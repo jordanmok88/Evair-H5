@@ -1,7 +1,7 @@
 {
-  "name": "evair-h5",
+  "name": "evair-sim-1.2",
   "private": true,
-  "version": "1.0.0",
+  "version": "0.0.0",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -9,6 +9,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@fontsource/inter": "^5.2.8",
     "i18n-iso-countries": "^7.14.0",
     "i18next": "^25.8.13",
     "lucide-react": "^0.563.0",
@@ -17,8 +18,10 @@
     "react-i18next": "^16.5.4"
   },
   "devDependencies": {
+    "@tailwindcss/vite": "^4.2.1",
     "@types/node": "^22.14.0",
     "@vitejs/plugin-react": "^5.0.0",
+    "tailwindcss": "^4.2.1",
     "typescript": "~5.8.2",
     "vite": "^6.2.0"
   }

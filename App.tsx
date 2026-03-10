@@ -6,7 +6,6 @@ import ProfileView from './views/ProfileView';
 import LoginModal from './views/LoginModal';
 import DialerView from './views/DialerView';
 import ContactUsView from './views/ContactUsView';
-import ECardView from './views/ECardView';
 import InboxView from './views/InboxView';
 import { Tab, ActiveSim, SimType, User } from './types';
 import { Lock } from 'lucide-react';
@@ -124,8 +123,6 @@ function App() {
                 onNavigate={handleTabChange}
             />
         );
-      case Tab.ECARD:
-        return <ECardView onBack={() => setActiveTab(Tab.ESIM)} onNavigateToEsimShop={() => setActiveTab(Tab.ESIM)} />;
       case Tab.INBOX:
         return <InboxView />;
       case Tab.PROFILE:

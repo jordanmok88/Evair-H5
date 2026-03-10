@@ -1,7 +1,6 @@
 export enum Tab {
   SIM_CARD = 'SIM_CARD',
   ESIM = 'ESIM',
-  ECARD = 'ECARD',
   INBOX = 'INBOX',
   PROFILE = 'PROFILE',
   DIALER = 'DIALER',
@@ -69,6 +68,20 @@ export interface Order {
   status: 'PENDING' | 'PAID' | 'ACTIVE' | 'EXPIRED';
   date: string;
   type: SimType;
+}
+
+/** Physical SIM card product from catalog (e.g. from Excel) for purchase */
+export interface SimCardProduct {
+  id: string;
+  slug: string;
+  region: string;
+  coverage: string;
+  sellingPrice: number;
+  gbs: number;
+  validityDays: number;
+  speed: string;
+  topUpType: string;
+  productId: string; // backend/operator ID
 }
 
 export type ECardType = 'E1' | 'E2' | 'E2_PRO';

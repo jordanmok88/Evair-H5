@@ -24,6 +24,7 @@ const es = {
     next: 'Siguiente',
     search_results: 'Resultados de Búsqueda',
     buy_new_sim: 'Comprar Nueva SIM',
+    purchase_sim_cards: 'Comprar tarjetas SIM',
     buy_new_esim: 'Comprar Nueva eSIM',
     view_all_countries: 'Ver Todos los Países',
     more: 'más',

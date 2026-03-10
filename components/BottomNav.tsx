@@ -44,28 +44,6 @@ const EsimIcon = ({ active }: { active: boolean }) => (
   </svg>
 );
 
-const ECardIcon = ({ active }: { active: boolean }) => (
-  <svg width="26" height="26" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-    <rect x="2" y="5" width="20" height="14" rx="3" 
-      stroke={active ? '#FF6600' : '#8E8E93'} 
-      strokeWidth="1.8"
-      fill={active ? '#FFF3EB' : 'none'}
-    />
-    <rect x="2" y="3" width="20" height="14" rx="3" 
-      stroke={active ? '#FF6600' : '#8E8E93'} 
-      strokeWidth="1.8"
-      fill={active ? '#FFE0CC' : '#fff'}
-    />
-    <circle cx="9" cy="10" r="2.5" 
-      stroke={active ? '#FF6600' : '#8E8E93'} 
-      strokeWidth="1.2"
-      fill="none"
-    />
-    <line x1="13" y1="8" x2="18" y2="8" stroke={active ? '#FF6600' : '#8E8E93'} strokeWidth="1.2" strokeLinecap="round" />
-    <line x1="13" y1="11" x2="17" y2="11" stroke={active ? '#FF6600' : '#8E8E93'} strokeWidth="1.2" strokeLinecap="round" />
-  </svg>
-);
-
 const InboxIcon = ({ active }: { active: boolean }) => (
   <svg width="26" height="26" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
     <path d="M4 7C4 5.34315 5.34315 4 7 4H17C18.6569 4 20 5.34315 20 7V14C20 15.6569 18.6569 17 17 17H7C5.34315 17 4 15.6569 4 14V7Z" 
@@ -105,7 +83,6 @@ const BottomNav: React.FC<BottomNavProps> = ({ activeTab, onTabChange }) => {
   const tabs = [
     { id: Tab.SIM_CARD, label: t('nav.sim_card'), Icon: SimCardIcon, badge: 0 },
     { id: Tab.ESIM, label: t('nav.esim'), Icon: EsimIcon, badge: 0 },
-    { id: Tab.ECARD, label: t('nav.ecard'), Icon: ECardIcon, badge: 0 },
     { id: Tab.INBOX, label: t('nav.inbox'), Icon: InboxIcon, badge: unreadCount },
     { id: Tab.PROFILE, label: t('nav.profile'), Icon: ProfileIcon, badge: 0 },
   ];

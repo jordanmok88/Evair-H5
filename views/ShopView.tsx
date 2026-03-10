@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Search, ChevronRight, ArrowLeft, Globe, Star, X, MapPin, Loader2, Smartphone, Truck, CheckCircle, Calendar, Wifi, Signal, Info, CreditCard, ArrowDown, ShoppingBag } from 'lucide-react';
-import { Country, Plan, SimType, User } from '../types';
-import { MOCK_COUNTRIES } from '../constants';
+import { Country, Plan, SimType, User, SimCardProduct } from '../types';
+import { MOCK_COUNTRIES, SIM_CARD_PRODUCTS } from '../constants';
 import FlagIcon from '../components/FlagIcon';
 
 interface ShopViewProps {
@@ -22,6 +22,7 @@ const ShopView: React.FC<ShopViewProps> = ({ isLoggedIn, user, onLoginRequest, o
   const TOP_COUNTRY_COUNT = 10;
   const [selectedCountry, setSelectedCountry] = useState<Country | null>(null);
   const [selectedPlan, setSelectedPlan] = useState<Plan | null>(null);
+  const [selectedSimCardProduct, setSelectedSimCardProduct] = useState<SimCardProduct | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [showAllCountries, setShowAllCountries] = useState(false);
   
@@ -66,6 +67,19 @@ const ShopView: React.FC<ShopViewProps> = ({ isLoggedIn, user, onLoginRequest, o
     }, 1500);
   };
 
+  const handleCheckoutSimCard = () => {
+    setIsProcessing(true);
+    setTimeout(() => {
+      setIsProcessing(false);
+      setShowSuccess(true);
+      setTimeout(() => {
+        setShowSuccess(false);
+        setSelectedSimCardProduct(null);
+        onPurchaseComplete();
+      }, 2000);
+    }, 1500);
+  };
+
   // --- SUCCESS OVERLAY (Ultra Thick Material) ---
   if (showSuccess) {
       return (
@@ -80,6 +94,81 @@ const ShopView: React.FC<ShopViewProps> = ({ isLoggedIn, user, onLoginRequest, o
               <Loader2 className="animate-spin text-brand-orange" />
           </div>
       );
+  }
+
+  // --- CHECKOUT MODAL: Physical SIM Card Product (from Excel catalog) ---
+  if (selectedSimCardProduct && simType === 'PHYSICAL') {
+    const shippingCost = 5.99;
+    const total = selectedSimCardProduct.sellingPrice + shippingCost;
+    return (
+      <div className="h-full flex flex-col relative bg-[#F2F4F7]">
+        <div className="absolute inset-0 z-[60] flex items-end sm:items-center justify-center bg-black/20 backdrop-blur-sm">
+          <div className="bg-white/95 backdrop-blur-2xl border-t border-white/50 w-full sm:w-[90%] sm:max-w-sm max-h-[90vh] sm:max-h-[85vh] rounded-t-[2rem] sm:rounded-[2rem] p-6 shadow-2xl overflow-y-auto overscroll-contain">
+            <div className="flex justify-between items-center mb-6">
+              <h2 className="text-xl font-bold text-slate-900 tracking-tight">{t('shop.checkout')}</h2>
+              <button onClick={() => setSelectedSimCardProduct(null)} className="p-2 bg-gray-100 rounded-full text-slate-500 hover:bg-gray-200">
+                <X size={20} />
+              </button>
+            </div>
+            <div className="bg-white/50 border border-white/60 p-4 rounded-2xl mb-6">
+              <p className="text-[12px] font-bold text-slate-400 uppercase tracking-wider">{t('shop.selected_plan')}</p>
+              <p className="font-bold text-slate-900 text-lg">{selectedSimCardProduct.region}</p>
+              <p className="text-sm text-slate-500 font-medium">{selectedSimCardProduct.gbs} GB / {selectedSimCardProduct.validityDays} Days · {selectedSimCardProduct.speed}</p>
+              <div className="flex justify-between items-center mt-2 pt-2 border-t border-slate-100">
+                <span className="text-sm text-slate-500">SIM Card</span>
+                <span className="text-lg font-bold text-brand-orange">${selectedSimCardProduct.sellingPrice.toFixed(2)}</span>
+              </div>
+              <div className="flex justify-between items-center mt-1 text-sm text-slate-500">
+                <span>Shipping</span>
+                <span>${shippingCost.toFixed(2)}</span>
+              </div>
+            </div>
+            <div className="mb-6 bg-orange-50/50 border border-orange-100 p-4 rounded-xl flex items-center gap-3 text-brand-orange">
+              <CreditCard size={24} />
+              <div className="flex-1">
+                <p className="text-sm font-bold uppercase tracking-wider opacity-70">{t('shop.product_type')}</p>
+                <p className="font-bold">{t('shop.physical_sim_card')}</p>
+              </div>
+            </div>
+            <div className="mb-6">
+              <label className="block text-sm font-semibold text-slate-400 uppercase tracking-wider mb-2">{t('shop.email_address')}</label>
+              <div className="relative">
+                <svg className="absolute left-3 top-3.5 text-slate-400 pointer-events-none" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></svg>
+                <input
+                  type="email"
+                  placeholder={t('shop.email_placeholder')}
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  autoComplete="email"
+                  className="w-full bg-gray-50/50 border border-gray-200 rounded-xl py-3 pl-10 pr-4 text-sm focus:outline-none focus:border-brand-orange focus:ring-1 focus:ring-brand-orange"
+                />
+              </div>
+            </div>
+            <div className="mb-6">
+              <label className="block text-sm font-semibold text-slate-400 uppercase tracking-wider mb-2">{t('shop.shipping_address')}</label>
+              <div className="relative">
+                <MapPin className="absolute left-3 top-3.5 text-slate-400 pointer-events-none" size={18} />
+                <input
+                  type="text"
+                  placeholder={t('shop.address_placeholder')}
+                  value={address}
+                  onChange={(e) => setAddress(e.target.value)}
+                  autoComplete="street-address"
+                  className="w-full bg-gray-50/50 border border-gray-200 rounded-xl py-3 pl-10 pr-4 text-sm focus:outline-none focus:border-brand-orange focus:ring-1 focus:ring-brand-orange"
+                />
+              </div>
+            </div>
+            <button
+              onClick={handleCheckoutSimCard}
+              disabled={isProcessing || !email.includes('@') || address.length < 5}
+              className="w-full bg-brand-orange text-white py-4 rounded-[1.2rem] font-bold text-lg shadow-lg shadow-orange-500/30 active:scale-[0.98] transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-orange-600"
+            >
+              {isProcessing ? <Loader2 className="animate-spin" /> : <>{t('shop.pay')} ${total.toFixed(2)}</>}
+            </button>
+          </div>
+        </div>
+      </div>
+    );
   }
 
   // --- SUB-VIEW: Country Details & Plans ---
@@ -400,40 +489,75 @@ const ShopView: React.FC<ShopViewProps> = ({ isLoggedIn, user, onLoginRequest, o
             </div>
         )}
 
-        {/* All Countries List - Inset Grouped Style */}
-        <h3 className="text-xl font-bold text-slate-900 mb-4 tracking-tight">
-          {searchQuery ? t('shop.search_results') : (simType === 'ESIM' ? t('shop.buy_new_esim') : t('shop.buy_new_sim'))}
-        </h3>
-        <div className="bg-white/70 backdrop-blur-xl rounded-[1.5rem] border border-white/60 divide-y divide-gray-200/50 overflow-hidden shadow-sm mb-6">
-          {visibleCountries.map((country) => (
-             <button 
-                key={country.id}
-                onClick={() => setSelectedCountry(country)}
-                className="w-full flex items-center justify-between p-4 hover:bg-black/5 transition-colors text-left group"
-             >
-                <div className="flex items-center gap-4">
-                  <FlagIcon countryCode={country.countryCode} size="md" />
-                  <div>
-                    <p className="font-semibold text-slate-900 text-[15px]">{country.name}</p>
-                    <p className="text-sm text-slate-400">
-                      {country.networks?.join(' · ') || `${country.plans.length} Plans`}
-                    </p>
-                  </div>
-                </div>
-                <div className="flex items-center gap-2 flex-shrink-0">
-                   <span className="text-sm font-medium text-slate-400 group-hover:text-brand-orange transition-colors whitespace-nowrap">{t('shop.from')} ${country.startPrice.toFixed(2)}</span>
-                   <ChevronRight size={16} className="text-slate-300 flex-shrink-0" />
-                </div>
-             </button>
-          ))}
-        </div>
-        {!searchQuery && !showAllCountries && hiddenCountryCount > 0 && (
-          <button
-            onClick={() => setShowAllCountries(true)}
-            className="w-full py-3.5 rounded-[1rem] bg-slate-900 text-white font-semibold text-sm shadow-lg shadow-slate-200 active:scale-[0.98] transition-transform mb-6"
-          >
-            {t('shop.view_all_countries')} ({hiddenCountryCount} {t('shop.more')})
-          </button>
+        {/* SIM Card products from catalog (Excel) - PHYSICAL only */}
+        {simType === 'PHYSICAL' && !searchQuery && (
+            <>
+              <h3 className="text-xl font-bold text-slate-900 mb-4 tracking-tight">{t('shop.purchase_sim_cards')}</h3>
+              <div className="bg-white/70 backdrop-blur-xl rounded-[1.5rem] border border-white/60 divide-y divide-gray-200/50 overflow-hidden shadow-sm mb-6">
+                {SIM_CARD_PRODUCTS.map((product) => (
+                  <button
+                    key={product.id}
+                    onClick={() => {
+                      if (!isLoggedIn) onLoginRequest();
+                      else setSelectedSimCardProduct(product);
+                    }}
+                    className="w-full flex items-center justify-between p-4 hover:bg-black/5 transition-colors text-left group"
+                  >
+                    <div className="flex items-center gap-4">
+                      <FlagIcon countryCode={product.coverage} size="md" />
+                      <div>
+                        <p className="font-semibold text-slate-900 text-[15px]">{product.region}</p>
+                        <p className="text-sm text-slate-500">{product.gbs} GB · {product.validityDays} Days · {product.speed}</p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2 flex-shrink-0">
+                      <span className="text-base font-bold text-brand-orange">${product.sellingPrice.toFixed(2)}</span>
+                      <ChevronRight size={16} className="text-slate-300 flex-shrink-0" />
+                    </div>
+                  </button>
+                ))}
+              </div>
+            </>
+        )}
+
+        {/* All Countries List - eSIM only; SIM Card tab uses Purchase SIM Cards list instead */}
+        {simType === 'ESIM' && (
+          <>
+            <h3 className="text-xl font-bold text-slate-900 mb-4 tracking-tight">
+              {searchQuery ? t('shop.search_results') : t('shop.buy_new_esim')}
+            </h3>
+            <div className="bg-white/70 backdrop-blur-xl rounded-[1.5rem] border border-white/60 divide-y divide-gray-200/50 overflow-hidden shadow-sm mb-6">
+              {visibleCountries.map((country) => (
+                 <button 
+                    key={country.id}
+                    onClick={() => setSelectedCountry(country)}
+                    className="w-full flex items-center justify-between p-4 hover:bg-black/5 transition-colors text-left group"
+                 >
+                    <div className="flex items-center gap-4">
+                      <FlagIcon countryCode={country.countryCode} size="md" />
+                      <div>
+                        <p className="font-semibold text-slate-900 text-[15px]">{country.name}</p>
+                        <p className="text-sm text-slate-400">
+                          {country.networks?.join(' · ') || `${country.plans.length} Plans`}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2 flex-shrink-0">
+                       <span className="text-sm font-medium text-slate-400 group-hover:text-brand-orange transition-colors whitespace-nowrap">{t('shop.from')} ${country.startPrice.toFixed(2)}</span>
+                       <ChevronRight size={16} className="text-slate-300 flex-shrink-0" />
+                    </div>
+                 </button>
+              ))}
+            </div>
+            {!searchQuery && !showAllCountries && hiddenCountryCount > 0 && (
+              <button
+                onClick={() => setShowAllCountries(true)}
+                className="w-full py-3.5 rounded-[1rem] bg-slate-900 text-white font-semibold text-sm shadow-lg shadow-slate-200 active:scale-[0.98] transition-transform mb-6"
+              >
+                {t('shop.view_all_countries')} ({hiddenCountryCount} {t('shop.more')})
+              </button>
+            )}
+          </>
         )}
       </div>
     </div>

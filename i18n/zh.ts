@@ -24,6 +24,7 @@ const zh = {
     next: '下一步',
     search_results: '搜索结果',
     buy_new_sim: '购买新SIM卡',
+    purchase_sim_cards: '购买SIM卡',
     buy_new_esim: '购买新eSIM',
     view_all_countries: '查看所有国家',
     more: '更多',
