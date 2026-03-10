@@ -1,0 +1,271 @@
+import { createClient, SupabaseClient, RealtimeChannel } from '@supabase/supabase-js';
+import { AppNotification } from '../types';
+
+const url = import.meta.env.VITE_SUPABASE_URL as string | undefined;
+const key = import.meta.env.VITE_SUPABASE_ANON_KEY as string | undefined;
+
+export const supabaseConfigured = !!(url && key);
+
+export const supabase: SupabaseClient | null =
+  supabaseConfigured ? createClient(url!, key!) : null;
+
+// ─── Notifications ───────────────────────────────────────────────
+
+export interface DbNotification {
+  id: string;
+  type: 'promo' | 'service';
+  title_en: string;
+  title_zh: string;
+  title_es: string;
+  body_en: string;
+  body_zh: string;
+  body_es: string;
+  action_label: string | null;
+  action_target: string | null;
+  country_code: string | null;
+  active: boolean;
+  created_at: string;
+}
+
+function langField(lang: string): 'en' | 'zh' | 'es' {
+  if (lang.startsWith('zh')) return 'zh';
+  if (lang.startsWith('es')) return 'es';
+  return 'en';
+}
+
+export function dbNotifToApp(n: DbNotification, lang: string): AppNotification {
+  const l = langField(lang);
+  return {
+    id: n.id,
+    type: n.type,
+    titleKey: `__raw:${n[`title_${l}`] || n.title_en}`,
+    bodyKey: `__raw:${n[`body_${l}`] || n.body_en}`,
+    date: n.created_at,
+    read: false,
+    actionLabel: n.action_label ? `__raw:${n.action_label}` : undefined,
+    countryCode: n.country_code ?? undefined,
+  };
+}
+
+export async function fetchNotifications(lang: string): Promise<AppNotification[]> {
+  if (!supabase) return [];
+  const { data, error } = await supabase
+    .from('notifications')
+    .select('*')
+    .eq('active', true)
+    .order('created_at', { ascending: false })
+    .limit(50);
+  if (error || !data) return [];
+  return (data as DbNotification[]).map(n => dbNotifToApp(n, lang));
+}
+
+// Admin: CRUD for notifications (requires auth)
+
+export async function adminLogin(email: string, password: string) {
+  if (!supabase) throw new Error('Supabase not configured');
+  const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+  if (error) throw error;
+  return data;
+}
+
+export async function adminLogout() {
+  if (!supabase) return;
+  await supabase.auth.signOut();
+}
+
+export async function getAdminSession() {
+  if (!supabase) return null;
+  const { data } = await supabase.auth.getSession();
+  return data.session;
+}
+
+export async function adminFetchAllNotifications(): Promise<DbNotification[]> {
+  if (!supabase) return [];
+  const { data, error } = await supabase
+    .from('notifications')
+    .select('*')
+    .order('created_at', { ascending: false });
+  if (error || !data) return [];
+  return data as DbNotification[];
+}
+
+export async function adminCreateNotification(notif: Omit<DbNotification, 'id' | 'created_at'>): Promise<DbNotification | null> {
+  if (!supabase) return null;
+  const { data, error } = await supabase
+    .from('notifications')
+    .insert(notif)
+    .select()
+    .single();
+  if (error) throw error;
+  return data as DbNotification;
+}
+
+export async function adminUpdateNotification(id: string, updates: Partial<DbNotification>): Promise<void> {
+  if (!supabase) return;
+  const { error } = await supabase
+    .from('notifications')
+    .update(updates)
+    .eq('id', id);
+  if (error) throw error;
+}
+
+export async function adminDeleteNotification(id: string): Promise<void> {
+  if (!supabase) return;
+  const { error } = await supabase
+    .from('notifications')
+    .delete()
+    .eq('id', id);
+  if (error) throw error;
+}
+
+// ─── Chat / Conversations ────────────────────────────────────────
+
+export interface DbConversation {
+  id: string;
+  customer_id: string;
+  status: 'open' | 'needs_human' | 'resolved';
+  topic: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface DbChatMessage {
+  id: string;
+  conversation_id: string;
+  sender: 'customer' | 'ai' | 'agent';
+  agent_name: string | null;
+  content: string;
+  created_at: string;
+}
+
+function getCustomerId(): string {
+  let cid = localStorage.getItem('evair-customer-id');
+  if (!cid) {
+    cid = crypto.randomUUID();
+    localStorage.setItem('evair-customer-id', cid);
+  }
+  return cid;
+}
+
+export function getOrCreateCustomerId(): string {
+  return getCustomerId();
+}
+
+export async function createConversation(topic?: string): Promise<DbConversation | null> {
+  if (!supabase) return null;
+  const { data, error } = await supabase
+    .from('conversations')
+    .insert({ customer_id: getCustomerId(), topic, status: 'open' })
+    .select()
+    .single();
+  if (error) return null;
+  return data as DbConversation;
+}
+
+export async function getCustomerConversation(): Promise<DbConversation | null> {
+  if (!supabase) return null;
+  const { data } = await supabase
+    .from('conversations')
+    .select('*')
+    .eq('customer_id', getCustomerId())
+    .neq('status', 'resolved')
+    .order('created_at', { ascending: false })
+    .limit(1)
+    .single();
+  return data as DbConversation | null;
+}
+
+export async function sendMessage(
+  conversationId: string,
+  sender: 'customer' | 'ai' | 'agent',
+  content: string,
+  agentName?: string,
+): Promise<DbChatMessage | null> {
+  if (!supabase) return null;
+  const { data, error } = await supabase
+    .from('chat_messages')
+    .insert({ conversation_id: conversationId, sender, content, agent_name: agentName ?? null })
+    .select()
+    .single();
+  if (error) return null;
+
+  // Update conversation timestamp
+  await supabase
+    .from('conversations')
+    .update({ updated_at: new Date().toISOString() })
+    .eq('id', conversationId);
+
+  return data as DbChatMessage;
+}
+
+export async function getMessages(conversationId: string): Promise<DbChatMessage[]> {
+  if (!supabase) return [];
+  const { data } = await supabase
+    .from('chat_messages')
+    .select('*')
+    .eq('conversation_id', conversationId)
+    .order('created_at', { ascending: true });
+  return (data ?? []) as DbChatMessage[];
+}
+
+export async function markNeedsHuman(conversationId: string): Promise<void> {
+  if (!supabase) return;
+  await supabase
+    .from('conversations')
+    .update({ status: 'needs_human', updated_at: new Date().toISOString() })
+    .eq('id', conversationId);
+}
+
+export function subscribeToMessages(
+  conversationId: string,
+  onMessage: (msg: DbChatMessage) => void,
+): RealtimeChannel | null {
+  if (!supabase) return null;
+  return supabase
+    .channel(`chat:${conversationId}`)
+    .on(
+      'postgres_changes',
+      {
+        event: 'INSERT',
+        schema: 'public',
+        table: 'chat_messages',
+        filter: `conversation_id=eq.${conversationId}`,
+      },
+      (payload) => onMessage(payload.new as DbChatMessage),
+    )
+    .subscribe();
+}
+
+// ─── Admin: Chat Dashboard ───────────────────────────────────────
+
+export async function adminFetchConversations(): Promise<DbConversation[]> {
+  if (!supabase) return [];
+  const { data } = await supabase
+    .from('conversations')
+    .select('*')
+    .order('updated_at', { ascending: false })
+    .limit(100);
+  return (data ?? []) as DbConversation[];
+}
+
+export async function adminResolveConversation(id: string): Promise<void> {
+  if (!supabase) return;
+  await supabase
+    .from('conversations')
+    .update({ status: 'resolved', updated_at: new Date().toISOString() })
+    .eq('id', id);
+}
+
+export function subscribeToConversations(
+  onUpdate: (conv: DbConversation) => void,
+): RealtimeChannel | null {
+  if (!supabase) return null;
+  return supabase
+    .channel('admin:conversations')
+    .on(
+      'postgres_changes',
+      { event: '*', schema: 'public', table: 'conversations' },
+      (payload) => onUpdate(payload.new as DbConversation),
+    )
+    .subscribe();
+}

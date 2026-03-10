@@ -52,15 +52,16 @@ export const MOCK_COUNTRIES: Country[] = RAW.map((c, i) => {
   };
 });
 
-/** Physical SIM card products from catalog (New Cards.xlsx) for purchase in SIM Card section */
+/** Physical SIM card products from catalog (New Cards.xlsx) sorted by GB */
 export const SIM_CARD_PRODUCTS: SimCardProduct[] = [
-  { id: 'US_10_30', slug: 'US_10_30', region: 'United States', coverage: 'US', sellingPrice: 15.99, gbs: 10, validityDays: 30, speed: '3G/4G/5G', topUpType: 'Data Reloadable for same area within validitity', productId: 'PCRKRUHIL' },
-  { id: 'US_12_180', slug: 'US_12_180', region: 'United States', coverage: 'US', sellingPrice: 23.99, gbs: 12, validityDays: 180, speed: '3G/4G/5G', topUpType: 'Non-reloadable', productId: 'PICWP3TVY' },
-  { id: 'US_15_30', slug: 'US_15_30', region: 'United States', coverage: 'US', sellingPrice: 21.99, gbs: 15, validityDays: 30, speed: '3G/4G/5G', topUpType: 'Data Reloadable for same area within validitity', productId: 'P7QQR3WW0' },
-  { id: 'US_20_30', slug: 'US_20_30', region: 'United States', coverage: 'US', sellingPrice: 27.99, gbs: 20, validityDays: 30, speed: '3G/4G/5G', topUpType: 'Data Reloadable for same area within validitity', productId: 'CKH533' },
-  { id: 'US_3_30', slug: 'US_3_30', region: 'United States', coverage: 'US', sellingPrice: 8.99, gbs: 3, validityDays: 30, speed: '3G/4G/5G', topUpType: 'Data Reloadable for same area within validitity', productId: 'PKY3WHPRZ' },
-  { id: 'US_50_180', slug: 'US_50_180', region: 'United States', coverage: 'US', sellingPrice: 74.99, gbs: 50, validityDays: 180, speed: '3G/4G/5G', topUpType: 'Data Reloadable for same area within validitity', productId: 'P3ICIKSE8' },
-  { id: 'US_5_30', slug: 'US_5_30', region: 'United States', coverage: 'US', sellingPrice: 9.99, gbs: 5, validityDays: 30, speed: '3G/4G/5G', topUpType: 'Data Reloadable for same area within validitity', productId: 'PKJNMJIIU' },
+  { id: 'US_3_30',  slug: 'US_3_30',  region: 'United States', coverage: 'US', sellingPrice: 8.99,  gbs: 3,  validityDays: 30,  speed: '3G/4G/5G', topUpType: 'Data Reloadable for same area within validitity', productId: 'PKY3WHPRZ' },
+  { id: 'US_5_30',  slug: 'US_5_30',  region: 'United States', coverage: 'US', sellingPrice: 9.99,  gbs: 5,  validityDays: 30,  speed: '3G/4G/5G', topUpType: 'Data Reloadable for same area within validitity', productId: 'PKJNMJIIU' },
+  { id: 'US_10_30', slug: 'US_10_30', region: 'United States', coverage: 'US', sellingPrice: 15.99, gbs: 10, validityDays: 30,  speed: '3G/4G/5G', topUpType: 'Data Reloadable for same area within validitity', productId: 'PCRKRUHIL' },
+  { id: 'US_12_180',slug: 'US_12_180',region: 'United States', coverage: 'US', sellingPrice: 23.99, gbs: 12, validityDays: 180, speed: '3G/4G/5G', topUpType: 'Non-reloadable', productId: 'PICWP3TVY' },
+  { id: 'US_15_30', slug: 'US_15_30', region: 'United States', coverage: 'US', sellingPrice: 21.99, gbs: 15, validityDays: 30,  speed: '3G/4G/5G', topUpType: 'Data Reloadable for same area within validitity', productId: 'P7QQR3WW0' },
+  { id: 'US_20_30', slug: 'US_20_30', region: 'United States', coverage: 'US', sellingPrice: 27.99, gbs: 20, validityDays: 30,  speed: '3G/4G/5G', topUpType: 'Data Reloadable for same area within validitity', productId: 'CKH533' },
+  { id: 'US_50_30', slug: 'US_50_30', region: 'United States', coverage: 'US', sellingPrice: 44.99, gbs: 50, validityDays: 30,  speed: '3G/4G/5G', topUpType: 'Data Reloadable for same area within validitity', productId: 'PCR902VVL' },
+  { id: 'US_50_180',slug: 'US_50_180',region: 'United States', coverage: 'US', sellingPrice: 74.99, gbs: 50, validityDays: 180, speed: '3G/4G/5G', topUpType: 'Data Reloadable for same area within validitity', productId: 'P3ICIKSE8' },
 ];
 
 export const MOCK_PLANS_US: Plan[] = MOCK_COUNTRIES.find(c => c.countryCode === 'US')?.plans ?? [];
@@ -148,52 +149,53 @@ export const MOCK_ECARDS: ECard[] = [
   },
 ];
 
-export const MOCK_ACTIVE_SIMS: ActiveSim[] = [
-  // eSIMs
-  { id: 'ESIM-8832', country: US_COUNTRY, plan: MOCK_PLANS_US[0], type: 'ESIM', activationDate: '2023-11-01T10:00:00Z', expiryDate: '2024-01-01T10:00:00Z', dataTotalGB: 1.0, dataUsedGB: 0.5, status: 'ACTIVE' },
-  { id: 'ESIM-9941', country: US_COUNTRY, plan: MOCK_PLANS_US[1], type: 'ESIM', activationDate: '2023-11-10T14:30:00Z', expiryDate: '2024-01-10T14:30:00Z', dataTotalGB: 3.0, dataUsedGB: 2.8, status: 'ACTIVE' },
-  // Physical SIMs
-  { id: 'SIM-3301', country: US_COUNTRY, plan: MOCK_PLANS_US[2], type: 'PHYSICAL', activationDate: '2024-10-15T09:00:00Z', expiryDate: '2025-04-15T09:00:00Z', dataTotalGB: 5.0, dataUsedGB: 1.8, status: 'ACTIVE' },
-  { id: 'SIM-3302', country: US_COUNTRY, plan: MOCK_PLANS_US[3], type: 'PHYSICAL', activationDate: '2024-11-01T12:00:00Z', expiryDate: '2025-05-01T12:00:00Z', dataTotalGB: 10.0, dataUsedGB: 3.5, status: 'ACTIVE' },
-];
+export const MOCK_ACTIVE_SIMS: ActiveSim[] = [];
+
+function hoursAgo(h: number): string {
+  return new Date(Date.now() - h * 3600_000).toISOString();
+}
 
 export const MOCK_NOTIFICATIONS: AppNotification[] = [
   {
     id: 'N-001',
     type: 'data_low',
     titleKey: 'inbox.data_low_title',
-    bodyKey: 'inbox.data_low_body_gb',
-    date: '2026-02-28T14:30:00Z',
+    bodyKey: 'inbox.data_low_body_auto',
+    date: hoursAgo(2),
     read: false,
     actionLabel: 'inbox.top_up_now',
-    countryCode: 'GB',
+    countryCode: 'US',
+    planName: '0.2 GB / 1.0 GB',
   },
   {
     id: 'N-002',
     type: 'expiring',
     titleKey: 'inbox.expiring_title',
-    bodyKey: 'inbox.expiring_body_th',
-    date: '2026-02-27T09:00:00Z',
+    bodyKey: 'inbox.expiring_body_auto',
+    date: hoursAgo(18),
     read: false,
     actionLabel: 'inbox.renew_plan',
-    countryCode: 'TH',
+    countryCode: 'JP',
+    planName: '3',
   },
   {
     id: 'N-003',
     type: 'order',
-    titleKey: 'inbox.order_ready_title',
-    bodyKey: 'inbox.order_ready_body',
-    date: '2026-02-26T16:45:00Z',
+    titleKey: 'inbox.esim_order_title',
+    bodyKey: 'inbox.esim_order_body',
+    date: hoursAgo(48),
     read: true,
     actionLabel: 'inbox.install_now',
-    countryCode: 'JP',
+    countryCode: 'TH',
+    planName: 'Thailand 3GB/15Days',
+    orderNo: 'ORD-20260307-8832',
   },
   {
     id: 'N-004',
     type: 'promo',
     titleKey: 'inbox.promo_title',
     bodyKey: 'inbox.promo_body',
-    date: '2026-02-25T10:00:00Z',
+    date: hoursAgo(120),
     read: true,
     actionLabel: 'inbox.shop_now',
   },
@@ -202,17 +204,7 @@ export const MOCK_NOTIFICATIONS: AppNotification[] = [
     type: 'service',
     titleKey: 'inbox.service_title',
     bodyKey: 'inbox.service_body',
-    date: '2026-02-24T08:00:00Z',
+    date: hoursAgo(168),
     read: true,
-  },
-  {
-    id: 'N-006',
-    type: 'data_low',
-    titleKey: 'inbox.data_low_title',
-    bodyKey: 'inbox.data_low_body_us',
-    date: '2026-02-23T11:20:00Z',
-    read: true,
-    actionLabel: 'inbox.top_up_now',
-    countryCode: 'US',
   },
 ];

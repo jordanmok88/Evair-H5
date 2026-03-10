@@ -36,6 +36,10 @@ const FlagIcon: React.FC<FlagIconProps> = ({ countryCode, size = 'md', className
       <img
         src={src}
         alt={code.toUpperCase()}
+        loading="lazy"
+        decoding="async"
+        width={width}
+        height={height}
         style={{
           width: '100%',
           height: '100%',

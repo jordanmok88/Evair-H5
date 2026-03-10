@@ -11,7 +11,11 @@ export default defineConfig(({ mode }) => {
         host: '0.0.0.0',
         proxy: {
           '/api/track': {
-            target: 'https://superlative-mooncake-5fd7f7.netlify.app',
+            target: 'https://evair-h5.netlify.app',
+            changeOrigin: true,
+          },
+          '/api/esim': {
+            target: 'https://evair-h5.netlify.app',
             changeOrigin: true,
           },
         },

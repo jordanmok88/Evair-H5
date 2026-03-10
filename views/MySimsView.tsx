@@ -1,9 +1,10 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Wifi, Phone, Zap, ChevronDown, CheckCircle2, QrCode, Copy, X, Calendar, Clock, SignalHigh, Smartphone, RefreshCw, Plus, ShoppingBag, Settings, MoreHorizontal, Trash2, Check, AlertTriangle } from 'lucide-react';
-import { ActiveSim, Tab, SimType } from '../types';
+import { Wifi, Phone, Zap, ChevronDown, CheckCircle2, QrCode, Copy, X, Calendar, Clock, SignalHigh, Smartphone, RefreshCw, Plus, ShoppingBag, Settings, MoreHorizontal, Trash2, Check, AlertTriangle, Loader2, Globe, Database } from 'lucide-react';
+import { ActiveSim, Tab, SimType, EsimPackage } from '../types';
 import FlagIcon from '../components/FlagIcon';
 import { CARRIER_MAP } from '../constants';
+import { checkDataUsage, fetchTopUpPackages, topUp, formatVolume, formatPrice } from '../services/esimApi';
 
 interface MySimsViewProps {
   activeSims: ActiveSim[];
@@ -28,6 +29,10 @@ function lerpColor(a: string, b: string, t: number): string {
   return `rgb(${rr},${rg},${rb})`;
 }
 
+function resolveIccid(sim: ActiveSim): string {
+  return sim.iccid || `898520002633221${sim.id.replace(/\D/g, '').slice(0, 5)}`;
+}
+
 const MySimsView: React.FC<MySimsViewProps> = ({ activeSims, onNavigate, filterType, onSwitchToShop, onDeleteSim, onSwitchToSetup }) => {
   const { t } = useTranslation();
   const filteredSims = activeSims.filter(s => s.type === filterType);
@@ -41,20 +46,47 @@ const MySimsView: React.FC<MySimsViewProps> = ({ activeSims, onNavigate, filterT
   const [copiedField, setCopiedField] = useState<'smdp' | 'activation' | 'qr' | null>(null);
   const [deleteConfirmSimId, setDeleteConfirmSimId] = useState<string | null>(null);
 
+  // eSIM API states for top-up
+  const [topUpPackages, setTopUpPackages] = useState<EsimPackage[]>([]);
+  const [topUpLoading, setTopUpLoading] = useState(false);
+  const [selectedTopUp, setSelectedTopUp] = useState<EsimPackage | null>(null);
+  const [topUpProcessing, setTopUpProcessing] = useState(false);
+  const [topUpSuccess, setTopUpSuccess] = useState(false);
+
+  const currentSim = filteredSims.find(s => s.id === selectedSimId) || filteredSims[0];
+
   useEffect(() => {
     if (filteredSims.length > 0 && (!selectedSimId || !filteredSims.find(s => s.id === selectedSimId))) {
         setSelectedSimId(filteredSims[0].id);
     }
   }, [filteredSims, selectedSimId]);
 
-  const currentSim = filteredSims.find(s => s.id === selectedSimId) || filteredSims[0];
+  useEffect(() => {
+    if (isRechargeModalOpen && currentSim?.type === 'ESIM' && topUpPackages.length === 0 && !topUpLoading) {
+      const iccid = resolveIccid(currentSim);
+      setTopUpLoading(true);
+      fetchTopUpPackages(iccid)
+        .then(pkgs => setTopUpPackages(pkgs))
+        .catch(() => {})
+        .finally(() => setTopUpLoading(false));
+    }
+  }, [isRechargeModalOpen, currentSim]);
 
-  const handleSync = () => {
+  const handleSync = async () => {
     setIsSyncing(true);
-    setTimeout(() => setIsSyncing(false), 2000);
+    try {
+      if (currentSim?.type === 'ESIM') {
+        const iccid = resolveIccid(currentSim);
+        await checkDataUsage(iccid).catch(() => {});
+      }
+    } finally {
+      setTimeout(() => setIsSyncing(false), 1500);
+    }
   };
 
-  const handleCopyIccid = (id: string) => {
+  const handleCopyIccid = (sim: ActiveSim) => {
+      const iccid = resolveIccid(sim);
+      navigator.clipboard.writeText(iccid).catch(() => {});
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
   };
@@ -71,9 +103,9 @@ const MySimsView: React.FC<MySimsViewProps> = ({ activeSims, onNavigate, filterT
   // EMPTY STATE
   if (!currentSim) {
       return (
-          <div className="h-full flex flex-col items-center justify-center px-8 text-center bg-[#F2F4F7]">
-              <div className="relative mb-12">
-                  <div className="w-64 h-40 bg-white rounded-3xl border border-slate-200 shadow-sm flex flex-col p-6 relative overflow-hidden">
+          <div className="md:h-full min-h-[60vh] flex flex-col items-center justify-center px-8 text-center bg-[#F2F4F7]">
+              <div className="relative mb-10">
+                  <div className="w-60 h-36 bg-white rounded-2xl border border-slate-200 shadow-sm flex flex-col p-5 relative overflow-hidden">
                       <div className="w-12 h-16 rounded-lg border-2 border-slate-100 bg-slate-50 mb-3 grid grid-cols-2 gap-0.5 p-1">
                           <div className="border border-slate-200 rounded-sm"></div>
                           <div className="border border-slate-200 rounded-sm"></div>
@@ -94,15 +126,15 @@ const MySimsView: React.FC<MySimsViewProps> = ({ activeSims, onNavigate, filterT
                       </button>
                   </div>
               </div>
-              <p className="text-slate-500 mb-10 font-medium text-[16px] tracking-tight">
+              <p className="text-slate-500 mb-8 font-medium text-base tracking-tight">
                   {filterType === 'ESIM' ? t('my_sims.no_esims') : t('my_sims.no_sims')}
               </p>
               {onSwitchToShop && (
                 <button 
                     onClick={onSwitchToShop}
-                    className="bg-brand-orange hover:bg-orange-600 text-white w-40 py-3.5 rounded-full font-bold text-lg shadow-lg shadow-orange-900/10 active:scale-95 transition-all flex items-center justify-center gap-2"
+                    className="bg-brand-orange hover:bg-orange-600 text-white w-40 py-3 rounded-xl font-bold text-base shadow-lg shadow-orange-500/15 active:scale-95 transition-all flex items-center justify-center gap-2"
                 >
-                    <Plus size={22} strokeWidth={3} />
+                    <Plus size={20} strokeWidth={3} />
                     {t('my_sims.add')}
                 </button>
               )}
@@ -135,11 +167,11 @@ const MySimsView: React.FC<MySimsViewProps> = ({ activeSims, onNavigate, filterT
 
   if (isInstallModalOpen) {
     return (
-      <div className="h-full flex flex-col bg-[#1c1c1e]">
-          <div className="px-5 pt-safe pb-2 flex items-center justify-between shrink-0">
-              <h2 className="text-white text-xl font-bold tracking-tight">{t('my_sims.install_esim')}</h2>
-              <button onClick={() => { setIsInstallModalOpen(false); setCopiedField(null); }} className="bg-white/10 p-2 rounded-full text-white hover:bg-white/20 transition-colors backdrop-blur-md">
-                  <X size={20} />
+      <div className="md:h-full flex flex-col bg-[#1c1c1e]">
+          <div className="px-4 pt-safe pb-3 flex items-center justify-between shrink-0 sticky top-0 bg-[#1c1c1e] z-10 border-b border-white/10">
+              <h2 className="text-white text-lg font-bold tracking-tight">{t('my_sims.install_esim')}</h2>
+              <button onClick={() => { setIsInstallModalOpen(false); setCopiedField(null); }} className="bg-white/10 p-2 rounded-full text-white hover:bg-white/20 transition-colors">
+                  <X size={18} />
               </button>
           </div>
           <div className="flex-1 min-h-0 flex flex-col px-5 pb-2 gap-4 overflow-y-auto no-scrollbar">
@@ -256,18 +288,18 @@ const MySimsView: React.FC<MySimsViewProps> = ({ activeSims, onNavigate, filterT
   }
 
   return (
-    <div className={`h-full flex flex-col bg-[#F2F4F7] no-scrollbar relative ${isRechargeModalOpen ? 'overflow-hidden' : 'overflow-y-auto'}`}>
+    <div className={`md:h-full flex flex-col bg-[#F2F4F7] no-scrollbar relative ${isRechargeModalOpen ? 'overflow-hidden' : 'md:overflow-y-auto'}`}>
       
       {/* Header */}
-      <div className="pt-safe px-6 pb-2 flex items-center justify-between shrink-0 bg-[#F2F4F7] z-10">
-          <h1 className="text-2xl font-bold tracking-tight text-slate-900">{filterType === 'ESIM' ? t('my_sims.title_esims') : t('my_sims.title_sims')}</h1>
+      <div className="bg-white/90 backdrop-blur-xl pt-safe px-4 pb-3 flex items-center justify-between shrink-0 sticky top-0 z-10 border-b border-slate-100">
+          <h1 className="text-lg font-bold tracking-tight text-slate-900">{filterType === 'ESIM' ? t('my_sims.title_esims') : t('my_sims.title_sims')}</h1>
           <div className="flex gap-2">
-             <button onClick={handleSync} className="w-9 h-9 bg-white rounded-full flex items-center justify-center shadow-sm text-slate-600 active:scale-95 transition-transform">
+             <button onClick={handleSync} className="w-9 h-9 bg-slate-100 rounded-full flex items-center justify-center text-slate-600 active:scale-95 transition-transform">
                  <RefreshCw size={16} className={isSyncing ? 'animate-spin' : ''} />
              </button>
              {onSwitchToShop && (
                 <button onClick={onSwitchToShop} className="w-9 h-9 bg-brand-orange text-white rounded-full flex items-center justify-center shadow-md active:scale-95 transition-transform">
-                    <Plus size={20} />
+                    <Plus size={18} />
                 </button>
              )}
           </div>
@@ -385,8 +417,8 @@ const MySimsView: React.FC<MySimsViewProps> = ({ activeSims, onNavigate, filterT
       </div>
 
       {/* DATA USAGE CARD — Ring gauge for selected SIM */}
-      <div className="px-6 mb-6">
-          <div className="bg-white rounded-[2rem] shadow-xl shadow-slate-200/60 overflow-hidden flex flex-col">
+      <div className="px-4 mb-5">
+          <div className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden flex flex-col">
 
               {/* Ring gauge with text in center */}
               <div className="flex justify-center pt-8 pb-2">
@@ -461,9 +493,9 @@ const MySimsView: React.FC<MySimsViewProps> = ({ activeSims, onNavigate, filterT
               {/* ICCID row */}
               <div 
                 className="flex items-center justify-center gap-2 py-4 px-6 border-t border-slate-100 bg-slate-50/50 cursor-pointer hover:bg-slate-100/80 transition-colors active:opacity-70" 
-                onClick={() => handleCopyIccid(currentSim.id)}
+                onClick={() => handleCopyIccid(currentSim)}
               >
-                  <span className="text-slate-500 text-sm font-mono tracking-wide">ICCID: 898520002633221{currentSim.id.replace(/\D/g,'').slice(0, 5)}</span>
+                  <span className="text-slate-500 text-sm font-mono tracking-wide">ICCID: {resolveIccid(currentSim)}</span>
                   {copied ? <CheckCircle2 size={16} className="text-green-500 shrink-0" /> : <Copy size={14} className="text-slate-400 shrink-0" />}
               </div>
 
@@ -471,19 +503,19 @@ const MySimsView: React.FC<MySimsViewProps> = ({ activeSims, onNavigate, filterT
       </div>
       {/* Low data warning banner */}
       {currentSim.status === 'ACTIVE' && percentUsed >= 80 && (
-        <div className="px-6 mb-4">
+        <div className="px-4 mb-4">
           <button
             onClick={() => setIsRechargeModalOpen(true)}
-            className="w-full flex items-center gap-3 p-3.5 rounded-2xl border border-amber-200 bg-gradient-to-r from-amber-50 to-orange-50 active:scale-[0.99] transition-all"
+            className="w-full flex items-center gap-3 p-3 rounded-xl border border-amber-200 bg-gradient-to-r from-amber-50 to-orange-50 active:scale-[0.99] transition-all"
           >
             <div className="w-9 h-9 rounded-xl bg-amber-100 flex items-center justify-center shrink-0">
               <AlertTriangle size={16} className="text-amber-600" />
             </div>
             <div className="flex-1 text-left">
-              <p className="text-[13px] font-bold text-amber-900">{t('my_sims.data_low_warning')}</p>
+              <p className="text-sm font-bold text-amber-900">{t('my_sims.data_low_warning')}</p>
               <p className="text-[11px] text-amber-700/70">{t('my_sims.data_low_hint')}</p>
             </div>
-            <span className="text-[11px] font-bold text-white bg-brand-orange px-3 py-1.5 rounded-lg shrink-0">
+            <span className="text-[11px] font-semibold text-white bg-brand-orange px-3 py-1.5 rounded-full shrink-0">
               {t('my_sims.top_up')}
             </span>
           </button>
@@ -491,28 +523,28 @@ const MySimsView: React.FC<MySimsViewProps> = ({ activeSims, onNavigate, filterT
       )}
 
       {/* Action Grid */}
-      <div className="px-6 grid grid-cols-2 gap-4 mb-6">
+      <div className="px-4 grid grid-cols-2 gap-3 mb-5">
           <button 
              onClick={() => setIsRechargeModalOpen(true)}
-             className="bg-white p-4 rounded-[1.5rem] shadow-sm flex flex-col items-center gap-2 border border-slate-100 active:scale-[0.98] transition-all hover:border-brand-orange/30 group"
+             className="bg-white p-4 rounded-xl shadow-sm flex flex-col items-center gap-2 border border-slate-100 active:scale-[0.98] transition-all hover:border-brand-orange/30 group"
           >
-              <img src="/icon-add-data.png" alt={t('my_sims.add_data')} style={{ width: 60, height: 60 }} className="group-hover:scale-110 transition-transform" />
-              <span className="text-sm font-bold text-slate-700">{t('my_sims.add_data')}</span>
+              <img src="/icon-add-data.png" alt={t('my_sims.add_data')} loading="lazy" width={56} height={56} style={{ width: 56, height: 56 }} className="group-hover:scale-110 transition-transform" />
+              <span className="text-sm font-semibold text-slate-700">{t('my_sims.add_data')}</span>
           </button>
           
           <button 
              onClick={() => onNavigate(Tab.DIALER)}
-             className="bg-white p-4 rounded-[1.5rem] shadow-sm flex flex-col items-center gap-2 border border-slate-100 active:scale-[0.98] transition-all hover:border-brand-orange/30 group"
+             className="bg-white p-4 rounded-xl shadow-sm flex flex-col items-center gap-2 border border-slate-100 active:scale-[0.98] transition-all hover:border-brand-orange/30 group"
           >
-              <img src="/icon-contact-us.png" alt={t('my_sims.contact_us')} style={{ width: 60, height: 60 }} className="group-hover:scale-110 transition-transform" />
-              <span className="text-sm font-bold text-slate-700">{t('my_sims.contact_us')}</span>
+              <img src="/icon-contact-us.png" alt={t('my_sims.contact_us')} loading="lazy" width={56} height={56} style={{ width: 56, height: 56 }} className="group-hover:scale-110 transition-transform" />
+              <span className="text-sm font-semibold text-slate-700">{t('my_sims.contact_us')}</span>
           </button>
       </div>
       {/* Details List */}
-      <div className="px-6 pb-32 space-y-3">
-          <h3 className="text-sm font-bold text-slate-400 uppercase tracking-wider ml-1">{t('my_sims.plan_details')}</h3>
+      <div className="px-4 pb-6 space-y-3">
+          <h3 className="text-xs font-semibold text-slate-400 uppercase tracking-wider ml-1">{t('my_sims.plan_details')}</h3>
           
-          <div className="bg-white rounded-[1.5rem] p-5 shadow-sm border border-slate-100 space-y-4">
+          <div className="bg-white rounded-xl p-4 shadow-sm border border-slate-100 space-y-4">
               <div className="flex justify-between items-center">
                   <div className="flex items-center gap-3">
                       <div className="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-slate-500">
@@ -533,6 +565,46 @@ const MySimsView: React.FC<MySimsViewProps> = ({ activeSims, onNavigate, filterT
                       <span className="text-sm font-bold text-slate-900">{t('my_sims.plan_type')}</span>
                   </div>
                   <span className="text-sm font-bold text-slate-500">{currentSim.plan.name}</span>
+              </div>
+
+              <div className="flex justify-between items-center">
+                  <div className="flex items-center gap-3">
+                      <div className="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-slate-500">
+                          <Database size={16} />
+                      </div>
+                      <span className="text-sm font-bold text-slate-900">Data Allowance</span>
+                  </div>
+                  <span className="text-sm font-bold text-slate-500">{currentSim.dataTotalGB} GB</span>
+              </div>
+
+              <div className="flex justify-between items-center">
+                  <div className="flex items-center gap-3">
+                      <div className="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-slate-500">
+                          <Calendar size={16} />
+                      </div>
+                      <span className="text-sm font-bold text-slate-900">Validity</span>
+                  </div>
+                  <span className="text-sm font-bold text-slate-500">{currentSim.plan.days} Days</span>
+              </div>
+
+              <div className="flex justify-between items-center">
+                  <div className="flex items-center gap-3">
+                      <div className="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-slate-500">
+                          <Clock size={16} />
+                      </div>
+                      <span className="text-sm font-bold text-slate-900">Expires</span>
+                  </div>
+                  <span className="text-sm font-bold text-slate-500">{new Date(currentSim.expiryDate).toLocaleDateString()}</span>
+              </div>
+
+              <div className="flex justify-between items-center">
+                  <div className="flex items-center gap-3">
+                      <div className="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-slate-500">
+                          <Globe size={16} />
+                      </div>
+                      <span className="text-sm font-bold text-slate-900">Coverage</span>
+                  </div>
+                  <span className="text-sm font-bold text-slate-500">{currentSim.country.name}</span>
               </div>
 
               {currentSim.type === 'ESIM' && (
@@ -556,63 +628,127 @@ const MySimsView: React.FC<MySimsViewProps> = ({ activeSims, onNavigate, filterT
       
       {isRechargeModalOpen && (() => {
           const carrierInfo = CARRIER_MAP[currentSim.country.countryCode] || { carrier: 'Carrier', network: '4G' };
-          const iccid = `898520002633221${currentSim.id.replace(/\D/g,'').slice(0, 5)}`;
+          const iccid = resolveIccid(currentSim);
+
+          const handleTopUpPurchase = async () => {
+            if (!selectedTopUp) return;
+            setTopUpProcessing(true);
+            try {
+              const txnId = `topup_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+              await topUp({
+                iccid,
+                packageCode: selectedTopUp.packageCode,
+                transactionId: txnId,
+                amount: selectedTopUp.price,
+              });
+              setTopUpSuccess(true);
+              setTimeout(() => {
+                setTopUpSuccess(false);
+                setIsRechargeModalOpen(false);
+                setSelectedTopUp(null);
+                setTopUpPackages([]);
+              }, 2000);
+            } catch (err: any) {
+              alert(err.message || 'Top-up failed');
+            } finally {
+              setTopUpProcessing(false);
+            }
+          };
+
           return (
           <div className="fixed md:absolute inset-0 z-[60] bg-black/20 backdrop-blur-sm flex items-end justify-center" style={{ touchAction: 'none', overscrollBehavior: 'none' }} onTouchMove={e => e.preventDefault()}>
               <div className="bg-white/95 backdrop-blur-2xl w-full rounded-t-[2rem] p-6 pb-24 border-t border-white/50 shadow-2xl overflow-hidden" style={{ touchAction: 'none' }}>
                   <div className="flex justify-between items-center mb-5">
                        <h3 className="text-xl font-bold text-slate-900 tracking-tight">{t('my_sims.top_up_data')}</h3>
-                       <button onClick={() => setIsRechargeModalOpen(false)} className="bg-gray-100 p-2 rounded-full text-slate-500"><X size={20}/></button>
+                       <button onClick={() => { setIsRechargeModalOpen(false); setSelectedTopUp(null); setTopUpPackages([]); }} className="bg-gray-100 p-2 rounded-full text-slate-500"><X size={20}/></button>
                   </div>
 
-                  {/* SIM Info Header */}
-                  <div className="bg-slate-50 rounded-2xl p-4 mb-5 border border-slate-100">
-                      {/* Country + Flag */}
-                      <div className="flex items-center justify-between pb-3 border-b border-slate-200">
-                          <div className="flex items-center gap-3">
-                              <FlagIcon countryCode={currentSim.country.countryCode} size="md" />
-                              <span className="text-base font-bold text-slate-900">{currentSim.country.name}</span>
+                  {topUpSuccess && (
+                    <div className="flex flex-col items-center justify-center py-8">
+                      <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mb-3">
+                        <CheckCircle2 size={32} className="text-[#34C759]" />
+                      </div>
+                      <p className="font-bold text-slate-900">Top-up successful!</p>
+                    </div>
+                  )}
+
+                  {!topUpSuccess && (
+                    <>
+                      {/* SIM Info Header */}
+                      <div className="bg-slate-50 rounded-2xl p-4 mb-5 border border-slate-100">
+                          <div className="flex items-center justify-between pb-3 border-b border-slate-200">
+                              <div className="flex items-center gap-3">
+                                  <FlagIcon countryCode={currentSim.country.countryCode} size="md" />
+                                  <span className="text-base font-bold text-slate-900">{currentSim.country.name}</span>
+                              </div>
+                              <MoreHorizontal size={20} className="text-slate-400" />
                           </div>
-                          <MoreHorizontal size={20} className="text-slate-400" />
+                          <div className="flex items-center gap-2 pt-3 pb-3">
+                              <SignalHigh size={16} className="text-slate-600" />
+                              <span className="text-sm font-semibold text-slate-700">{carrierInfo.carrier}</span>
+                              <span className="text-[12px] font-bold text-slate-500 border border-slate-300 rounded px-1.5 py-0.5">{carrierInfo.network}</span>
+                          </div>
+                          <div 
+                            className="flex items-center justify-between bg-white rounded-xl px-4 py-3 border border-slate-100 cursor-pointer active:opacity-70"
+                            onClick={() => handleCopyIccid(currentSim)}
+                          >
+                              <div>
+                                  <p className="text-[12px] font-bold text-slate-400 uppercase tracking-wider">{t('my_sims.iccid')}</p>
+                                  <p className="text-sm font-mono text-slate-800 tracking-wide">{iccid}</p>
+                              </div>
+                              {copied ? <CheckCircle2 size={18} className="text-green-500 shrink-0" /> : <Copy size={16} className="text-slate-400 shrink-0" />}
+                          </div>
                       </div>
 
-                      {/* Carrier + Network */}
-                      <div className="flex items-center gap-2 pt-3 pb-3">
-                          <SignalHigh size={16} className="text-slate-600" />
-                          <span className="text-sm font-semibold text-slate-700">{carrierInfo.carrier}</span>
-                          <span className="text-[12px] font-bold text-slate-500 border border-slate-300 rounded px-1.5 py-0.5">{carrierInfo.network}</span>
+                      {/* Top-up packages from API (eSIM) or static fallback (physical) */}
+                      {currentSim.type === 'ESIM' && topUpLoading && (
+                        <div className="flex items-center justify-center py-8">
+                          <Loader2 size={24} className="animate-spin text-brand-orange" />
+                        </div>
+                      )}
+
+                      <div className="space-y-3 mb-6 max-h-[200px] overflow-y-auto">
+                          {currentSim.type === 'ESIM' && topUpPackages.length > 0 && topUpPackages.map(pkg => {
+                            const isSelected = selectedTopUp?.packageCode === pkg.packageCode;
+                            return (
+                              <button
+                                key={pkg.packageCode}
+                                onClick={() => setSelectedTopUp(pkg)}
+                                className={`w-full flex justify-between p-4 rounded-2xl transition-colors ${isSelected ? 'border-2 border-brand-orange bg-orange-50/30' : 'border border-gray-200 bg-white/50 hover:border-brand-orange'}`}
+                              >
+                                <div className="text-left">
+                                  <span className={`font-bold ${isSelected ? 'text-slate-900' : 'text-slate-700'}`}>{formatVolume(pkg.volume)} / {pkg.duration} {pkg.durationUnit === 'DAY' ? 'Days' : 'Mo'}</span>
+                                  <p className="text-[11px] text-slate-400 mt-0.5">{pkg.name}</p>
+                                </div>
+                                <span className="text-brand-orange font-bold">${formatPrice(pkg.price).toFixed(2)}</span>
+                              </button>
+                            );
+                          })}
+
+                          {/* Static fallback for physical SIMs or when no API packages */}
+                          {(currentSim.type === 'PHYSICAL' || (!topUpLoading && topUpPackages.length === 0)) && (
+                            <>
+                              <button className="w-full flex justify-between p-4 border border-gray-200 bg-white/50 rounded-2xl hover:border-brand-orange active:bg-orange-50/50 transition-colors group">
+                                  <span className="font-bold text-slate-700">1 GB / 7 Days</span>
+                                  <span className="text-brand-orange font-bold group-hover:scale-110 transition-transform">$3.00</span>
+                              </button>
+                              <button className="w-full flex justify-between p-4 border-2 border-brand-orange bg-orange-50/30 rounded-2xl">
+                                  <span className="font-bold text-slate-900">3 GB / 15 Days</span>
+                                  <span className="text-brand-orange font-bold">$8.00</span>
+                              </button>
+                            </>
+                          )}
                       </div>
 
-                      {/* ICCID */}
-                      <div 
-                        className="flex items-center justify-between bg-white rounded-xl px-4 py-3 border border-slate-100 cursor-pointer active:opacity-70"
-                        onClick={() => handleCopyIccid(currentSim.id)}
+                      <button 
+                        onClick={currentSim.type === 'ESIM' && selectedTopUp ? handleTopUpPurchase : () => setIsRechargeModalOpen(false)}
+                        disabled={topUpProcessing || (currentSim.type === 'ESIM' && !selectedTopUp)}
+                        className="w-full bg-brand-orange text-white py-4 rounded-2xl font-bold shadow-lg shadow-orange-500/20 active:scale-[0.98] transition-transform flex items-center justify-center gap-2 disabled:opacity-50"
                       >
-                          <div>
-                              <p className="text-[12px] font-bold text-slate-400 uppercase tracking-wider">{t('my_sims.iccid')}</p>
-                              <p className="text-sm font-mono text-slate-800 tracking-wide">{iccid}</p>
-                          </div>
-                          {copied ? <CheckCircle2 size={18} className="text-green-500 shrink-0" /> : <Copy size={16} className="text-slate-400 shrink-0" />}
-                      </div>
-                  </div>
-
-                  {/* Plans */}
-                  <div className="space-y-3 mb-6">
-                      <button className="w-full flex justify-between p-4 border border-gray-200 bg-white/50 rounded-2xl hover:border-brand-orange active:bg-orange-50/50 transition-colors group">
-                          <span className="font-bold text-slate-700">1 GB / 7 Days</span>
-                          <span className="text-brand-orange font-bold group-hover:scale-110 transition-transform">$3.00</span>
+                          {topUpProcessing ? <Loader2 className="animate-spin" size={20} /> : t('my_sims.purchase_top_up')}
                       </button>
-                      <button className="w-full flex justify-between p-4 border-2 border-brand-orange bg-orange-50/30 rounded-2xl">
-                          <span className="font-bold text-slate-900">3 GB / 15 Days</span>
-                          <span className="text-brand-orange font-bold">$8.00</span>
-                      </button>
-                  </div>
-                  <button 
-                    onClick={() => setIsRechargeModalOpen(false)}
-                    className="w-full bg-brand-orange text-white py-4 rounded-2xl font-bold shadow-lg shadow-orange-500/20 active:scale-[0.98] transition-transform"
-                  >
-                      {t('my_sims.purchase_top_up')}
-                  </button>
+                    </>
+                  )}
               </div>
           </div>
           );

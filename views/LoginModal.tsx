@@ -90,24 +90,24 @@ const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose, onLogin, initi
   const strengthLabel = ['', 'Weak', 'Good', 'Strong'][passwordStrength];
   const strengthColor = ['', '#ef4444', '#f59e0b', '#22c55e'][passwordStrength];
 
-  const inputClass = "w-full bg-slate-50 border border-slate-200 rounded-xl py-3 pl-12 pr-4 text-slate-900 focus:outline-none focus:border-brand-orange focus:ring-1 focus:ring-brand-orange transition-all text-[15px]";
+  const inputClass = "w-full bg-slate-50 border border-slate-200 rounded-xl py-2.5 pl-12 pr-4 text-slate-900 focus:outline-none focus:border-brand-orange focus:ring-1 focus:ring-brand-orange transition-all text-sm";
 
   return (
     <div className="absolute inset-0 z-[60] flex items-end sm:items-center justify-center bg-slate-900/40 backdrop-blur-sm animate-in fade-in duration-200">
-      <div className="bg-white w-full sm:w-[90%] sm:max-w-sm rounded-t-3xl sm:rounded-3xl p-6 shadow-2xl animate-in slide-in-from-bottom-10 duration-300 max-h-[85vh] overflow-y-auto no-scrollbar">
+      <div className="bg-white w-full sm:w-[90%] sm:max-w-sm rounded-t-2xl sm:rounded-2xl p-5 shadow-2xl animate-in slide-in-from-bottom-10 duration-300 max-h-[85vh] overflow-y-auto no-scrollbar">
 
         {mode === 'LOGIN' && (
           <>
-            <div className="flex justify-between items-center mb-6">
-              <h2 className="text-xl font-bold text-slate-900">{t('login.sign_in')}</h2>
+            <div className="flex justify-between items-center mb-5">
+              <h2 className="text-lg font-bold text-slate-900">{t('login.sign_in')}</h2>
               <button onClick={handleClose} className="p-2 bg-slate-100 rounded-full text-slate-500 hover:bg-slate-200">
-                <X size={20} />
+                <X size={18} />
               </button>
             </div>
 
-            <div className="mb-6">
-              <div className="w-16 h-16 bg-orange-50 rounded-2xl flex items-center justify-center mb-4 text-brand-orange mx-auto">
-                <Lock size={32} />
+            <div className="mb-5">
+              <div className="w-14 h-14 bg-orange-50 rounded-xl flex items-center justify-center mb-3 text-brand-orange mx-auto">
+                <Lock size={28} />
               </div>
               <p className="text-center text-slate-500 text-sm">
                 {t('login.sign_in_desc')}
@@ -148,14 +148,14 @@ const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose, onLogin, initi
               <button
                 type="submit"
                 disabled={isLoading}
-                className="w-full bg-brand-orange text-white py-4 rounded-xl font-bold shadow-lg shadow-orange-200 active:scale-[0.98] transition-all flex items-center justify-center hover:bg-orange-600"
+                className="w-full bg-brand-orange text-white py-3.5 rounded-xl font-bold text-base shadow-lg shadow-orange-500/20 active:scale-[0.98] transition-all flex items-center justify-center hover:bg-orange-600"
               >
                 {isLoading ? <Loader2 className="animate-spin" /> : t('login.sign_in')}
               </button>
             </form>
 
-            <div className="mt-6 text-center">
-              <p className="text-[13px] text-slate-400">
+            <div className="mt-5 text-center">
+              <p className="text-xs text-slate-400">
                 {t('login.no_account')}{' '}
                 <button onClick={() => setMode('REGISTER')} className="text-brand-orange font-semibold">
                   {t('login.register')}
@@ -170,9 +170,9 @@ const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose, onLogin, initi
             <div className="flex justify-between items-center mb-5">
               <div className="flex items-center gap-2">
                 <button onClick={() => { setMode('LOGIN'); resetRegForm(); }} className="p-1.5 rounded-full hover:bg-slate-100 text-slate-500 -ml-1">
-                  <ArrowLeft size={20} />
+                  <ArrowLeft size={18} />
                 </button>
-                <h2 className="text-xl font-bold text-slate-900">Create Account</h2>
+                <h2 className="text-lg font-bold text-slate-900">Create Account</h2>
               </div>
               <button onClick={handleClose} className="p-2 bg-slate-100 rounded-full text-slate-500 hover:bg-slate-200">
                 <X size={20} />

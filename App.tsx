@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import BottomNav from './components/BottomNav';
 import StatusBar from './components/StatusBar';
 import ProductTab from './views/ProductTab';
@@ -7,22 +7,123 @@ import LoginModal from './views/LoginModal';
 import DialerView from './views/DialerView';
 import ContactUsView from './views/ContactUsView';
 import InboxView from './views/InboxView';
-import { Tab, ActiveSim, SimType, User } from './types';
+import AdminApp from './views/admin/AdminApp';
+import { Tab, ActiveSim, SimType, User, AppNotification } from './types';
 import { Lock } from 'lucide-react';
-import { MOCK_COUNTRIES, MOCK_PLANS_US, MOCK_ACTIVE_SIMS } from './constants';
+import { MOCK_COUNTRIES, MOCK_PLANS_US, MOCK_ACTIVE_SIMS, MOCK_NOTIFICATIONS } from './constants';
+import { checkDataUsage, prefetchPackages } from './services/esimApi';
+import { supabaseConfigured, fetchNotifications } from './services/supabase';
 
 function App() {
-  const [activeTab, setActiveTab] = useState<Tab>(Tab.ESIM); // Default to eSIM tab
+  // Admin mode: detected via URL hash
+  const [isAdmin, setIsAdmin] = useState(() => window.location.hash.includes('admin'));
+
+  useEffect(() => {
+    const onHash = () => setIsAdmin(window.location.hash.includes('admin'));
+    window.addEventListener('hashchange', onHash);
+    return () => window.removeEventListener('hashchange', onHash);
+  }, []);
+
+  if (isAdmin) return <AdminApp />;
+
+  return <CustomerApp />;
+}
+
+function CustomerApp() {
+  const [activeTab, setActiveTab] = useState<Tab>(Tab.SIM_CARD);
   const [isLoggedIn, setIsLoggedIn] = useState(true);
   const [user, setUser] = useState<User | undefined>({ id: 'u1', name: 'Jordan', email: 'jordan@example.com', role: 'OWNER' });
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
   const [loginModalMode, setLoginModalMode] = useState<'LOGIN' | 'REGISTER'>('LOGIN');
   
-  // Mock State for Active SIMs - pre-loaded for preview
   const [activeSims, setActiveSims] = useState<ActiveSim[]>(MOCK_ACTIVE_SIMS);
+  const [notifications, setNotifications] = useState<AppNotification[]>(MOCK_NOTIFICATIONS);
+
+  useEffect(() => { prefetchPackages(); }, []);
+
+  // Fetch real notifications from Supabase (if configured) and merge with mocks
+  const notifFetched = useRef(false);
+  useEffect(() => {
+    if (notifFetched.current || !supabaseConfigured) return;
+    notifFetched.current = true;
+    const lang = localStorage.getItem('evair-lang') || 'en';
+    fetchNotifications(lang).then(serverNotifs => {
+      if (serverNotifs.length > 0) {
+        setNotifications(prev => {
+          const localOnly = prev.filter(n => n.id.startsWith('auto-') || n.id.startsWith('N-'));
+          return [...serverNotifs, ...localOnly.filter(n => n.id.startsWith('auto-'))];
+        });
+      }
+    });
+  }, []);
+
+  const addNotification = useCallback((notif: AppNotification) => {
+    setNotifications(prev => {
+      if (prev.some(n => n.id === notif.id)) return prev;
+      return [notif, ...prev];
+    });
+  }, []);
+
+  const healthCheckRan = useRef(false);
+
+  useEffect(() => {
+    if (healthCheckRan.current || !isLoggedIn) return;
+    healthCheckRan.current = true;
+
+    const esims = activeSims.filter(s => s.type === 'ESIM' && s.iccid && s.status === 'ACTIVE');
+    if (esims.length === 0) return;
+
+    esims.forEach(async (sim) => {
+      try {
+        const usage = await checkDataUsage(sim.iccid!);
+        const totalBytes = usage.totalVolume || 0;
+        const usedBytes = usage.usedVolume || 0;
+        const remainingBytes = Math.max(0, totalBytes - usedBytes);
+        const remainingPct = totalBytes > 0 ? (remainingBytes / totalBytes) * 100 : 100;
+
+        const remainingGB = (remainingBytes / (1024 * 1024 * 1024)).toFixed(1);
+        const totalGB = (totalBytes / (1024 * 1024 * 1024)).toFixed(1);
+
+        if (remainingPct < 20) {
+          addNotification({
+            id: `auto-data-low-${sim.iccid}`,
+            type: 'data_low',
+            titleKey: 'inbox.data_low_title',
+            bodyKey: 'inbox.data_low_body_auto',
+            date: new Date().toISOString(),
+            read: false,
+            actionLabel: 'inbox.top_up_now',
+            countryCode: sim.country.countryCode,
+            planName: `${remainingGB} GB / ${totalGB} GB`,
+          });
+        }
+
+        if (usage.expiredTime) {
+          const expiryDate = new Date(usage.expiredTime);
+          const daysLeft = Math.ceil((expiryDate.getTime() - Date.now()) / (1000 * 60 * 60 * 24));
+          if (daysLeft > 0 && daysLeft <= 5) {
+            addNotification({
+              id: `auto-expiring-${sim.iccid}`,
+              type: 'expiring',
+              titleKey: 'inbox.expiring_title',
+              bodyKey: 'inbox.expiring_body_auto',
+              date: new Date().toISOString(),
+              read: false,
+              actionLabel: 'inbox.renew_plan',
+              countryCode: sim.country.countryCode,
+              planName: `${daysLeft}`,
+            });
+          }
+        }
+      } catch {
+        // API call failed silently -- don't block the app
+      }
+    });
+  }, [isLoggedIn, activeSims, addNotification]);
 
   const handleTabChange = (tab: Tab) => {
     setActiveTab(tab);
+    window.scrollTo(0, 0);
   };
 
   const handleLoginSuccess = () => {
@@ -30,17 +131,15 @@ function App() {
     setUser({ id: 'u1', name: 'Jordan', email: 'jordan@example.com', role: 'OWNER' });
     setIsLoginModalOpen(false);
     
-    // Simulate fetching existing user data
-    if (activeSims.length === 0) {
-        setActiveSims(MOCK_ACTIVE_SIMS);
-    }
+    // Real SIMs will be populated from API / purchases
   };
 
-  const handlePurchaseComplete = () => {
-    const currentType: SimType = activeTab === Tab.SIM_CARD ? 'PHYSICAL' : 'ESIM';
+  const handlePurchaseComplete = (purchaseInfo?: { planName?: string; countryCode?: string; type?: SimType; orderNo?: string; iccid?: string }) => {
+    const currentType: SimType = purchaseInfo?.type ?? (activeTab === Tab.SIM_CARD ? 'PHYSICAL' : 'ESIM');
     
     const newSim: ActiveSim = {
         id: `${currentType}-${Math.floor(Math.random() * 10000)}`,
+        iccid: purchaseInfo?.iccid,
         country: MOCK_COUNTRIES[0],
         plan: MOCK_PLANS_US[1],
         type: currentType,
@@ -50,7 +149,23 @@ function App() {
         dataUsedGB: 0.0,
         status: 'PENDING_ACTIVATION'
     };
-    setActiveSims([newSim, ...activeSims]); 
+    setActiveSims([newSim, ...activeSims]);
+
+    const planLabel = purchaseInfo?.planName || (currentType === 'ESIM' ? 'eSIM' : 'SIM Card');
+    const isEsim = currentType === 'ESIM';
+
+    addNotification({
+      id: `N-${Date.now()}`,
+      type: 'order',
+      titleKey: isEsim ? 'inbox.esim_order_title' : 'inbox.sim_order_title',
+      bodyKey: isEsim ? 'inbox.esim_order_body' : 'inbox.sim_order_body',
+      date: new Date().toISOString(),
+      read: false,
+      actionLabel: isEsim ? 'inbox.install_now' : 'inbox.track_order',
+      countryCode: purchaseInfo?.countryCode,
+      planName: planLabel,
+      orderNo: purchaseInfo?.orderNo,
+    });
   };
 
   const handleDeleteSim = (simId: string) => {
@@ -58,8 +173,8 @@ function App() {
   };
 
   const handleAddCard = (iccid: string) => {
-    const country = MOCK_COUNTRIES[4]; // Mexico — matched from ICCID prefix
-    const plan = MOCK_PLANS_US[3]; // Unlimited 10GB
+    const country = MOCK_COUNTRIES[0]; // United States
+    const plan = MOCK_PLANS_US[0];
 
     const newSim: ActiveSim = {
         id: `SIM-PHYS-${Math.floor(Math.random() * 10000)}`,
@@ -91,28 +206,23 @@ function App() {
     </div>
   );
 
+  const [currentSimType, setCurrentSimType] = useState<SimType>('PHYSICAL');
+
+  const handleSwitchSimType = (type: SimType) => {
+    setCurrentSimType(type);
+    if (type === 'PHYSICAL') setActiveTab(Tab.SIM_CARD);
+    else setActiveTab(Tab.ESIM);
+    window.scrollTo(0, 0);
+  };
+
   const renderContent = () => {
     switch (activeTab) {
       case Tab.SIM_CARD:
-        return (
-            <ProductTab 
-                key="SIM_CARD"
-                type="PHYSICAL"
-                isLoggedIn={isLoggedIn}
-                user={user}
-                onLoginRequest={() => setIsLoginModalOpen(true)}
-                onPurchaseComplete={handlePurchaseComplete}
-                onAddCard={handleAddCard}
-                onDeleteSim={handleDeleteSim}
-                activeSims={activeSims}
-                onNavigate={handleTabChange}
-            />
-        );
       case Tab.ESIM:
         return (
             <ProductTab 
-                key="ESIM"
-                type="ESIM"
+                key={currentSimType}
+                type={currentSimType}
                 isLoggedIn={isLoggedIn}
                 user={user}
                 onLoginRequest={() => setIsLoginModalOpen(true)}
@@ -121,10 +231,12 @@ function App() {
                 onDeleteSim={handleDeleteSim}
                 activeSims={activeSims}
                 onNavigate={handleTabChange}
+                onSwitchSimType={handleSwitchSimType}
+                notifications={notifications}
             />
         );
       case Tab.INBOX:
-        return <InboxView />;
+        return <InboxView notifications={notifications} onUpdateNotifications={setNotifications} onNavigate={(tab) => setActiveTab(tab as Tab)} onBack={() => { setActiveTab(currentSimType === 'PHYSICAL' ? Tab.SIM_CARD : Tab.ESIM); window.scrollTo(0,0); }} />;
       case Tab.PROFILE:
         return (
             <ProfileView 
@@ -138,20 +250,21 @@ function App() {
                 }}
                 onOpenDialer={() => setActiveTab(Tab.DIALER)}
                 onOpenInbox={() => setActiveTab(Tab.INBOX)}
+                notifications={notifications}
+                onBack={() => { setActiveTab(currentSimType === 'PHYSICAL' ? Tab.SIM_CARD : Tab.ESIM); window.scrollTo(0,0); }}
             />
         );
       case Tab.DIALER:
-        return <ContactUsView onBack={() => setActiveTab(Tab.ESIM)} userName={user?.name} />;
+        return <ContactUsView onBack={() => { setActiveTab(currentSimType === 'PHYSICAL' ? Tab.SIM_CARD : Tab.ESIM); window.scrollTo(0,0); }} userName={user?.name} />;
       default:
         return null;
     }
   };
 
   return (
-    <div className="min-h-screen bg-[#F2F4F7] md:bg-[#E5E5E5] flex items-center justify-center p-0 md:p-8 font-sans antialiased selection:bg-orange-100">
+    <div className="bg-[#F2F4F7] md:bg-[#E5E5E5] md:h-full md:min-h-screen md:flex md:items-center md:justify-center md:p-8 font-sans antialiased selection:bg-orange-100">
       
-      {/* Mobile: full screen, no frame. Desktop: phone frame for preview */}
-      <div className="w-full md:max-w-[430px] h-[100dvh] md:h-[880px] bg-[#F2F4F7] md:rounded-[3.5rem] overflow-hidden md:shadow-[0_50px_100px_-20px_rgba(0,0,0,0.25)] relative md:border-[8px] md:border-slate-900 md:ring-1 md:ring-black/50">
+      <div className="w-full md:max-w-[430px] md:h-[880px] bg-[#F2F4F7] md:rounded-[3.5rem] md:overflow-hidden md:shadow-[0_50px_100px_-20px_rgba(0,0,0,0.25)] relative md:border-[8px] md:border-slate-900 md:ring-1 md:ring-black/50">
         
         {/* Dynamic Island — desktop preview only */}
         <div className="hidden md:block absolute top-0 left-1/2 -translate-x-1/2 w-[120px] h-[36px] bg-black rounded-b-[20px] z-[60]"></div>
@@ -161,15 +274,10 @@ function App() {
           <StatusBar />
         </div>
 
-        {/* Main Content Area - System Background */}
-        <main className="h-full w-full relative overflow-hidden">
+        {/* Main Content Area */}
+        <main className="md:h-full w-full relative md:overflow-hidden">
            {renderContent()}
         </main>
-
-        {/* Bottom Nav - Thick Material */}
-        {activeTab !== Tab.DIALER && (
-          <BottomNav activeTab={activeTab} onTabChange={handleTabChange} />
-        )}
 
         <LoginModal 
             isOpen={isLoginModalOpen} 

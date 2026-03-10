@@ -1,0 +1,5 @@
+User-agent: *
+Allow: /
+Disallow: /#admin
+
+Sitemap: https://evair-h5.netlify.app/sitemap.xml

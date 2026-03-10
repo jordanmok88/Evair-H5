@@ -29,6 +29,10 @@ export default function OperatorLogo({ name, className = '', size = 32 }: Operat
       src={url}
       alt={name}
       title={name}
+      loading="lazy"
+      decoding="async"
+      width={size}
+      height={size}
       className={`rounded-lg object-contain shrink-0 grayscale ${className}`}
       style={{ width: size, height: size }}
       onError={() => setError(true)}

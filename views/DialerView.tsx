@@ -90,7 +90,7 @@ const DialerView: React.FC<DialerViewProps> = ({ onBack }) => {
 
   // --- DIALER SCREEN (Light Mode) ---
   return (
-    <div className="h-full bg-white flex flex-col pt-safe pb-24 relative overflow-hidden">
+    <div className="h-full bg-white flex flex-col pt-safe pb-6 relative overflow-hidden">
        
        {/* Navigation Bar */}
        <div className="absolute top-0 left-0 right-0 h-14 z-20 flex items-end pb-2 px-4">

@@ -9,7 +9,6 @@
 }
 
 html, body, #root {
-  height: 100%;
   margin: 0;
   padding: 0;
 }
@@ -17,24 +16,44 @@ html, body, #root {
 body {
   -webkit-tap-highlight-color: transparent;
   background-color: #F2F4F7;
-  overscroll-behavior: none;
+  overscroll-behavior-x: none;
 }
 
-/* Safe area top padding: real inset on mobile, fixed for desktop frame */
+/* Desktop: contained in phone frame */
+@media (min-width: 768px) {
+  html, body, #root {
+    height: 100%;
+    overflow: hidden;
+  }
+}
+
+/* Safe area top padding: minimal in browser, real inset in standalone PWA */
 .pt-safe {
-  padding-top: max(env(safe-area-inset-top, 0px), 8px);
+  padding-top: 2px;
 }
 
+/* Bottom safe padding: minimal in browser */
+.pb-safe-bottom {
+  padding-bottom: 2px;
+}
+
+/* Desktop preview: space for fake status bar + bottom padding */
 @media (min-width: 768px) {
   .pt-safe {
     padding-top: 3.5rem;
   }
+  .pb-safe-bottom {
+    padding-bottom: 32px;
+  }
 }
 
-/* Standalone PWA: status bar overlays content, needs safe area */
+/* Standalone PWA: content extends behind status bar & home indicator */
 @media all and (display-mode: standalone) {
   .pt-safe {
     padding-top: env(safe-area-inset-top, 20px);
+  }
+  .pb-safe-bottom {
+    padding-bottom: env(safe-area-inset-bottom, 20px);
   }
 }
 

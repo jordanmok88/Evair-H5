@@ -1,11 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Tab } from '../types';
-import { MOCK_NOTIFICATIONS } from '../constants';
+import { Tab, AppNotification } from '../types';
 
 interface BottomNavProps {
   activeTab: Tab;
   onTabChange: (tab: Tab) => void;
+  notifications?: AppNotification[];
 }
 
 const SimCardIcon = ({ active }: { active: boolean }) => (
@@ -76,10 +76,10 @@ const ProfileIcon = ({ active }: { active: boolean }) => (
   </svg>
 );
 
-const BottomNav: React.FC<BottomNavProps> = ({ activeTab, onTabChange }) => {
+const BottomNav: React.FC<BottomNavProps> = ({ activeTab, onTabChange, notifications = [] }) => {
   const { t } = useTranslation();
   const [tooltipTab, setTooltipTab] = useState<Tab | null>(null);
-  const unreadCount = MOCK_NOTIFICATIONS.filter(n => !n.read).length;
+  const unreadCount = notifications.filter(n => !n.read).length;
   const tabs = [
     { id: Tab.SIM_CARD, label: t('nav.sim_card'), Icon: SimCardIcon, badge: 0 },
     { id: Tab.ESIM, label: t('nav.esim'), Icon: EsimIcon, badge: 0 },
@@ -99,7 +99,7 @@ const BottomNav: React.FC<BottomNavProps> = ({ activeTab, onTabChange }) => {
   }, [tooltipTab]);
 
   return (
-    <div className="absolute bottom-0 w-full bg-white/90 backdrop-blur-2xl backdrop-saturate-150 border-t border-orange-100/60 pt-1 px-4 z-50" style={{ paddingBottom: 'max(env(safe-area-inset-bottom, 0px), 32px)' }}>
+    <div className="fixed md:absolute bottom-0 left-0 right-0 md:left-auto md:right-auto w-full bg-white/90 backdrop-blur-2xl backdrop-saturate-150 border-t border-orange-100/60 px-4 z-50 pb-safe-bottom">
       <div className="flex justify-around items-center">
         {tabs.map(({ id, label, Icon, badge }) => {
           const active = activeTab === id;
@@ -107,7 +107,7 @@ const BottomNav: React.FC<BottomNavProps> = ({ activeTab, onTabChange }) => {
             <button
               key={id}
               onClick={() => handleTabTap(id)}
-              className="flex-1 flex flex-col items-center justify-center gap-0.5 pt-1 pb-0.5 relative"
+              className="flex-1 flex flex-col items-center justify-center pt-1.5 pb-0.5 relative"
               style={{ WebkitTapHighlightColor: 'transparent' }}
             >
               {tooltipTab === id && (
@@ -121,14 +121,14 @@ const BottomNav: React.FC<BottomNavProps> = ({ activeTab, onTabChange }) => {
               {active && (
                 <div style={{
                   position: 'absolute', top: -1, left: '50%', transform: 'translateX(-50%)',
-                  width: 32, height: 3, borderRadius: 2,
+                  width: 28, height: 2.5, borderRadius: 2,
                   background: 'linear-gradient(90deg, #FF6600, #FF8533)',
                 }} />
               )}
               <div
                 className="relative"
                 style={{
-                  width: 36, height: 36, borderRadius: 12,
+                  width: 30, height: 30, borderRadius: 10,
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
                   backgroundColor: active ? '#FFF3EB' : 'transparent',
                   transition: 'background-color 0.2s',
@@ -137,12 +137,12 @@ const BottomNav: React.FC<BottomNavProps> = ({ activeTab, onTabChange }) => {
                 <Icon active={active} />
                 {badge > 0 && (
                   <div style={{
-                    position: 'absolute', top: 0, right: -2,
-                    minWidth: 16, height: 16, borderRadius: 8,
+                    position: 'absolute', top: -2, right: -4,
+                    minWidth: 15, height: 15, borderRadius: 8,
                     backgroundColor: '#EF4444', color: '#fff',
-                    fontSize: 9, fontWeight: 800,
+                    fontSize: 8, fontWeight: 800,
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    padding: '0 4px',
+                    padding: '0 3px',
                     border: '2px solid white',
                   }}>
                     {badge > 9 ? '9+' : badge}

@@ -194,44 +194,44 @@ const PhysicalSimSetupView: React.FC<PhysicalSimSetupViewProps> = ({ onSwitchToS
   const stepLabels = ['Processing', 'Shipped', 'In Transit', 'Out for Delivery', 'Delivered'];
 
   return (
-    <div className="h-full flex flex-col bg-[#F9F5F0]">
+    <div className="md:h-full flex flex-col bg-[#F2F4F7]">
 
-      <div className="bg-white px-5 pt-safe pb-3 flex items-center gap-3 shadow-sm sticky top-0 z-20">
-        <button onClick={onSwitchToShop} className="w-9 h-9 rounded-full flex items-center justify-center hover:bg-gray-100 -ml-1">
+      <div className="bg-white/90 backdrop-blur-xl px-4 pt-safe pb-3 flex items-center gap-2 shrink-0 sticky top-0 z-20 border-b border-slate-100">
+        <button onClick={onSwitchToShop} className="w-9 h-9 rounded-full flex items-center justify-center hover:bg-black/5 -ml-1">
           <ArrowLeft size={22} className="text-slate-900" />
         </button>
-        <h1 className="text-xl font-bold text-slate-900 tracking-tight">SIM Card Setup</h1>
+        <h1 className="text-lg font-bold text-slate-900 tracking-tight">SIM Card Setup</h1>
       </div>
 
-      <div className="px-5 pt-4 pb-2">
-        <div className="flex bg-white rounded-xl p-1 shadow-sm border border-gray-100">
+      <div className="px-4 pt-4 pb-2">
+        <div className="flex bg-white rounded-xl p-1 shadow-sm border border-slate-100">
           <button
             onClick={() => setActiveTab('TRACKING')}
-            className={`flex-1 py-2.5 rounded-lg text-[15px] font-bold transition-all ${activeTab === 'TRACKING' ? 'bg-brand-orange text-white shadow-md' : 'text-slate-500'}`}
+            className={`flex-1 py-2 rounded-xl text-sm font-semibold transition-all ${activeTab === 'TRACKING' ? 'bg-brand-orange text-white shadow-sm' : 'text-slate-500'}`}
           >
             Delivery Tracking
           </button>
           <button
             onClick={() => setActiveTab('ACTIVATE')}
-            className={`flex-1 py-2.5 rounded-lg text-[15px] font-bold transition-all ${activeTab === 'ACTIVATE' ? 'bg-brand-orange text-white shadow-md' : 'text-slate-500'}`}
+            className={`flex-1 py-2 rounded-xl text-sm font-semibold transition-all ${activeTab === 'ACTIVATE' ? 'bg-brand-orange text-white shadow-sm' : 'text-slate-500'}`}
           >
             Activate SIM
           </button>
         </div>
       </div>
 
-      <div className="flex-1 overflow-y-auto no-scrollbar px-5 pb-32">
+      <div className="flex-1 overflow-y-auto no-scrollbar px-4 pb-6">
 
         {activeTab === 'TRACKING' && (
           <div className="pt-3">
 
             {/* Search Input */}
-            <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-5 mb-4">
-              <h3 className="text-[15px] font-bold text-slate-900 mb-1">Track Your Parcel</h3>
-              <p className="text-[14px] text-slate-400 mb-4">Enter your tracking number to see live delivery status</p>
+            <div className="bg-white rounded-xl shadow-sm border border-slate-100 p-4 mb-4">
+              <h3 className="text-base font-bold text-slate-900 mb-1">Track Your Parcel</h3>
+              <p className="text-sm text-slate-400 mb-4">Enter your tracking number to see live delivery status</p>
 
               <div className="flex gap-2">
-                <div className="flex-1 border-2 border-slate-200 focus-within:border-brand-orange rounded-xl h-12 flex items-center px-3 bg-white transition-colors">
+                <div className="flex-1 border border-slate-200 focus-within:border-brand-orange rounded-xl h-11 flex items-center px-3 bg-slate-50 transition-colors">
                   <Search size={16} className="text-slate-400 shrink-0 mr-2" />
                   <input
                     type="text"
@@ -239,7 +239,7 @@ const PhysicalSimSetupView: React.FC<PhysicalSimSetupViewProps> = ({ onSwitchToS
                     onChange={e => setTrackingInput(e.target.value.replace(/\s/g, ''))}
                     onKeyDown={e => e.key === 'Enter' && handleTrack()}
                     placeholder="e.g. SF1029384756HK"
-                    className="flex-1 h-full outline-none text-slate-900 font-semibold placeholder:text-slate-400 placeholder:font-normal bg-transparent text-[15px] tracking-wide"
+                    className="flex-1 h-full outline-none text-slate-900 font-semibold placeholder:text-slate-400 placeholder:font-normal bg-transparent text-sm tracking-wide"
                   />
                   {trackingResult && (
                     <button onClick={handleReset} className="p-1 text-slate-400 hover:text-slate-600">
@@ -250,7 +250,7 @@ const PhysicalSimSetupView: React.FC<PhysicalSimSetupViewProps> = ({ onSwitchToS
                 <button
                   onClick={handleTrack}
                   disabled={!trackingInput.trim() || trackingState === 'LOADING'}
-                  className="h-12 px-5 rounded-xl font-bold text-[15px] flex items-center justify-center gap-1.5 active:scale-[0.97] transition-all shrink-0"
+                  className="h-11 px-4 rounded-xl font-bold text-sm flex items-center justify-center gap-1.5 active:scale-[0.97] transition-all shrink-0"
                   style={{
                     background: trackingInput.trim() ? 'linear-gradient(135deg, #FF6600 0%, #FF8A3D 100%)' : '#e2e8f0',
                     color: trackingInput.trim() ? '#fff' : '#94a3b8',
@@ -265,7 +265,7 @@ const PhysicalSimSetupView: React.FC<PhysicalSimSetupViewProps> = ({ onSwitchToS
 
             {/* Loading */}
             {trackingState === 'LOADING' && (
-              <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-8 mb-4 flex flex-col items-center">
+              <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-8 mb-4 flex flex-col items-center">
                 <Loader2 size={32} className="text-brand-orange animate-spin mb-3" />
                 <p className="text-[15px] font-semibold text-slate-600">Fetching tracking information...</p>
                 <p className="text-[13px] text-slate-400 mt-1">This may take a moment</p>
@@ -289,7 +289,7 @@ const PhysicalSimSetupView: React.FC<PhysicalSimSetupViewProps> = ({ onSwitchToS
 
             {/* Idle State */}
             {trackingState === 'IDLE' && (
-              <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-8 mb-4 flex flex-col items-center text-center">
+              <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-8 mb-4 flex flex-col items-center text-center">
                 <div className="w-16 h-16 rounded-2xl bg-orange-50 flex items-center justify-center mb-4">
                   <Package size={28} className="text-brand-orange" />
                 </div>
@@ -313,7 +313,7 @@ const PhysicalSimSetupView: React.FC<PhysicalSimSetupViewProps> = ({ onSwitchToS
               return (
                 <>
                   {/* Tracking Number Card */}
-                  <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-5 mb-4">
+                  <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-5 mb-4">
                     <div className="flex items-center justify-between mb-1">
                       <p className="text-[13px] font-bold text-slate-400 uppercase tracking-wider">Tracking Number</p>
                       <div style={{ backgroundColor: statusColor.bg, color: statusColor.text }} className="px-3 py-1 rounded-lg">
@@ -342,7 +342,7 @@ const PhysicalSimSetupView: React.FC<PhysicalSimSetupViewProps> = ({ onSwitchToS
                   </div>
 
                   {/* Progress */}
-                  <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-5 mb-4">
+                  <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-5 mb-4">
                     <div className="flex justify-between items-center mb-4">
                       <div className="flex items-center gap-3">
                         <div className="w-9 h-9 rounded-xl bg-orange-50 flex items-center justify-center">
@@ -375,7 +375,7 @@ const PhysicalSimSetupView: React.FC<PhysicalSimSetupViewProps> = ({ onSwitchToS
                   </div>
 
                   {/* Event Timeline */}
-                  <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-5">
+                  <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-5">
                     <h3 className="text-[15px] font-bold text-slate-900 mb-5">Shipment History</h3>
                     <div className="relative">
                       {trackingResult.events.slice().reverse().map((event, i) => {
@@ -416,7 +416,7 @@ const PhysicalSimSetupView: React.FC<PhysicalSimSetupViewProps> = ({ onSwitchToS
         {activeTab === 'ACTIVATE' && (
           <div className="pt-3">
 
-            <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-5 mb-4">
+            <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-5 mb-4">
               <div className="flex justify-between items-start mb-4">
                 <div>
                   <h3 className="text-[15px] font-bold text-slate-900 mb-0.5">Activate Your SIM</h3>
@@ -575,7 +575,7 @@ const PhysicalSimSetupView: React.FC<PhysicalSimSetupViewProps> = ({ onSwitchToS
               )}
             </div>
 
-            <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-5 mb-4">
+            <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-5 mb-4">
               <h3 className="text-[15px] font-bold text-slate-900 mb-1">Activation Guide</h3>
               <p className="text-[14px] text-slate-400 mb-5">Follow these steps to activate your EvairSIM card</p>
               <div className="space-y-5">

@@ -501,8 +501,8 @@ const ECardView: React.FC<ECardViewProps> = ({ onBack, onNavigateToEsimShop }) =
   return (
     <div className="h-full flex flex-col bg-[#F2F4F7]">
       {/* Header */}
-      <div className="pt-safe px-5 pb-2 shrink-0 bg-[#F2F4F7] z-10">
-        <h1 className="text-2xl font-bold tracking-tight text-slate-900">{t('ecard.title')}</h1>
+      <div className="bg-white/90 backdrop-blur-xl pt-safe px-4 pb-3 shrink-0 sticky top-0 z-10 border-b border-slate-100">
+        <h1 className="text-lg font-bold tracking-tight text-slate-900">{t('ecard.title')}</h1>
       </div>
 
       {/* Tab Switcher */}
@@ -525,7 +525,7 @@ const ECardView: React.FC<ECardViewProps> = ({ onBack, onNavigateToEsimShop }) =
       </div>
 
       {/* Content */}
-      <div className="flex-1 min-h-0 overflow-y-auto no-scrollbar px-5 pb-32">
+      <div className="flex-1 min-h-0 overflow-y-auto no-scrollbar px-5 pb-6">
         {activeTab === 'BIND' && renderBind()}
         {activeTab === 'PROFILES' && renderProfiles()}
         {activeTab === 'GUIDE' && renderGuide()}

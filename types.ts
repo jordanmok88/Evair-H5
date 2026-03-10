@@ -47,6 +47,7 @@ export interface User {
 
 export interface ActiveSim {
   id: string;
+  iccid?: string;
   country: Country;
   plan: Plan;
   type: SimType;
@@ -109,6 +110,125 @@ export interface ECard {
   maxDownloads: number; // -1 = unlimited
 }
 
+// ─── eSIM Access (Red Tea) API Types ────────────────────────────────
+
+export interface EsimPackage {
+  packageCode: string;
+  name: string;
+  price: number;          // micro-cents (divide by 10 000 for USD)
+  currencyCode: string;
+  volume: number;          // bytes
+  unusedValidTime: number; // days the package stays valid before first use
+  duration: number;
+  durationUnit: 'DAY' | 'MONTH';
+  location: string;        // comma-separated ISO country codes, e.g. "US,CA"
+  description: string;
+  activeType: number;      // 1 = auto-activate on first data use
+}
+
+export interface EsimApiResponse<T> {
+  errorCode: string | null;
+  errorMsg: string | null;
+  success: boolean;
+  obj: T;
+}
+
+export interface PackageListPayload {
+  packageList: EsimPackage[];
+}
+
+export interface EsimOrderRequest {
+  packageCode: string;
+  transactionId: string;
+  amount: number;
+  count?: number;          // batch quantity, default 1
+}
+
+export interface EsimOrderRawResult {
+  orderNo: string;
+  transactionId: string;
+}
+
+/** eSIM details returned from query after ordering */
+export interface EsimQueryItem {
+  esimTranNo: string;
+  orderNo: string;
+  transactionId: string;
+  iccid: string;
+  ac: string;
+  qrCodeUrl: string;
+  shortUrl: string;
+  smdpStatus: string;
+  esimStatus: string;
+  totalVolume: number;
+  totalDuration: number;
+  durationUnit: string;
+  expiredTime: string;
+  packageList: { packageName: string; packageCode: string }[];
+}
+
+export interface EsimQueryPayload {
+  esimList: EsimQueryItem[];
+  pager: { pageSize: number; pageNum: number; total: number };
+}
+
+/** Normalized eSIM order result for UI consumption */
+export interface EsimOrderResult {
+  orderNo: string;
+  transactionId: string;
+  iccid: string;
+  smdpAddress: string;
+  activationCode: string;
+  qrCodeUrl: string;
+  shortUrl: string;
+  lpaString: string;
+}
+
+export interface EsimProfileResult {
+  iccid: string;
+  packageCode: string;
+  status: string;
+  expiredTime: string;
+  totalVolume: number;
+  usedVolume: number;
+  totalDuration: number;
+}
+
+export interface DataUsageResult {
+  iccid: string;
+  totalVolume: number;
+  usedVolume: number;
+  expiredTime: string;
+}
+
+export interface TopUpRequest {
+  iccid: string;
+  packageCode: string;
+  transactionId: string;
+  amount: number;
+}
+
+export interface TopUpResult {
+  transactionId: string;
+  iccid: string;
+  expiredTime: string;
+  totalVolume: number;
+  totalDuration: number;
+  orderUsage: number;
+}
+
+// Grouped packages for UI display
+export interface EsimCountryGroup {
+  locationCode: string;    // e.g. "US" or "US,CA"
+  locationName: string;    // resolved display name
+  flag: string;            // ISO country code for primary country (for FlagIcon)
+  packages: EsimPackage[];
+  continent: string;       // e.g. "Asia", "Europe", "Americas", "Africa", "Oceania", "Multi-Region"
+  isMultiRegion: boolean;
+}
+
+// ─── End eSIM Access API Types ──────────────────────────────────────
+
 export type NotificationType = 'data_low' | 'expiring' | 'order' | 'promo' | 'service';
 
 export interface AppNotification {
@@ -120,4 +240,17 @@ export interface AppNotification {
   read: boolean;
   actionLabel?: string;
   countryCode?: string;
+  planName?: string;
+  orderNo?: string;
+}
+
+// ─── Chat Types ──────────────────────────────────────────────────
+
+export interface ChatMessage {
+  id: string;
+  text: string;
+  sender: 'customer' | 'ai' | 'agent';
+  agentName?: string;
+  timestamp: Date;
+  status?: 'sent' | 'delivered' | 'read';
 }

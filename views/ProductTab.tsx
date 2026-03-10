@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { SimType, ActiveSim, Tab, User } from '../types';
+import { SimType, ActiveSim, Tab, User, AppNotification } from '../types';
 import ShopView from './ShopView';
 import MySimsView from './MySimsView';
 import PhysicalSimSetupView from './PhysicalSimSetupView';
@@ -8,11 +8,13 @@ interface ProductTabProps {
   isLoggedIn: boolean;
   user?: User;
   onLoginRequest: () => void;
-  onPurchaseComplete: () => void;
+  onPurchaseComplete: (purchaseInfo?: { planName?: string; countryCode?: string; type?: SimType; orderNo?: string; iccid?: string }) => void;
   onAddCard?: (iccid: string) => void;
   onDeleteSim?: (simId: string) => void;
   activeSims: ActiveSim[];
   onNavigate: (tab: Tab) => void;
+  onSwitchSimType?: (type: SimType) => void;
+  notifications?: AppNotification[];
 }
 
 const ProductTab: React.FC<ProductTabProps> = ({ 
@@ -24,7 +26,9 @@ const ProductTab: React.FC<ProductTabProps> = ({
   onAddCard,
   onDeleteSim,
   activeSims,
-  onNavigate 
+  onNavigate,
+  onSwitchSimType,
+  notifications 
 }) => {
   const mySims = activeSims.filter(s => s.type === type);
   
@@ -37,15 +41,15 @@ const ProductTab: React.FC<ProductTabProps> = ({
   }, [mySims.length, viewMode]);
 
   return (
-    <div className="h-full relative">
+    <div className="md:h-full relative">
        {viewMode === 'SHOP' && (
           <ShopView 
             simType={type}
             isLoggedIn={isLoggedIn}
             user={user}
             onLoginRequest={onLoginRequest}
-            onPurchaseComplete={() => {
-                onPurchaseComplete();
+            onPurchaseComplete={(info) => {
+                onPurchaseComplete(info);
                 setViewMode('MINE');
             }}
             hasActiveSims={mySims.length > 0}
@@ -55,6 +59,9 @@ const ProductTab: React.FC<ProductTabProps> = ({
                 onAddCard?.(iccid);
                 setViewMode('MINE');
             }}
+            onNavigate={(tab) => onNavigate(tab as Tab)}
+            onSwitchSimType={onSwitchSimType}
+            notifications={notifications}
           />
        )}
        

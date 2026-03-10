@@ -1,7 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ChevronRight, Share, ChevronLeft, Search, Lock, Bell, Download, Trash2, Check, Plus, Package, HelpCircle, FileText, Globe, Info, Coins, ShieldCheck, CreditCard, ShoppingBag, Briefcase, Phone, Settings, AlertCircle, Play, Smartphone } from 'lucide-react';
-import { MOCK_NOTIFICATIONS } from '../constants';
+import { AppNotification } from '../types';
+import { useSwipeBack } from '../hooks/useSwipeBack';
 
 interface ProfileViewProps {
   isLoggedIn: boolean;
@@ -11,6 +12,8 @@ interface ProfileViewProps {
   onLogout: () => void;
   onOpenDialer: () => void;
   onOpenInbox: () => void;
+  notifications?: AppNotification[];
+  onBack?: () => void;
 }
 
 type ProfileScreen = 'MAIN' | 'ACCOUNT' | 'INBOX' | 'ORDERS' | 'CURRENCY' | 'HELP' | 'INFO' | 'LANGUAGES' | 'REFUND' | 'TERMS' | 'ABOUT' | 'PRIVACY' | 'ACCEPTABLE' | 'COOKIE';
@@ -20,25 +23,25 @@ type ProfileScreen = 'MAIN' | 'ACCOUNT' | 'INBOX' | 'ORDERS' | 'CURRENCY' | 'HEL
 const MenuItem = ({ label, onClick, isLast = false, rightElement }: { label: string, onClick?: () => void, isLast?: boolean, rightElement?: React.ReactNode }) => (
   <button 
       onClick={onClick}
-      className={`w-full flex items-center justify-between p-4 pl-5 active:bg-gray-50 transition-colors ${!isLast ? 'border-b border-gray-100' : ''}`}
+      className={`w-full flex items-center justify-between p-4 active:bg-slate-50 transition-colors ${!isLast ? 'border-b border-slate-100' : ''}`}
   >
-      <span className="text-slate-900 font-medium text-[15px] text-left flex-1">{label}</span>
-      {rightElement ? rightElement : <ChevronRight size={18} className="text-gray-300" />}
+      <span className="text-slate-900 font-medium text-sm text-left flex-1">{label}</span>
+      {rightElement ? rightElement : <ChevronRight size={18} className="text-slate-300" />}
   </button>
 );
 
 const MenuGroup = ({ children }: { children?: React.ReactNode }) => (
-    <div className="bg-white rounded-xl shadow-sm border border-gray-100 mb-6 overflow-hidden">
+    <div className="bg-white rounded-xl shadow-sm border border-slate-100 mb-5 overflow-hidden">
         {children}
     </div>
 );
 
 const ScreenHeader = ({ title, onBack }: { title: string, onBack: () => void }) => (
-    <div className="pt-safe px-4 pb-4 flex items-center shrink-0 bg-[#F9F5F0] sticky top-0 z-10">
-        <button onClick={onBack} className="w-10 h-10 -ml-2 flex items-center justify-center rounded-full hover:bg-black/5 active:bg-black/10 transition-colors">
-            <ChevronLeft size={24} className="text-slate-900" />
+    <div className="bg-white/90 backdrop-blur-xl pt-safe px-4 pb-3 flex items-center shrink-0 sticky top-0 z-10 border-b border-slate-100">
+        <button onClick={onBack} className="w-9 h-9 -ml-1 flex items-center justify-center rounded-full hover:bg-black/5 active:bg-black/10 transition-colors">
+            <ChevronLeft size={22} className="text-slate-900" />
         </button>
-        <h1 className="text-xl font-bold text-slate-900 ml-1">{title}</h1>
+        <h1 className="text-lg font-bold text-slate-900 ml-2">{title}</h1>
     </div>
 );
 
@@ -49,9 +52,9 @@ const AccountInfoView = ({ onBack, user }: { onBack: () => void, user?: any }) =
     const { t } = useTranslation();
 
     return (
-        <div className="h-full flex flex-col bg-[#F9F5F0] overflow-y-auto no-scrollbar relative">
+        <div className="md:h-full flex flex-col bg-[#F2F4F7] md:overflow-y-auto no-scrollbar relative">
             <ScreenHeader title={t('profile.account_info')} onBack={onBack} />
-            <div className="px-5 pb-32">
+            <div className="px-5 pb-6">
                 <div className="space-y-4 mb-6">
                     <div>
                         <div className="bg-white border border-gray-200 rounded-xl px-4 py-3 mb-4">
@@ -120,10 +123,10 @@ const AccountInfoView = ({ onBack, user }: { onBack: () => void, user?: any }) =
 const OrdersView = ({ onBack }: { onBack: () => void }) => {
     const { t } = useTranslation();
     return (
-    <div className="h-full flex flex-col bg-[#F9F5F0] overflow-y-auto no-scrollbar relative">
+    <div className="md:h-full flex flex-col bg-[#F2F4F7] md:overflow-y-auto no-scrollbar relative">
         <ScreenHeader title={t('profile.orders')} onBack={onBack} />
-        <div className="px-5 pb-32 pt-2">
-            <div className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100 flex gap-4 items-start active:scale-[0.99] transition-transform">
+        <div className="px-5 pb-6 pt-2">
+            <div className="bg-white rounded-2xl p-5 shadow-sm border border-slate-100 flex gap-4 items-start active:scale-[0.99] transition-transform">
                 <div className="text-4xl shadow-sm rounded-lg overflow-hidden">🇺🇸</div>
                 <div className="flex-1">
                     <h3 className="text-base font-bold text-slate-900">United States / eSIM</h3>
@@ -145,9 +148,9 @@ const CurrencyView = ({ onBack }: { onBack: () => void }) => {
     ];
 
     return (
-        <div className="h-full flex flex-col bg-[#F9F5F0] overflow-y-auto no-scrollbar relative">
+        <div className="md:h-full flex flex-col bg-[#F2F4F7] md:overflow-y-auto no-scrollbar relative">
             <ScreenHeader title={t('profile.currency')} onBack={onBack} />
-            <div className="px-5 pb-32">
+            <div className="px-5 pb-6">
                 <div className="relative mb-6">
                     <Search className="absolute left-4 top-3.5 text-slate-900" size={20} />
                     <input 
@@ -157,12 +160,12 @@ const CurrencyView = ({ onBack }: { onBack: () => void }) => {
                     />
                 </div>
 
-                <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+                <div className="bg-white rounded-xl shadow-sm border border-slate-100 overflow-hidden">
                     {currencies.map((curr, idx) => (
                         <button 
                             key={curr.code}
                             onClick={() => setSelected(curr.code)}
-                            className={`w-full flex items-center justify-between p-4 pl-5 active:bg-gray-50 transition-colors ${idx !== currencies.length - 1 ? 'border-b border-gray-100' : ''}`}
+                            className={`w-full flex items-center justify-between p-4 pl-5 active:bg-gray-50 transition-colors ${idx !== currencies.length - 1 ? 'border-b border-slate-100' : ''}`}
                         >
                             <span className="text-slate-900 font-bold text-[15px]">{curr.name} ({curr.code}) {curr.symbol}</span>
                             {selected === curr.code && <Check size={20} className="text-slate-900" strokeWidth={2.5} />}
@@ -188,15 +191,15 @@ const LanguagesView = ({ onBack }: { onBack: () => void }) => {
     };
 
     return (
-        <div className="h-full flex flex-col bg-[#F9F5F0] overflow-y-auto no-scrollbar relative">
+        <div className="md:h-full flex flex-col bg-[#F2F4F7] md:overflow-y-auto no-scrollbar relative">
             <ScreenHeader title={t('profile.languages')} onBack={onBack} />
-            <div className="px-5 pt-6 pb-32">
-                <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+            <div className="px-5 pt-6 pb-6">
+                <div className="bg-white rounded-xl shadow-sm border border-slate-100 overflow-hidden">
                     {languages.map((lang, idx) => (
                         <button 
                             key={lang.code}
                             onClick={() => handleLanguageChange(lang.code)}
-                            className={`w-full flex items-center justify-between p-4 pl-5 active:bg-gray-50 transition-colors ${idx !== languages.length - 1 ? 'border-b border-gray-100' : ''}`}
+                            className={`w-full flex items-center justify-between p-4 pl-5 active:bg-gray-50 transition-colors ${idx !== languages.length - 1 ? 'border-b border-slate-100' : ''}`}
                         >
                             <span className="text-slate-900 font-bold text-[15px]">{lang.name} <span className="text-slate-400 font-medium ml-1">({lang.native})</span></span>
                             {i18n.language === lang.code && <Check size={20} className="text-slate-900" strokeWidth={2.5} />}
@@ -212,20 +215,20 @@ const AboutEvairView = ({ onBack }: { onBack: () => void }) => {
     const { t } = useTranslation();
 
     return (
-        <div className="h-full flex flex-col bg-[#F9F5F0] overflow-y-auto no-scrollbar relative">
+        <div className="md:h-full flex flex-col bg-[#F2F4F7] md:overflow-y-auto no-scrollbar relative">
             <ScreenHeader title={t('profile.about_evair')} onBack={onBack} />
-            <div className="px-5 pt-2 pb-32">
+            <div className="px-5 pt-2 pb-6">
 
                 {/* Hero */}
                 <div className="rounded-2xl mb-6 overflow-hidden px-5 py-5 flex items-center gap-4" style={{ background: 'linear-gradient(135deg, #1a0a00 0%, #3d1800 50%, #5c2600 100%)' }}>
-                    <img src="/evairsim-logo-full.png" alt="EvairSIM" style={{ width: 130, height: 'auto', objectFit: 'contain', flexShrink: 0, mixBlendMode: 'screen' }} />
+                    <img src="/evairsim-logo-full.png" alt="EvairSIM – Travel eSIM and SIM Card Provider" loading="lazy" width={130} height={40} style={{ width: 130, height: 'auto', objectFit: 'contain', flexShrink: 0, mixBlendMode: 'screen' }} />
                     <p style={{ fontSize: 15, fontWeight: 600, color: 'rgba(255,165,80,0.6)', lineHeight: 1.5, letterSpacing: '0.02em', fontStyle: 'italic' }}>
                         "Connecting the world,<br />one journey at a time."
                     </p>
                 </div>
 
                 {/* Story */}
-                <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-5 mb-5">
+                <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-5 mb-5">
                     <h3 className="text-[15px] font-bold text-slate-900 mb-3">Our Story</h3>
                     <p className="text-[15px] text-slate-600 leading-relaxed mb-3">
                         EvairSIM was born from a simple frustration shared by travelers everywhere: arriving in a new country and being disconnected. Founded in Hong Kong — one of the world's most connected cities — Evair Digital Limited set out with a clear mission: make reliable, affordable mobile data accessible to anyone, anywhere on the planet.
@@ -236,7 +239,7 @@ const AboutEvairView = ({ onBack }: { onBack: () => void }) => {
                 </div>
 
                 {/* Network & Technology */}
-                <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-5 mb-5">
+                <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-5 mb-5">
                     <h3 className="text-[15px] font-bold text-slate-900 mb-3">World-Class Network Stability</h3>
                     <p className="text-[15px] text-slate-600 leading-relaxed mb-3">
                         We understand that connectivity isn't a luxury — it's a necessity. Whether you're navigating a bustling street market in Bangkok, closing a deal in a London café, or sharing a sunset from the coast of Portugal, you need data that simply works. That's why every EvairSIM plan is engineered for consistency and speed.
@@ -247,7 +250,7 @@ const AboutEvairView = ({ onBack }: { onBack: () => void }) => {
                 </div>
 
                 {/* Why Choose Us */}
-                <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-5 mb-5">
+                <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-5 mb-5">
                     <h3 className="text-[15px] font-bold text-slate-900 mb-4">Why Travelers Trust EvairSIM</h3>
                     <div className="space-y-4">
                         {[
@@ -270,7 +273,7 @@ const AboutEvairView = ({ onBack }: { onBack: () => void }) => {
                 </div>
 
                 {/* Mission */}
-                <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-5">
+                <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-5">
                     <h3 className="text-[15px] font-bold text-slate-900 mb-3">Our Promise</h3>
                     <p className="text-[15px] text-slate-600 leading-relaxed mb-3">
                         At EvairSIM, we believe that staying connected should be effortless. No hunting for local SIM shops at the airport. No surprise roaming charges on your phone bill. No dropped connections during your most important moments abroad.
@@ -294,10 +297,10 @@ const TermsOfUseView = ({ onBack }: { onBack: () => void }) => {
     const numSpan = "absolute left-0 text-slate-400";
 
     return (
-        <div className="h-full flex flex-col bg-[#F9F5F0] overflow-y-auto no-scrollbar relative">
+        <div className="md:h-full flex flex-col bg-[#F2F4F7] md:overflow-y-auto no-scrollbar relative">
             <ScreenHeader title={t('profile.terms_of_use')} onBack={onBack} />
-            <div className="px-5 pt-2 pb-32">
-                <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-5">
+            <div className="px-5 pt-2 pb-6">
+                <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-5">
 
                     <h2 className="text-lg font-bold text-slate-900 mb-1">Terms of Service</h2>
                     <p className="text-[13px] text-slate-400 font-medium mb-4">Evair Digital Limited</p>
@@ -456,10 +459,10 @@ const AcceptableUsePolicyView = ({ onBack }: { onBack: () => void }) => {
     const sectionTitle = "text-[15px] font-bold text-slate-900 mb-2 mt-6";
 
     return (
-        <div className="h-full flex flex-col bg-[#F9F5F0] overflow-y-auto no-scrollbar relative">
+        <div className="md:h-full flex flex-col bg-[#F2F4F7] md:overflow-y-auto no-scrollbar relative">
             <ScreenHeader title={t('profile.acceptable_use')} onBack={onBack} />
-            <div className="px-5 pt-2 pb-32">
-                <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-5">
+            <div className="px-5 pt-2 pb-6">
+                <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-5">
 
                     <h2 className="text-lg font-bold text-slate-900 mb-1">Fair Usage Policy</h2>
                     <p className={`${bodyText} mt-2 mb-4`}>
@@ -507,10 +510,10 @@ const PrivacyPolicyView = ({ onBack }: { onBack: () => void }) => {
     const listItem = "text-[15px] text-slate-600 leading-relaxed pl-4 relative before:content-['•'] before:absolute before:left-0 before:text-slate-400";
 
     return (
-        <div className="h-full flex flex-col bg-[#F9F5F0] overflow-y-auto no-scrollbar relative">
+        <div className="md:h-full flex flex-col bg-[#F2F4F7] md:overflow-y-auto no-scrollbar relative">
             <ScreenHeader title={t('profile.privacy_policy')} onBack={onBack} />
-            <div className="px-5 pt-2 pb-32">
-                <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-5">
+            <div className="px-5 pt-2 pb-6">
+                <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-5">
 
                     <h2 className="text-lg font-bold text-slate-900 mb-1">Privacy Policy</h2>
                     <p className="text-[13px] text-slate-400 font-medium mb-4">Last updated: February 6, 2026</p>
@@ -680,10 +683,10 @@ const RefundPolicyView = ({ onBack }: { onBack: () => void }) => {
     const numberedItem = "text-[15px] text-slate-600 leading-relaxed pl-5 relative";
 
     return (
-        <div className="h-full flex flex-col bg-[#F9F5F0] overflow-y-auto no-scrollbar relative">
+        <div className="md:h-full flex flex-col bg-[#F2F4F7] md:overflow-y-auto no-scrollbar relative">
             <ScreenHeader title={t('profile.refund_policy')} onBack={onBack} />
-            <div className="px-5 pt-2 pb-32">
-                <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-5">
+            <div className="px-5 pt-2 pb-6">
+                <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-5">
 
                     <h2 className="text-lg font-bold text-slate-900 mb-1">Return & Refund Policy</h2>
                     <p className="text-[13px] text-slate-400 font-medium mb-4">Evair Digital Limited</p>
@@ -790,10 +793,10 @@ const CookiePolicyView = ({ onBack }: { onBack: () => void }) => {
     const listItem = "text-[15px] text-slate-600 leading-relaxed pl-4 relative before:content-['•'] before:absolute before:left-0 before:text-slate-400";
 
     return (
-        <div className="h-full flex flex-col bg-[#F9F5F0] overflow-y-auto no-scrollbar relative">
+        <div className="md:h-full flex flex-col bg-[#F2F4F7] md:overflow-y-auto no-scrollbar relative">
             <ScreenHeader title={t('profile.cookie_policy')} onBack={onBack} />
-            <div className="px-5 pt-2 pb-32">
-                <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-5">
+            <div className="px-5 pt-2 pb-6">
+                <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-5">
 
                     <h2 className="text-lg font-bold text-slate-900 mb-1">Cookie & Tracking Policy</h2>
                     <p className="text-[13px] text-slate-400 font-medium mb-4">Last updated: February 6, 2026</p>
@@ -880,7 +883,7 @@ const CookiePolicyView = ({ onBack }: { onBack: () => void }) => {
 const MoreInfoView = ({ onBack, onNavigate }: { onBack: () => void, onNavigate: (screen: ProfileScreen) => void }) => {
     const { t } = useTranslation();
     return (
-    <div className="h-full flex flex-col bg-[#F9F5F0] overflow-y-auto no-scrollbar relative">
+    <div className="md:h-full flex flex-col bg-[#F2F4F7] md:overflow-y-auto no-scrollbar relative">
         <ScreenHeader title={t('profile.more_info')} onBack={onBack} />
         <div className="px-5 pt-2">
             <MenuGroup>
@@ -899,23 +902,23 @@ const MoreInfoView = ({ onBack, onNavigate }: { onBack: () => void, onNavigate: 
 const HelpCenterView = ({ onBack }: { onBack: () => void }) => {
     const { t } = useTranslation();
     return (
-        <div className="h-full flex flex-col bg-[#F9F5F0] overflow-y-auto no-scrollbar relative">
+        <div className="md:h-full flex flex-col bg-[#F2F4F7] relative">
             
-            <div className="bg-white px-5 pt-safe pb-4 flex justify-between items-center shadow-sm sticky top-0 z-20">
-                 <button onClick={onBack} className="p-2 -ml-2 rounded-full hover:bg-gray-100"><Settings size={0} className="hidden" /><ChevronLeft size={24} className="text-slate-900" /></button>
-                 <span className="font-bold text-xl">{t('profile.help_center')}</span>
+            <div className="bg-white/90 backdrop-blur-xl px-4 pt-safe pb-3 flex justify-between items-center shrink-0 sticky top-0 z-20 border-b border-slate-100">
+                 <button onClick={onBack} className="p-2 -ml-1 rounded-full hover:bg-black/5"><Settings size={0} className="hidden" /><ChevronLeft size={22} className="text-slate-900" /></button>
+                 <span className="font-bold text-lg">{t('profile.help_center')}</span>
                  <div className="w-8"></div>
             </div>
 
-            <div className="px-5 pt-8 pb-32">
-                 <h1 className="text-3xl font-bold text-slate-900 mb-6 text-center">{t('profile.how_can_help')}</h1>
+            <div className="md:flex-1 md:overflow-y-auto no-scrollbar px-4 pt-6 pb-6">
+                 <h1 className="text-2xl font-bold text-slate-900 mb-5 text-center">{t('profile.how_can_help')}</h1>
                  
-                 <div className="relative mb-10 shadow-sm">
-                    <Search className="absolute left-4 top-4 text-slate-400" size={20} />
+                 <div className="relative mb-6">
+                    <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
                     <input 
                         type="text" 
                         placeholder={t('profile.search_issue')} 
-                        className="w-full bg-white border border-gray-200 rounded-full py-3.5 pl-12 pr-4 text-slate-900 text-sm focus:outline-none focus:ring-2 focus:ring-brand-orange/20"
+                        className="w-full bg-white border border-slate-200 rounded-xl py-2.5 pl-10 pr-4 text-slate-900 text-sm focus:outline-none focus:ring-1 focus:ring-brand-orange/30 focus:border-brand-orange"
                     />
                  </div>
 
@@ -925,10 +928,10 @@ const HelpCenterView = ({ onBack }: { onBack: () => void }) => {
                              { icon: Info, label: t('profile.about_evair'), color: 'bg-blue-100 text-blue-600' },
                              { icon: Play, label: t('profile.getting_started'), color: 'bg-teal-100 text-teal-600' },
                              { icon: Settings, label: t('profile.my_account'), color: 'bg-indigo-100 text-indigo-600' },
-                             { icon: Settings, label: t('profile.troubleshooting'), color: 'bg-gray-100 text-gray-600' },
+                             { icon: Settings, label: t('profile.troubleshooting'), color: 'bg-slate-100 text-gray-600' },
                              { icon: Smartphone, label: t('profile.manage_esim'), color: 'bg-pink-100 text-pink-600' },
                          ].map((item, i) => (
-                             <button key={i} className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 flex flex-col items-center justify-center gap-3 active:scale-[0.98] transition-transform h-32">
+                             <button key={i} className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 flex flex-col items-center justify-center gap-3 active:scale-[0.98] transition-transform h-32">
                                  <div className={`w-10 h-10 rounded-full ${item.color} flex items-center justify-center`}>
                                      <item.icon size={20} />
                                  </div>
@@ -948,7 +951,7 @@ const HelpCenterView = ({ onBack }: { onBack: () => void }) => {
                          t('profile.faq_5'),
                          t('profile.faq_6'),
                      ].map((q, i) => (
-                         <button key={i} className="w-full bg-white p-5 rounded-2xl shadow-sm border border-gray-100 flex items-center justify-between text-left active:bg-gray-50">
+                         <button key={i} className="w-full bg-white p-5 rounded-2xl shadow-sm border border-slate-100 flex items-center justify-between text-left active:bg-gray-50">
                              <span className="font-bold text-slate-900 text-sm pr-4">{q}</span>
                              <ChevronRight size={20} className="text-slate-400 shrink-0" />
                          </button>
@@ -958,7 +961,7 @@ const HelpCenterView = ({ onBack }: { onBack: () => void }) => {
                  {/* Footer Mimic */}
                  <div className="mt-12 pt-12 border-t border-gray-200 flex flex-col items-center gap-6 opacity-60 pb-10">
                       <div className="flex gap-4">
-                          <img src="/logo.png" alt="EvairSIM" style={{ height: 40, objectFit: 'contain' }} />
+                          <img src="/logo.png" alt="EvairSIM logo" loading="lazy" width={100} height={40} style={{ height: 40, objectFit: 'contain' }} />
                       </div>
                       <p className="text-sm font-medium">©2026 EVAIR SIM</p>
                       <div className="flex flex-wrap justify-center gap-4 text-[12px] text-slate-500 font-bold uppercase tracking-wider">
@@ -975,9 +978,20 @@ const HelpCenterView = ({ onBack }: { onBack: () => void }) => {
 };
 
 
-const ProfileView: React.FC<ProfileViewProps> = ({ isLoggedIn, user, onLogin, onSignup, onLogout, onOpenDialer, onOpenInbox }) => {
+const ProfileView: React.FC<ProfileViewProps> = ({ isLoggedIn, user, onLogin, onSignup, onLogout, onOpenDialer, onOpenInbox, notifications = [], onBack }) => {
   const [currentView, setCurrentView] = useState<ProfileScreen>('MAIN');
   const { t } = useTranslation();
+
+  const infoScreens = ['ABOUT', 'TERMS', 'REFUND', 'PRIVACY', 'ACCEPTABLE', 'COOKIE'];
+  const navDepth = currentView === 'MAIN' ? (onBack ? 1 : 0) : infoScreens.includes(currentView) ? (onBack ? 3 : 2) : (onBack ? 2 : 1);
+
+  const handleSwipeBack = useCallback(() => {
+    if (infoScreens.includes(currentView)) setCurrentView('INFO');
+    else if (currentView !== 'MAIN') setCurrentView('MAIN');
+    else onBack?.();
+  }, [currentView, onBack]);
+
+  useSwipeBack(navDepth, handleSwipeBack);
 
   // If we are in a sub-view, render it
   if (currentView === 'ACCOUNT') return <AccountInfoView onBack={() => setCurrentView('MAIN')} user={user} />;
@@ -996,28 +1010,33 @@ const ProfileView: React.FC<ProfileViewProps> = ({ isLoggedIn, user, onLogin, on
 
   // Main Profile Menu
   return (
-    <div className="h-full flex flex-col bg-[#F9F5F0] overflow-y-auto no-scrollbar relative">
+    <div className="md:h-full flex flex-col bg-[#F2F4F7] md:overflow-y-auto no-scrollbar relative">
         
         {/* Header */}
-        <div className="pt-safe px-6 pb-4 flex items-center justify-between shrink-0">
-            <h1 className="text-2xl font-bold text-slate-900 tracking-tight">{t('profile.title')}</h1>
+        <div className="bg-white/90 backdrop-blur-xl pt-safe px-4 pb-3 flex items-center gap-2 shrink-0 sticky top-0 z-10 border-b border-slate-100">
+            {onBack && (
+              <button onClick={onBack} className="w-9 h-9 -ml-1 rounded-full flex items-center justify-center hover:bg-black/5 active:bg-black/10 transition-colors">
+                <ChevronLeft size={22} className="text-slate-900" />
+              </button>
+            )}
+            <h1 className="text-lg font-bold text-slate-900 tracking-tight">{t('profile.title')}</h1>
         </div>
 
-        <div className="flex-1 px-5 pb-32">
+        <div className="flex-1 px-4 pb-6 pt-4">
             
             {/* GUEST VIEW */}
             {!isLoggedIn && (
                 <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
-                    <div className="space-y-4 mb-8">
+                    <div className="space-y-3 mb-6">
                         <button 
                             onClick={onLogin}
-                            className="w-full bg-white border border-gray-200 text-slate-900 py-3.5 rounded-full font-bold text-lg shadow-sm active:scale-[0.98] transition-transform"
+                            className="w-full bg-white border border-slate-200 text-slate-900 py-3 rounded-xl font-bold text-base shadow-sm active:scale-[0.98] transition-transform"
                         >
                             {t('profile.log_in')}
                         </button>
                         <button 
                             onClick={onSignup}
-                            className="w-full bg-brand-orange text-white py-3.5 rounded-full font-bold text-lg shadow-lg shadow-orange-900/10 active:scale-[0.98] transition-transform"
+                            className="w-full bg-brand-orange text-white py-3 rounded-xl font-bold text-base shadow-lg shadow-orange-500/15 active:scale-[0.98] transition-transform"
                         >
                             {t('profile.sign_up')}
                         </button>
@@ -1042,11 +1061,11 @@ const ProfileView: React.FC<ProfileViewProps> = ({ isLoggedIn, user, onLogin, on
                 <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
                     
                     {/* User Profile */}
-                    <div className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100 mb-6 flex items-center gap-4">
-                        <div className="w-14 h-14 rounded-full bg-gradient-to-br from-red-500 to-orange-500 shadow-inner"></div>
+                    <div className="bg-white rounded-xl p-4 shadow-sm border border-slate-100 mb-5 flex items-center gap-3">
+                        <div className="w-12 h-12 rounded-full bg-gradient-to-br from-red-500 to-orange-500 shadow-inner"></div>
                         <div>
-                            <h2 className="text-2xl font-bold text-slate-900 leading-tight">{user.name}</h2>
-                            <p className="text-slate-500 font-medium">{user.role}</p>
+                            <h2 className="text-lg font-bold text-slate-900 leading-tight">{user.name}</h2>
+                            <p className="text-slate-500 text-sm font-medium">{user.role}</p>
                         </div>
                     </div>
 
@@ -1056,7 +1075,7 @@ const ProfileView: React.FC<ProfileViewProps> = ({ isLoggedIn, user, onLogin, on
                           label={t('profile.inbox')}
                           onClick={onOpenInbox}
                           rightElement={(() => {
-                            const unread = MOCK_NOTIFICATIONS.filter(n => !n.read).length;
+                            const unread = notifications.filter(n => !n.read).length;
                             return (
                               <span className="flex items-center gap-2">
                                 {unread > 0 && (
@@ -1082,7 +1101,7 @@ const ProfileView: React.FC<ProfileViewProps> = ({ isLoggedIn, user, onLogin, on
 
                     <button 
                         onClick={onLogout}
-                        className="w-full bg-white border border-gray-200 text-slate-900 py-3.5 rounded-full font-bold text-lg shadow-sm active:scale-[0.98] transition-transform mb-6"
+                        className="w-full bg-white border border-slate-200 text-slate-900 py-3 rounded-xl font-bold text-base shadow-sm active:scale-[0.98] transition-transform mb-5"
                     >
                         {t('profile.log_out')}
                     </button>
