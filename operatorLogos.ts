@@ -1,0 +1,107 @@
+/**
+ * Official telecom brand logos from Wikimedia Commons.
+ * Uses Special:FilePath for reliable image URLs. Append ?width=128 for thumbnails.
+ */
+const COMMONS = 'https://commons.wikimedia.org/wiki/Special:FilePath';
+const W = 64; // thumbnail width
+
+export const OPERATOR_LOGO_URLS: Record<string, string> = {
+  // Asia-Pacific
+  'Optus': `${COMMONS}/Optus_Logo.png?width=${W}`,
+  'Metfone': `${COMMONS}/The_Metfone_Logo.png?width=${W}`,
+  'Hello Axiata': `${COMMONS}/Axiata_logo.svg?width=${W}`,
+  'China Telecom': `${COMMONS}/China_Telecom_logotip.png?width=${W}`,
+  'China Unicom': `${COMMONS}/China_Unicom_logo.svg?width=${W}`,
+  'HKT': `${COMMONS}/HKT_logo.svg?width=${W}`,
+  'CSL': `${COMMONS}/CSL_Limited_logo.svg?width=${W}`,
+  'Telkomsel': `${COMMONS}/Telkomsel_2021_icon.svg?width=${W}`,
+  'Hutchison': `${COMMONS}/Hutchison_3G_logo.svg?width=${W}`,
+  'Indosat': `${COMMONS}/Indosat_Ooredoo_logo.svg?width=${W}`,
+  'KDDI': `${COMMONS}/KDDI_Logo.svg?width=${W}`,
+  'SoftBank': `${COMMONS}/SoftBankMobile_logo.svg?width=${W}`,
+  'SK Telecom': `${COMMONS}/SK_Telecom_Logo.svg?width=${W}`,
+  'LG U+': `${COMMONS}/LG_U%2B_BI.svg?width=${W}`,
+  'KT': `${COMMONS}/KT_corporation_logo.svg?width=${W}`,
+  'CTM': `${COMMONS}/CTM_Macau_logo.png?width=${W}`,
+  'Celcom': `${COMMONS}/Celcom_logo.svg?width=${W}`,
+  'Digi': `${COMMONS}/Digi_Communications_logo.svg?width=${W}`,
+  'Maxis': `${COMMONS}/Maxis-logo.png?width=${W}`,
+  'Spark': `${COMMONS}/Spark_New_Zealand_logo.svg?width=${W}`,
+  'Two Degrees': `${COMMONS}/2degrees_logo.svg?width=${W}`,
+  'Globe': `${COMMONS}/Globe-logo.png?width=${W}`,
+  'Smart': `${COMMONS}/Smart_Communications_logo.svg?width=${W}`,
+  'SingTel': `${COMMONS}/Singtel_Logo_New.png?width=${W}`,
+  'StarHub': `${COMMONS}/Starhublogo.png?width=${W}`,
+  'Chunghwa': `${COMMONS}/Chunghwa_Telecom_logo.svg?width=${W}`,
+  'FarEasTone': `${COMMONS}/Far_EasTone_logo.svg?width=${W}`,
+  'Taiwan Mobile': `${COMMONS}/Taiwan_Mobile_logo.svg?width=${W}`,
+  'AIS': `${COMMONS}/AIS_Logo.svg?width=${W}`,
+  'dtac': `${COMMONS}/Dtac_logo.svg?width=${W}`,
+  'True Move': `${COMMONS}/True_Corporation_logo.svg?width=${W}`,
+  'MobiFone': `${COMMONS}/Mobifone_logo.svg?width=${W}`,
+  'Viettel': `${COMMONS}/Viettel_Logo.svg?width=${W}`,
+  'Vietnamobile': `${COMMONS}/Vietnamobile_logo.svg?width=${W}`,
+
+  // Europe
+  'Vodafone': `${COMMONS}/Vodafone_logo_2017.png?width=${W}`,
+  'Proximus': `${COMMONS}/Proximus_logo1.png?width=${W}`,
+  'BASE': `${COMMONS}/Base_Belgium_logo.svg?width=${W}`,
+  'BH Telecom': `${COMMONS}/BH_Telecom_logo.svg?width=${W}`,
+  'HT Eronet': `${COMMONS}/HT_Eronet_logo.svg?width=${W}`,
+  'Vivacom': `${COMMONS}/Vivacom_Bulgaria_logo.svg?width=${W}`,
+  'A1': `${COMMONS}/A1_Telekom_Austria_logo.svg?width=${W}`,
+  'Yettel': `${COMMONS}/Yettel_logo.svg?width=${W}`,
+  'Epic': `${COMMONS}/Epic_Cyprus_logo.svg?width=${W}`,
+  'PrimeTel': `${COMMONS}/PrimeTel_logo.svg?width=${W}`,
+  'T-Mobile': `${COMMONS}/T-Mobile_logo.svg?width=${W}`,
+  'O2': `${COMMONS}/O2-Logo.svg?width=${W}`,
+  'TDC': `${COMMONS}/TDC_A_S_logo.svg?width=${W}`,
+  'Telenor': `${COMMONS}/Telenor_logo.png?width=${W}`,
+  'Telia': `${COMMONS}/Telia_logo.svg?width=${W}`,
+  'Elisa': `${COMMONS}/Elisa.svg?width=${W}`,
+  'Tele2': `${COMMONS}/Tele2_logo.svg?width=${W}`,
+  'TELE2': `${COMMONS}/Tele2_logo.svg?width=${W}`,
+  'DNA': `${COMMONS}/DNA_Oyj_logo.svg?width=${W}`,
+  'Bouygues': `${COMMONS}/Bouygues_Telecom_logo.svg?width=${W}`,
+  'Orange': `${COMMONS}/Orange_tm.png?width=${W}`,
+  'SFR': `${COMMONS}/SFR_logo.svg?width=${W}`,
+  'E-Plus': `${COMMONS}/E-Plus_Logo.svg?width=${W}`,
+  'Nova': `${COMMONS}/Nova_Greece_logo.svg?width=${W}`,
+  'Cosmote': `${COMMONS}/Cosmote_logo.svg?width=${W}`,
+  'Sunrise': `${COMMONS}/Sunrise_Communications_logo.svg?width=${W}`,
+  'Salt': `${COMMONS}/Salt_logo.svg?width=${W}`,
+  '3': `${COMMONS}/3_UK_logo.svg?width=${W}`,
+  'EE': `${COMMONS}/EE_limited_logo.svg?width=${W}`,
+  'KPN': `${COMMONS}/KPN_logo.png?width=${W}`,
+  'Plus': `${COMMONS}/Plus_network_logo.svg?width=${W}`,
+  'NOS': `${COMMONS}/NOS_Comunicacoes_logo.svg?width=${W}`,
+  'MEO': `${COMMONS}/MEO_logo.svg?width=${W}`,
+  'Windtre': `${COMMONS}/Wind_3_logo.svg?width=${W}`,
+  'TIM': `${COMMONS}/TIM_logo.svg?width=${W}`,
+  'Bite': `${COMMONS}/Bite_Lithuania_logo.svg?width=${W}`,
+  'LMT': `${COMMONS}/LMT_Latvia_logo.svg?width=${W}`,
+  'Tango': `${COMMONS}/Tango_Luxembourg_logo.svg?width=${W}`,
+  'Post': `${COMMONS}/POST_Luxembourg_logo.svg?width=${W}`,
+  'Life:)': `${COMMONS}/Life_cell_logo.svg?width=${W}`,
+  'Telemach': `${COMMONS}/Telemach_logo.svg?width=${W}`,
+  'Telekom': `${COMMONS}/Slovenian_Telekom_logo.svg?width=${W}`,
+  'Telecom FL': `${COMMONS}/Telecom_Liechtenstein_logo.svg?width=${W}`,
+  '7acht': `${COMMONS}/7acht_logo.svg?width=${W}`,
+  'Eir': `${COMMONS}/Eir_logo.svg?width=${W}`,
+
+  // Americas
+  'AT&T': `${COMMONS}/AT%26T_Wireless_logo.svg?width=${W}`,
+  'Verizon': `${COMMONS}/Verizon_logo.png?width=${W}`,
+  'Freedom': `${COMMONS}/Freedom_Mobile_logo.svg?width=${W}`,
+  'Telus': `${COMMONS}/Telus_logo.svg?width=${W}`,
+  'Bell': `${COMMONS}/Bell_Canada_logo.svg?width=${W}`,
+  'Rogers': `${COMMONS}/Rogers_Communications_logo.svg?width=${W}`,
+  'Movistar': `${COMMONS}/Movistar_logo.svg?width=${W}`,
+
+  // Africa
+  'Djezzy': `${COMMONS}/Djezzy_logo.svg?width=${W}`,
+};
+
+export function getOperatorLogoUrl(networkName: string): string | null {
+  return OPERATOR_LOGO_URLS[networkName] ?? null;
+}
