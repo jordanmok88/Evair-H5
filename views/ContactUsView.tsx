@@ -215,7 +215,7 @@ const ContactUsView: React.FC<ContactUsViewProps> = ({ onBack, userName = 'Jorda
   };
 
   return (
-    <div className="md:h-full min-h-screen md:min-h-0 flex flex-col bg-[#F2F4F7] relative">
+    <div className="sm:h-full min-h-screen sm:min-h-0 flex flex-col bg-[#F2F4F7] relative">
       {/* Header */}
       <div className="pt-safe px-4 pb-3 sticky top-0 z-10 rounded-b-2xl shadow-md" style={{ background: 'linear-gradient(180deg, #FF6600 0%, #FF8533 100%)' }}>
         <div className="flex items-center gap-3 mb-2">

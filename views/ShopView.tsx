@@ -51,14 +51,14 @@ const ShopView: React.FC<ShopViewProps> = ({ isLoggedIn, user, onLoginRequest, o
   const [orderError, setOrderError] = useState<string | null>(null);
   const [continentTab, setContinentTab] = useState<ContinentTab>('All');
 
-  // Scroll-based header auto-hide
+  // Scroll-based header auto-hide (works for both window scroll on mobile and container scroll on tablet/desktop)
   const [headerHidden, setHeaderHidden] = useState(false);
   const lastScrollY = useRef(0);
   const scrollThreshold = 10;
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    const onScroll = () => {
-      const y = window.scrollY;
+    const onScroll = (y: number) => {
       if (y > lastScrollY.current + scrollThreshold && y > 60) {
         setHeaderHidden(true);
       } else if (y < lastScrollY.current - scrollThreshold) {
@@ -66,8 +66,20 @@ const ShopView: React.FC<ShopViewProps> = ({ isLoggedIn, user, onLoginRequest, o
       }
       lastScrollY.current = y;
     };
-    window.addEventListener('scroll', onScroll, { passive: true });
-    return () => window.removeEventListener('scroll', onScroll);
+
+    const onWindowScroll = () => onScroll(window.scrollY);
+    const onContainerScroll = () => {
+      if (scrollContainerRef.current) onScroll(scrollContainerRef.current.scrollTop);
+    };
+
+    window.addEventListener('scroll', onWindowScroll, { passive: true });
+    const container = scrollContainerRef.current;
+    container?.addEventListener('scroll', onContainerScroll, { passive: true });
+
+    return () => {
+      window.removeEventListener('scroll', onWindowScroll);
+      container?.removeEventListener('scroll', onContainerScroll);
+    };
   }, []);
 
   const loadEsimPackages = useCallback(async (force = false) => {
@@ -223,7 +235,7 @@ const ShopView: React.FC<ShopViewProps> = ({ isLoggedIn, user, onLoginRequest, o
   if (esimOrderResult) {
     const { smdpAddress, activationCode, lpaString, qrCodeUrl } = esimOrderResult;
     return (
-      <div className="md:h-full min-h-screen md:min-h-0 flex flex-col bg-[#1c1c1e]">
+      <div className="sm:h-full min-h-screen sm:min-h-0 flex flex-col bg-[#1c1c1e]">
         <div className="px-5 pt-safe pb-2 flex items-center justify-between shrink-0">
           <h2 className="text-white text-xl font-bold tracking-tight">{t('shop.order_success_title')}</h2>
           <button onClick={() => {
@@ -327,7 +339,7 @@ const ShopView: React.FC<ShopViewProps> = ({ isLoggedIn, user, onLoginRequest, o
   // --- eSIM COUNTRY DETAIL: Package list for selected country group ---
   if (selectedEsimGroup) {
     return (
-      <div className="md:h-full flex flex-col relative bg-[#F2F4F7]">
+      <div className="sm:h-full flex flex-col relative bg-[#F2F4F7]">
         {/* eSIM Checkout Modal */}
         {selectedEsimPkg && (
           <div className="fixed md:absolute inset-0 z-[60] flex items-end sm:items-center justify-center bg-black/20 backdrop-blur-sm">
@@ -404,7 +416,7 @@ const ShopView: React.FC<ShopViewProps> = ({ isLoggedIn, user, onLoginRequest, o
         </div>
 
         {/* Content */}
-        <div className="md:flex-1 md:overflow-y-auto no-scrollbar pb-6 px-4 pt-5">
+        <div className="sm:flex-1 sm:overflow-y-auto no-scrollbar pb-6 px-4 pt-5">
           {/* Country header */}
           <div className="flex items-center gap-4 mb-5">
             <FlagIcon countryCode={selectedEsimGroup.flag} size="lg" />
@@ -516,7 +528,7 @@ const ShopView: React.FC<ShopViewProps> = ({ isLoggedIn, user, onLoginRequest, o
     const shippingCost = 5.99;
     const total = selectedSimCardProduct.sellingPrice + shippingCost;
     return (
-      <div className="md:h-full flex flex-col relative bg-[#F2F4F7]">
+      <div className="sm:h-full flex flex-col relative bg-[#F2F4F7]">
         <div className="fixed md:absolute inset-0 z-[60] flex items-end sm:items-center justify-center bg-black/20 backdrop-blur-sm">
           <div className="bg-white w-full sm:w-[90%] sm:max-w-sm max-h-[90vh] sm:max-h-[85vh] rounded-t-2xl sm:rounded-2xl p-5 shadow-2xl overflow-y-auto overscroll-contain">
             <div className="flex justify-between items-center mb-5">
@@ -593,7 +605,7 @@ const ShopView: React.FC<ShopViewProps> = ({ isLoggedIn, user, onLoginRequest, o
     const total = discountedPrice + shippingCost;
 
     return (
-      <div className="md:h-full flex flex-col relative bg-[#F2F4F7]">
+      <div className="sm:h-full flex flex-col relative bg-[#F2F4F7]">
         {/* Checkout Modal */}
         {selectedPlan && (
           <div className="fixed md:absolute inset-0 z-[60] flex items-end sm:items-center justify-center bg-black/20 backdrop-blur-sm">
@@ -688,7 +700,7 @@ const ShopView: React.FC<ShopViewProps> = ({ isLoggedIn, user, onLoginRequest, o
         </div>
 
         {/* Content */}
-        <div className="md:flex-1 md:overflow-y-auto no-scrollbar pb-6 px-4 pt-5">
+        <div className="sm:flex-1 sm:overflow-y-auto no-scrollbar pb-6 px-4 pt-5">
           
           {/* Visual Country Header */}
           <div className="flex items-center gap-4 mb-5">
@@ -789,64 +801,63 @@ const ShopView: React.FC<ShopViewProps> = ({ isLoggedIn, user, onLoginRequest, o
 
   // --- MAIN VIEW: Shop Home ---
   return (
-    <div className="md:h-full flex flex-col relative bg-[#F2F4F7]">
-      {/* Header - auto-hides on scroll down, reappears on scroll up */}
-      <div
-        className="bg-white px-4 pt-safe pb-3 shrink-0 sticky top-0 z-40 border-b border-slate-100 transition-transform duration-300 ease-out"
-        style={{ transform: headerHidden ? 'translateY(-100%)' : 'translateY(0)' }}
-      >
-        {/* Row 1: Greeting + action buttons */}
-        <div className="flex justify-between items-center mb-3">
-            <div>
-                <p className="text-base font-bold text-slate-900 tracking-tight">
-                    {t('shop.hello')} {isLoggedIn && user ? user.name : t('shop.new_friend')}
-                </p>
-                <p className="text-xs text-slate-400 mt-0.5">Find the perfect plan for your trip</p>
-            </div>
-            <div className="flex items-center gap-2">
-              {hasActiveSims && onSwitchToMySims && (
-                <button onClick={onSwitchToMySims} className="text-[11px] font-semibold text-brand-orange bg-orange-50 border border-orange-200 px-2.5 py-1 rounded-full active:scale-95 transition-transform">
-                  {simType === 'ESIM' ? t('shop.my_esims') : t('shop.my_sims')}
+    <div className="sm:h-full relative bg-[#F2F4F7]">
+      <div ref={scrollContainerRef} className="h-full sm:overflow-y-auto no-scrollbar">
+        {/* Header - auto-hides on scroll down, reappears on scroll up */}
+        <div
+          className="bg-white px-4 pt-safe pb-3 sticky top-0 z-40 border-b border-slate-100 transition-transform duration-300 ease-out"
+          style={{ transform: headerHidden ? 'translateY(-100%)' : 'translateY(0)' }}
+        >
+          {/* Row 1: Greeting + action buttons */}
+          <div className="flex justify-between items-center mb-3">
+              <div>
+                  <p className="text-base font-bold text-slate-900 tracking-tight">
+                      {t('shop.hello')} {isLoggedIn && user ? user.name : t('shop.new_friend')}
+                  </p>
+                  <p className="text-xs text-slate-400 mt-0.5">Find the perfect plan for your trip</p>
+              </div>
+              <div className="flex items-center gap-2">
+                {hasActiveSims && onSwitchToMySims && (
+                  <button onClick={onSwitchToMySims} className="text-[11px] font-semibold text-brand-orange bg-orange-50 border border-orange-200 px-2.5 py-1 rounded-full active:scale-95 transition-transform">
+                    {simType === 'ESIM' ? t('shop.my_esims') : t('shop.my_sims')}
+                  </button>
+                )}
+                <button onClick={() => onNavigate?.('INBOX')} className="relative w-10 h-10 rounded-xl bg-slate-100 flex items-center justify-center active:scale-95 transition-all" style={{ WebkitTapHighlightColor: 'transparent' }}>
+                  <Bell size={18} className="text-slate-700" />
+                  {notifications.filter(n => !n.read).length > 0 && (
+                    <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] rounded-full bg-red-500 text-white text-[10px] font-bold flex items-center justify-center px-1 border-2 border-white shadow-sm">
+                      {notifications.filter(n => !n.read).length > 9 ? '9+' : notifications.filter(n => !n.read).length}
+                    </span>
+                  )}
                 </button>
-              )}
-              <button onClick={() => onNavigate?.('INBOX')} className="relative w-10 h-10 rounded-xl bg-slate-100 flex items-center justify-center active:scale-95 transition-all" style={{ WebkitTapHighlightColor: 'transparent' }}>
-                <Bell size={18} className="text-slate-700" />
-                {notifications.filter(n => !n.read).length > 0 && (
-                  <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] rounded-full bg-red-500 text-white text-[10px] font-bold flex items-center justify-center px-1 border-2 border-white shadow-sm">
-                    {notifications.filter(n => !n.read).length > 9 ? '9+' : notifications.filter(n => !n.read).length}
-                  </span>
-                )}
-              </button>
-              <button onClick={() => onNavigate?.('PROFILE')} className="w-10 h-10 rounded-xl flex items-center justify-center active:scale-95 transition-all overflow-hidden" style={{ background: 'linear-gradient(135deg, #FF6600, #FF8A3D)', WebkitTapHighlightColor: 'transparent' }}>
-                {isLoggedIn && user ? (
-                  <span className="text-sm font-bold text-white">{user.name.charAt(0).toUpperCase()}</span>
-                ) : (
-                  <UserCircle size={20} className="text-white" />
-                )}
-              </button>
-            </div>
+                <button onClick={() => onNavigate?.('PROFILE')} className="w-10 h-10 rounded-xl flex items-center justify-center active:scale-95 transition-all overflow-hidden" style={{ background: 'linear-gradient(135deg, #FF6600, #FF8A3D)', WebkitTapHighlightColor: 'transparent' }}>
+                  {isLoggedIn && user ? (
+                    <span className="text-sm font-bold text-white">{user.name.charAt(0).toUpperCase()}</span>
+                  ) : (
+                    <UserCircle size={20} className="text-white" />
+                  )}
+                </button>
+              </div>
+          </div>
+
+          {/* Row 2: Segmented product type toggle */}
+          <div className="flex bg-slate-200/80 rounded-xl p-1 mb-2">
+            <button
+              onClick={() => onSwitchSimType?.('PHYSICAL')}
+              className={`flex-1 py-2.5 rounded-lg text-sm font-bold transition-all ${simType === 'PHYSICAL' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500'}`}
+            >
+              SIM Card
+            </button>
+            <button
+              onClick={() => onSwitchSimType?.('ESIM')}
+              className={`flex-1 py-2.5 rounded-lg text-sm font-bold transition-all ${simType === 'ESIM' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500'}`}
+            >
+              eSIM
+            </button>
+          </div>
         </div>
 
-        {/* Row 2: Segmented product type toggle */}
-        <div className="flex bg-slate-200/80 rounded-xl p-1 mb-2">
-          <button
-            onClick={() => onSwitchSimType?.('PHYSICAL')}
-            className={`flex-1 py-2.5 rounded-lg text-sm font-bold transition-all ${simType === 'PHYSICAL' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500'}`}
-          >
-            SIM Card
-          </button>
-          <button
-            onClick={() => onSwitchSimType?.('ESIM')}
-            className={`flex-1 py-2.5 rounded-lg text-sm font-bold transition-all ${simType === 'ESIM' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500'}`}
-          >
-            eSIM
-          </button>
-        </div>
-
-        
-      </div>
-
-      <div className="md:flex-1 md:overflow-y-auto no-scrollbar pb-6 px-4 pt-4">
+        <div className="pb-6 px-4 pt-4">
         
         {/* HERO SECTION: 'Purchase' for eSIM, 'Bind' for Physical */}
         {!searchQuery && (
@@ -1117,6 +1128,7 @@ const ShopView: React.FC<ShopViewProps> = ({ isLoggedIn, user, onLoginRequest, o
             )}
           </>
         )}
+        </div>
       </div>
     </div>
   );

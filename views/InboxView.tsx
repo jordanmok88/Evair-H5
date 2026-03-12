@@ -77,7 +77,7 @@ const InboxView: React.FC<InboxViewProps> = ({ notifications, onUpdateNotificati
   const deleteTarget = deleteConfirmId ? notifications.find(n => n.id === deleteConfirmId) : null;
 
   return (
-    <div className="md:h-full flex flex-col bg-[#F2F4F7] relative">
+    <div className="sm:h-full flex flex-col bg-[#F2F4F7] relative">
       {/* Header */}
       <div className="bg-white/90 backdrop-blur-xl pt-safe px-4 pb-3 shrink-0 sticky top-0 z-10 flex items-center gap-2 border-b border-slate-100">
         {onBack && (
@@ -88,7 +88,7 @@ const InboxView: React.FC<InboxViewProps> = ({ notifications, onUpdateNotificati
         <h1 className="text-lg font-bold tracking-tight text-slate-900">{t('profile.inbox')}</h1>
       </div>
 
-      <div className="md:flex-1 md:min-h-0 md:overflow-y-auto no-scrollbar px-4 pb-6 pt-4">
+      <div className="sm:flex-1 sm:min-h-0 sm:overflow-y-auto no-scrollbar px-4 pb-6 pt-4">
         {/* Unread count & mark all read */}
         {unreadCount > 0 && (
           <div className="flex items-center justify-between mb-3">

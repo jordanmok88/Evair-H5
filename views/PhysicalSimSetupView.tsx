@@ -194,7 +194,7 @@ const PhysicalSimSetupView: React.FC<PhysicalSimSetupViewProps> = ({ onSwitchToS
   const stepLabels = ['Processing', 'Shipped', 'In Transit', 'Out for Delivery', 'Delivered'];
 
   return (
-    <div className="md:h-full flex flex-col bg-[#F2F4F7]">
+    <div className="sm:h-full flex flex-col bg-[#F2F4F7]">
 
       <div className="bg-white/90 backdrop-blur-xl px-4 pt-safe pb-3 flex items-center gap-2 shrink-0 sticky top-0 z-20 border-b border-slate-100">
         <button onClick={onSwitchToShop} className="w-9 h-9 rounded-full flex items-center justify-center hover:bg-black/5 -ml-1">
