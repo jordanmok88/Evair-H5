@@ -264,7 +264,7 @@ function CustomerApp() {
   return (
     <div className="bg-[#F2F4F7] md:bg-[#E5E5E5] md:h-full md:min-h-screen md:flex md:items-center md:justify-center md:p-8 font-sans antialiased selection:bg-orange-100">
       
-      <div className="w-full md:max-w-[430px] md:h-[880px] bg-[#F2F4F7] md:rounded-[3.5rem] md:overflow-hidden md:shadow-[0_50px_100px_-20px_rgba(0,0,0,0.25)] relative md:border-[8px] md:border-slate-900 md:ring-1 md:ring-black/50">
+      <div className="w-full max-w-[375px] mx-auto md:max-w-[430px] md:h-[880px] bg-[#F2F4F7] md:rounded-[3.5rem] md:overflow-hidden md:shadow-[0_50px_100px_-20px_rgba(0,0,0,0.25)] relative md:border-[8px] md:border-slate-900 md:ring-1 md:ring-black/50">
         
         {/* Dynamic Island — desktop preview only */}
         <div className="hidden md:block absolute top-0 left-1/2 -translate-x-1/2 w-[120px] h-[36px] bg-black rounded-b-[20px] z-[60]"></div>

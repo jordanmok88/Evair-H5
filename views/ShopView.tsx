@@ -922,13 +922,12 @@ const ShopView: React.FC<ShopViewProps> = ({ isLoggedIn, user, onLoginRequest, o
               <div className="bg-white rounded-xl p-4 mb-4 shadow-sm border border-slate-100">
                 <div className="flex items-center gap-3">
                   <FlagIcon countryCode="US" size="sm" />
-                  <div className="flex-1">
-                    <p className="text-base font-semibold text-slate-900 leading-tight">United States</p>
-                    <p className="text-xs text-slate-400">AT&T · Verizon · T-Mobile</p>
-                  </div>
-                  <div className="flex items-center gap-1.5 shrink-0">
-                    <span className="text-[11px] font-semibold text-white bg-slate-700 px-1.5 py-0.5 rounded-full">3G/4G/5G</span>
-                    <span className="text-[11px] font-semibold text-brand-orange bg-orange-50 px-1.5 py-0.5 rounded-full border border-orange-100">{SIM_CARD_PRODUCTS.length} Plans</span>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center justify-between gap-2">
+                      <p className="text-base font-semibold text-slate-900 leading-tight">United States</p>
+                      <span className="text-[11px] font-semibold text-brand-orange bg-orange-50 px-1.5 py-0.5 rounded-full border border-orange-100 shrink-0">{SIM_CARD_PRODUCTS.length} Plans</span>
+                    </div>
+                    <p className="text-xs text-slate-400 mt-0.5">AT&T · Verizon · T-Mobile · <span className="text-[11px] font-semibold text-slate-600">3G/4G/5G</span></p>
                   </div>
                 </div>
               </div>
