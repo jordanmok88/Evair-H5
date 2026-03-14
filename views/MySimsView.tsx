@@ -737,27 +737,7 @@ const MySimsView: React.FC<MySimsViewProps> = ({ activeSims, onNavigate, filterT
                 </div>
               ) : (
                 <>
-                  {/* Duration tabs — wrapped into rows so nothing is hidden */}
-                  {tabKeys.length > 0 && (
-                    <div className="shrink-0 px-4 pt-3 pb-1">
-                      <div className="flex flex-wrap gap-2">
-                        {tabKeys.map(tab => {
-                          const isActive = tab === activeTab;
-                          return (
-                            <button
-                              key={tab}
-                              onClick={() => setSelectedTopUp(grouped.get(tab)?.[0] || null)}
-                              className={`px-3.5 py-1.5 rounded-full text-[13px] font-semibold transition-all ${isActive ? 'bg-brand-orange text-white shadow-sm' : 'bg-slate-100 text-slate-600 active:bg-slate-200'}`}
-                            >
-                              {tab}
-                            </button>
-                          );
-                        })}
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Package grid */}
+                  {/* All plans — scrollable with section headers */}
                   <div className="flex-1 overflow-y-auto px-4 pt-3 pb-4">
                     {topUpLoading && (
                       <div className="flex items-center justify-center py-16">
@@ -765,39 +745,42 @@ const MySimsView: React.FC<MySimsViewProps> = ({ activeSims, onNavigate, filterT
                       </div>
                     )}
 
-                    {!topUpLoading && topUpPackages.length === 0 && (
+                    {!topUpLoading && filtered.length === 0 && (
                       <p className="text-center text-slate-400 py-16 text-sm">No top-up plans available</p>
                     )}
 
-                    {!topUpLoading && activePkgs.length > 0 && (
-                      <div className="grid grid-cols-2 gap-2.5">
-                        {activePkgs.map(pkg => {
-                          const isSelected = selectedTopUp?.packageCode === pkg.packageCode;
-                          const priceRetail = retailPrice(pkg.price);
-                          const isBestValue = pkg.packageCode === bestValueCode && activePkgs.length > 1;
-                          return (
-                            <button
-                              key={pkg.packageCode}
-                              onClick={() => setSelectedTopUp(pkg)}
-                              className={`relative flex flex-col items-start px-3 py-2.5 rounded-xl transition-all ${isSelected ? 'border-2 border-brand-orange bg-orange-50/40' : 'border border-slate-200 bg-white active:border-brand-orange'}`}
-                            >
-                              {isBestValue && (
-                                <span className="absolute top-2.5 right-2.5 w-5 h-5 flex items-center justify-center">
-                                  <svg viewBox="0 0 20 20" fill="none" className="w-5 h-5">
-                                    <path d="M10 1l2.39 4.84 5.34.78-3.87 3.77.91 5.33L10 13.27l-4.77 2.45.91-5.33L2.27 6.62l5.34-.78L10 1z" fill="#FF6600" />
-                                    <path d="M8.5 10.2l1.2 1.3 2.8-3" stroke="#fff" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-                                  </svg>
-                                </span>
-                              )}
-                              <span className="text-base font-bold text-slate-900 leading-tight">{formatVolume(pkg.volume)}</span>
-                              <span className="text-[11px] text-slate-400">{pkg.duration} {pkg.durationUnit === 'DAY' ? 'Days' : 'Months'}</span>
-                              <span className="text-[15px] font-bold text-brand-orange mt-1">${priceRetail.toFixed(2)}</span>
-                              <span className="text-[9px] text-slate-300 mt-0.5 leading-tight truncate w-full">{pkg.name}</span>
-                            </button>
-                          );
-                        })}
+                    {!topUpLoading && sections.map(({ label, pkgs, bestCode }) => (
+                      <div key={label} className="mb-5">
+                        <h4 className="text-sm font-bold text-slate-700 mb-2">{label}</h4>
+                        <div className="grid grid-cols-2 gap-2.5">
+                          {pkgs.map(pkg => {
+                            const isSelected = selectedTopUp?.packageCode === pkg.packageCode;
+                            const priceRetail = retailPrice(pkg.price);
+                            const isBestValue = pkg.packageCode === bestCode;
+                            return (
+                              <button
+                                key={pkg.packageCode}
+                                onClick={() => setSelectedTopUp(pkg)}
+                                className={`relative flex flex-col items-start px-3 py-2.5 rounded-xl transition-all ${isSelected ? 'border-2 border-brand-orange bg-orange-50/40' : 'border border-slate-200 bg-white active:border-brand-orange'}`}
+                              >
+                                {isBestValue && (
+                                  <span className="absolute top-2.5 right-2.5 w-5 h-5 flex items-center justify-center">
+                                    <svg viewBox="0 0 20 20" fill="none" className="w-5 h-5">
+                                      <path d="M10 1l2.39 4.84 5.34.78-3.87 3.77.91 5.33L10 13.27l-4.77 2.45.91-5.33L2.27 6.62l5.34-.78L10 1z" fill="#FF6600" />
+                                      <path d="M8.5 10.2l1.2 1.3 2.8-3" stroke="#fff" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                                    </svg>
+                                  </span>
+                                )}
+                                <span className="text-base font-bold text-slate-900 leading-tight">{formatVolume(pkg.volume)}</span>
+                                <span className="text-[11px] text-slate-400">{label}</span>
+                                <span className="text-[15px] font-bold text-brand-orange mt-1">${priceRetail.toFixed(2)}</span>
+                                <span className="text-[9px] text-slate-300 mt-0.5 leading-tight truncate w-full">{pkg.name}</span>
+                              </button>
+                            );
+                          })}
+                        </div>
                       </div>
-                    )}
+                    ))}
                   </div>
 
                   {/* Sticky purchase button */}
