@@ -18,12 +18,36 @@ function MobilePreview() {
   const phoneW = 402;
   const phoneH = 868;
   const [scale, setScale] = useState(1);
+  const [collapsed, setCollapsed] = useState(false);
+  const iframeRef = useRef<HTMLIFrameElement>(null);
+  const lastScrollY = useRef(0);
+  const tr = '0.3s ease';
 
   useEffect(() => {
     const update = () => setScale(Math.min(1, (window.innerHeight - 40) / (phoneH + 24)));
     update();
     window.addEventListener('resize', update);
     return () => window.removeEventListener('resize', update);
+  }, []);
+
+  useEffect(() => {
+    const iframe = iframeRef.current;
+    if (!iframe) return;
+    const onLoad = () => {
+      try {
+        const doc = iframe.contentDocument || iframe.contentWindow?.document;
+        if (!doc) return;
+        doc.addEventListener('scroll', () => {
+          const y = doc.documentElement.scrollTop || doc.body.scrollTop;
+          if (y > lastScrollY.current && y > 50) setCollapsed(true);
+          else if (y < lastScrollY.current) setCollapsed(false);
+          if (y <= 0) setCollapsed(false);
+          lastScrollY.current = y;
+        }, { passive: true });
+      } catch {}
+    };
+    iframe.addEventListener('load', onLoad);
+    return () => iframe.removeEventListener('load', onLoad);
   }, []);
 
   return (
@@ -35,16 +59,23 @@ function MobilePreview() {
           <div style={{ position: 'absolute', left: -3, top: 290, width: 3, height: 60, background: '#2a2a2a', borderRadius: '4px 0 0 4px' }} />
           <div style={{ position: 'absolute', right: -3, top: 240, width: 3, height: 80, background: '#2a2a2a', borderRadius: '0 4px 4px 0' }} />
           <div style={{ width: '100%', height: '100%', borderRadius: 44, overflow: 'hidden', background: '#F2F4F7', display: 'flex', flexDirection: 'column' }}>
-            {/* Safari top: status bar (54px) + address bar (50px) = 104px */}
-            <div style={{ flexShrink: 0, background: '#F2F4F7' }}>
-              <div style={{ height: 54, position: 'relative' }}>
-                <span style={{ position: 'absolute', left: 20, top: 16, fontSize: 15, fontWeight: 600, fontFamily: '-apple-system, sans-serif' }}>10:11</span>
-                <div style={{ position: 'absolute', right: 20, top: 18, display: 'flex', gap: 5, alignItems: 'center' }}>
-                  <svg width="18" height="12" viewBox="0 0 18 12" fill="none"><rect x="0.5" y="3" width="3" height="9" rx="1" fill="#1a1a1a"/><rect x="5" y="2" width="3" height="10" rx="1" fill="#1a1a1a"/><rect x="9.5" y="1" width="3" height="11" rx="1" fill="#1a1a1a"/><rect x="14" y="0" width="3" height="12" rx="1" fill="#1a1a1a"/></svg>
-                  <span style={{ fontSize: 12, fontWeight: 700, fontFamily: '-apple-system, sans-serif' }}>LTE</span>
-                  <svg width="27" height="13" viewBox="0 0 27 13" fill="none"><rect x="0" y="1" width="23" height="11" rx="3" stroke="#1a1a1a" strokeWidth="1"/><rect x="1.5" y="2.5" width="18" height="8" rx="2" fill="#34C759"/><rect x="24" y="4" width="2.5" height="5" rx="1" fill="#1a1a1a"/></svg>
-                </div>
+
+            {/* Status bar - always visible */}
+            <div style={{ flexShrink: 0, height: 54, position: 'relative', background: '#F2F4F7', zIndex: 2 }}>
+              <span style={{ position: 'absolute', left: 20, top: 16, fontSize: 15, fontWeight: 600, fontFamily: '-apple-system, sans-serif' }}>10:11</span>
+              <div style={{ position: 'absolute', right: 20, top: 18, display: 'flex', gap: 5, alignItems: 'center' }}>
+                <svg width="18" height="12" viewBox="0 0 18 12" fill="none"><rect x="0.5" y="3" width="3" height="9" rx="1" fill="#1a1a1a"/><rect x="5" y="2" width="3" height="10" rx="1" fill="#1a1a1a"/><rect x="9.5" y="1" width="3" height="11" rx="1" fill="#1a1a1a"/><rect x="14" y="0" width="3" height="12" rx="1" fill="#1a1a1a"/></svg>
+                <span style={{ fontSize: 12, fontWeight: 700, fontFamily: '-apple-system, sans-serif' }}>LTE</span>
+                <svg width="27" height="13" viewBox="0 0 27 13" fill="none"><rect x="0" y="1" width="23" height="11" rx="3" stroke="#1a1a1a" strokeWidth="1"/><rect x="1.5" y="2.5" width="18" height="8" rx="2" fill="#34C759"/><rect x="24" y="4" width="2.5" height="5" rx="1" fill="#1a1a1a"/></svg>
               </div>
+              {/* Compact address bar - shown when collapsed */}
+              <div style={{ position: 'absolute', bottom: -30, left: '50%', transform: 'translateX(-50%)', background: '#E8E8ED', borderRadius: 18, padding: '5px 16px', opacity: collapsed ? 1 : 0, transition: `opacity ${tr}`, pointerEvents: collapsed ? 'auto' : 'none', zIndex: 3 }}>
+                <span style={{ fontSize: 13, color: '#1a1a1a', fontWeight: 500, fontFamily: '-apple-system, sans-serif', whiteSpace: 'nowrap' }}>evair-h5.netlify.app</span>
+              </div>
+            </div>
+
+            {/* Expanded address bar - hidden when collapsed */}
+            <div style={{ flexShrink: 0, background: '#F2F4F7', overflow: 'hidden', maxHeight: collapsed ? 0 : 56, opacity: collapsed ? 0 : 1, transition: `max-height ${tr}, opacity ${tr}`, zIndex: 1 }}>
               <div style={{ padding: '0 16px 10px', display: 'flex', alignItems: 'center' }}>
                 <svg width="16" height="16" viewBox="0 0 16 16" fill="none" style={{ marginRight: 8, flexShrink: 0 }}><path d="M3 7.5V6C3 3.8 4.8 2 7 2s4 1.8 4 4v1.5" stroke="#8E8E93" strokeWidth="1.5" strokeLinecap="round"/><rect x="2" y="7" width="10" height="6" rx="1.5" fill="#8E8E93"/></svg>
                 <div style={{ flex: 1, background: '#E8E8ED', borderRadius: 12, height: 36, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
@@ -55,10 +86,10 @@ function MobilePreview() {
             </div>
 
             {/* App content */}
-            <iframe src={src} style={{ width: '100%', flex: 1, border: 'none' }} title="iPhone Preview" />
+            <iframe ref={iframeRef} src={src} style={{ width: '100%', flex: 1, border: 'none' }} title="iPhone Preview" />
 
-            {/* Safari bottom toolbar */}
-            <div style={{ flexShrink: 0, background: '#F2F4F7', borderTop: '0.5px solid #C6C6C8', padding: '8px 0 0', display: 'flex', justifyContent: 'space-around', alignItems: 'center' }}>
+            {/* Safari bottom toolbar - hidden when collapsed */}
+            <div style={{ flexShrink: 0, background: '#F2F4F7', borderTop: collapsed ? 'none' : '0.5px solid #C6C6C8', overflow: 'hidden', maxHeight: collapsed ? 0 : 50, opacity: collapsed ? 0 : 1, transition: `max-height ${tr}, opacity ${tr}`, display: 'flex', justifyContent: 'space-around', alignItems: 'center', padding: collapsed ? 0 : '8px 0 0' }}>
               <div style={{ display: 'flex', gap: 28 }}>
                 <svg width="12" height="20" viewBox="0 0 12 20" fill="none"><path d="M10 1L2 10L10 19" stroke="#007AFF" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"/></svg>
                 <svg width="12" height="20" viewBox="0 0 12 20" fill="none"><path d="M2 1L10 10L2 19" stroke="#007AFF" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"/></svg>
@@ -67,10 +98,12 @@ function MobilePreview() {
               <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M4 1h12a2 2 0 012 2v14l-7-4-7 4V3a2 2 0 012-2z" stroke="#007AFF" strokeWidth="1.8" strokeLinejoin="round"/></svg>
               <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><rect x="1" y="4" width="14" height="14" rx="2.5" stroke="#007AFF" strokeWidth="1.8"/><path d="M5 4V2.5A1.5 1.5 0 016.5 1h10A1.5 1.5 0 0118 2.5v10a1.5 1.5 0 01-1.5 1.5H15" stroke="#007AFF" strokeWidth="1.8"/></svg>
             </div>
+
             {/* Home indicator */}
-            <div style={{ flexShrink: 0, background: '#F2F4F7', display: 'flex', justifyContent: 'center', padding: '10px 0 8px' }}>
+            <div style={{ flexShrink: 0, background: '#F2F4F7', display: 'flex', justifyContent: 'center', padding: collapsed ? '4px 0 8px' : '10px 0 8px', transition: `padding ${tr}` }}>
               <div style={{ width: 134, height: 5, background: '#1a1a1a', borderRadius: 3, opacity: 0.15 }} />
             </div>
+
           </div>
         </div>
       </div>
