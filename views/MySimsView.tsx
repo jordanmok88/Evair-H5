@@ -715,20 +715,16 @@ const MySimsView: React.FC<MySimsViewProps> = ({ activeSims, onNavigate, filterT
                 </div>
 
                 {/* Compact SIM info */}
-                <div className="pb-3 border-b border-slate-100">
-                  <div className="flex items-center gap-2.5">
-                    <FlagIcon countryCode={currentSim.country.countryCode} size="lg" />
-                    <div className="flex flex-col">
-                      <span className="text-base font-bold text-slate-900">{currentSim.country.name}</span>
-                      <div className="flex items-center gap-1.5 mt-0.5">
-                        <span className="text-xs font-medium text-slate-500">{carrierInfo.carrier}</span>
-                        <span className="text-[10px] font-bold text-slate-400 border border-slate-200 rounded px-1 py-0.5">{carrierInfo.network}</span>
-                      </div>
-                      <div className="flex items-center gap-1.5 mt-1 cursor-pointer active:opacity-70" onClick={() => handleCopyIccid(currentSim)}>
-                        <span className="text-[11px] font-mono text-slate-400">{iccid}</span>
-                        {copied ? <CheckCircle2 size={14} className="text-green-500 shrink-0" /> : <Copy size={12} className="text-slate-300 shrink-0" />}
-                      </div>
-                    </div>
+                <div className="pb-3 border-b border-slate-100 flex flex-col items-center gap-1.5">
+                  <FlagIcon countryCode={currentSim.country.countryCode} size="lg" />
+                  <span className="text-base font-bold text-slate-900">{currentSim.country.name}</span>
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-xs font-medium text-slate-500">{carrierInfo.carrier}</span>
+                    <span className="text-[10px] font-bold text-slate-400 border border-slate-200 rounded px-1 py-0.5">{carrierInfo.network}</span>
+                  </div>
+                  <div className="flex items-center gap-1.5 cursor-pointer active:opacity-70" onClick={() => handleCopyIccid(currentSim)}>
+                    <span className="text-[11px] font-mono text-slate-400">{iccid}</span>
+                    {copied ? <CheckCircle2 size={14} className="text-green-500 shrink-0" /> : <Copy size={12} className="text-slate-300 shrink-0" />}
                   </div>
                 </div>
               </div>
