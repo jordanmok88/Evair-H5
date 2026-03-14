@@ -804,7 +804,7 @@ const ShopView: React.FC<ShopViewProps> = ({ isLoggedIn, user, onLoginRequest, o
       <div ref={scrollContainerRef} className="h-full sm:overflow-y-auto no-scrollbar">
         {/* Header - auto-hides on scroll down, reappears on scroll up */}
         <div
-          className="bg-white px-4 pt-safe pb-3 sticky top-0 z-40 border-b border-slate-100 transition-transform duration-300 ease-out"
+          className={`px-4 pt-safe pb-3 sticky top-0 z-40 border-b transition-all duration-300 ease-out ${headerHidden ? 'bg-transparent border-transparent' : 'bg-white border-slate-100'}`}
           style={{ transform: headerHidden ? 'translateY(-100%)' : 'translateY(0)' }}
         >
           {/* Row 1: Greeting + action buttons */}
