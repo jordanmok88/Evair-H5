@@ -670,91 +670,139 @@ const MySimsView: React.FC<MySimsViewProps> = ({ activeSims, onNavigate, filterT
             }
           };
 
-          return (
-          <div className="fixed md:absolute inset-0 z-[60] bg-black/20 backdrop-blur-sm flex items-end justify-center" style={{ touchAction: 'none', overscrollBehavior: 'none' }} onTouchMove={e => e.preventDefault()}>
-              <div className="bg-white/95 backdrop-blur-2xl w-full rounded-t-[2rem] p-6 pb-24 border-t border-white/50 shadow-2xl overflow-hidden" style={{ touchAction: 'none' }}>
-                  <div className="flex justify-between items-center mb-5">
-                       <h3 className="text-xl font-bold text-slate-900 tracking-tight">{t('my_sims.top_up_data')}</h3>
-                       <button onClick={() => { setIsRechargeModalOpen(false); setSelectedTopUp(null); setTopUpPackages([]); }} className="bg-gray-100 p-2 rounded-full text-slate-500"><X size={20}/></button>
-                  </div>
+          const grouped = new Map<string, EsimPackage[]>();
+          topUpPackages.forEach(pkg => {
+            const key = `${pkg.duration} ${pkg.durationUnit === 'DAY' ? (pkg.duration === 1 ? 'Day' : 'Days') : (pkg.duration === 1 ? 'Month' : 'Months')}`;
+            if (!grouped.has(key)) grouped.set(key, []);
+            grouped.get(key)!.push(pkg);
+          });
+          grouped.forEach(pkgs => pkgs.sort((a, b) => a.volume - b.volume));
+          const tabKeys = Array.from(grouped.keys());
+          const activeTab = tabKeys.includes(selectedTopUp ? `${selectedTopUp.duration} ${selectedTopUp.durationUnit === 'DAY' ? (selectedTopUp.duration === 1 ? 'Day' : 'Days') : (selectedTopUp.duration === 1 ? 'Month' : 'Months')}` : '') 
+            ? `${selectedTopUp!.duration} ${selectedTopUp!.durationUnit === 'DAY' ? (selectedTopUp!.duration === 1 ? 'Day' : 'Days') : (selectedTopUp!.duration === 1 ? 'Month' : 'Months')}`
+            : tabKeys[0] || '';
+          const activePkgs = grouped.get(activeTab) || [];
 
-                  {topUpSuccess && (
-                    <div className="flex flex-col items-center justify-center py-8">
-                      <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mb-3">
-                        <CheckCircle2 size={32} className="text-[#34C759]" />
+          const bestValueCode = activePkgs.length > 0
+            ? activePkgs.reduce((best, pkg) => {
+                const gbPrice = pkg.volume > 0 ? pkg.price / (pkg.volume / (1024 * 1024 * 1024)) : Infinity;
+                const bestGbPrice = best.volume > 0 ? best.price / (best.volume / (1024 * 1024 * 1024)) : Infinity;
+                return gbPrice < bestGbPrice ? pkg : best;
+              }).packageCode
+            : '';
+
+          const closeModal = () => { setIsRechargeModalOpen(false); setSelectedTopUp(null); setTopUpPackages([]); };
+
+          return (
+          <div className="fixed md:absolute inset-0 z-[60] bg-white flex flex-col" style={{ touchAction: 'pan-y' }}>
+              {/* Header */}
+              <div className="shrink-0 px-4 pt-safe">
+                <div className="flex justify-between items-center py-3">
+                  <h3 className="text-lg font-bold text-slate-900 tracking-tight">{t('my_sims.top_up_data')}</h3>
+                  <button onClick={closeModal} className="bg-gray-100 p-2 rounded-full text-slate-500 active:scale-95 transition-transform"><X size={18}/></button>
+                </div>
+
+                {/* Compact SIM info */}
+                <div className="flex items-center gap-2 pb-3 border-b border-slate-100">
+                  <FlagIcon countryCode={currentSim.country.countryCode} size="sm" />
+                  <span className="text-sm font-bold text-slate-900">{currentSim.country.name}</span>
+                  <span className="text-xs text-slate-400">·</span>
+                  <span className="text-xs font-medium text-slate-500">{carrierInfo.carrier}</span>
+                  <span className="text-[10px] font-bold text-slate-400 border border-slate-200 rounded px-1 py-0.5">{carrierInfo.network}</span>
+                  <div className="ml-auto flex items-center gap-1.5 cursor-pointer active:opacity-70" onClick={() => handleCopyIccid(currentSim)}>
+                    <span className="text-[11px] font-mono text-slate-400 truncate max-w-[120px]">{iccid}</span>
+                    {copied ? <CheckCircle2 size={14} className="text-green-500 shrink-0" /> : <Copy size={12} className="text-slate-300 shrink-0" />}
+                  </div>
+                </div>
+              </div>
+
+              {topUpSuccess ? (
+                <div className="flex-1 flex flex-col items-center justify-center">
+                  <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mb-3">
+                    <CheckCircle2 size={32} className="text-[#34C759]" />
+                  </div>
+                  <p className="font-bold text-slate-900">Top-up successful!</p>
+                </div>
+              ) : (
+                <>
+                  {/* Duration tabs */}
+                  {tabKeys.length > 0 && (
+                    <div className="shrink-0 px-4 pt-3 pb-2">
+                      <div className="flex gap-2 overflow-x-auto no-scrollbar">
+                        {tabKeys.map(tab => {
+                          const isActive = tab === activeTab;
+                          return (
+                            <button
+                              key={tab}
+                              onClick={() => setSelectedTopUp(grouped.get(tab)?.[0] || null)}
+                              className={`shrink-0 px-4 py-2 rounded-full text-sm font-semibold transition-all ${isActive ? 'bg-brand-orange text-white shadow-sm' : 'bg-slate-100 text-slate-600 active:bg-slate-200'}`}
+                            >
+                              {tab}
+                            </button>
+                          );
+                        })}
                       </div>
-                      <p className="font-bold text-slate-900">Top-up successful!</p>
                     </div>
                   )}
 
-                  {!topUpSuccess && (
-                    <>
-                      {/* SIM Info Header */}
-                      <div className="bg-slate-50 rounded-2xl p-4 mb-5 border border-slate-100">
-                          <div className="flex items-center justify-between pb-3 border-b border-slate-200">
-                              <div className="flex items-center gap-3">
-                                  <FlagIcon countryCode={currentSim.country.countryCode} size="md" />
-                                  <span className="text-base font-bold text-slate-900">{currentSim.country.name}</span>
-                              </div>
-                              <MoreHorizontal size={20} className="text-slate-400" />
-                          </div>
-                          <div className="flex items-center gap-2 pt-3 pb-3">
-                              <SignalHigh size={16} className="text-slate-600" />
-                              <span className="text-sm font-semibold text-slate-700">{carrierInfo.carrier}</span>
-                              <span className="text-[12px] font-bold text-slate-500 border border-slate-300 rounded px-1.5 py-0.5">{carrierInfo.network}</span>
-                          </div>
-                          <div 
-                            className="flex items-center justify-between bg-white rounded-xl px-4 py-3 border border-slate-100 cursor-pointer active:opacity-70"
-                            onClick={() => handleCopyIccid(currentSim)}
-                          >
-                              <div>
-                                  <p className="text-[12px] font-bold text-slate-400 uppercase tracking-wider">{t('my_sims.iccid')}</p>
-                                  <p className="text-sm font-mono text-slate-800 tracking-wide">{iccid}</p>
-                              </div>
-                              {copied ? <CheckCircle2 size={18} className="text-green-500 shrink-0" /> : <Copy size={16} className="text-slate-400 shrink-0" />}
-                          </div>
+                  {/* Package grid */}
+                  <div className="flex-1 overflow-y-auto px-4 pt-2 pb-4">
+                    {topUpLoading && (
+                      <div className="flex items-center justify-center py-16">
+                        <Loader2 size={28} className="animate-spin text-brand-orange" />
                       </div>
+                    )}
 
-                      {/* Top-up packages from API */}
-                      {topUpLoading && (
-                        <div className="flex items-center justify-center py-8">
-                          <Loader2 size={24} className="animate-spin text-brand-orange" />
-                        </div>
+                    {!topUpLoading && topUpPackages.length === 0 && (
+                      <p className="text-center text-slate-400 py-16 text-sm">No top-up plans available</p>
+                    )}
+
+                    {!topUpLoading && activePkgs.length > 0 && (
+                      <div className="grid grid-cols-2 gap-3">
+                        {activePkgs.map(pkg => {
+                          const isSelected = selectedTopUp?.packageCode === pkg.packageCode;
+                          const priceUsd = formatPrice(pkg.price);
+                          const gb = pkg.volume / (1024 * 1024 * 1024);
+                          const perGb = gb > 0 ? priceUsd / gb : 0;
+                          const isBestValue = pkg.packageCode === bestValueCode && activePkgs.length > 1;
+                          return (
+                            <button
+                              key={pkg.packageCode}
+                              onClick={() => setSelectedTopUp(pkg)}
+                              className={`relative flex flex-col items-start p-4 rounded-2xl transition-all ${isSelected ? 'border-2 border-brand-orange bg-orange-50/40 shadow-sm' : 'border border-slate-200 bg-white active:border-brand-orange'}`}
+                            >
+                              {isBestValue && (
+                                <span className="absolute -top-2.5 left-3 text-[10px] font-bold uppercase tracking-wide bg-brand-orange text-white px-2 py-0.5 rounded-full">Best Value</span>
+                              )}
+                              <span className="text-xl font-bold text-slate-900">{formatVolume(pkg.volume)}</span>
+                              <span className="text-xs text-slate-400 mt-0.5">{pkg.duration} {pkg.durationUnit === 'DAY' ? 'Days' : 'Months'}</span>
+                              <span className="text-lg font-bold text-brand-orange mt-2">${priceUsd.toFixed(2)}</span>
+                              <span className="text-[11px] text-slate-400">${perGb.toFixed(2)}/GB</span>
+                            </button>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Sticky purchase button */}
+                  <div className="shrink-0 px-4 pb-safe pt-2 border-t border-slate-100 bg-white">
+                    <button
+                      onClick={selectedTopUp ? handleTopUpPurchase : closeModal}
+                      disabled={topUpProcessing || !selectedTopUp}
+                      className="w-full bg-brand-orange text-white py-4 rounded-2xl font-bold shadow-lg shadow-orange-500/20 active:scale-[0.98] transition-transform flex items-center justify-center gap-2 disabled:opacity-50"
+                    >
+                      {topUpProcessing ? (
+                        <Loader2 className="animate-spin" size={20} />
+                      ) : selectedTopUp ? (
+                        <>{t('my_sims.purchase_top_up')} — ${formatPrice(selectedTopUp.price).toFixed(2)}</>
+                      ) : (
+                        t('my_sims.purchase_top_up')
                       )}
-
-                      <div className="space-y-3 mb-6 max-h-[200px] overflow-y-auto">
-                          {topUpPackages.length > 0 && topUpPackages.map(pkg => {
-                            const isSelected = selectedTopUp?.packageCode === pkg.packageCode;
-                            return (
-                              <button
-                                key={pkg.packageCode}
-                                onClick={() => setSelectedTopUp(pkg)}
-                                className={`w-full flex justify-between p-4 rounded-2xl transition-colors ${isSelected ? 'border-2 border-brand-orange bg-orange-50/30' : 'border border-gray-200 bg-white/50 hover:border-brand-orange'}`}
-                              >
-                                <div className="text-left">
-                                  <span className={`font-bold ${isSelected ? 'text-slate-900' : 'text-slate-700'}`}>{formatVolume(pkg.volume)} / {pkg.duration} {pkg.durationUnit === 'DAY' ? 'Days' : 'Mo'}</span>
-                                  <p className="text-[11px] text-slate-400 mt-0.5">{pkg.name}</p>
-                                </div>
-                                <span className="text-brand-orange font-bold">${formatPrice(pkg.price).toFixed(2)}</span>
-                              </button>
-                            );
-                          })}
-
-                          {!topUpLoading && topUpPackages.length === 0 && (
-                            <p className="text-center text-slate-400 py-4 text-sm">No top-up plans available</p>
-                          )}
-                      </div>
-
-                      <button 
-                        onClick={selectedTopUp ? handleTopUpPurchase : () => setIsRechargeModalOpen(false)}
-                        disabled={topUpProcessing || !selectedTopUp}
-                        className="w-full bg-brand-orange text-white py-4 rounded-2xl font-bold shadow-lg shadow-orange-500/20 active:scale-[0.98] transition-transform flex items-center justify-center gap-2 disabled:opacity-50"
-                      >
-                          {topUpProcessing ? <Loader2 className="animate-spin" size={20} /> : t('my_sims.purchase_top_up')}
-                      </button>
-                    </>
-                  )}
-              </div>
+                    </button>
+                  </div>
+                </>
+              )}
           </div>
           );
       })()}
