@@ -149,6 +149,7 @@ const PhysicalSimSetupView: React.FC<PhysicalSimSetupViewProps> = ({ onSwitchToS
   const [trackingError, setTrackingError] = useState('');
   const [copied, setCopied] = useState(false);
   const [iccidInput, setIccidInput] = useState('');
+  const [scannerOpen, setScannerOpen] = useState(false);
   const [activating, setActivating] = useState(false);
   const [activated, setActivated] = useState(false);
   const { t, i18n } = useTranslation();
@@ -437,7 +438,7 @@ const PhysicalSimSetupView: React.FC<PhysicalSimSetupViewProps> = ({ onSwitchToS
                   className="flex-1 h-full outline-none text-slate-900 font-semibold placeholder:text-slate-400 placeholder:font-normal bg-transparent text-[16px] tracking-wider"
                   maxLength={22}
                 />
-                <button className="p-2 -mr-2 text-slate-400 hover:text-brand-orange transition-colors">
+                <button onClick={() => setScannerOpen(true)} className="p-2 -mr-2 text-slate-400 hover:text-brand-orange transition-colors">
                   <ScanLine size={22} />
                 </button>
               </div>
