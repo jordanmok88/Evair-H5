@@ -689,19 +689,16 @@ const MySimsView: React.FC<MySimsViewProps> = ({ activeSims, onNavigate, filterT
             const deduped = Array.from(best.values()).sort((a, b) => a.volume - b.volume);
             grouped.set(key, deduped);
           }
-          const tabKeys = Array.from(grouped.keys());
-          const activeTab = tabKeys.includes(selectedTopUp ? `${selectedTopUp.duration} ${selectedTopUp.durationUnit === 'DAY' ? (selectedTopUp.duration === 1 ? 'Day' : 'Days') : (selectedTopUp.duration === 1 ? 'Month' : 'Months')}` : '') 
-            ? `${selectedTopUp!.duration} ${selectedTopUp!.durationUnit === 'DAY' ? (selectedTopUp!.duration === 1 ? 'Day' : 'Days') : (selectedTopUp!.duration === 1 ? 'Month' : 'Months')}`
-            : tabKeys[0] || '';
-          const activePkgs = grouped.get(activeTab) || [];
-
-          const bestValueCode = activePkgs.length > 0
-            ? activePkgs.reduce((best, pkg) => {
-                const gbPrice = pkg.volume > 0 ? pkg.price / (pkg.volume / (1024 * 1024 * 1024)) : Infinity;
-                const bestGbPrice = best.volume > 0 ? best.price / (best.volume / (1024 * 1024 * 1024)) : Infinity;
-                return gbPrice < bestGbPrice ? pkg : best;
-              }).packageCode
-            : '';
+          const sections = Array.from(grouped.entries()).map(([label, pkgs]) => {
+            const bestCode = pkgs.length > 1
+              ? pkgs.reduce((best, pkg) => {
+                  const gbPrice = pkg.volume > 0 ? pkg.price / (pkg.volume / (1024 * 1024 * 1024)) : Infinity;
+                  const bestGbPrice = best.volume > 0 ? best.price / (best.volume / (1024 * 1024 * 1024)) : Infinity;
+                  return gbPrice < bestGbPrice ? pkg : best;
+                }).packageCode
+              : '';
+            return { label, pkgs, bestCode };
+          });
 
           const closeModal = () => { setIsRechargeModalOpen(false); setSelectedTopUp(null); setTopUpPackages([]); };
 
