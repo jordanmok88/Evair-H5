@@ -61,27 +61,32 @@ function MobilePreview() {
           <div style={{ width: '100%', height: '100%', borderRadius: 44, overflow: 'hidden', background: '#F2F4F7', display: 'flex', flexDirection: 'column' }}>
 
             {/* Status bar - always visible */}
-            <div style={{ flexShrink: 0, height: 54, position: 'relative', background: '#F2F4F7', zIndex: 2 }}>
+            <div style={{ flexShrink: 0, height: 54, position: 'relative', background: '#F2F4F7' }}>
               <span style={{ position: 'absolute', left: 20, top: 16, fontSize: 15, fontWeight: 600, fontFamily: '-apple-system, sans-serif' }}>10:11</span>
               <div style={{ position: 'absolute', right: 20, top: 18, display: 'flex', gap: 5, alignItems: 'center' }}>
                 <svg width="18" height="12" viewBox="0 0 18 12" fill="none"><rect x="0.5" y="3" width="3" height="9" rx="1" fill="#1a1a1a"/><rect x="5" y="2" width="3" height="10" rx="1" fill="#1a1a1a"/><rect x="9.5" y="1" width="3" height="11" rx="1" fill="#1a1a1a"/><rect x="14" y="0" width="3" height="12" rx="1" fill="#1a1a1a"/></svg>
                 <span style={{ fontSize: 12, fontWeight: 700, fontFamily: '-apple-system, sans-serif' }}>LTE</span>
                 <svg width="27" height="13" viewBox="0 0 27 13" fill="none"><rect x="0" y="1" width="23" height="11" rx="3" stroke="#1a1a1a" strokeWidth="1"/><rect x="1.5" y="2.5" width="18" height="8" rx="2" fill="#34C759"/><rect x="24" y="4" width="2.5" height="5" rx="1" fill="#1a1a1a"/></svg>
               </div>
-              {/* Compact address bar - shown when collapsed */}
-              <div style={{ position: 'absolute', bottom: -30, left: '50%', transform: 'translateX(-50%)', background: '#E8E8ED', borderRadius: 18, padding: '5px 16px', opacity: collapsed ? 1 : 0, transition: `opacity ${tr}`, pointerEvents: collapsed ? 'auto' : 'none', zIndex: 3 }}>
-                <span style={{ fontSize: 13, color: '#1a1a1a', fontWeight: 500, fontFamily: '-apple-system, sans-serif', whiteSpace: 'nowrap' }}>evair-h5.netlify.app</span>
-              </div>
             </div>
 
-            {/* Expanded address bar - hidden when collapsed */}
-            <div style={{ flexShrink: 0, background: '#F2F4F7', overflow: 'hidden', maxHeight: collapsed ? 0 : 56, opacity: collapsed ? 0 : 1, transition: `max-height ${tr}, opacity ${tr}`, zIndex: 1 }}>
-              <div style={{ padding: '0 16px 10px', display: 'flex', alignItems: 'center' }}>
-                <svg width="16" height="16" viewBox="0 0 16 16" fill="none" style={{ marginRight: 8, flexShrink: 0 }}><path d="M3 7.5V6C3 3.8 4.8 2 7 2s4 1.8 4 4v1.5" stroke="#8E8E93" strokeWidth="1.5" strokeLinecap="round"/><rect x="2" y="7" width="10" height="6" rx="1.5" fill="#8E8E93"/></svg>
-                <div style={{ flex: 1, background: '#E8E8ED', borderRadius: 12, height: 36, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                  <span style={{ fontSize: 15, color: '#1a1a1a', fontFamily: '-apple-system, sans-serif' }}>evair-h5.netlify.app</span>
+            {/* Address bar area - switches between expanded and compact */}
+            <div style={{ flexShrink: 0, background: '#F2F4F7', transition: `all ${tr}` }}>
+              {/* Expanded address bar */}
+              <div style={{ overflow: 'hidden', maxHeight: collapsed ? 0 : 56, opacity: collapsed ? 0 : 1, transition: `max-height ${tr}, opacity ${tr}` }}>
+                <div style={{ padding: '0 16px 10px', display: 'flex', alignItems: 'center' }}>
+                  <svg width="16" height="16" viewBox="0 0 16 16" fill="none" style={{ marginRight: 8, flexShrink: 0 }}><path d="M3 7.5V6C3 3.8 4.8 2 7 2s4 1.8 4 4v1.5" stroke="#8E8E93" strokeWidth="1.5" strokeLinecap="round"/><rect x="2" y="7" width="10" height="6" rx="1.5" fill="#8E8E93"/></svg>
+                  <div style={{ flex: 1, background: '#E8E8ED', borderRadius: 12, height: 36, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <span style={{ fontSize: 15, color: '#1a1a1a', fontFamily: '-apple-system, sans-serif' }}>evair-h5.netlify.app</span>
+                  </div>
+                  <svg width="16" height="16" viewBox="0 0 16 16" fill="none" style={{ marginLeft: 8, flexShrink: 0 }}><path d="M8 2v8M8 2L5 5M8 2l3 3" stroke="#007AFF" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/><path d="M3 9v4h10V9" stroke="#007AFF" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/></svg>
                 </div>
-                <svg width="16" height="16" viewBox="0 0 16 16" fill="none" style={{ marginLeft: 8, flexShrink: 0 }}><path d="M8 2v8M8 2L5 5M8 2l3 3" stroke="#007AFF" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/><path d="M3 9v4h10V9" stroke="#007AFF" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/></svg>
+              </div>
+              {/* Compact address bar pill */}
+              <div style={{ overflow: 'hidden', maxHeight: collapsed ? 36 : 0, opacity: collapsed ? 1 : 0, transition: `max-height ${tr}, opacity ${tr}`, display: 'flex', justifyContent: 'center', padding: collapsed ? '0 0 6px' : 0 }}>
+                <div style={{ background: '#E8E8ED', borderRadius: 18, padding: '5px 16px' }}>
+                  <span style={{ fontSize: 13, color: '#1a1a1a', fontWeight: 500, fontFamily: '-apple-system, sans-serif', whiteSpace: 'nowrap' }}>evair-h5.netlify.app</span>
+                </div>
               </div>
             </div>
 
