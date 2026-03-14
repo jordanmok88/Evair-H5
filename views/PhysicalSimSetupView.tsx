@@ -568,6 +568,12 @@ const PhysicalSimSetupView: React.FC<PhysicalSimSetupViewProps> = ({ onSwitchToS
                     setActivationError('');
                     try {
                       const profile = await queryProfile(trimmed);
+
+                      const pkg = (profile.packageName || '').toLowerCase();
+                      if (!pkg.startsWith('united states') && !pkg.startsWith('usa') && !pkg.startsWith('us ')) {
+                        throw new Error('This ICCID belongs to a non-US plan. Only US SIM cards can be activated here.');
+                      }
+
                       setActivated(true);
                       onAddCard?.(trimmed, profile);
                     } catch (err: any) {
