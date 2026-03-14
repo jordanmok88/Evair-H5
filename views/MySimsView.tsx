@@ -715,14 +715,16 @@ const MySimsView: React.FC<MySimsViewProps> = ({ activeSims, onNavigate, filterT
                 </div>
 
                 {/* Compact SIM info */}
-                <div className="flex items-center gap-2 pb-3 border-b border-slate-100 flex-wrap">
-                  <FlagIcon countryCode={currentSim.country.countryCode} size="md" />
-                  <span className="text-sm font-bold text-slate-900 whitespace-nowrap">{currentSim.country.name}</span>
-                  <span className="text-xs text-slate-400">·</span>
-                  <span className="text-xs font-medium text-slate-500 whitespace-nowrap">{carrierInfo.carrier}</span>
-                  <span className="text-[10px] font-bold text-slate-400 border border-slate-200 rounded px-1 py-0.5">{carrierInfo.network}</span>
-                  <div className="flex items-center gap-1.5 cursor-pointer active:opacity-70 ml-auto" onClick={() => handleCopyIccid(currentSim)}>
-                    <span className="text-[11px] font-mono text-slate-400 truncate max-w-[100px]">{iccid}</span>
+                <div className="pb-3 border-b border-slate-100">
+                  <div className="flex items-center gap-2">
+                    <FlagIcon countryCode={currentSim.country.countryCode} size="md" />
+                    <span className="text-sm font-bold text-slate-900 whitespace-nowrap">{currentSim.country.name}</span>
+                    <span className="text-xs text-slate-400">·</span>
+                    <span className="text-xs font-medium text-slate-500 whitespace-nowrap">{carrierInfo.carrier}</span>
+                    <span className="text-[10px] font-bold text-slate-400 border border-slate-200 rounded px-1 py-0.5">{carrierInfo.network}</span>
+                  </div>
+                  <div className="flex items-center gap-1.5 mt-1.5 cursor-pointer active:opacity-70" onClick={() => handleCopyIccid(currentSim)}>
+                    <span className="text-[11px] font-mono text-slate-400">{iccid}</span>
                     {copied ? <CheckCircle2 size={14} className="text-green-500 shrink-0" /> : <Copy size={12} className="text-slate-300 shrink-0" />}
                   </div>
                 </div>
