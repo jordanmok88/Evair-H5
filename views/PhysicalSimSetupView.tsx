@@ -635,6 +635,12 @@ const PhysicalSimSetupView: React.FC<PhysicalSimSetupViewProps> = ({ onSwitchToS
         )}
 
       </div>
+
+      <BarcodeScanner
+        open={scannerOpen}
+        onClose={() => setScannerOpen(false)}
+        onDetected={(value) => setIccidInput(value)}
+      />
     </div>
   );
 };
