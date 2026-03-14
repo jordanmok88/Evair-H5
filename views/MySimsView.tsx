@@ -690,6 +690,7 @@ const MySimsView: React.FC<MySimsViewProps> = ({ activeSims, onNavigate, filterT
             grouped.set(key, deduped);
           }
           const sections = Array.from(grouped.entries()).map(([label, pkgs]) => {
+            const duration = pkgs[0]?.duration ?? 0;
             const bestCode = pkgs.length > 1
               ? pkgs.reduce((best, pkg) => {
                   const gbPrice = pkg.volume > 0 ? pkg.price / (pkg.volume / (1024 * 1024 * 1024)) : Infinity;
@@ -697,8 +698,8 @@ const MySimsView: React.FC<MySimsViewProps> = ({ activeSims, onNavigate, filterT
                   return gbPrice < bestGbPrice ? pkg : best;
                 }).packageCode
               : '';
-            return { label, pkgs, bestCode };
-          });
+            return { label, pkgs, bestCode, duration };
+          }).sort((a, b) => a.duration - b.duration);
 
           const closeModal = () => { setIsRechargeModalOpen(false); setSelectedTopUp(null); setTopUpPackages([]); };
 
