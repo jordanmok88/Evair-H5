@@ -678,25 +678,17 @@ const MySimsView: React.FC<MySimsViewProps> = ({ activeSims, onNavigate, filterT
             if (!grouped.has(key)) grouped.set(key, []);
             grouped.get(key)!.push(pkg);
           });
-          grouped.forEach(pkgs => {
-            pkgs.sort((a, b) => a.volume - b.volume);
-            const seen = new Map<number, number>();
-            for (let i = pkgs.length - 1; i >= 0; i--) {
-              const vol = pkgs[i].volume;
-              if (seen.has(vol)) {
-                const existingIdx = seen.get(vol)!;
-                if (pkgs[i].price < pkgs[existingIdx].price) {
-                  pkgs.splice(existingIdx, 1);
-                  seen.set(vol, i);
-                } else {
-                  pkgs.splice(i, 1);
-                }
-              } else {
-                seen.set(vol, i);
+          for (const [key, pkgs] of grouped) {
+            const best = new Map<number, EsimPackage>();
+            for (const pkg of pkgs) {
+              const existing = best.get(pkg.volume);
+              if (!existing || pkg.price < existing.price) {
+                best.set(pkg.volume, pkg);
               }
             }
-            pkgs.sort((a, b) => a.volume - b.volume);
-          });
+            const deduped = Array.from(best.values()).sort((a, b) => a.volume - b.volume);
+            grouped.set(key, deduped);
+          }
           const tabKeys = Array.from(grouped.keys());
           const activeTab = tabKeys.includes(selectedTopUp ? `${selectedTopUp.duration} ${selectedTopUp.durationUnit === 'DAY' ? (selectedTopUp.duration === 1 ? 'Day' : 'Days') : (selectedTopUp.duration === 1 ? 'Month' : 'Months')}` : '') 
             ? `${selectedTopUp!.duration} ${selectedTopUp!.durationUnit === 'DAY' ? (selectedTopUp!.duration === 1 ? 'Day' : 'Days') : (selectedTopUp!.duration === 1 ? 'Month' : 'Months')}`
