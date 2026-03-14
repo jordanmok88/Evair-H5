@@ -643,28 +643,19 @@ const MySimsView: React.FC<MySimsViewProps> = ({ activeSims, onNavigate, filterT
             setTopUpProcessing(true);
             try {
               const txnId = `topup_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
-              if (currentSim.type === 'ESIM') {
-                await topUp({
-                  iccid,
-                  packageCode: selectedTopUp.packageCode,
-                  transactionId: txnId,
-                  amount: selectedTopUp.price,
-                });
-                setTopUpSuccess(true);
-                setTimeout(() => {
-                  setTopUpSuccess(false);
-                  setIsRechargeModalOpen(false);
-                  setSelectedTopUp(null);
-                  setTopUpPackages([]);
-                }, 2000);
-              } else {
-                const result = await orderEsim({
-                  packageCode: selectedTopUp.packageCode,
-                  transactionId: txnId,
-                  amount: selectedTopUp.price,
-                });
-                setLpaResult(result);
-              }
+              await topUp({
+                iccid,
+                packageCode: selectedTopUp.packageCode,
+                transactionId: txnId,
+                amount: selectedTopUp.price,
+              });
+              setTopUpSuccess(true);
+              setTimeout(() => {
+                setTopUpSuccess(false);
+                setIsRechargeModalOpen(false);
+                setSelectedTopUp(null);
+                setTopUpPackages([]);
+              }, 2000);
             } catch (err: any) {
               alert(err.message || 'Top-up failed');
             } finally {
