@@ -567,9 +567,9 @@ const PhysicalSimSetupView: React.FC<PhysicalSimSetupViewProps> = ({ onSwitchToS
                     setActivating(true);
                     setActivationError('');
                     try {
-                      await queryProfile(trimmed);
+                      const profile = await queryProfile(trimmed);
                       setActivated(true);
-                      onAddCard?.(trimmed);
+                      onAddCard?.(trimmed, profile);
                     } catch (err: any) {
                       setActivationError(err.message || 'Could not verify this ICCID. Please check the number and try again.');
                     } finally {
