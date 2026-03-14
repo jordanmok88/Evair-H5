@@ -746,7 +746,7 @@ const MySimsView: React.FC<MySimsViewProps> = ({ activeSims, onNavigate, filterT
                   )}
 
                   {/* Package grid */}
-                  <div className="flex-1 overflow-y-auto px-4 pt-2 pb-4">
+                  <div className="flex-1 overflow-y-auto px-4 pt-4 pb-6">
                     {topUpLoading && (
                       <div className="flex items-center justify-center py-16">
                         <Loader2 size={28} className="animate-spin text-brand-orange" />
@@ -758,7 +758,7 @@ const MySimsView: React.FC<MySimsViewProps> = ({ activeSims, onNavigate, filterT
                     )}
 
                     {!topUpLoading && activePkgs.length > 0 && (
-                      <div className="grid grid-cols-2 gap-3">
+                      <div className="grid grid-cols-2 gap-4">
                         {activePkgs.map(pkg => {
                           const isSelected = selectedTopUp?.packageCode === pkg.packageCode;
                           const priceUsd = formatPrice(pkg.price);
@@ -769,10 +769,10 @@ const MySimsView: React.FC<MySimsViewProps> = ({ activeSims, onNavigate, filterT
                             <button
                               key={pkg.packageCode}
                               onClick={() => setSelectedTopUp(pkg)}
-                              className={`relative flex flex-col items-start p-4 rounded-2xl transition-all ${isSelected ? 'border-2 border-brand-orange bg-orange-50/40 shadow-sm' : 'border border-slate-200 bg-white active:border-brand-orange'}`}
+                              className={`relative flex flex-col items-start rounded-2xl transition-all ${isBestValue ? 'pt-3 pb-4 px-4' : 'p-4'} ${isSelected ? 'border-2 border-brand-orange bg-orange-50/40 shadow-sm' : 'border border-slate-200 bg-white active:border-brand-orange'}`}
                             >
                               {isBestValue && (
-                                <span className="absolute -top-2.5 left-3 text-[10px] font-bold uppercase tracking-wide bg-brand-orange text-white px-2 py-0.5 rounded-full">Best Value</span>
+                                <span className="text-[10px] font-bold uppercase tracking-wide bg-brand-orange text-white px-2 py-0.5 rounded-full mb-2">Best Value</span>
                               )}
                               <span className="text-xl font-bold text-slate-900">{formatVolume(pkg.volume)}</span>
                               <span className="text-xs text-slate-400 mt-0.5">{pkg.duration} {pkg.durationUnit === 'DAY' ? 'Days' : 'Months'}</span>
