@@ -1,0 +1,49 @@
+---
+description: EvairSIM H5 project overview - architecture, tech stack, and key decisions
+alwaysApply: true
+---
+
+# EvairSIM H5 — Project Overview
+
+## What This Is
+A mobile-first H5 web app for selling and managing eSIMs and physical SIM cards. Built for customers to purchase eSIM plans, activate physical SIMs, top up data, and manage their SIMs. Hosted on Netlify.
+
+## Tech Stack
+- **Framework**: Vite + React + TypeScript
+- **Styling**: Tailwind CSS (utility-first, mobile-first)
+- **Hosting**: Netlify (auto-deploys from GitHub `main` branch)
+- **Serverless**: Netlify Functions (in `netlify/functions/`)
+- **eSIM Supplier**: ESIMAccess (Red Tea) API — proxied through Netlify functions
+- **Email**: Resend API (via `netlify/functions/send-esim-email.mjs`)
+- **i18n**: react-i18next (en, zh, es)
+- **Barcode scanning**: html5-qrcode library
+
+## Key File Structure
+```
+App.tsx              — Main app component, routing, top-level state (activeSims, user)
+views/ShopView.tsx   — eSIM purchase flow, triggers email after order
+views/MySimsView.tsx — SIM management, top-up flow (both eSIM & physical)
+views/PhysicalSimSetupView.tsx — Physical SIM activation (ICCID entry/scan)
+views/ProductTab.tsx — Tab container routing between Shop, MySims, PhysicalSim
+views/LoginModal.tsx — Auth modal (fixed positioning, centered)
+services/esimApi.ts  — ESIMAccess API wrapper (order, query, topup, usage)
+types.ts             — Shared TypeScript types
+hooks/useEdgeSwipeBack.ts — iOS-like swipe-from-left-edge gesture
+components/BarcodeScanner.tsx — Camera barcode/QR scanner
+netlify/functions/send-esim-email.mjs — Email delivery function
+```
+
+## Business Logic
+- **eSIM section**: Customers buy eSIM plans → order created via ESIMAccess API → QR code + LPA details shown in-app AND emailed
+- **SIM Card section**: Physical SIM cards have US eSIM profiles pre-loaded. Customer enters ICCID → validated against ESIMAccess API → only US plans accepted → top-up uses same ESIMAccess topup API
+- **Top-up plans**: Filtered to show 30/60/90/180 day plans only (1, 7, 15, 365 day plans hidden). Pricing is ~100% markup rounded to retail prices (X.99)
+- **ICCID validation**: Must be 18-22 digits. Non-US package names are rejected in the SIM Card section.
+
+## UI/UX Decisions
+- Brand color: `#FF6600` (orange), referred to as `brand-orange` in Tailwind
+- Logo: `/public/evairsim-logo.png` (white background, "Evair" in orange + "SIM" badge)
+- Login modal uses `fixed inset-0` positioning (not absolute) to stay centered
+- All sub-views support swipe-from-left-edge to go back (`useEdgeSwipeBack` hook)
+- Top-up modal shows all plans in a single scrollable view with section headers (30 Days, 60 Days, etc.) rather than tabs
+- "BEST" ribbon on best-value plans (orange corner tag)
+- Sample name placeholder: "John Smith" (not "Jordan Mok")

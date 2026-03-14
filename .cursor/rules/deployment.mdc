@@ -1,0 +1,36 @@
+---
+description: Deployment, Git, and environment setup for EvairSIM H5
+alwaysApply: true
+---
+
+# Deployment & Environment
+
+## Git → GitHub → Netlify Pipeline
+- Repo: `github.com/jordanmok88/Evair-H5` (branch: `main`)
+- Netlify site: `evair-h5.netlify.app`
+- Auto-deploys on push to `main` (GitHub integration)
+- An `autopush.sh` script runs locally to auto-commit and push changes periodically
+- Git remote uses HTTPS (not SSH). Credentials stored via `git credential.helper store`.
+
+## Netlify Environment Variables
+Set via Netlify dashboard (Site configuration > Environment variables):
+- `ESIM_ACCESS_CODE` — ESIMAccess supplier code
+- `ESIM_SECRET` — ESIMAccess secret
+- `RESEND_API_KEY` — Resend email service key
+- `RESEND_FROM` — `EvairSIM <service@evairdigital.com>`
+
+## Netlify Functions
+Located in `netlify/functions/`. These are serverless functions:
+- `esim-proxy.mjs` — proxies ESIMAccess API calls (keeps credentials server-side)
+- `send-esim-email.mjs` — sends eSIM activation emails via Resend
+
+## Build
+- `npx vite build` — outputs to `dist/`
+- Netlify build command: `npm run build`
+- Always run build locally after major changes to catch errors before push
+
+## Logo & Assets
+- Logo file: `public/evairsim-logo.png` (white background)
+- Email uses `evairsim-logo-v2.png` (same image, different filename to bust CDN cache)
+- Company website: `evairdigital.com`
+- Support email: `service@evairdigital.com`

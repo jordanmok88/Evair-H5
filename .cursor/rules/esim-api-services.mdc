@@ -1,0 +1,46 @@
+---
+description: ESIMAccess API integration details and SIM card activation flow
+globs: services/esimApi.ts,views/ShopView.tsx,views/MySimsView.tsx,views/PhysicalSimSetupView.tsx,netlify/functions/**
+alwaysApply: false
+---
+
+# ESIMAccess (Red Tea) API
+
+## API Proxy
+All API calls go through Netlify function proxy at `/.netlify/functions/esim-proxy` to keep credentials server-side.
+
+## Environment Variables (on Netlify)
+- `ESIM_ACCESS_CODE` — supplier access code
+- `ESIM_SECRET` — supplier secret key
+- `RESEND_API_KEY` — Resend email API key
+- `RESEND_FROM` — email sender, set to `EvairSIM <service@evairdigital.com>`
+
+## Key API Endpoints (in `services/esimApi.ts`)
+- `fetchPackages()` — GET `/package/list` — fetches all available eSIM plans
+- `orderEsim(packageCode)` — POST `/esim/order` — creates new eSIM order, returns QR code + LPA
+- `queryProfile(iccid)` — POST `/esim/query` — looks up eSIM profile by ICCID (requires `pager: { pageNum: 1, pageSize: 20 }`)
+- `topUp(iccid, packageCode)` — POST `/esim/topup` — adds data plan to existing eSIM
+- `queryUsage(iccid)` — POST `/esim/usage` — checks data usage
+
+## SIM Card Activation Flow
+1. Customer enters ICCID (18-22 digits) or scans barcode
+2. `queryProfile(iccid)` validates ICCID exists in ESIMAccess system
+3. `packageName` from response is checked — must start with "United States" / "USA" / "US "
+4. If valid, SIM is added to user's list with data from the profile (totalVolume, totalDuration)
+5. Top-up uses the same `topUp()` API call as eSIM
+
+## eSIM Purchase Flow
+1. Customer selects plan in ShopView
+2. `orderEsim(packageCode)` creates the order
+3. QR code + LPA details displayed in-app
+4. `send-esim-email.mjs` Netlify function sends confirmation email via Resend API
+5. Email includes: logo image, QR code, SM-DP+ address, activation code, LPA string, install instructions
+
+## After Top-Up
+- `onUpdateSim` callback flows from App.tsx → ProductTab → MySimsView
+- After successful `topUp()`, `dataTotalGB` is optimistically updated in state
+
+## Important: queryProfile Response Handling
+- API may return `success: true` with empty `esimList` for non-existent ICCIDs
+- Code explicitly checks `if (!list || list.length === 0)` and throws error
+- Returns `packageName` from `esim.packageList?.[0]?.packageName`
