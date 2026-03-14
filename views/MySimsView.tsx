@@ -731,7 +731,84 @@ const MySimsView: React.FC<MySimsViewProps> = ({ activeSims, onNavigate, filterT
                 </div>
               </div>
 
-              {topUpSuccess ? (
+              {lpaResult ? (
+                <div className="flex-1 overflow-y-auto px-4 pt-4 pb-4">
+                  {/* Success header */}
+                  <div className="flex flex-col items-center mb-5">
+                    <div className="w-14 h-14 bg-green-100 rounded-full flex items-center justify-center mb-2">
+                      <CheckCircle2 size={28} className="text-[#34C759]" />
+                    </div>
+                    <p className="font-bold text-slate-900 text-base">Profile Ready to Install</p>
+                    <p className="text-xs text-slate-400 mt-1 text-center max-w-[280px]">Scan the QR code or copy the details below to write the profile to your SIM card.</p>
+                  </div>
+
+                  {/* QR Code */}
+                  <div className="bg-slate-50 rounded-2xl p-4 flex flex-col items-center mb-4 border border-slate-100">
+                    <div className="bg-white p-2 rounded-xl mb-2 border border-slate-100">
+                      {lpaResult.qrCodeUrl ? (
+                        <img src={lpaResult.qrCodeUrl} alt="eSIM QR Code" loading="lazy" width={160} height={160} className="w-36 h-36 rounded-lg object-contain" />
+                      ) : (
+                        <div className="w-28 h-28 bg-slate-900 rounded-lg flex items-center justify-center">
+                          <QrCode size={40} className="text-white/60" />
+                        </div>
+                      )}
+                    </div>
+                    <button
+                      onClick={() => handleCopy(lpaResult.lpaString, 'qr')}
+                      className={`flex items-center gap-2 font-bold text-xs px-4 py-2 rounded-lg transition-all active:scale-95 border ${
+                        copiedField === 'qr' ? 'bg-emerald-50 text-emerald-600 border-emerald-200' : 'bg-orange-50 text-brand-orange border-orange-100'
+                      }`}
+                    >
+                      {copiedField === 'qr' ? <Check size={14} /> : <Copy size={14} />}
+                      {copiedField === 'qr' ? t('my_sims.copied') : t('my_sims.copy_qr_data')}
+                    </button>
+                  </div>
+
+                  {/* SM-DP+ Address */}
+                  {lpaResult.smdpAddress && (
+                    <div className={`rounded-xl p-3 mb-3 border transition-colors ${copiedField === 'smdp' ? 'bg-emerald-50 border-emerald-200' : 'bg-white border-slate-200'}`}>
+                      <p className="text-slate-400 text-[10px] uppercase font-bold tracking-wider mb-1">{t('my_sims.smdp_address')}</p>
+                      <button onClick={() => handleCopy(lpaResult.smdpAddress, 'smdp')} className="w-full flex justify-between items-center active:opacity-70">
+                        <code className="text-slate-900 font-mono text-sm truncate mr-2">{lpaResult.smdpAddress}</code>
+                        {copiedField === 'smdp' ? (
+                          <span className="text-emerald-500 text-[10px] font-semibold flex items-center gap-1 shrink-0"><Check size={12} />{t('my_sims.copied')}</span>
+                        ) : (
+                          <span className="text-brand-orange text-[10px] font-semibold flex items-center gap-1 shrink-0"><Copy size={12} />{t('my_sims.tap_to_copy')}</span>
+                        )}
+                      </button>
+                    </div>
+                  )}
+
+                  {/* Activation Code */}
+                  {lpaResult.activationCode && (
+                    <div className={`rounded-xl p-3 mb-3 border transition-colors ${copiedField === 'activation' ? 'bg-emerald-50 border-emerald-200' : 'bg-white border-slate-200'}`}>
+                      <p className="text-slate-400 text-[10px] uppercase font-bold tracking-wider mb-1">{t('my_sims.activation_code')}</p>
+                      <button onClick={() => handleCopy(lpaResult.activationCode, 'activation')} className="w-full flex justify-between items-center active:opacity-70">
+                        <code className="text-slate-900 font-mono text-xs truncate mr-2">{lpaResult.activationCode}</code>
+                        {copiedField === 'activation' ? (
+                          <span className="text-emerald-500 text-[10px] font-semibold flex items-center gap-1 shrink-0"><Check size={12} />{t('my_sims.copied')}</span>
+                        ) : (
+                          <span className="text-brand-orange text-[10px] font-semibold flex items-center gap-1 shrink-0"><Copy size={12} />{t('my_sims.tap_to_copy')}</span>
+                        )}
+                      </button>
+                    </div>
+                  )}
+
+                  {/* Instructions */}
+                  <div className="bg-orange-50 rounded-xl p-3 border border-orange-100">
+                    <p className="text-xs font-semibold text-slate-700 mb-1">How to install:</p>
+                    <p className="text-[11px] text-slate-500 leading-relaxed">
+                      <strong>Android:</strong> Open EasyEUICC or NekokoLPA app, scan the QR code above to write the profile to your SIM card.
+                    </p>
+                    <p className="text-[11px] text-slate-500 leading-relaxed mt-1">
+                      <strong>iOS:</strong> Use NekokoLPA app with a Bluetooth card reader to write the profile.
+                    </p>
+                    <p className="text-[11px] text-slate-500 leading-relaxed mt-1">
+                      <strong>STK Menu:</strong> If your SIM supports it, go to SIM Toolkit in your phone settings to download the profile directly.
+                    </p>
+                  </div>
+                </div>
+              ) : topUpSuccess ? (
                 <div className="flex-1 flex flex-col items-center justify-center">
                   <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mb-3">
                     <CheckCircle2 size={32} className="text-[#34C759]" />
