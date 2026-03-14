@@ -768,12 +768,7 @@ const MySimsView: React.FC<MySimsViewProps> = ({ activeSims, onNavigate, filterT
                                 className={`relative flex flex-col items-start px-3 py-2.5 rounded-xl transition-all ${isSelected ? 'border-2 border-brand-orange bg-orange-50/40' : 'border border-slate-200 bg-white active:border-brand-orange'}`}
                               >
                                 {isBestValue && (
-                                  <span className="absolute top-2.5 right-2.5 w-5 h-5 flex items-center justify-center">
-                                    <svg viewBox="0 0 20 20" fill="none" className="w-5 h-5">
-                                      <path d="M10 1l2.39 4.84 5.34.78-3.87 3.77.91 5.33L10 13.27l-4.77 2.45.91-5.33L2.27 6.62l5.34-.78L10 1z" fill="#FF6600" />
-                                      <path d="M8.5 10.2l1.2 1.3 2.8-3" stroke="#fff" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-                                    </svg>
-                                  </span>
+                                  <span className="absolute top-0 right-0 bg-brand-orange text-white text-[9px] font-bold uppercase px-2 py-0.5 rounded-bl-lg rounded-tr-xl">BEST</span>
                                 )}
                                 <span className="text-base font-bold text-slate-900 leading-tight">{formatVolume(pkg.volume)}</span>
                                 <span className="text-[15px] font-bold text-brand-orange mt-1">${priceRetail.toFixed(2)}</span>
