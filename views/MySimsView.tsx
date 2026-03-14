@@ -750,9 +750,12 @@ const MySimsView: React.FC<MySimsViewProps> = ({ activeSims, onNavigate, filterT
                       <p className="text-center text-slate-400 py-16 text-sm">No top-up plans available</p>
                     )}
 
-                    {!topUpLoading && sections.map(({ label, pkgs, bestCode }) => (
-                      <div key={label} className="mb-5">
-                        <h4 className="text-sm font-bold text-slate-700 mb-2">{label}</h4>
+                    {!topUpLoading && sections.map(({ label, pkgs, bestCode }, idx) => (
+                      <div key={label} className={idx > 0 ? 'mt-6' : ''}>
+                        <div className="flex items-center gap-2 mb-3">
+                          <span className="bg-slate-800 text-white text-sm font-bold px-3 py-1 rounded-lg">{label}</span>
+                          <div className="flex-1 h-px bg-slate-200" />
+                        </div>
                         <div className="grid grid-cols-2 gap-2.5">
                           {pkgs.map(pkg => {
                             const isSelected = selectedTopUp?.packageCode === pkg.packageCode;
@@ -773,7 +776,6 @@ const MySimsView: React.FC<MySimsViewProps> = ({ activeSims, onNavigate, filterT
                                   </span>
                                 )}
                                 <span className="text-base font-bold text-slate-900 leading-tight">{formatVolume(pkg.volume)}</span>
-                                <span className="text-[11px] text-slate-400">{label}</span>
                                 <span className="text-[15px] font-bold text-brand-orange mt-1">${priceRetail.toFixed(2)}</span>
                                 <span className="text-[9px] text-slate-300 mt-0.5 leading-tight truncate w-full">{pkg.name}</span>
                               </button>
