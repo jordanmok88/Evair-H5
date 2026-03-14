@@ -51,7 +51,35 @@ const ShopView: React.FC<ShopViewProps> = ({ isLoggedIn, user, onLoginRequest, o
   const [orderError, setOrderError] = useState<string | null>(null);
   const [continentTab, setContinentTab] = useState<ContinentTab>('All');
 
+  const [headerHidden, setHeaderHidden] = useState(false);
+  const lastScrollY = useRef(0);
+  const scrollThreshold = 10;
   const scrollContainerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const onScroll = (y: number) => {
+      if (y > lastScrollY.current + scrollThreshold && y > 60) {
+        setHeaderHidden(true);
+      } else if (y < lastScrollY.current - scrollThreshold) {
+        setHeaderHidden(false);
+      }
+      lastScrollY.current = y;
+    };
+
+    const onWindowScroll = () => onScroll(window.scrollY);
+    const onContainerScroll = () => {
+      if (scrollContainerRef.current) onScroll(scrollContainerRef.current.scrollTop);
+    };
+
+    window.addEventListener('scroll', onWindowScroll, { passive: true });
+    const container = scrollContainerRef.current;
+    container?.addEventListener('scroll', onContainerScroll, { passive: true });
+
+    return () => {
+      window.removeEventListener('scroll', onWindowScroll);
+      container?.removeEventListener('scroll', onContainerScroll);
+    };
+  }, []);
 
   const loadEsimPackages = useCallback(async (force = false) => {
     setEsimLoading(true);
