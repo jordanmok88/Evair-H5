@@ -1,6 +1,7 @@
 import React, { useState, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ArrowLeft, Package, Truck, MapPin, CheckCircle2, Wifi, Globe, CreditCard, ShieldCheck, Copy, Check, Clock, Search, Loader2, AlertCircle, RotateCcw, ScanLine, Smartphone, Unlock, RotateCw, Signal, Mail } from 'lucide-react';
+import BarcodeScanner from '../components/BarcodeScanner';
 
 interface TrackingEvent {
   label: string;
