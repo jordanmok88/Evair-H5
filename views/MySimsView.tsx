@@ -813,7 +813,7 @@ const MySimsView: React.FC<MySimsViewProps> = ({ activeSims, onNavigate, filterT
                       {topUpProcessing ? (
                         <Loader2 className="animate-spin" size={20} />
                       ) : selectedTopUp ? (
-                        <>{t('my_sims.purchase_top_up')} — ${formatPrice(selectedTopUp.price).toFixed(2)}</>
+                        <>{t('my_sims.purchase_top_up')} — ${retailPrice(selectedTopUp.price).toFixed(2)}</>
                       ) : (
                         t('my_sims.purchase_top_up')
                       )}
