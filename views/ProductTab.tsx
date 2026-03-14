@@ -11,6 +11,7 @@ interface ProductTabProps {
   onPurchaseComplete: (purchaseInfo?: { planName?: string; countryCode?: string; type?: SimType; orderNo?: string; iccid?: string }) => void;
   onAddCard?: (iccid: string) => void;
   onDeleteSim?: (simId: string) => void;
+  onUpdateSim?: (simId: string, updates: Partial<ActiveSim>) => void;
   activeSims: ActiveSim[];
   onNavigate: (tab: Tab) => void;
   onSwitchSimType?: (type: SimType) => void;
@@ -25,6 +26,7 @@ const ProductTab: React.FC<ProductTabProps> = ({
   onPurchaseComplete, 
   onAddCard,
   onDeleteSim,
+  onUpdateSim,
   activeSims,
   onNavigate,
   onSwitchSimType,
