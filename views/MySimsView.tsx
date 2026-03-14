@@ -670,13 +670,33 @@ const MySimsView: React.FC<MySimsViewProps> = ({ activeSims, onNavigate, filterT
             }
           };
 
+          const filtered = topUpPackages.filter(pkg => !(pkg.durationUnit === 'DAY' && pkg.duration === 1));
+
           const grouped = new Map<string, EsimPackage[]>();
-          topUpPackages.forEach(pkg => {
+          filtered.forEach(pkg => {
             const key = `${pkg.duration} ${pkg.durationUnit === 'DAY' ? (pkg.duration === 1 ? 'Day' : 'Days') : (pkg.duration === 1 ? 'Month' : 'Months')}`;
             if (!grouped.has(key)) grouped.set(key, []);
             grouped.get(key)!.push(pkg);
           });
-          grouped.forEach(pkgs => pkgs.sort((a, b) => a.volume - b.volume));
+          grouped.forEach(pkgs => {
+            pkgs.sort((a, b) => a.volume - b.volume);
+            const seen = new Map<number, number>();
+            for (let i = pkgs.length - 1; i >= 0; i--) {
+              const vol = pkgs[i].volume;
+              if (seen.has(vol)) {
+                const existingIdx = seen.get(vol)!;
+                if (pkgs[i].price < pkgs[existingIdx].price) {
+                  pkgs.splice(existingIdx, 1);
+                  seen.set(vol, i);
+                } else {
+                  pkgs.splice(i, 1);
+                }
+              } else {
+                seen.set(vol, i);
+              }
+            }
+            pkgs.sort((a, b) => a.volume - b.volume);
+          });
           const tabKeys = Array.from(grouped.keys());
           const activeTab = tabKeys.includes(selectedTopUp ? `${selectedTopUp.duration} ${selectedTopUp.durationUnit === 'DAY' ? (selectedTopUp.duration === 1 ? 'Day' : 'Days') : (selectedTopUp.duration === 1 ? 'Month' : 'Months')}` : '') 
             ? `${selectedTopUp!.duration} ${selectedTopUp!.durationUnit === 'DAY' ? (selectedTopUp!.duration === 1 ? 'Day' : 'Days') : (selectedTopUp!.duration === 1 ? 'Month' : 'Months')}`
@@ -775,7 +795,6 @@ const MySimsView: React.FC<MySimsViewProps> = ({ activeSims, onNavigate, filterT
                               <span className="text-base font-bold text-slate-900 leading-tight">{formatVolume(pkg.volume)}</span>
                               <span className="text-[11px] text-slate-400">{pkg.duration} {pkg.durationUnit === 'DAY' ? 'Days' : 'Months'}</span>
                               <span className="text-[15px] font-bold text-brand-orange mt-1">${priceUsd.toFixed(2)}</span>
-                              <span className="text-[9px] text-slate-300 mt-0.5 leading-tight truncate w-full">{pkg.name}</span>
                             </button>
                           );
                         })}
