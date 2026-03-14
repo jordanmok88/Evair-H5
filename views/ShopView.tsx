@@ -192,6 +192,7 @@ const ShopView: React.FC<ShopViewProps> = ({ isLoggedIn, user, onLoginRequest, o
     if (!selectedEsimPkg) return;
     setIsProcessing(true);
     setOrderError(null);
+    setEmailSent(false);
     try {
       const txnId = `evair_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
       const result = await orderEsim({
@@ -200,6 +201,24 @@ const ShopView: React.FC<ShopViewProps> = ({ isLoggedIn, user, onLoginRequest, o
         amount: selectedEsimPkg.price,
       });
       setEsimOrderResult(result);
+
+      if (email) {
+        fetch('/.netlify/functions/send-esim-email', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            email,
+            qrCodeUrl: result.qrCodeUrl,
+            smdpAddress: result.smdpAddress,
+            activationCode: result.activationCode,
+            lpaString: result.lpaString,
+            orderNo: result.orderNo,
+            packageName: selectedEsimGroup?.locationName || selectedEsimPkg.name,
+          }),
+        })
+          .then(r => { if (r.ok) setEmailSent(true); })
+          .catch(() => {});
+      }
     } catch (err: any) {
       console.error('eSIM order error:', err);
       setOrderError(err.message || 'Order failed. Please try again.');
