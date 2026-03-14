@@ -266,8 +266,30 @@ function CustomerApp() {
       
       <div className="w-full sm:max-w-[430px] sm:h-[880px] bg-[#F2F4F7] sm:rounded-[3.5rem] sm:overflow-hidden sm:shadow-[0_50px_100px_-20px_rgba(0,0,0,0.25)] relative sm:border-[8px] sm:border-slate-900 sm:ring-1 sm:ring-black/50">
         
+        {/* Safari chrome — only visible in tablet/desktop phone frame */}
+        <div className="hidden sm:block relative z-50 bg-[#F2F4F7] shrink-0">
+          {/* Status bar with Dynamic Island */}
+          <div className="relative h-[54px]">
+            <div className="absolute top-[10px] left-1/2 -translate-x-1/2 w-[126px] h-[37px] bg-black rounded-[24px] z-10" />
+            <span className="absolute left-5 top-4 text-[15px] font-semibold" style={{ fontFamily: '-apple-system, sans-serif' }}>11:00</span>
+            <div className="absolute right-5 top-[18px] flex items-center gap-[5px]">
+              <svg width="18" height="12" viewBox="0 0 18 12" fill="none"><rect x="0.5" y="3" width="3" height="9" rx="1" fill="#1a1a1a"/><rect x="5" y="2" width="3" height="10" rx="1" fill="#1a1a1a"/><rect x="9.5" y="1" width="3" height="11" rx="1" fill="#1a1a1a"/><rect x="14" y="0" width="3" height="12" rx="1" fill="#1a1a1a"/></svg>
+              <span className="text-xs font-bold" style={{ fontFamily: '-apple-system, sans-serif' }}>LTE</span>
+              <svg width="27" height="13" viewBox="0 0 27 13" fill="none"><rect x="0" y="1" width="23" height="11" rx="3" stroke="#1a1a1a" strokeWidth="1"/><rect x="1.5" y="2.5" width="18" height="8" rx="2" fill="#34C759"/><rect x="24" y="4" width="2.5" height="5" rx="1" fill="#1a1a1a"/></svg>
+            </div>
+          </div>
+          {/* Address bar */}
+          <div className="px-4 pb-[10px] flex items-center">
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none" className="mr-2 shrink-0"><path d="M3 7.5V6C3 3.8 4.8 2 7 2s4 1.8 4 4v1.5" stroke="#8E8E93" strokeWidth="1.5" strokeLinecap="round"/><rect x="2" y="7" width="10" height="6" rx="1.5" fill="#8E8E93"/></svg>
+            <div className="flex-1 bg-[#E8E8ED] rounded-xl h-9 flex items-center justify-center">
+              <span className="text-[15px] text-[#1a1a1a]" style={{ fontFamily: '-apple-system, sans-serif' }}>evair-h5.netlify.app</span>
+            </div>
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none" className="ml-2 shrink-0"><path d="M8 2v8M8 2L5 5M8 2l3 3" stroke="#007AFF" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/><path d="M3 9v4h10V9" stroke="#007AFF" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/></svg>
+          </div>
+        </div>
+
         {/* Main Content Area */}
-        <main className="sm:h-full w-full relative sm:overflow-hidden">
+        <main className="sm:h-[calc(100%-104px)] w-full relative sm:overflow-hidden">
            {renderContent()}
         </main>
 
