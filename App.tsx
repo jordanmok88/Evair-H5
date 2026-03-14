@@ -7,7 +7,7 @@ import DialerView from './views/DialerView';
 import ContactUsView from './views/ContactUsView';
 import InboxView from './views/InboxView';
 import AdminApp from './views/admin/AdminApp';
-import { Tab, ActiveSim, SimType, User, AppNotification } from './types';
+import { Tab, ActiveSim, SimType, User, AppNotification, EsimProfileResult } from './types';
 import { Lock } from 'lucide-react';
 import { MOCK_COUNTRIES, MOCK_PLANS_US, MOCK_ACTIVE_SIMS, MOCK_NOTIFICATIONS } from './constants';
 import { checkDataUsage, prefetchPackages } from './services/esimApi';
