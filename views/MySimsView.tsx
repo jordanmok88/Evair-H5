@@ -725,17 +725,17 @@ const MySimsView: React.FC<MySimsViewProps> = ({ activeSims, onNavigate, filterT
                 </div>
               ) : (
                 <>
-                  {/* Duration tabs */}
+                  {/* Duration tabs — wrapped into rows so nothing is hidden */}
                   {tabKeys.length > 0 && (
-                    <div className="shrink-0 px-4 pt-3 pb-2">
-                      <div className="flex gap-2 overflow-x-auto no-scrollbar">
+                    <div className="shrink-0 px-4 pt-3 pb-1">
+                      <div className="flex flex-wrap gap-2">
                         {tabKeys.map(tab => {
                           const isActive = tab === activeTab;
                           return (
                             <button
                               key={tab}
                               onClick={() => setSelectedTopUp(grouped.get(tab)?.[0] || null)}
-                              className={`shrink-0 px-4 py-2 rounded-full text-sm font-semibold transition-all ${isActive ? 'bg-brand-orange text-white shadow-sm' : 'bg-slate-100 text-slate-600 active:bg-slate-200'}`}
+                              className={`px-3.5 py-1.5 rounded-full text-[13px] font-semibold transition-all ${isActive ? 'bg-brand-orange text-white shadow-sm' : 'bg-slate-100 text-slate-600 active:bg-slate-200'}`}
                             >
                               {tab}
                             </button>
