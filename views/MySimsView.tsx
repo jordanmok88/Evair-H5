@@ -52,7 +52,6 @@ const MySimsView: React.FC<MySimsViewProps> = ({ activeSims, onNavigate, filterT
   const [selectedTopUp, setSelectedTopUp] = useState<EsimPackage | null>(null);
   const [topUpProcessing, setTopUpProcessing] = useState(false);
   const [topUpSuccess, setTopUpSuccess] = useState(false);
-  const [lpaResult, setLpaResult] = useState<EsimOrderResult | null>(null);
 
   const currentSim = filteredSims.find(s => s.id === selectedSimId) || filteredSims[0];
 
@@ -694,7 +693,7 @@ const MySimsView: React.FC<MySimsViewProps> = ({ activeSims, onNavigate, filterT
             return { label, pkgs, bestCode, duration };
           }).sort((a, b) => a.duration - b.duration);
 
-          const closeModal = () => { setIsRechargeModalOpen(false); setSelectedTopUp(null); setTopUpPackages([]); setLpaResult(null); setCopiedField(null); };
+          const closeModal = () => { setIsRechargeModalOpen(false); setSelectedTopUp(null); setTopUpPackages([]); };
 
           return (
           <div className="fixed md:absolute inset-0 z-[60] bg-white flex flex-col" style={{ touchAction: 'pan-y' }}>
