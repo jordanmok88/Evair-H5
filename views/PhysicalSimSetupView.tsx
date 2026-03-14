@@ -153,6 +153,7 @@ const PhysicalSimSetupView: React.FC<PhysicalSimSetupViewProps> = ({ onSwitchToS
   const [scannerOpen, setScannerOpen] = useState(false);
   const [activating, setActivating] = useState(false);
   const [activated, setActivated] = useState(false);
+  const [activationError, setActivationError] = useState('');
   const { t, i18n } = useTranslation();
 
   const handleTrack = useCallback(async () => {
@@ -551,14 +552,19 @@ const PhysicalSimSetupView: React.FC<PhysicalSimSetupViewProps> = ({ onSwitchToS
                 </div>
               ) : (
                 <button
-                  onClick={() => {
+                  onClick={async () => {
                     if (!iccidInput.trim()) return;
                     setActivating(true);
-                    setTimeout(() => {
-                      setActivating(false);
+                    setActivationError('');
+                    try {
+                      await queryProfile(iccidInput.trim());
                       setActivated(true);
                       onAddCard?.(iccidInput.trim());
-                    }, 2000);
+                    } catch (err: any) {
+                      setActivationError(err.message || 'Could not verify this ICCID. Please check the number and try again.');
+                    } finally {
+                      setActivating(false);
+                    }
                   }}
                   disabled={!iccidInput.trim() || activating}
                   className="w-full py-4 rounded-xl font-bold text-[15px] flex items-center justify-center gap-2 active:scale-[0.98] transition-all"
