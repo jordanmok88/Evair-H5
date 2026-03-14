@@ -83,8 +83,8 @@ const ProductTab: React.FC<ProductTabProps> = ({
           <PhysicalSimSetupView 
              onSwitchToShop={() => setViewMode('SHOP')}
              onSwitchToList={() => setViewMode('MINE')}
-             onAddCard={(iccid) => {
-                onAddCard?.(iccid);
+             onAddCard={(iccid, profile) => {
+                onAddCard?.(iccid, profile);
                 setViewMode('MINE');
              }}
           />
