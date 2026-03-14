@@ -15,8 +15,31 @@ import { supabaseConfigured, fetchNotifications } from './services/supabase';
 
 function MobilePreview() {
   const src = window.location.origin + '/';
+  const phoneW = 393;
+  const phoneH = 852;
+  const [scale, setScale] = useState(1);
+
+  useEffect(() => {
+    const update = () => setScale(Math.min(1, (window.innerHeight - 40) / (phoneH + 24)));
+    update();
+    window.addEventListener('resize', update);
+    return () => window.removeEventListener('resize', update);
+  }, []);
+
   return (
-    <iframe src={src} style={{ width: 390, height: '100vh', border: 'none', display: 'block', margin: 0, padding: 0 }} title="iPhone Preview" />
+    <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh', background: '#E5E5E5', overflow: 'hidden' }}>
+      <div style={{ transform: `scale(${scale})`, transformOrigin: 'center center' }}>
+        <div style={{ position: 'relative', width: phoneW, height: phoneH, borderRadius: 55, background: '#1a1a1a', padding: 12, boxShadow: '0 50px 100px -20px rgba(0,0,0,0.3), inset 0 0 0 1px rgba(255,255,255,0.1)' }}>
+          <div style={{ position: 'absolute', left: -3, top: 160, width: 3, height: 32, background: '#2a2a2a', borderRadius: '4px 0 0 4px' }} />
+          <div style={{ position: 'absolute', left: -3, top: 220, width: 3, height: 60, background: '#2a2a2a', borderRadius: '4px 0 0 4px' }} />
+          <div style={{ position: 'absolute', left: -3, top: 290, width: 3, height: 60, background: '#2a2a2a', borderRadius: '4px 0 0 4px' }} />
+          <div style={{ position: 'absolute', right: -3, top: 240, width: 3, height: 80, background: '#2a2a2a', borderRadius: '0 4px 4px 0' }} />
+          <div style={{ width: '100%', height: '100%', borderRadius: 44, overflow: 'hidden', background: '#000' }}>
+            <iframe src={src} style={{ width: '100%', height: '100%', border: 'none' }} title="iPhone Preview" />
+          </div>
+        </div>
+      </div>
+    </div>
   );
 }
 
