@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { ChevronRight, Share, ChevronLeft, Search, Lock, Bell, Download, Trash2, Check, Plus, Package, HelpCircle, FileText, Globe, Info, Coins, ShieldCheck, CreditCard, ShoppingBag, Briefcase, Phone, Settings, AlertCircle, Play, Smartphone } from 'lucide-react';
 import { AppNotification } from '../types';
 import { useSwipeBack } from '../hooks/useSwipeBack';
+import { useEdgeSwipeBack } from '../hooks/useEdgeSwipeBack';
 
 interface ProfileViewProps {
   isLoggedIn: boolean;
@@ -992,6 +993,7 @@ const ProfileView: React.FC<ProfileViewProps> = ({ isLoggedIn, user, onLogin, on
   }, [currentView, onBack]);
 
   useSwipeBack(navDepth, handleSwipeBack);
+  useEdgeSwipeBack(handleSwipeBack);
 
   // If we are in a sub-view, render it
   if (currentView === 'ACCOUNT') return <AccountInfoView onBack={() => setCurrentView('MAIN')} user={user} />;
