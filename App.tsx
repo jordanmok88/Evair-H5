@@ -29,7 +29,7 @@ function MobilePreview() {
   return (
     <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh', background: '#E5E5E5', overflow: 'hidden' }}>
       <div style={{ transform: `scale(${scale})`, transformOrigin: 'center center' }}>
-        <div style={{ position: 'relative', width: phoneW, height: phoneH, borderRadius: 55, background: '#1a1a1a', padding: '12px 6px', boxShadow: '0 50px 100px -20px rgba(0,0,0,0.3), inset 0 0 0 1px rgba(255,255,255,0.1)' }}>
+        <div style={{ position: 'relative', width: phoneW, height: phoneH, borderRadius: 55, background: '#1a1a1a', padding: '12px 6px', boxShadow: '0 50px 100px -20px rgba(0,0,0,0.25), inset 0 0 0 1px rgba(255,255,255,0.1)' }}>
           <div style={{ position: 'absolute', left: -3, top: 160, width: 3, height: 32, background: '#2a2a2a', borderRadius: '4px 0 0 4px' }} />
           <div style={{ position: 'absolute', left: -3, top: 220, width: 3, height: 60, background: '#2a2a2a', borderRadius: '4px 0 0 4px' }} />
           <div style={{ position: 'absolute', left: -3, top: 290, width: 3, height: 60, background: '#2a2a2a', borderRadius: '4px 0 0 4px' }} />
