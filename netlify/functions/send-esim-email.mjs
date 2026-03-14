@@ -21,7 +21,14 @@ function buildHtml({ qrCodeUrl, smdpAddress, activationCode, lpaString, orderNo,
     <div style="background:#fff;border-radius:16px;padding:32px 24px;box-shadow:0 2px 12px rgba(0,0,0,0.06)">
 
       <div style="text-align:center;margin-bottom:24px">
-        <div style="font-size:28px;font-weight:800;color:#FF6600">Evair<span style="color:#1a1a1a">SIM</span></div>
+        <table cellpadding="0" cellspacing="0" border="0" style="margin:0 auto"><tr>
+          <td style="font-size:28px;font-weight:800;font-style:italic;color:#FF6600;font-family:Arial,Helvetica,sans-serif;vertical-align:middle">Evair</td>
+          <td style="vertical-align:middle;padding-left:4px">
+            <div style="background:#FF6600;border-radius:6px;padding:4px 10px;display:inline-block">
+              <span style="font-size:22px;font-weight:800;color:#ffffff;font-family:Arial,Helvetica,sans-serif">SIM</span>
+            </div>
+          </td>
+        </tr></table>
       </div>
 
       <h1 style="font-size:20px;font-weight:700;color:#1a1a1a;text-align:center;margin:0 0 8px">Your eSIM is Ready!</h1>
@@ -58,7 +65,7 @@ function buildHtml({ qrCodeUrl, smdpAddress, activationCode, lpaString, orderNo,
 
     </div>
     <p style="text-align:center;font-size:11px;color:#94a3b8;margin-top:16px">
-      © ${new Date().getFullYear()} EvairSIM · <a href="https://evair-h5.netlify.app" style="color:#FF6600;text-decoration:none">evairsim.com</a>
+      © ${new Date().getFullYear()} EvairSIM · <a href="https://evairdigital.com" style="color:#FF6600;text-decoration:none">evairdigital.com</a>
     </p>
   </div>
 </body></html>`;
