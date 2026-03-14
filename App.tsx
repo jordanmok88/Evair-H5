@@ -34,8 +34,16 @@ function MobilePreview() {
           <div style={{ position: 'absolute', left: -3, top: 220, width: 3, height: 60, background: '#2a2a2a', borderRadius: '4px 0 0 4px' }} />
           <div style={{ position: 'absolute', left: -3, top: 290, width: 3, height: 60, background: '#2a2a2a', borderRadius: '4px 0 0 4px' }} />
           <div style={{ position: 'absolute', right: -3, top: 240, width: 3, height: 80, background: '#2a2a2a', borderRadius: '0 4px 4px 0' }} />
-          <div style={{ width: '100%', height: '100%', borderRadius: 44, overflow: 'hidden', background: '#000' }}>
-            <iframe src={src} style={{ width: '100%', height: '100%', border: 'none' }} title="iPhone Preview" />
+          <div style={{ width: '100%', height: '100%', borderRadius: 44, overflow: 'hidden', background: '#F2F4F7', display: 'flex', flexDirection: 'column' }}>
+            {/* Safari top area: status bar + address bar */}
+            <div style={{ flexShrink: 0, background: '#F2F4F7', paddingTop: 14 }}>
+              <div style={{ display: 'flex', justifyContent: 'center', padding: '6px 16px 8px' }}>
+                <div style={{ background: '#E8E8ED', borderRadius: 12, height: 36, width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <span style={{ fontSize: 15, color: '#1a1a1a', fontFamily: '-apple-system, sans-serif' }}>evair-h5.netlify.app</span>
+                </div>
+              </div>
+            </div>
+            <iframe src={src} style={{ width: '100%', flex: 1, border: 'none' }} title="iPhone Preview" />
           </div>
         </div>
       </div>
