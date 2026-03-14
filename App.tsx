@@ -62,6 +62,7 @@ function MobilePreview() {
 
             {/* Status bar - always visible */}
             <div style={{ flexShrink: 0, height: 54, position: 'relative', background: '#F2F4F7' }}>
+              <div style={{ position: 'absolute', top: 10, left: '50%', transform: 'translateX(-50%)', width: 126, height: 37, background: '#000', borderRadius: 24, zIndex: 1 }} />
               <span style={{ position: 'absolute', left: 20, top: 16, fontSize: 15, fontWeight: 600, fontFamily: '-apple-system, sans-serif' }}>10:11</span>
               <div style={{ position: 'absolute', right: 20, top: 18, display: 'flex', gap: 5, alignItems: 'center' }}>
                 <svg width="18" height="12" viewBox="0 0 18 12" fill="none"><rect x="0.5" y="3" width="3" height="9" rx="1" fill="#1a1a1a"/><rect x="5" y="2" width="3" height="10" rx="1" fill="#1a1a1a"/><rect x="9.5" y="1" width="3" height="11" rx="1" fill="#1a1a1a"/><rect x="14" y="0" width="3" height="12" rx="1" fill="#1a1a1a"/></svg>
