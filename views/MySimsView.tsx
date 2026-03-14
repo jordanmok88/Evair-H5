@@ -818,6 +818,7 @@ const MySimsView: React.FC<MySimsViewProps> = ({ activeSims, onNavigate, filterT
                     {t('my_sims.done')}
                   </button>
                 </div>
+                </>
               ) : topUpSuccess ? (
                 <div className="flex-1 flex flex-col items-center justify-center">
                   <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mb-3">
