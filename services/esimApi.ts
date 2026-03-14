@@ -212,11 +212,12 @@ export async function queryProfile(iccid: string): Promise<EsimProfileResult> {
   const esim = list[0];
   return {
     iccid: esim.iccid,
-    packageCode: esim.packageCode || '',
-    status: esim.smdpStatus || '',
+    packageCode: esim.packageList?.[0]?.packageCode || '',
+    status: esim.smdpStatus || esim.esimStatus || '',
     expiredTime: esim.expiredTime || '',
     totalVolume: esim.totalVolume || 0,
-    usedVolume: esim.usedVolume || 0,
+    usedVolume: 0,
+    totalDuration: esim.totalDuration || 0,
   };
 }
 
