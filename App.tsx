@@ -195,20 +195,67 @@ function CustomerApp() {
     setActiveSims(prev => prev.map(s => s.id === simId ? { ...s, ...updates } : s));
   }, []);
 
-  const handleAddCard = (iccid: string) => {
-    const country = MOCK_COUNTRIES[0]; // United States
+  const handleAddCard = (iccid: string, profile?: EsimProfileResult) => {
+    const pkgName = profile?.packageName || '';
+
+    // Map well-known country names from Red Tea package names to ISO codes
+    const COUNTRY_NAME_TO_CODE: Record<string, string> = {
+      'united states': 'US', 'usa': 'US', 'china': 'CN', 'china mainland': 'CN',
+      'japan': 'JP', 'korea': 'KR', 'south korea': 'KR', 'canada': 'CA',
+      'mexico': 'MX', 'united kingdom': 'GB', 'uk': 'GB', 'australia': 'AU',
+      'france': 'FR', 'germany': 'DE', 'italy': 'IT', 'spain': 'ES',
+      'thailand': 'TH', 'singapore': 'SG', 'malaysia': 'MY', 'taiwan': 'TW',
+      'hong kong': 'HK', 'macau': 'MO', 'india': 'IN', 'indonesia': 'ID',
+      'vietnam': 'VN', 'philippines': 'PH', 'brazil': 'BR', 'turkey': 'TR',
+    };
+
+    let countryCode = 'US';
+    let countryName = 'United States';
+    const lowerPkg = pkgName.toLowerCase();
+    for (const [name, code] of Object.entries(COUNTRY_NAME_TO_CODE)) {
+      if (lowerPkg.startsWith(name)) {
+        countryCode = code;
+        countryName = pkgName.substring(0, name.length).replace(/\b\w/g, c => c.toUpperCase());
+        break;
+      }
+    }
+
+    const totalGB = profile?.totalVolume
+      ? profile.totalVolume / (1024 * 1024 * 1024)
+      : 10;
+    const durationDays = profile?.totalDuration || 30;
+
+    const flag = countryCode.toUpperCase().split('').map(c => String.fromCodePoint(127397 + c.charCodeAt(0))).join('');
+    const carrier = CARRIER_MAP[countryCode];
+
+    const country = {
+      id: countryCode.toLowerCase(),
+      name: countryName,
+      flag,
+      countryCode,
+      region: '',
+      startPrice: 0,
+      networkCount: 0,
+      networks: carrier ? [carrier.carrier] : [],
+      vpmn: '',
+      vpn: true,
+      plans: [],
+      isPopular: false,
+    };
+
     const plan = MOCK_PLANS_US[0];
 
     const newSim: ActiveSim = {
-        id: `SIM-PHYS-${Math.floor(Math.random() * 10000)}`,
-        country,
-        plan,
-        type: 'PHYSICAL',
-        activationDate: new Date().toISOString(),
-        expiryDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
-        dataTotalGB: 10.0,
-        dataUsedGB: 0,
-        status: 'PENDING_ACTIVATION'
+      id: `SIM-PHYS-${Math.floor(Math.random() * 10000)}`,
+      iccid,
+      country,
+      plan,
+      type: 'PHYSICAL',
+      activationDate: new Date().toISOString(),
+      expiryDate: new Date(Date.now() + durationDays * 24 * 60 * 60 * 1000).toISOString(),
+      dataTotalGB: Math.round(totalGB * 10) / 10,
+      dataUsedGB: 0,
+      status: 'ACTIVE',
     };
     setActiveSims([newSim, ...activeSims]);
   };
