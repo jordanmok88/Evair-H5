@@ -717,7 +717,7 @@ const MySimsView: React.FC<MySimsViewProps> = ({ activeSims, onNavigate, filterT
                 {/* Compact SIM info */}
                 <div className="pb-3 border-b border-slate-100 flex items-center gap-3">
                   <FlagIcon countryCode={currentSim.country.countryCode} size="lg" />
-                  <span className="text-base font-bold text-slate-900 whitespace-nowrap">{currentSim.country.name}</span>
+                  <span className="text-lg font-bold text-slate-900 whitespace-nowrap">{currentSim.country.name}</span>
                   <div className="flex flex-col ml-auto items-end">
                     <div className="flex items-center gap-1.5">
                       <span className="text-xs font-medium text-slate-500">{carrierInfo.carrier}</span>
