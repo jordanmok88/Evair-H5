@@ -16,9 +16,7 @@ import { supabaseConfigured, fetchNotifications } from './services/supabase';
 function MobilePreview() {
   const src = window.location.origin + '/';
   return (
-    <div style={{ margin: '0 auto', maxWidth: 390, height: '100vh', background: '#F2F4F7' }}>
-      <iframe src={src} style={{ width: '100%', height: '100%', border: 'none', display: 'block' }} title="iPhone Preview" />
-    </div>
+    <iframe src={src} style={{ width: 390, height: '100vh', border: 'none', display: 'block', margin: 0, padding: 0 }} title="iPhone Preview" />
   );
 }
 
