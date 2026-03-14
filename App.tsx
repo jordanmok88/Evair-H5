@@ -127,7 +127,7 @@ function MobilePreview() {
 }
 
 function App() {
-  const isMobilePreview = import.meta.env.DEV && new URLSearchParams(window.location.search).has('mobile');
+  const isMobilePreview = new URLSearchParams(window.location.search).has('mobile');
   if (isMobilePreview) return <MobilePreview />;
 
   // Admin mode: detected via URL hash
