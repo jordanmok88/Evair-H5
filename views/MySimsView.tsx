@@ -4,7 +4,7 @@ import { Wifi, Phone, Zap, ChevronDown, CheckCircle2, QrCode, Copy, X, Calendar,
 import { ActiveSim, Tab, SimType, EsimPackage } from '../types';
 import FlagIcon from '../components/FlagIcon';
 import { CARRIER_MAP } from '../constants';
-import { checkDataUsage, fetchTopUpPackages, topUp, formatVolume, formatPrice } from '../services/esimApi';
+import { checkDataUsage, fetchTopUpPackages, fetchPackages, topUp, orderEsim, formatVolume, formatPrice } from '../services/esimApi';
 
 interface MySimsViewProps {
   activeSims: ActiveSim[];
@@ -62,13 +62,20 @@ const MySimsView: React.FC<MySimsViewProps> = ({ activeSims, onNavigate, filterT
   }, [filteredSims, selectedSimId]);
 
   useEffect(() => {
-    if (isRechargeModalOpen && currentSim?.type === 'ESIM' && topUpPackages.length === 0 && !topUpLoading) {
-      const iccid = resolveIccid(currentSim);
+    if (isRechargeModalOpen && topUpPackages.length === 0 && !topUpLoading && currentSim) {
       setTopUpLoading(true);
-      fetchTopUpPackages(iccid)
-        .then(pkgs => setTopUpPackages(pkgs))
-        .catch(() => {})
-        .finally(() => setTopUpLoading(false));
+      const iccid = resolveIccid(currentSim);
+      if (currentSim.type === 'ESIM') {
+        fetchTopUpPackages(iccid)
+          .then(pkgs => setTopUpPackages(pkgs))
+          .catch(() => {})
+          .finally(() => setTopUpLoading(false));
+      } else {
+        fetchPackages({ locationCode: currentSim.country.countryCode })
+          .then(pkgs => setTopUpPackages(pkgs))
+          .catch(() => {})
+          .finally(() => setTopUpLoading(false));
+      }
     }
   }, [isRechargeModalOpen, currentSim]);
 
