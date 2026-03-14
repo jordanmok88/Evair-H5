@@ -774,10 +774,9 @@ const ShopView: React.FC<ShopViewProps> = ({ isLoggedIn, user, onLoginRequest, o
   return (
     <div className="sm:h-full relative bg-[#F2F4F7]">
       <div ref={scrollContainerRef} className="h-full sm:overflow-y-auto no-scrollbar">
-        {/* Header - auto-hides on scroll down, reappears on scroll up */}
+        {/* Header - always visible, pinned to top */}
         <div
-          className="bg-white px-4 pt-safe pb-3 sticky top-0 z-40 border-b border-slate-100 transition-transform duration-300 ease-out"
-          style={{ transform: headerHidden ? 'translateY(-100%)' : 'translateY(0)' }}
+          className="bg-white px-4 pt-safe pb-3 sticky top-0 z-40 border-b border-slate-100"
         >
           {/* Row 1: Greeting + action buttons */}
           <div className="flex justify-between items-center mb-3">
