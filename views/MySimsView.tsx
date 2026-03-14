@@ -762,8 +762,6 @@ const MySimsView: React.FC<MySimsViewProps> = ({ activeSims, onNavigate, filterT
                         {activePkgs.map(pkg => {
                           const isSelected = selectedTopUp?.packageCode === pkg.packageCode;
                           const priceUsd = formatPrice(pkg.price);
-                          const gb = pkg.volume / (1024 * 1024 * 1024);
-                          const perGb = gb > 0 ? priceUsd / gb : 0;
                           const isBestValue = pkg.packageCode === bestValueCode && activePkgs.length > 1;
                           return (
                             <button
