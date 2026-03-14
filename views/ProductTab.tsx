@@ -75,6 +75,7 @@ const ProductTab: React.FC<ProductTabProps> = ({
             onSwitchToShop={() => setViewMode('SHOP')}
             onDeleteSim={onDeleteSim}
             onSwitchToSetup={() => setViewMode('SETUP')}
+            onUpdateSim={onUpdateSim}
           />
        )}
 

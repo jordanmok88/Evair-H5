@@ -191,6 +191,10 @@ function CustomerApp() {
     setActiveSims(prev => prev.filter(s => s.id !== simId));
   };
 
+  const handleUpdateSim = useCallback((simId: string, updates: Partial<ActiveSim>) => {
+    setActiveSims(prev => prev.map(s => s.id === simId ? { ...s, ...updates } : s));
+  }, []);
+
   const handleAddCard = (iccid: string) => {
     const country = MOCK_COUNTRIES[0]; // United States
     const plan = MOCK_PLANS_US[0];
