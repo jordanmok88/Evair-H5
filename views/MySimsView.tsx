@@ -746,7 +746,7 @@ const MySimsView: React.FC<MySimsViewProps> = ({ activeSims, onNavigate, filterT
                   )}
 
                   {/* Package grid */}
-                  <div className="flex-1 overflow-y-auto px-4 pt-4 pb-6">
+                  <div className="flex-1 overflow-y-auto px-4 pt-3 pb-4">
                     {topUpLoading && (
                       <div className="flex items-center justify-center py-16">
                         <Loader2 size={28} className="animate-spin text-brand-orange" />
@@ -758,7 +758,7 @@ const MySimsView: React.FC<MySimsViewProps> = ({ activeSims, onNavigate, filterT
                     )}
 
                     {!topUpLoading && activePkgs.length > 0 && (
-                      <div className="grid grid-cols-2 gap-4">
+                      <div className="grid grid-cols-2 gap-2.5">
                         {activePkgs.map(pkg => {
                           const isSelected = selectedTopUp?.packageCode === pkg.packageCode;
                           const priceUsd = formatPrice(pkg.price);
@@ -769,15 +769,15 @@ const MySimsView: React.FC<MySimsViewProps> = ({ activeSims, onNavigate, filterT
                             <button
                               key={pkg.packageCode}
                               onClick={() => setSelectedTopUp(pkg)}
-                              className={`relative flex flex-col items-start rounded-2xl transition-all ${isBestValue ? 'pt-3 pb-4 px-4' : 'p-4'} ${isSelected ? 'border-2 border-brand-orange bg-orange-50/40 shadow-sm' : 'border border-slate-200 bg-white active:border-brand-orange'}`}
+                              className={`relative flex flex-col items-start px-3 py-2.5 rounded-xl transition-all ${isSelected ? 'border-2 border-brand-orange bg-orange-50/40' : 'border border-slate-200 bg-white active:border-brand-orange'}`}
                             >
                               {isBestValue && (
-                                <span className="text-[10px] font-bold uppercase tracking-wide bg-brand-orange text-white px-2 py-0.5 rounded-full mb-2">Best Value</span>
+                                <span className="text-[9px] font-bold uppercase tracking-wide bg-brand-orange text-white px-1.5 py-px rounded-full mb-1">Best Value</span>
                               )}
-                              <span className="text-xl font-bold text-slate-900">{formatVolume(pkg.volume)}</span>
-                              <span className="text-xs text-slate-400 mt-0.5">{pkg.duration} {pkg.durationUnit === 'DAY' ? 'Days' : 'Months'}</span>
-                              <span className="text-lg font-bold text-brand-orange mt-2">${priceUsd.toFixed(2)}</span>
-                              <span className="text-[11px] text-slate-400">${perGb.toFixed(2)}/GB</span>
+                              <span className="text-base font-bold text-slate-900 leading-tight">{formatVolume(pkg.volume)}</span>
+                              <span className="text-[11px] text-slate-400">{pkg.duration} {pkg.durationUnit === 'DAY' ? 'Days' : 'Months'}</span>
+                              <span className="text-[15px] font-bold text-brand-orange mt-1">${priceUsd.toFixed(2)}</span>
+                              <span className="text-[10px] text-slate-400">${perGb.toFixed(2)}/GB</span>
                             </button>
                           );
                         })}
@@ -786,7 +786,7 @@ const MySimsView: React.FC<MySimsViewProps> = ({ activeSims, onNavigate, filterT
                   </div>
 
                   {/* Sticky purchase button */}
-                  <div className="shrink-0 px-4 pb-safe pt-2 border-t border-slate-100 bg-white">
+                  <div className="shrink-0 px-4 pb-6 pt-3 border-t border-slate-100 bg-white">
                     <button
                       onClick={selectedTopUp ? handleTopUpPurchase : closeModal}
                       disabled={topUpProcessing || !selectedTopUp}
