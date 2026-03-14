@@ -642,12 +642,20 @@ const MySimsView: React.FC<MySimsViewProps> = ({ activeSims, onNavigate, filterT
             setTopUpProcessing(true);
             try {
               const txnId = `topup_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
-              await topUp({
-                iccid,
-                packageCode: selectedTopUp.packageCode,
-                transactionId: txnId,
-                amount: selectedTopUp.price,
-              });
+              if (currentSim.type === 'ESIM') {
+                await topUp({
+                  iccid,
+                  packageCode: selectedTopUp.packageCode,
+                  transactionId: txnId,
+                  amount: selectedTopUp.price,
+                });
+              } else {
+                await orderEsim({
+                  packageCode: selectedTopUp.packageCode,
+                  transactionId: txnId,
+                  amount: selectedTopUp.price,
+                });
+              }
               setTopUpSuccess(true);
               setTimeout(() => {
                 setTopUpSuccess(false);
@@ -707,15 +715,15 @@ const MySimsView: React.FC<MySimsViewProps> = ({ activeSims, onNavigate, filterT
                           </div>
                       </div>
 
-                      {/* Top-up packages from API (eSIM) or static fallback (physical) */}
-                      {currentSim.type === 'ESIM' && topUpLoading && (
+                      {/* Top-up packages from API */}
+                      {topUpLoading && (
                         <div className="flex items-center justify-center py-8">
                           <Loader2 size={24} className="animate-spin text-brand-orange" />
                         </div>
                       )}
 
                       <div className="space-y-3 mb-6 max-h-[200px] overflow-y-auto">
-                          {currentSim.type === 'ESIM' && topUpPackages.length > 0 && topUpPackages.map(pkg => {
+                          {topUpPackages.length > 0 && topUpPackages.map(pkg => {
                             const isSelected = selectedTopUp?.packageCode === pkg.packageCode;
                             return (
                               <button
@@ -732,24 +740,14 @@ const MySimsView: React.FC<MySimsViewProps> = ({ activeSims, onNavigate, filterT
                             );
                           })}
 
-                          {/* Static fallback for physical SIMs or when no API packages */}
-                          {(currentSim.type === 'PHYSICAL' || (!topUpLoading && topUpPackages.length === 0)) && (
-                            <>
-                              <button className="w-full flex justify-between p-4 border border-gray-200 bg-white/50 rounded-2xl hover:border-brand-orange active:bg-orange-50/50 transition-colors group">
-                                  <span className="font-bold text-slate-700">1 GB / 7 Days</span>
-                                  <span className="text-brand-orange font-bold group-hover:scale-110 transition-transform">$3.00</span>
-                              </button>
-                              <button className="w-full flex justify-between p-4 border-2 border-brand-orange bg-orange-50/30 rounded-2xl">
-                                  <span className="font-bold text-slate-900">3 GB / 15 Days</span>
-                                  <span className="text-brand-orange font-bold">$8.00</span>
-                              </button>
-                            </>
+                          {!topUpLoading && topUpPackages.length === 0 && (
+                            <p className="text-center text-slate-400 py-4 text-sm">No top-up plans available</p>
                           )}
                       </div>
 
                       <button 
-                        onClick={currentSim.type === 'ESIM' && selectedTopUp ? handleTopUpPurchase : () => setIsRechargeModalOpen(false)}
-                        disabled={topUpProcessing || (currentSim.type === 'ESIM' && !selectedTopUp)}
+                        onClick={selectedTopUp ? handleTopUpPurchase : () => setIsRechargeModalOpen(false)}
+                        disabled={topUpProcessing || !selectedTopUp}
                         className="w-full bg-brand-orange text-white py-4 rounded-2xl font-bold shadow-lg shadow-orange-500/20 active:scale-[0.98] transition-transform flex items-center justify-center gap-2 disabled:opacity-50"
                       >
                           {topUpProcessing ? <Loader2 className="animate-spin" size={20} /> : t('my_sims.purchase_top_up')}
