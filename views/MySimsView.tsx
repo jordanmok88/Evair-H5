@@ -1,10 +1,10 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Wifi, Phone, Zap, ChevronDown, CheckCircle2, QrCode, Copy, X, Calendar, Clock, SignalHigh, Smartphone, RefreshCw, Plus, ShoppingBag, Settings, MoreHorizontal, Trash2, Check, AlertTriangle, Loader2, Globe, Database } from 'lucide-react';
-import { ActiveSim, Tab, SimType, EsimPackage, EsimOrderResult } from '../types';
+import { ActiveSim, Tab, SimType, EsimPackage } from '../types';
 import FlagIcon from '../components/FlagIcon';
 import { CARRIER_MAP } from '../constants';
-import { checkDataUsage, fetchTopUpPackages, fetchPackages, topUp, orderEsim, formatVolume, formatPrice, retailPrice } from '../services/esimApi';
+import { checkDataUsage, fetchTopUpPackages, fetchPackages, topUp, formatVolume, formatPrice, retailPrice } from '../services/esimApi';
 
 interface MySimsViewProps {
   activeSims: ActiveSim[];
