@@ -13,7 +13,31 @@ import { MOCK_COUNTRIES, MOCK_PLANS_US, MOCK_ACTIVE_SIMS, MOCK_NOTIFICATIONS } f
 import { checkDataUsage, prefetchPackages } from './services/esimApi';
 import { supabaseConfigured, fetchNotifications } from './services/supabase';
 
+function MobilePreview() {
+  const src = window.location.origin + '/';
+  return (
+    <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh', background: '#E5E5E5' }}>
+      <div style={{ position: 'relative', width: 393, height: 852, borderRadius: 55, background: '#1a1a1a', padding: 12, boxShadow: '0 50px 100px -20px rgba(0,0,0,0.3), inset 0 0 0 1px rgba(255,255,255,0.1)' }}>
+        {/* Side buttons */}
+        <div style={{ position: 'absolute', left: -3, top: 160, width: 3, height: 32, background: '#2a2a2a', borderRadius: '4px 0 0 4px' }} />
+        <div style={{ position: 'absolute', left: -3, top: 220, width: 3, height: 60, background: '#2a2a2a', borderRadius: '4px 0 0 4px' }} />
+        <div style={{ position: 'absolute', left: -3, top: 290, width: 3, height: 60, background: '#2a2a2a', borderRadius: '4px 0 0 4px' }} />
+        <div style={{ position: 'absolute', right: -3, top: 240, width: 3, height: 80, background: '#2a2a2a', borderRadius: '0 4px 4px 0' }} />
+        {/* Screen */}
+        <div style={{ width: '100%', height: '100%', borderRadius: 44, overflow: 'hidden', background: '#000' }}>
+          {/* Dynamic Island */}
+          <div style={{ position: 'absolute', top: 20, left: '50%', transform: 'translateX(-50%)', width: 126, height: 37, background: '#000', borderRadius: 20, zIndex: 10 }} />
+          <iframe src={src} style={{ width: '100%', height: '100%', border: 'none' }} title="iPhone Preview" />
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function App() {
+  const isMobilePreview = new URLSearchParams(window.location.search).has('mobile');
+  if (isMobilePreview) return <MobilePreview />;
+
   // Admin mode: detected via URL hash
   const [isAdmin, setIsAdmin] = useState(() => window.location.hash.includes('admin'));
 
