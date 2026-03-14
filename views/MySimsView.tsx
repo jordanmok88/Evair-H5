@@ -652,6 +652,13 @@ const MySimsView: React.FC<MySimsViewProps> = ({ activeSims, onNavigate, filterT
                 transactionId: txnId,
                 amount: selectedTopUp.price,
               });
+
+              const addedGB = selectedTopUp.volume / (1024 * 1024 * 1024);
+              onUpdateSim?.(currentSim.id, {
+                dataTotalGB: currentSim.dataTotalGB + addedGB,
+                status: 'ACTIVE',
+              });
+
               setTopUpSuccess(true);
               setTimeout(() => {
                 setTopUpSuccess(false);
