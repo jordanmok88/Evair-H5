@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { SimType, ActiveSim, Tab, User, AppNotification } from '../types';
+import { SimType, ActiveSim, Tab, User, AppNotification, EsimProfileResult } from '../types';
 import ShopView from './ShopView';
 import MySimsView from './MySimsView';
 import PhysicalSimSetupView from './PhysicalSimSetupView';
@@ -9,7 +9,7 @@ interface ProductTabProps {
   user?: User;
   onLoginRequest: () => void;
   onPurchaseComplete: (purchaseInfo?: { planName?: string; countryCode?: string; type?: SimType; orderNo?: string; iccid?: string }) => void;
-  onAddCard?: (iccid: string) => void;
+  onAddCard?: (iccid: string, profile?: EsimProfileResult) => void;
   onDeleteSim?: (simId: string) => void;
   onUpdateSim?: (simId: string, updates: Partial<ActiveSim>) => void;
   activeSims: ActiveSim[];
