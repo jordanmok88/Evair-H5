@@ -61,7 +61,7 @@ function MobilePreview() {
           <div style={{ width: '100%', height: '100%', borderRadius: 44, overflow: 'hidden', background: '#F2F4F7', position: 'relative' }}>
 
             {/* Safari top overlay - frosted glass when collapsed */}
-            <div style={{ position: 'absolute', top: 0, left: 0, right: 0, zIndex: 2, background: collapsed ? 'rgba(242,244,247,0.75)' : '#F2F4F7', backdropFilter: collapsed ? 'blur(20px)' : 'none', WebkitBackdropFilter: collapsed ? 'blur(20px)' : 'none', transition: `background ${tr}` }}>
+            <div style={{ position: 'absolute', top: 0, left: 0, right: 0, zIndex: 2, background: collapsed ? 'transparent' : '#F2F4F7', transition: `background ${tr}` }}>
               {/* Status bar */}
               <div style={{ height: 54, position: 'relative' }}>
                 <div style={{ position: 'absolute', top: 10, left: '50%', transform: 'translateX(-50%)', width: 126, height: 37, background: '#000', borderRadius: 24, zIndex: 1 }} />
