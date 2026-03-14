@@ -58,11 +58,30 @@ function MobilePreview() {
           <div style={{ position: 'absolute', left: -3, top: 220, width: 3, height: 60, background: '#2a2a2a', borderRadius: '4px 0 0 4px' }} />
           <div style={{ position: 'absolute', left: -3, top: 290, width: 3, height: 60, background: '#2a2a2a', borderRadius: '4px 0 0 4px' }} />
           <div style={{ position: 'absolute', right: -3, top: 240, width: 3, height: 80, background: '#2a2a2a', borderRadius: '0 4px 4px 0' }} />
-          <div style={{ width: '100%', height: '100%', borderRadius: 44, overflow: 'hidden', background: '#F2F4F7', position: 'relative' }}>
+          <div style={{ width: '100%', height: '100%', borderRadius: 44, overflow: 'hidden', background: '#F2F4F7', display: 'flex', flexDirection: 'column', position: 'relative' }}>
 
-            {/* Safari top overlay - frosted glass when collapsed */}
-            <div style={{ position: 'absolute', top: 0, left: 0, right: 0, zIndex: 2, background: collapsed ? 'transparent' : '#F2F4F7', transition: `background ${tr}` }}>
-              {/* Status bar */}
+            {/* Collapsed overlay - transparent status bar + compact pill floating over content */}
+            {collapsed && (
+              <div style={{ position: 'absolute', top: 0, left: 0, right: 0, zIndex: 2, pointerEvents: 'none' }}>
+                <div style={{ height: 54, position: 'relative' }}>
+                  <div style={{ position: 'absolute', top: 10, left: '50%', transform: 'translateX(-50%)', width: 126, height: 37, background: '#000', borderRadius: 24 }} />
+                  <span style={{ position: 'absolute', left: 20, top: 16, fontSize: 15, fontWeight: 600, fontFamily: '-apple-system, sans-serif' }}>10:11</span>
+                  <div style={{ position: 'absolute', right: 20, top: 18, display: 'flex', gap: 5, alignItems: 'center' }}>
+                    <svg width="18" height="12" viewBox="0 0 18 12" fill="none"><rect x="0.5" y="3" width="3" height="9" rx="1" fill="#1a1a1a"/><rect x="5" y="2" width="3" height="10" rx="1" fill="#1a1a1a"/><rect x="9.5" y="1" width="3" height="11" rx="1" fill="#1a1a1a"/><rect x="14" y="0" width="3" height="12" rx="1" fill="#1a1a1a"/></svg>
+                    <span style={{ fontSize: 12, fontWeight: 700, fontFamily: '-apple-system, sans-serif' }}>LTE</span>
+                    <svg width="27" height="13" viewBox="0 0 27 13" fill="none"><rect x="0" y="1" width="23" height="11" rx="3" stroke="#1a1a1a" strokeWidth="1"/><rect x="1.5" y="2.5" width="18" height="8" rx="2" fill="#34C759"/><rect x="24" y="4" width="2.5" height="5" rx="1" fill="#1a1a1a"/></svg>
+                  </div>
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'center', padding: '0 0 6px' }}>
+                  <div style={{ background: 'rgba(232,232,237,0.85)', borderRadius: 18, padding: '5px 16px', backdropFilter: 'blur(12px)', WebkitBackdropFilter: 'blur(12px)' }}>
+                    <span style={{ fontSize: 13, color: '#1a1a1a', fontWeight: 500, fontFamily: '-apple-system, sans-serif', whiteSpace: 'nowrap' }}>evair-h5.netlify.app</span>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Expanded Safari top - in normal flow */}
+            <div style={{ flexShrink: 0, background: '#F2F4F7', overflow: 'hidden', maxHeight: collapsed ? 0 : 200, opacity: collapsed ? 0 : 1, transition: `max-height ${tr}, opacity ${tr}` }}>
               <div style={{ height: 54, position: 'relative' }}>
                 <div style={{ position: 'absolute', top: 10, left: '50%', transform: 'translateX(-50%)', width: 126, height: 37, background: '#000', borderRadius: 24, zIndex: 1 }} />
                 <span style={{ position: 'absolute', left: 20, top: 16, fontSize: 15, fontWeight: 600, fontFamily: '-apple-system, sans-serif' }}>10:11</span>
@@ -72,26 +91,17 @@ function MobilePreview() {
                   <svg width="27" height="13" viewBox="0 0 27 13" fill="none"><rect x="0" y="1" width="23" height="11" rx="3" stroke="#1a1a1a" strokeWidth="1"/><rect x="1.5" y="2.5" width="18" height="8" rx="2" fill="#34C759"/><rect x="24" y="4" width="2.5" height="5" rx="1" fill="#1a1a1a"/></svg>
                 </div>
               </div>
-              {/* Expanded address bar */}
-              <div style={{ overflow: 'hidden', maxHeight: collapsed ? 0 : 56, opacity: collapsed ? 0 : 1, transition: `max-height ${tr}, opacity ${tr}` }}>
-                <div style={{ padding: '0 16px 10px', display: 'flex', alignItems: 'center' }}>
-                  <svg width="16" height="16" viewBox="0 0 16 16" fill="none" style={{ marginRight: 8, flexShrink: 0 }}><path d="M3 7.5V6C3 3.8 4.8 2 7 2s4 1.8 4 4v1.5" stroke="#8E8E93" strokeWidth="1.5" strokeLinecap="round"/><rect x="2" y="7" width="10" height="6" rx="1.5" fill="#8E8E93"/></svg>
-                  <div style={{ flex: 1, background: '#E8E8ED', borderRadius: 12, height: 36, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                    <span style={{ fontSize: 15, color: '#1a1a1a', fontFamily: '-apple-system, sans-serif' }}>evair-h5.netlify.app</span>
-                  </div>
-                  <svg width="16" height="16" viewBox="0 0 16 16" fill="none" style={{ marginLeft: 8, flexShrink: 0 }}><path d="M8 2v8M8 2L5 5M8 2l3 3" stroke="#007AFF" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/><path d="M3 9v4h10V9" stroke="#007AFF" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/></svg>
+              <div style={{ padding: '0 16px 10px', display: 'flex', alignItems: 'center' }}>
+                <svg width="16" height="16" viewBox="0 0 16 16" fill="none" style={{ marginRight: 8, flexShrink: 0 }}><path d="M3 7.5V6C3 3.8 4.8 2 7 2s4 1.8 4 4v1.5" stroke="#8E8E93" strokeWidth="1.5" strokeLinecap="round"/><rect x="2" y="7" width="10" height="6" rx="1.5" fill="#8E8E93"/></svg>
+                <div style={{ flex: 1, background: '#E8E8ED', borderRadius: 12, height: 36, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <span style={{ fontSize: 15, color: '#1a1a1a', fontFamily: '-apple-system, sans-serif' }}>evair-h5.netlify.app</span>
                 </div>
-              </div>
-              {/* Compact address bar pill */}
-              <div style={{ overflow: 'hidden', maxHeight: collapsed ? 36 : 0, opacity: collapsed ? 1 : 0, transition: `max-height ${tr}, opacity ${tr}`, display: 'flex', justifyContent: 'center', padding: collapsed ? '0 0 6px' : 0 }}>
-                <div style={{ background: 'rgba(232,232,237,0.7)', borderRadius: 18, padding: '5px 16px', backdropFilter: 'blur(10px)', WebkitBackdropFilter: 'blur(10px)' }}>
-                  <span style={{ fontSize: 13, color: '#1a1a1a', fontWeight: 500, fontFamily: '-apple-system, sans-serif', whiteSpace: 'nowrap' }}>evair-h5.netlify.app</span>
-                </div>
+                <svg width="16" height="16" viewBox="0 0 16 16" fill="none" style={{ marginLeft: 8, flexShrink: 0 }}><path d="M8 2v8M8 2L5 5M8 2l3 3" stroke="#007AFF" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/><path d="M3 9v4h10V9" stroke="#007AFF" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/></svg>
               </div>
             </div>
 
-            {/* App content - extends behind the status bar */}
-            <iframe ref={iframeRef} src={src} style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', border: 'none' }} title="iPhone Preview" />
+            {/* App content */}
+            <iframe ref={iframeRef} src={src} style={{ width: '100%', flex: 1, border: 'none' }} title="iPhone Preview" />
 
             {/* Safari bottom toolbar - hidden when collapsed */}
             <div style={{ flexShrink: 0, background: '#F2F4F7', borderTop: collapsed ? 'none' : '0.5px solid #C6C6C8', overflow: 'hidden', maxHeight: collapsed ? 0 : 50, opacity: collapsed ? 0 : 1, transition: `max-height ${tr}, opacity ${tr}`, display: 'flex', justifyContent: 'space-around', alignItems: 'center', padding: collapsed ? 0 : '8px 0 0' }}>
