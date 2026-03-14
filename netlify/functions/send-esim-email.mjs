@@ -91,7 +91,7 @@ export async function handler(event) {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${apiKey}` },
       body: JSON.stringify({
-        from: 'EvairSIM <noreply@evairsim.com>',
+        from: process.env.RESEND_FROM || 'EvairSIM <onboarding@resend.dev>',
         to: [email],
         subject: `Your eSIM is ready${packageName ? ` — ${packageName}` : ''}`,
         html,
