@@ -281,7 +281,7 @@ function CustomerApp() {
   };
 
   return (
-    <div className="bg-[#F2F4F7] sm:bg-[#E5E5E5] sm:h-full sm:min-h-screen sm:flex sm:items-center sm:justify-center sm:p-8 font-sans antialiased selection:bg-orange-100">
+    <div className="sm:bg-[#E5E5E5] sm:h-full sm:min-h-screen sm:flex sm:items-center sm:justify-center sm:p-8 font-sans antialiased selection:bg-orange-100">
       
       <div ref={phoneRef} className="w-full sm:max-w-[430px] sm:h-[880px] bg-[#F2F4F7] sm:rounded-[3.5rem] sm:overflow-hidden sm:shadow-[0_50px_100px_-20px_rgba(0,0,0,0.25)] relative sm:border-[8px] sm:border-slate-900 sm:ring-1 sm:ring-black/50">
         
