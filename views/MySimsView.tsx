@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Wifi, Phone, Zap, ChevronDown, CheckCircle2, QrCode, Copy, X, Calendar, Clock, SignalHigh, Smartphone, RefreshCw, Plus, ShoppingBag, Settings, MoreHorizontal, Trash2, Check, AlertTriangle, Loader2, Globe, Database } from 'lucide-react';
-import { ActiveSim, Tab, SimType, EsimPackage } from '../types';
+import { ActiveSim, Tab, SimType, EsimPackage, EsimOrderResult } from '../types';
 import FlagIcon from '../components/FlagIcon';
 import { CARRIER_MAP } from '../constants';
 import { checkDataUsage, fetchTopUpPackages, fetchPackages, topUp, orderEsim, formatVolume, formatPrice, retailPrice } from '../services/esimApi';
@@ -52,6 +52,7 @@ const MySimsView: React.FC<MySimsViewProps> = ({ activeSims, onNavigate, filterT
   const [selectedTopUp, setSelectedTopUp] = useState<EsimPackage | null>(null);
   const [topUpProcessing, setTopUpProcessing] = useState(false);
   const [topUpSuccess, setTopUpSuccess] = useState(false);
+  const [lpaResult, setLpaResult] = useState<EsimOrderResult | null>(null);
 
   const currentSim = filteredSims.find(s => s.id === selectedSimId) || filteredSims[0];
 
