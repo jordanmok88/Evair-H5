@@ -32,21 +32,21 @@ function App() {
 function CustomerApp() {
   const [safariCollapsed, setSafariCollapsed] = useState(false);
   const lastSafariScrollY = useRef(0);
-  const mainRef = useRef<HTMLElement>(null);
+  const phoneRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    const el = mainRef.current;
-    if (!el) return;
     const handler = (e: Event) => {
+      if (!phoneRef.current) return;
       const target = e.target as HTMLElement;
+      if (!phoneRef.current.contains(target)) return;
       const y = target.scrollTop ?? 0;
-      if (y > lastSafariScrollY.current + 30 && y > 60) setSafariCollapsed(true);
-      else if (y < lastSafariScrollY.current - 30) setSafariCollapsed(false);
+      if (y > lastSafariScrollY.current + 20 && y > 50) setSafariCollapsed(true);
+      else if (y < lastSafariScrollY.current - 20) setSafariCollapsed(false);
       if (y <= 0) setSafariCollapsed(false);
       lastSafariScrollY.current = y;
     };
-    el.addEventListener('scroll', handler, { capture: true, passive: true });
-    return () => el.removeEventListener('scroll', handler, { capture: true });
+    document.addEventListener('scroll', handler, { capture: true, passive: true });
+    return () => document.removeEventListener('scroll', handler, { capture: true });
   }, []);
 
   const [activeTab, setActiveTab] = useState<Tab>(Tab.SIM_CARD);
