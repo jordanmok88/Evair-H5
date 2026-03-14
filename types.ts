@@ -187,6 +187,7 @@ export interface EsimOrderResult {
 export interface EsimProfileResult {
   iccid: string;
   packageCode: string;
+  packageName: string;
   status: string;
   expiredTime: string;
   totalVolume: number;
