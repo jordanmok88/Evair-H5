@@ -4,6 +4,7 @@ import { ArrowLeft, Package, Truck, MapPin, CheckCircle2, Wifi, Globe, CreditCar
 import BarcodeScanner from '../components/BarcodeScanner';
 import { queryProfile } from '../services/esimApi';
 import { useEdgeSwipeBack } from '../hooks/useEdgeSwipeBack';
+import { EsimProfileResult } from '../types';
 
 interface TrackingEvent {
   label: string;
@@ -23,7 +24,7 @@ interface TrackingResult {
 interface PhysicalSimSetupViewProps {
   onSwitchToShop: () => void;
   onSwitchToList: () => void;
-  onAddCard?: (iccid: string) => void;
+  onAddCard?: (iccid: string, profile?: EsimProfileResult) => void;
 }
 
 type SetupTab = 'TRACKING' | 'ACTIVATE';
