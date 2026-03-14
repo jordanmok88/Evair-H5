@@ -190,7 +190,7 @@ const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose, onLogin, initi
                     type="text"
                     required
                     className={inputClass}
-                    placeholder="Jordan Mok"
+                    placeholder="John Smith"
                     value={regName}
                     onChange={e => setRegName(e.target.value)}
                   />
