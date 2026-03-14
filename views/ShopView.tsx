@@ -49,6 +49,7 @@ const ShopView: React.FC<ShopViewProps> = ({ isLoggedIn, user, onLoginRequest, o
   const [esimOrderResult, setEsimOrderResult] = useState<EsimOrderResult | null>(null);
   const [copiedField, setCopiedField] = useState<string | null>(null);
   const [orderError, setOrderError] = useState<string | null>(null);
+  const [emailSent, setEmailSent] = useState(false);
   const [continentTab, setContinentTab] = useState<ContinentTab>('All');
 
   const [headerHidden, setHeaderHidden] = useState(false);
