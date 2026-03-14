@@ -45,7 +45,9 @@ while true; do
         git commit -m "auto: update $(date '+%H:%M:%S')" --quiet 2>/dev/null
 
         if git push --quiet 2>&1; then
-          echo "[$timestamp] ✅ Pushed successfully. Netlify will deploy in ~30-60s."
+          echo "[$timestamp] ✅ Pushed successfully. Triggering Netlify build..."
+          curl -s -X POST https://api.netlify.com/build_hooks/69b57d8cc1a75fc66b266223 > /dev/null 2>&1
+          echo "[$timestamp] 🚀 Netlify build triggered. Live in ~30-60s."
         else
           echo "[$timestamp] ❌ Push failed. Will retry on next change."
         fi
