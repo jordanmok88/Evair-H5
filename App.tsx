@@ -252,6 +252,7 @@ function CustomerApp() {
                 onPurchaseComplete={handlePurchaseComplete}
                 onAddCard={handleAddCard}
                 onDeleteSim={handleDeleteSim}
+                onUpdateSim={handleUpdateSim}
                 activeSims={activeSims}
                 onNavigate={handleTabChange}
                 onSwitchSimType={handleSwitchSimType}
