@@ -582,6 +582,13 @@ const PhysicalSimSetupView: React.FC<PhysicalSimSetupViewProps> = ({ onSwitchToS
                   )}
                 </button>
               )}
+
+              {activationError && (
+                <div className="flex items-start gap-2 mt-3 bg-red-50 border border-red-100 rounded-xl px-3 py-2.5">
+                  <AlertCircle size={16} className="text-red-500 shrink-0 mt-0.5" />
+                  <p className="text-xs text-red-600">{activationError}</p>
+                </div>
+              )}
             </div>
 
             <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-5 mb-4">
