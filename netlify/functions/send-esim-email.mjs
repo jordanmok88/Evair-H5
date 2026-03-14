@@ -22,11 +22,9 @@ function buildHtml({ qrCodeUrl, smdpAddress, activationCode, lpaString, orderNo,
 
       <div style="text-align:center;margin-bottom:24px">
         <table cellpadding="0" cellspacing="0" border="0" style="margin:0 auto"><tr>
-          <td style="font-size:28px;font-weight:800;font-style:italic;color:#FF6600;font-family:Arial,Helvetica,sans-serif;vertical-align:middle">Evair</td>
-          <td style="vertical-align:middle;padding-left:4px">
-            <div style="background:#FF6600;border-radius:6px;padding:4px 10px;display:inline-block">
-              <span style="font-size:22px;font-weight:800;color:#ffffff;font-family:Arial,Helvetica,sans-serif">SIM</span>
-            </div>
+          <td style="font-size:30px;font-weight:800;font-style:italic;color:#FF6600;font-family:Arial,Helvetica,sans-serif;vertical-align:middle;padding-right:6px">Evair</td>
+          <td bgcolor="#FF6600" style="background-color:#FF6600;border-radius:8px;vertical-align:middle;padding:5px 12px;mso-padding-alt:5px 12px">
+            <span style="font-size:24px;font-weight:800;color:#ffffff;font-family:Arial,Helvetica,sans-serif">SIM</span>
           </td>
         </tr></table>
       </div>
