@@ -15,8 +15,8 @@ import { supabaseConfigured, fetchNotifications } from './services/supabase';
 
 function MobilePreview() {
   const src = window.location.origin + '/';
-  const phoneW = 393;
-  const phoneH = 852;
+  const phoneW = 402;
+  const phoneH = 868;
   const [scale, setScale] = useState(1);
 
   useEffect(() => {
