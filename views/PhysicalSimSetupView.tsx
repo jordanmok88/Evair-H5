@@ -452,11 +452,10 @@ const PhysicalSimSetupView: React.FC<PhysicalSimSetupViewProps> = ({ onSwitchToS
                 {/* Top row: Logo + Barcode */}
                 <div className="absolute top-4 left-5 right-4 flex items-start justify-between">
                   {/* Logo */}
-                  <img
-                    src="/evairsim-logo.png"
-                    alt="EvairSIM"
-                    className="h-12 object-contain"
-                  />
+                  <div className="flex items-center gap-1">
+                    <span className="text-[22px] font-extrabold italic text-[#FF6600]" style={{ fontFamily: 'Arial, Helvetica, sans-serif' }}>Evair</span>
+                    <span className="text-[16px] font-extrabold text-white bg-[#FF6600] rounded-md px-2 py-0.5" style={{ fontFamily: 'Arial, Helvetica, sans-serif' }}>SIM</span>
+                  </div>
 
                   {/* Barcode area with ICCID highlight */}
                   <div className="flex flex-col items-center gap-1">
