@@ -5,6 +5,7 @@ import { ActiveSim, Tab, SimType, EsimPackage } from '../types';
 import FlagIcon from '../components/FlagIcon';
 import { CARRIER_MAP } from '../constants';
 import { checkDataUsage, fetchTopUpPackages, fetchPackages, topUp, formatVolume, formatPrice, retailPrice } from '../services/esimApi';
+import { useEdgeSwipeBack } from '../hooks/useEdgeSwipeBack';
 
 interface MySimsViewProps {
   activeSims: ActiveSim[];
@@ -35,6 +36,8 @@ function resolveIccid(sim: ActiveSim): string {
 
 const MySimsView: React.FC<MySimsViewProps> = ({ activeSims, onNavigate, filterType, onSwitchToShop, onDeleteSim, onSwitchToSetup }) => {
   const { t } = useTranslation();
+  const swipeBack = useCallback(() => { onSwitchToShop?.(); }, [onSwitchToShop]);
+  useEdgeSwipeBack(swipeBack);
   const filteredSims = activeSims.filter(s => s.type === filterType);
   
   const [selectedSimId, setSelectedSimId] = useState<string>('');

@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { ChevronLeft, Send, Paperclip, CheckCheck, Bot, Sparkles } from 'lucide-react';
 import { getAIResponse } from '../ai/evairAssistant';
 import { ChatMessage } from '../types';
+import { useEdgeSwipeBack } from '../hooks/useEdgeSwipeBack';
 import {
   supabaseConfigured,
   createConversation,
@@ -56,6 +57,7 @@ const RichText = ({ text }: { text: string }) => {
 
 const ContactUsView: React.FC<ContactUsViewProps> = ({ onBack, userName = 'Jordan' }) => {
   const { t } = useTranslation();
+  useEdgeSwipeBack(onBack);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);

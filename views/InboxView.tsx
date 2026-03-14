@@ -4,6 +4,7 @@ import { ChevronRight, Bell, Package, AlertTriangle, Clock, Tag, Zap, Trash2, Ar
 import { AppNotification, NotificationType } from '../types';
 import FlagIcon from '../components/FlagIcon';
 import { useSwipeBack } from '../hooks/useSwipeBack';
+import { useEdgeSwipeBack } from '../hooks/useEdgeSwipeBack';
 
 type InboxFilter = 'all' | 'alerts' | 'orders' | 'promos';
 
@@ -41,6 +42,7 @@ const InboxView: React.FC<InboxViewProps> = ({ notifications, onUpdateNotificati
 
   const handleSwipeBack = useCallback(() => { onBack?.(); }, [onBack]);
   useSwipeBack(onBack ? 1 : 0, handleSwipeBack);
+  useEdgeSwipeBack(handleSwipeBack);
 
   const unreadCount = notifications.filter(n => !n.read).length;
   const filtered = notifications.filter(n => FILTER_MAP[filter].includes(n.type));
