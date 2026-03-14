@@ -21,7 +21,7 @@ function buildHtml({ qrCodeUrl, smdpAddress, activationCode, lpaString, orderNo,
     <div style="background:#fff;border-radius:16px;padding:32px 24px;box-shadow:0 2px 12px rgba(0,0,0,0.06)">
 
       <div style="text-align:center;margin-bottom:24px">
-        <img src="https://evair-h5.netlify.app/evairsim-logo.png" alt="EvairSIM" width="200" style="display:block;margin:0 auto;max-width:200px;height:auto" />
+        <img src="https://evair-h5.netlify.app/evairsim-logo-v2.png" alt="EvairSIM" width="220" style="display:block;margin:0 auto;max-width:220px;height:auto" />
       </div>
 
       <h1 style="font-size:20px;font-weight:700;color:#1a1a1a;text-align:center;margin:0 0 8px">Your eSIM is Ready!</h1>
