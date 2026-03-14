@@ -21,18 +21,7 @@ function buildHtml({ qrCodeUrl, smdpAddress, activationCode, lpaString, orderNo,
     <div style="background:#fff;border-radius:16px;padding:32px 24px;box-shadow:0 2px 12px rgba(0,0,0,0.06)">
 
       <div style="text-align:center;margin-bottom:24px">
-        <table cellpadding="0" cellspacing="0" border="0" align="center" style="margin:0 auto">
-          <tr>
-            <td style="font-size:32px;font-weight:800;font-style:italic;color:#FF6600;font-family:Arial,Helvetica,sans-serif;vertical-align:middle;padding-right:4px;line-height:1">Evair</td>
-            <td style="vertical-align:middle">
-              <table cellpadding="0" cellspacing="0" border="0">
-                <tr>
-                  <td bgcolor="#FF6600" style="background-color:#FF6600;border-radius:8px;padding:4px 14px;font-size:24px;font-weight:800;color:#ffffff;font-family:Arial,Helvetica,sans-serif;line-height:1.2">SIM</td>
-                </tr>
-              </table>
-            </td>
-          </tr>
-        </table>
+        <img src="https://evair-h5.netlify.app/evairsim-logo.png" alt="EvairSIM" width="200" style="display:block;margin:0 auto;max-width:200px;height:auto" />
       </div>
 
       <h1 style="font-size:20px;font-weight:700;color:#1a1a1a;text-align:center;margin:0 0 8px">Your eSIM is Ready!</h1>
