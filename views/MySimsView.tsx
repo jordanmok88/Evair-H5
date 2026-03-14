@@ -753,7 +753,7 @@ const MySimsView: React.FC<MySimsViewProps> = ({ activeSims, onNavigate, filterT
                     {!topUpLoading && sections.map(({ label, pkgs, bestCode }, idx) => (
                       <div key={label} className={idx > 0 ? 'mt-6' : ''}>
                         <div className="flex items-center gap-2 mb-3">
-                          <span className="bg-slate-800 text-white text-sm font-bold px-3 py-1 rounded-lg">{label}</span>
+                          <span className="bg-brand-orange text-white text-sm font-bold px-3 py-1 rounded-lg">{label}</span>
                           <div className="flex-1 h-px bg-slate-200" />
                         </div>
                         <div className="grid grid-cols-2 gap-2.5">
