@@ -351,3 +351,10 @@ export function formatVolume(bytes: number): string {
 export function formatPrice(microCents: number): number {
   return microCents / 10000;
 }
+
+/** 100% markup rounded to .99 retail price */
+export function retailPrice(microCents: number): number {
+  const cost = microCents / 10000;
+  const marked = cost * 2;
+  return Math.ceil(marked) - 0.01;
+}
