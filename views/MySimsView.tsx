@@ -4,7 +4,7 @@ import { Wifi, Phone, Zap, ChevronDown, CheckCircle2, QrCode, Copy, X, Calendar,
 import { ActiveSim, Tab, SimType, EsimPackage } from '../types';
 import FlagIcon from '../components/FlagIcon';
 import { CARRIER_MAP } from '../constants';
-import { checkDataUsage, fetchTopUpPackages, fetchPackages, topUp, orderEsim, formatVolume, formatPrice } from '../services/esimApi';
+import { checkDataUsage, fetchTopUpPackages, fetchPackages, topUp, orderEsim, formatVolume, formatPrice, retailPrice } from '../services/esimApi';
 
 interface MySimsViewProps {
   activeSims: ActiveSim[];
@@ -776,7 +776,7 @@ const MySimsView: React.FC<MySimsViewProps> = ({ activeSims, onNavigate, filterT
                       <div className="grid grid-cols-2 gap-2.5">
                         {activePkgs.map(pkg => {
                           const isSelected = selectedTopUp?.packageCode === pkg.packageCode;
-                          const priceUsd = formatPrice(pkg.price);
+                          const priceRetail = retailPrice(pkg.price);
                           const isBestValue = pkg.packageCode === bestValueCode && activePkgs.length > 1;
                           return (
                             <button
