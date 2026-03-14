@@ -555,13 +555,20 @@ const PhysicalSimSetupView: React.FC<PhysicalSimSetupViewProps> = ({ onSwitchToS
               ) : (
                 <button
                   onClick={async () => {
-                    if (!iccidInput.trim()) return;
+                    const trimmed = iccidInput.trim().replace(/\s/g, '');
+                    if (!trimmed) return;
+
+                    if (!/^\d{18,22}$/.test(trimmed)) {
+                      setActivationError('ICCID must be 18–22 digits. Please check the number on your SIM card.');
+                      return;
+                    }
+
                     setActivating(true);
                     setActivationError('');
                     try {
-                      await queryProfile(iccidInput.trim());
+                      await queryProfile(trimmed);
                       setActivated(true);
-                      onAddCard?.(iccidInput.trim());
+                      onAddCard?.(trimmed);
                     } catch (err: any) {
                       setActivationError(err.message || 'Could not verify this ICCID. Please check the number and try again.');
                     } finally {
