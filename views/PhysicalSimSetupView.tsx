@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { ArrowLeft, Package, Truck, MapPin, CheckCircle2, Wifi, Globe, CreditCard, ShieldCheck, Copy, Check, Clock, Search, Loader2, AlertCircle, RotateCcw, ScanLine, Smartphone, Unlock, RotateCw, Signal, Mail } from 'lucide-react';
 import BarcodeScanner from '../components/BarcodeScanner';
 import { queryProfile } from '../services/esimApi';
+import { useEdgeSwipeBack } from '../hooks/useEdgeSwipeBack';
 
 interface TrackingEvent {
   label: string;
@@ -143,6 +144,7 @@ function getProgressSteps(status: TrackingResult['status']) {
 }
 
 const PhysicalSimSetupView: React.FC<PhysicalSimSetupViewProps> = ({ onSwitchToShop, onSwitchToList, onAddCard }) => {
+  useEdgeSwipeBack(onSwitchToShop);
   const [activeTab, setActiveTab] = useState<SetupTab>('ACTIVATE');
   const [trackingInput, setTrackingInput] = useState('');
   const [trackingState, setTrackingState] = useState<TrackingState>('IDLE');
