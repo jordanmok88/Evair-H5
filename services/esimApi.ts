@@ -195,7 +195,10 @@ export async function orderEsim(req: EsimOrderRequest): Promise<EsimOrderResult>
 // ─── Query Profile ───────────────────────────────────────────────────
 
 export async function queryProfile(iccid: string): Promise<EsimProfileResult> {
-  const resp = await call<EsimProfileResult>('/esim/query', { iccid });
+  const resp = await call<EsimProfileResult>('/esim/query', {
+    iccid,
+    pager: { pageNum: 1, pageSize: 20 },
+  });
 
   if (!resp.success) {
     throw new Error(resp.errorMsg ?? 'Profile query failed');
