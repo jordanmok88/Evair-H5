@@ -808,6 +808,15 @@ const MySimsView: React.FC<MySimsViewProps> = ({ activeSims, onNavigate, filterT
                     </p>
                   </div>
                 </div>
+                {/* Done button for LPA screen */}
+                <div className="shrink-0 px-4 pb-6 pt-3 border-t border-slate-100 bg-white">
+                  <button
+                    onClick={closeModal}
+                    className="w-full bg-brand-orange text-white py-4 rounded-2xl font-bold shadow-lg shadow-orange-500/20 active:scale-[0.98] transition-transform"
+                  >
+                    {t('my_sims.done')}
+                  </button>
+                </div>
               ) : topUpSuccess ? (
                 <div className="flex-1 flex flex-col items-center justify-center">
                   <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mb-3">
