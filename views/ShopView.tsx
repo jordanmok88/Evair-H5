@@ -267,6 +267,13 @@ const ShopView: React.FC<ShopViewProps> = ({ isLoggedIn, user, onLoginRequest, o
         <div className="flex-1 min-h-0 flex flex-col px-5 pb-2 gap-4 overflow-y-auto no-scrollbar">
           <p className="text-white/60 text-sm text-center mt-2">{t('shop.order_success_subtitle')}</p>
 
+          {emailSent && (
+            <div className="flex items-center justify-center gap-1.5 bg-emerald-500/15 rounded-xl py-2 px-3">
+              <Mail size={14} className="text-emerald-400" />
+              <span className="text-emerald-400 text-xs font-medium">Details also sent to {email}</span>
+            </div>
+          )}
+
           {/* QR Code */}
           <div className="bg-white rounded-2xl px-5 py-4 flex flex-col items-center">
             <div className="bg-slate-50 p-2 rounded-xl mb-2.5 border border-slate-100">
