@@ -775,6 +775,7 @@ const MySimsView: React.FC<MySimsViewProps> = ({ activeSims, onNavigate, filterT
                               <span className="text-base font-bold text-slate-900 leading-tight">{formatVolume(pkg.volume)}</span>
                               <span className="text-[11px] text-slate-400">{pkg.duration} {pkg.durationUnit === 'DAY' ? 'Days' : 'Months'}</span>
                               <span className="text-[15px] font-bold text-brand-orange mt-1">${priceUsd.toFixed(2)}</span>
+                              <span className="text-[9px] text-slate-300 mt-0.5 leading-tight truncate w-full">{pkg.name}</span>
                             </button>
                           );
                         })}
