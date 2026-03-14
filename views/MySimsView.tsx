@@ -732,6 +732,7 @@ const MySimsView: React.FC<MySimsViewProps> = ({ activeSims, onNavigate, filterT
               </div>
 
               {lpaResult ? (
+                <>
                 <div className="flex-1 overflow-y-auto px-4 pt-4 pb-4">
                   {/* Success header */}
                   <div className="flex flex-col items-center mb-5">
