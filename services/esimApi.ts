@@ -195,7 +195,7 @@ export async function orderEsim(req: EsimOrderRequest): Promise<EsimOrderResult>
 // ─── Query Profile ───────────────────────────────────────────────────
 
 export async function queryProfile(iccid: string): Promise<EsimProfileResult> {
-  const resp = await call<EsimProfileResult>('/esim/query', {
+  const resp = await call<EsimQueryPayload>('/esim/query', {
     iccid,
     pager: { pageNum: 1, pageSize: 20 },
   });
@@ -204,7 +204,20 @@ export async function queryProfile(iccid: string): Promise<EsimProfileResult> {
     throw new Error(resp.errorMsg ?? 'Profile query failed');
   }
 
-  return resp.obj;
+  const list = resp.obj?.esimList;
+  if (!list || list.length === 0) {
+    throw new Error('This ICCID was not found. Please check the number and try again.');
+  }
+
+  const esim = list[0];
+  return {
+    iccid: esim.iccid,
+    packageCode: esim.packageCode || '',
+    status: esim.smdpStatus || '',
+    expiredTime: esim.expiredTime || '',
+    totalVolume: esim.totalVolume || 0,
+    usedVolume: esim.usedVolume || 0,
+  };
 }
 
 // ─── Data Usage ──────────────────────────────────────────────────────
