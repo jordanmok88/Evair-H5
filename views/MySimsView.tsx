@@ -14,6 +14,7 @@ interface MySimsViewProps {
   onSwitchToShop?: () => void;
   onDeleteSim?: (simId: string) => void;
   onSwitchToSetup?: () => void;
+  onUpdateSim?: (simId: string, updates: Partial<ActiveSim>) => void;
 }
 
 const CARD_HEIGHT = 72;
@@ -34,7 +35,7 @@ function resolveIccid(sim: ActiveSim): string {
   return sim.iccid || `898520002633221${sim.id.replace(/\D/g, '').slice(0, 5)}`;
 }
 
-const MySimsView: React.FC<MySimsViewProps> = ({ activeSims, onNavigate, filterType, onSwitchToShop, onDeleteSim, onSwitchToSetup }) => {
+const MySimsView: React.FC<MySimsViewProps> = ({ activeSims, onNavigate, filterType, onSwitchToShop, onDeleteSim, onSwitchToSetup, onUpdateSim }) => {
   const { t } = useTranslation();
   const swipeBack = useCallback(() => { onSwitchToShop?.(); }, [onSwitchToShop]);
   useEdgeSwipeBack(swipeBack);
