@@ -7,6 +7,7 @@ import DialerView from './views/DialerView';
 import ContactUsView from './views/ContactUsView';
 import InboxView from './views/InboxView';
 import AdminApp from './views/admin/AdminApp';
+import ApiTestPage from './views/ApiTestPage';
 import { Tab, ActiveSim, SimType, User, AppNotification, EsimProfileResult } from './types';
 import { Lock } from 'lucide-react';
 import { MOCK_COUNTRIES, MOCK_PLANS_US, MOCK_ACTIVE_SIMS, MOCK_NOTIFICATIONS, CARRIER_MAP } from './constants';
@@ -18,13 +19,20 @@ function App() {
   // Admin mode: detected via URL hash
   const [isAdmin, setIsAdmin] = useState(() => window.location.hash.includes('admin'));
 
+  // API Test mode: detected via URL hash
+  const [isApiTest, setIsApiTest] = useState(() => window.location.hash.includes('api-test'));
+
   useEffect(() => {
-    const onHash = () => setIsAdmin(window.location.hash.includes('admin'));
+    const onHash = () => {
+      setIsAdmin(window.location.hash.includes('admin'));
+      setIsApiTest(window.location.hash.includes('api-test'));
+    };
     window.addEventListener('hashchange', onHash);
     return () => window.removeEventListener('hashchange', onHash);
   }, []);
 
   if (isAdmin) return <AdminApp />;
+  if (isApiTest) return <ApiTestPage />;
 
   return <CustomerApp />;
 }
