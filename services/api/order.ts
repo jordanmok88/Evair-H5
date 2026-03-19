@@ -9,6 +9,8 @@ import type {
   OrderDetailDto,
   CreateEsimOrderRequest,
   CreatePhysicalOrderRequest,
+  CreateTopupOrderRequest,
+  CreateTopupOrderResponse,
   CreateOrderResponse,
   OrderListParams,
   PaginatedData,
@@ -22,13 +24,14 @@ import type {
 // ─── API 端点 ────────────────────────────────────────────────────────────
 
 const ENDPOINTS = {
-  ORDERS: '/orders',
-  ORDER_BY_NO: (orderNo: string) => `/orders/${orderNo}`,
-  ESIM_ORDER: '/orders/esim',
-  PHYSICAL_ORDER: '/orders/physical',
-  CANCEL_ORDER: (orderNo: string) => `/orders/${orderNo}/cancel`,
-  REFUND_ORDER: (orderNo: string) => `/orders/${orderNo}/refund`,
-  TRACKING: (orderNo: string) => `/orders/${orderNo}/tracking`,
+  ORDERS: '/h5/orders',
+  ORDER_BY_NO: (orderNo: string) => `/h5/orders/${orderNo}`,
+  ESIM_ORDER: '/h5/orders/esim',
+  PHYSICAL_ORDER: '/h5/orders/physical',
+  TOPUP_ORDER: '/h5/orders/topup',
+  CANCEL_ORDER: (orderNo: string) => `/h5/orders/${orderNo}/cancel`,
+  REFUND_ORDER: (orderNo: string) => `/h5/orders/${orderNo}/refund`,
+  TRACKING: (orderNo: string) => `/h5/orders/${orderNo}/tracking`,
 } as const;
 
 // ─── 订单服务 ────────────────────────────────────────────────────────────
@@ -52,6 +55,14 @@ export const orderService = {
     return post<CreateOrderResponse>(ENDPOINTS.PHYSICAL_ORDER, data);
   },
 
+  /**
+   * 创建充值订单
+   * @param data 充值信息
+   */
+  async createTopupOrder(data: CreateTopupOrderRequest): Promise<CreateTopupOrderResponse> {
+    return post<CreateTopupOrderResponse>(ENDPOINTS.TOPUP_ORDER, data);
+  },
+
   // ============ 订单查询 ============
 
   /**
@@ -59,7 +70,7 @@ export const orderService = {
    * @param params 筛选参数
    */
   async getOrders(params?: OrderListParams): Promise<PaginatedData<OrderDto>> {
-    return get<PaginatedData<OrderDto>>(ENDPOINTS.ORDERS, params);
+    return get<PaginatedData<OrderDto>>(ENDPOINTS.ORDERS, params as Record<string, unknown>);
   },
 
   /**

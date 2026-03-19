@@ -21,17 +21,18 @@ import type {
 
 const ENDPOINTS = {
   // 用户信息
-  PROFILE: '/user/profile',
-  PASSWORD: '/user/password',
+  PROFILE: '/h5/user/profile',
+  PASSWORD: '/h5/user/password',
 
   // SIM 卡管理
-  SIMS: '/user/sims',
-  BIND_SIM: '/user/sims/bind',
-  UNBIND_SIM: '/user/sims/unbind',
+  SIMS: '/h5/user/sims',
+  BIND_SIM: '/h5/user/sims/bind',
+  UNBIND_SIM: '/h5/user/sims/unbind',
 
   // 地址管理
-  ADDRESSES: '/user/addresses',
-  ADDRESS_BY_ID: (id: string) => `/user/addresses/${id}`,
+  ADDRESSES: '/h5/user/addresses',
+  ADDRESS_BY_ID: (id: string) => `/h5/user/addresses/${id}`,
+  SET_DEFAULT_ADDRESS: (id: string) => `/h5/user/addresses/${id}/default`,
 } as const;
 
 // ─── 用户信息服务 ────────────────────────────────────────────────────────
@@ -134,7 +135,7 @@ export const userService = {
    * @param id 地址 ID
    */
   async setDefaultAddress(id: string): Promise<void> {
-    await put(ENDPOINTS.ADDRESS_BY_ID(id), { isDefault: true });
+    await put(ENDPOINTS.SET_DEFAULT_ADDRESS(id));
   },
 };
 

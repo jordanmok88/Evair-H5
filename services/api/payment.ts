@@ -10,14 +10,16 @@ import type {
   PaymentDto,
   ValidateCouponRequest,
   ValidateCouponResponse,
+  CouponDto,
 } from './types';
 
 // ─── API 端点 ────────────────────────────────────────────────────────────
 
 const ENDPOINTS = {
-  CREATE_PAYMENT: '/payments/create',
-  PAYMENT_BY_ID: (paymentId: string) => `/payments/${paymentId}`,
-  VALIDATE_COUPON: '/coupons/validate',
+  CREATE_PAYMENT: '/h5/payments/create',
+  PAYMENT_BY_ID: (paymentId: string) => `/h5/payments/${paymentId}`,
+  VALIDATE_COUPON: '/h5/coupons/validate',
+  COUPONS: '/h5/coupons',
 } as const;
 
 // ─── 支付服务 ────────────────────────────────────────────────────────────
@@ -46,6 +48,13 @@ export const paymentService = {
    */
   async validateCoupon(data: ValidateCouponRequest): Promise<ValidateCouponResponse> {
     return post<ValidateCouponResponse>(ENDPOINTS.VALIDATE_COUPON, data);
+  },
+
+  /**
+   * 获取用户可用优惠券列表
+   */
+  async getCoupons(): Promise<{ coupons: CouponDto[] }> {
+    return get<{ coupons: CouponDto[] }>(ENDPOINTS.COUPONS);
   },
 
   // ============ 辅助方法 ============

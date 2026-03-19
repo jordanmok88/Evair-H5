@@ -17,12 +17,12 @@ import type {
 // ─── API 端点 ────────────────────────────────────────────────────────────
 
 const ENDPOINTS = {
-  LOGIN: '/auth/login',
-  REGISTER: '/auth/register',
-  LOGOUT: '/auth/logout',
-  REFRESH: '/auth/refresh',
-  FORGOT_PASSWORD: '/auth/forgot-password',
-  RESET_PASSWORD: '/auth/reset-password',
+  LOGIN: '/h5/auth/login',
+  REGISTER: '/h5/auth/register',
+  LOGOUT: '/h5/auth/logout',
+  REFRESH: '/h5/auth/refresh',
+  FORGOT_PASSWORD: '/h5/auth/forgot-password',
+  RESET_PASSWORD: '/h5/auth/reset-password',
 } as const;
 
 // ─── 认证服务 ────────────────────────────────────────────────────────────

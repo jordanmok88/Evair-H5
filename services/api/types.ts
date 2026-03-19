@@ -140,7 +140,8 @@ export interface UpdateProfileRequest {
 
 export interface ChangePasswordRequest {
   currentPassword: string;
-  newPassword: string;
+  password: string;
+  passwordConfirmation: string;
 }
 
 export interface UserSimDto {
@@ -326,6 +327,22 @@ export interface CreateOrderResponse {
   createdAt: string;
 }
 
+export interface CreateTopupOrderRequest {
+  iccid: string;
+  packageCode: string;
+  amount: number;
+}
+
+export interface CreateTopupOrderResponse {
+  orderNo: string;
+  status: OrderStatus;
+  amount: number;
+  currency: string;
+  iccid: string;
+  packageCode: string;
+  createdAt: string;
+}
+
 export interface OrderListParams {
   status?: OrderStatus;
   type?: OrderType;
@@ -412,6 +429,21 @@ export interface ValidateCouponResponse {
   discountAmount?: number;
   minOrderAmount?: number;
   maxDiscount?: number;
+  expiresAt?: string;
+}
+
+export interface CouponDto {
+  id: string;
+  userCouponId: string;
+  code: string;
+  name: string;
+  description?: string;
+  discountType: 'PERCENTAGE' | 'FIXED';
+  discountValue: number;
+  minOrderAmount: number;
+  maxDiscount?: number;
+  status: 'active' | 'used' | 'expired';
+  startsAt?: string;
   expiresAt?: string;
 }
 

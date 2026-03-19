@@ -18,14 +18,15 @@ import type {
 
 const ENDPOINTS = {
   // 套餐
-  PACKAGES: '/packages',
-  HOT_PACKAGES: '/packages/hot',
-  RECHARGE_PACKAGES: '/packages/recharge',
+  PACKAGES: '/h5/packages',
+  HOT_PACKAGES: '/h5/packages/hot',
+  RECHARGE_PACKAGES: '/h5/packages/recharge',
+  PACKAGE_LOCATIONS: '/h5/packages/locations',
 
   // eSIM
-  ESIM_BY_ICCID: (iccid: string) => `/esim/${iccid}`,
-  ESIM_USAGE: (iccid: string) => `/esim/${iccid}/usage`,
-  ESIM_TOPUP: (iccid: string) => `/esim/${iccid}/topup`,
+  ESIM_BY_ICCID: (iccid: string) => `/h5/esim/${iccid}`,
+  ESIM_USAGE: (iccid: string) => `/h5/esim/${iccid}/usage`,
+  ESIM_TOPUP: (iccid: string) => `/h5/esim/${iccid}/topup`,
 } as const;
 
 // ─── 套餐服务 ────────────────────────────────────────────────────────────
@@ -36,7 +37,7 @@ export const packageService = {
    * @param params 筛选参数
    */
   async getPackages(params?: PackageListParams): Promise<{ packages: PackageDto[] }> {
-    return get<{ packages: PackageDto[] }>(ENDPOINTS.PACKAGES, params);
+    return get<{ packages: PackageDto[] }>(ENDPOINTS.PACKAGES, params as Record<string, unknown>);
   },
 
   /**
@@ -53,6 +54,19 @@ export const packageService = {
    */
   async getRechargePackages(iccid: string): Promise<{ packages: PackageDto[] }> {
     return get<{ packages: PackageDto[] }>(ENDPOINTS.RECHARGE_PACKAGES, { iccid });
+  },
+
+  /**
+   * 获取可用地区列表
+   */
+  async getLocations(): Promise<{
+    locations: Array<{
+      code: string;
+      name: string;
+      packageCount: number;
+    }>;
+  }> {
+    return get(ENDPOINTS.PACKAGE_LOCATIONS);
   },
 };
 
@@ -73,7 +87,7 @@ export const esimService = {
    * @param params 查询参数（是否包含每日用量）
    */
   async getUsage(iccid: string, params?: EsimUsageParams): Promise<EsimUsageDto> {
-    return get<EsimUsageDto>(ENDPOINTS.ESIM_USAGE(iccid), params);
+    return get<EsimUsageDto>(ENDPOINTS.ESIM_USAGE(iccid), params as Record<string, unknown>);
   },
 
   /**

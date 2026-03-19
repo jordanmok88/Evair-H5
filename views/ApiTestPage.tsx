@@ -51,12 +51,15 @@ const MODULES = {
     methods: {
       getProfile: { name: '获取用户信息', params: [] },
       updateProfile: { name: '更新用户信息', params: ['name?', 'phone?'] },
-      changePassword: { name: '修改密码', params: ['currentPassword', 'newPassword'] },
+      changePassword: { name: '修改密码', params: ['currentPassword', 'password', 'passwordConfirmation'] },
       getSims: { name: '获取SIM卡列表', params: ['status?', 'page?', 'size?'] },
       bindSim: { name: '绑定SIM卡', params: ['iccid', 'activationCode?'] },
       unbindSim: { name: '解绑SIM卡', params: ['iccid'] },
       getAddresses: { name: '获取地址列表', params: [] },
       createAddress: { name: '添加地址', params: ['recipientName', 'phone', 'addressLine1', 'city', 'postalCode', 'country'] },
+      updateAddress: { name: '更新地址', params: ['addressId', 'recipientName?', 'phone?', 'addressLine1?', 'city?', 'postalCode?', 'country?'] },
+      deleteAddress: { name: '删除地址', params: ['addressId'] },
+      setDefaultAddress: { name: '设置默认地址', params: ['addressId'] },
     },
   },
   package: {
@@ -65,6 +68,7 @@ const MODULES = {
       getPackages: { name: '获取套餐列表', params: ['locationCode?', 'type?', 'page?', 'size?'] },
       getHotPackages: { name: '获取热门套餐', params: ['limit?'] },
       getRechargePackages: { name: '获取充值套餐', params: ['iccid'] },
+      getLocations: { name: '获取可用地区', params: [] },
     },
   },
   order: {
@@ -72,6 +76,7 @@ const MODULES = {
     methods: {
       createEsimOrder: { name: '创建eSIM订单', params: ['packageCode', 'email', 'quantity?'] },
       createPhysicalOrder: { name: '创建实体SIM订单', params: ['productId', 'quantity', 'email'] },
+      createTopupOrder: { name: '创建充值订单', params: ['iccid', 'packageCode', 'amount'] },
       getOrders: { name: '获取订单列表', params: ['status?', 'type?', 'page?', 'size?'] },
       getOrderDetail: { name: '获取订单详情', params: ['orderNo'] },
       cancelOrder: { name: '取消订单', params: ['orderNo', 'reason?'] },
@@ -94,6 +99,7 @@ const MODULES = {
       createPayment: { name: '创建支付会话', params: ['orderNo', 'method', 'successUrl', 'cancelUrl'] },
       getPaymentStatus: { name: '查询支付状态', params: ['paymentId'] },
       validateCoupon: { name: '验证优惠券', params: ['code', 'orderNo'] },
+      getCoupons: { name: '获取优惠券列表', params: [] },
     },
   },
 } as const;
@@ -127,12 +133,14 @@ const DEFAULT_PARAMS: Record<string, string> = {
   reason: 'Test reason',
   currentPassword: 'OldPassword123',
   newPassword: 'NewPassword456',
+  passwordConfirmation: 'NewPassword456',
   token: 'reset_token_here',
   recipientName: 'John Doe',
   addressLine1: '123 Main St',
   city: 'San Francisco',
   postalCode: '94102',
   country: 'US',
+  addressId: 'addr_001',
 };
 
 export default function ApiTestPage() {
@@ -144,6 +152,7 @@ export default function ApiTestPage() {
   const [result, setResult] = useState<{ type: 'success' | 'error'; data: unknown } | null>(null);
   const [logs, setLogs] = useState<string[]>([]);
   const [loggedIn, setLoggedIn] = useState(isAuthenticated);
+  const [savedRecords, setSavedRecords] = useState(0);
 
   // 监听 Token 变化
   useEffect(() => {
@@ -151,6 +160,21 @@ export default function ApiTestPage() {
     // 登录/登出后更新状态
     window.addEventListener('storage', checkAuth);
     return () => window.removeEventListener('storage', checkAuth);
+  }, []);
+
+  // 监听 Vite 插件消息
+  useEffect(() => {
+    if (import.meta.hot) {
+      import.meta.hot.on('api-response-saved', (data: { totalRecords: number }) => {
+        setSavedRecords(data.totalRecords);
+        addLog(`响应已保存 (共 ${data.totalRecords} 条)`);
+      });
+
+      import.meta.hot.on('api-response-cleared', () => {
+        setSavedRecords(0);
+        addLog('已清空所有保存的响应');
+      });
+    }
   }, []);
 
   const addLog = (message: string) => {
@@ -172,6 +196,25 @@ export default function ApiTestPage() {
     setLoggedIn(false);
     addLog('Token 已清除');
     setResult({ type: 'success', data: { message: 'Token cleared' } });
+  };
+
+  const handleClearResponses = () => {
+    if (import.meta.hot) {
+      import.meta.hot.send('api-response-clear', {});
+    }
+  };
+
+  // 捕获响应到 Vite 插件
+  const captureResponse = (response: unknown, statusCode: number = 200) => {
+    if (import.meta.hot) {
+      import.meta.hot.send('api-response-capture', {
+        module: activeModule,
+        method: activeMethod,
+        endpoint: `${activeModule}/${activeMethod}`,
+        statusCode,
+        response,
+      });
+    }
   };
 
   // 登录成功后更新状态
@@ -206,6 +249,9 @@ export default function ApiTestPage() {
       setResult({ type: 'success', data: response });
       addLog(`${MODULES[activeModule].methods[activeMethod as MethodKey<typeof activeModule>]?.name} 成功`);
 
+      // 捕获成功响应
+      captureResponse(response, 200);
+
       // 登录成功后更新状态
       if (activeModule === 'auth' && (activeMethod === 'login' || activeMethod === 'register')) {
         setLoggedIn(true);
@@ -229,8 +275,16 @@ export default function ApiTestPage() {
 
       {/* 配置区域 */}
       <div style={{ marginBottom: 20, padding: 15, background: '#f5f5f5', borderRadius: 8 }}>
-        <div style={{ marginBottom: 10 }}>
-          <strong>状态:</strong> {loggedIn ? '已登录' : '未登录'}
+        <div style={{ marginBottom: 10, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <div>
+            <strong>状态:</strong> {loggedIn ? '已登录' : '未登录'}
+            <span style={{ marginLeft: 20 }}>
+              <strong>已保存响应:</strong> {savedRecords} 条
+            </span>
+          </div>
+          <span style={{ fontSize: 12, color: '#666' }}>
+            响应保存至: docs/api-responses/
+          </span>
         </div>
         <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
           <input
@@ -245,6 +299,9 @@ export default function ApiTestPage() {
           </button>
           <button onClick={handleClearTokens} style={{ padding: '8px 16px', background: '#f44336', color: 'white', border: 'none', borderRadius: 4, cursor: 'pointer' }}>
             清除Token
+          </button>
+          <button onClick={handleClearResponses} style={{ padding: '8px 16px', background: '#FF9800', color: 'white', border: 'none', borderRadius: 4, cursor: 'pointer' }}>
+            清空响应
           </button>
         </div>
       </div>
@@ -274,24 +331,28 @@ export default function ApiTestPage() {
               </div>
               {activeModule === moduleKey && (
                 <div style={{ marginLeft: 10, marginTop: 5 }}>
-                  {Object.keys(MODULES[moduleKey].methods).map(methodKey => (
-                    <div
-                      key={methodKey}
-                      onClick={() => {
-                        setActiveMethod(methodKey);
-                        setParams({});
-                      }}
-                      style={{
-                        padding: '4px 8px',
-                        background: activeMethod === methodKey ? '#bbdefb' : 'transparent',
-                        borderRadius: 4,
-                        cursor: 'pointer',
-                        fontSize: 13,
-                      }}
-                    >
-                      {MODULES[moduleKey].methods[methodKey as MethodKey<typeof moduleKey>]?.name}
-                    </div>
-                  ))}
+                  {Object.keys(MODULES[moduleKey].methods).map(methodKey => {
+                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                    const methodConfig = (MODULES[moduleKey].methods as any)[methodKey];
+                    return (
+                      <div
+                        key={methodKey}
+                        onClick={() => {
+                          setActiveMethod(methodKey);
+                          setParams({});
+                        }}
+                        style={{
+                          padding: '4px 8px',
+                          background: activeMethod === methodKey ? '#bbdefb' : 'transparent',
+                          borderRadius: 4,
+                          cursor: 'pointer',
+                          fontSize: 13,
+                        }}
+                      >
+                        {methodConfig?.name}
+                      </div>
+                    );
+                  })}
                 </div>
               )}
             </div>
@@ -439,7 +500,8 @@ async function executeUserMethod(method: string, params: Record<string, string>)
     case 'changePassword':
       return userService.changePassword({
         currentPassword: params.currentPassword || DEFAULT_PARAMS.currentPassword,
-        newPassword: params.newPassword || DEFAULT_PARAMS.newPassword,
+        password: params.password || DEFAULT_PARAMS.newPassword,
+        passwordConfirmation: params.passwordConfirmation || DEFAULT_PARAMS.passwordConfirmation,
       });
     case 'getSims':
       return userService.getSims({
@@ -465,6 +527,19 @@ async function executeUserMethod(method: string, params: Record<string, string>)
         postalCode: params.postalCode || DEFAULT_PARAMS.postalCode,
         country: params.country || DEFAULT_PARAMS.country,
       } as CreateAddressRequest);
+    case 'updateAddress':
+      return userService.updateAddress(params.addressId || DEFAULT_PARAMS.addressId, {
+        recipientName: params.recipientName,
+        phone: params.phone,
+        addressLine1: params.addressLine1,
+        city: params.city,
+        postalCode: params.postalCode,
+        country: params.country,
+      });
+    case 'deleteAddress':
+      return userService.deleteAddress(params.addressId || DEFAULT_PARAMS.addressId);
+    case 'setDefaultAddress':
+      return userService.setDefaultAddress(params.addressId || DEFAULT_PARAMS.addressId);
     default:
       throw new Error(`Unknown method: ${method}`);
   }
@@ -483,6 +558,8 @@ async function executePackageMethod(method: string, params: Record<string, strin
       return packageService.getHotPackages(params.limit ? parseInt(params.limit) : undefined);
     case 'getRechargePackages':
       return packageService.getRechargePackages(params.iccid || DEFAULT_PARAMS.iccid);
+    case 'getLocations':
+      return packageService.getLocations();
     default:
       throw new Error(`Unknown method: ${method}`);
   }
@@ -510,6 +587,12 @@ async function executeOrderMethod(method: string, params: Record<string, string>
           country: params.country || DEFAULT_PARAMS.country,
         },
       } as CreatePhysicalOrderRequest);
+    case 'createTopupOrder':
+      return orderService.createTopupOrder({
+        iccid: params.iccid || DEFAULT_PARAMS.iccid,
+        packageCode: params.packageCode || DEFAULT_PARAMS.packageCode,
+        amount: parseInt(params.amount || DEFAULT_PARAMS.amount),
+      });
     case 'getOrders':
       return orderService.getOrders({
         status: params.status as OrderStatus | undefined,
@@ -576,6 +659,8 @@ async function executePaymentMethod(method: string, params: Record<string, strin
         code: params.code || DEFAULT_PARAMS.code,
         orderNo: params.orderNo || DEFAULT_PARAMS.orderNo,
       } as ValidateCouponRequest);
+    case 'getCoupons':
+      return paymentService.getCoupons();
     default:
       throw new Error(`Unknown method: ${method}`);
   }

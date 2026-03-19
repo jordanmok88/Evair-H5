@@ -5,9 +5,63 @@
 
 import type { ApiResponse, ApiErrorCode } from './types';
 
+// ─── 命名转换工具 ──────────────────────────────────────────────────────────
+
+/**
+ * camelCase 转 snake_case
+ */
+function camelToSnake(str: string): string {
+  return str.replace(/[A-Z]/g, letter => `_${letter.toLowerCase()}`);
+}
+
+/**
+ * snake_case 转 camelCase
+ */
+function snakeToCamel(str: string): string {
+  return str.replace(/_([a-z])/g, (_, letter) => letter.toUpperCase());
+}
+
+/**
+ * 递归转换对象键名
+ */
+function transformKeys<T>(obj: T, transformer: (key: string) => string): T {
+  if (obj === null || obj === undefined) {
+    return obj;
+  }
+
+  if (Array.isArray(obj)) {
+    return obj.map(item => transformKeys(item, transformer)) as T;
+  }
+
+  if (typeof obj === 'object' && obj.constructor === Object) {
+    const result: Record<string, unknown> = {};
+    for (const [key, value] of Object.entries(obj)) {
+      result[transformer(key)] = transformKeys(value, transformer);
+    }
+    return result as T;
+  }
+
+  return obj;
+}
+
+/**
+ * 将 camelCase 对象转换为 snake_case（用于请求）
+ */
+export function toSnakeCase<T>(obj: T): T {
+  return transformKeys(obj, camelToSnake);
+}
+
+/**
+ * 将 snake_case 对象转换为 camelCase（用于响应）
+ */
+export function toCamelCase<T>(obj: T): T {
+  return transformKeys(obj, snakeToCamel);
+}
+
 // ─── 配置 ────────────────────────────────────────────────────────────────
 
-const DEFAULT_BASE_URL = '/api/v1';
+// 开发环境使用本地测试服务器，生产环境通过环境变量配置
+const DEFAULT_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8801/api/v1';
 const TOKEN_KEY = 'evair_access_token';
 const REFRESH_TOKEN_KEY = 'evair_refresh_token';
 
@@ -136,7 +190,7 @@ export function addErrorInterceptor(interceptor: ErrorInterceptor): void {
 // ─── 请求配置类型 ────────────────────────────────────────────────────────
 
 export interface RequestConfig extends RequestInit {
-  params?: Record<string, string | number | boolean | undefined>;
+  params?: Record<string, unknown>;
   skipAuth?: boolean;
 }
 
@@ -179,10 +233,11 @@ export async function request<T>(
   // 构建完整 URL
   let url = `${baseUrl}${endpoint}`;
 
-  // 处理查询参数
+  // 处理查询参数（转换为 snake_case）
   if (finalConfig.params) {
     const searchParams = new URLSearchParams();
-    for (const [key, value] of Object.entries(finalConfig.params)) {
+    const snakeParams = toSnakeCase(finalConfig.params);
+    for (const [key, value] of Object.entries(snakeParams)) {
       if (value !== undefined) {
         searchParams.append(key, String(value));
       }
@@ -263,6 +318,9 @@ export async function request<T>(
     throw error;
   }
 
+  // 将响应数据从 snake_case 转换为 camelCase
+  body = toCamelCase(body);
+
   // 检查业务错误码
   if (body.code !== 0) {
     const error = new ApiError(
@@ -293,10 +351,12 @@ export function get<T>(endpoint: string, params?: RequestConfig['params'], confi
  * POST 请求
  */
 export function post<T>(endpoint: string, data?: unknown, config?: RequestConfig): Promise<T> {
+  // 将请求体从 camelCase 转换为 snake_case
+  const snakeData = data ? toSnakeCase(data) : undefined;
   return request<T>(endpoint, {
     ...config,
     method: 'POST',
-    body: data ? JSON.stringify(data) : undefined,
+    body: snakeData ? JSON.stringify(snakeData) : undefined,
   });
 }
 
@@ -304,10 +364,12 @@ export function post<T>(endpoint: string, data?: unknown, config?: RequestConfig
  * PUT 请求
  */
 export function put<T>(endpoint: string, data?: unknown, config?: RequestConfig): Promise<T> {
+  // 将请求体从 camelCase 转换为 snake_case
+  const snakeData = data ? toSnakeCase(data) : undefined;
   return request<T>(endpoint, {
     ...config,
     method: 'PUT',
-    body: data ? JSON.stringify(data) : undefined,
+    body: snakeData ? JSON.stringify(snakeData) : undefined,
   });
 }
 

@@ -31,6 +31,10 @@ export {
 
   // 错误类
   ApiError,
+
+  // 命名转换工具
+  toSnakeCase,
+  toCamelCase,
 } from './client';
 
 // 导出类型
@@ -42,6 +46,13 @@ export { userService } from './user';
 export { orderService } from './order';
 export { packageService, esimService } from './esim';
 export { paymentService } from './payment';
+
+// 导入服务用于默认导出
+import { authService } from './auth';
+import { userService } from './user';
+import { orderService } from './order';
+import { packageService, esimService } from './esim';
+import { paymentService } from './payment';
 
 // 默认导出所有服务
 export default {

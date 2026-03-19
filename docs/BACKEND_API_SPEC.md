@@ -344,8 +344,9 @@ Authorization: Bearer {token}
 **请求体**：
 ```json
 {
-  "currentPassword": "oldPassword123",
-  "newPassword": "newPassword456"
+  "currentPassword": "当前密码",
+  "password": "新密码",
+  "passwordConfirmation": "确认新密码"
 }
 ```
 
