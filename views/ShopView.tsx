@@ -6,6 +6,8 @@ import { MOCK_COUNTRIES, SIM_CARD_PRODUCTS } from '../constants';
 import FlagIcon from '../components/FlagIcon';
 import { fetchPackages, prefetchPackages, groupPackagesByLocation, formatVolume, formatPrice, orderEsim, getPopularGroups, CONTINENT_TABS, type ContinentTab } from '../services/esimApi';
 import { useSwipeBack } from '../hooks/useSwipeBack';
+import { packageService } from '../services/api';
+import type { PackageDto } from '../services/api/types';
 
 import { Bell, UserCircle } from 'lucide-react';
 import { AppNotification } from '../types';
@@ -23,6 +25,222 @@ interface ShopViewProps {
   onNavigate?: (tab: string) => void;
   onSwitchSimType?: (type: SimType) => void;
   notifications?: AppNotification[];
+}
+
+// ─── 国家/地区信息映射 ────────────────────────────────────────────────
+
+const COUNTRY_CODE_MAP: Record<string, { name: string; continent: string }> = {
+  'US': { name: 'United States', continent: 'Americas' },
+  'CN': { name: 'China', continent: 'Asia' },
+  'JP': { name: 'Japan', continent: 'Asia' },
+  'KR': { name: 'South Korea', continent: 'Asia' },
+  'GB': { name: 'United Kingdom', continent: 'Europe' },
+  'AU': { name: 'Australia', continent: 'Oceania' },
+  'CA': { name: 'Canada', continent: 'Americas' },
+  'DE': { name: 'Germany', continent: 'Europe' },
+  'FR': { name: 'France', continent: 'Europe' },
+  'SG': { name: 'Singapore', continent: 'Asia' },
+  'TH': { name: 'Thailand', continent: 'Asia' },
+  'MY': { name: 'Malaysia', continent: 'Asia' },
+  'ID': { name: 'Indonesia', continent: 'Asia' },
+  'VN': { name: 'Vietnam', continent: 'Asia' },
+  'PH': { name: 'Philippines', continent: 'Asia' },
+  'TW': { name: 'Taiwan', continent: 'Asia' },
+  'HK': { name: 'Hong Kong', continent: 'Asia' },
+  'IN': { name: 'India', continent: 'Asia' },
+  'BR': { name: 'Brazil', continent: 'Americas' },
+  'TR': { name: 'Turkey', continent: 'Europe' },
+  'MX': { name: 'Mexico', continent: 'Americas' },
+  'ES': { name: 'Spain', continent: 'Europe' },
+  'IT': { name: 'Italy', continent: 'Europe' },
+  'NL': { name: 'Netherlands', continent: 'Europe' },
+  'CH': { name: 'Switzerland', continent: 'Europe' },
+  'SE': { name: 'Sweden', continent: 'Europe' },
+  'NO': { name: 'Norway', continent: 'Europe' },
+  'DK': { name: 'Denmark', continent: 'Europe' },
+  'FI': { name: 'Finland', continent: 'Europe' },
+  'NZ': { name: 'New Zealand', continent: 'Oceania' },
+  'AE': { name: 'United Arab Emirates', continent: 'Asia' },
+  'SA': { name: 'Saudi Arabia', continent: 'Asia' },
+  'ZA': { name: 'South Africa', continent: 'Africa' },
+  'EG': { name: 'Egypt', continent: 'Africa' },
+  'RU': { name: 'Russia', continent: 'Europe' },
+  'PL': { name: 'Poland', continent: 'Europe' },
+  'BE': { name: 'Belgium', continent: 'Europe' },
+  'AT': { name: 'Austria', continent: 'Europe' },
+  'PT': { name: 'Portugal', continent: 'Europe' },
+  'GR': { name: 'Greece', continent: 'Europe' },
+  'CZ': { name: 'Czech Republic', continent: 'Europe' },
+  'HU': { name: 'Hungary', continent: 'Europe' },
+  'IE': { name: 'Ireland', continent: 'Europe' },
+};
+
+// ─── 后端套餐数据转换为前端格式 ────────────────────────────────────────
+
+function convertPackageDtoToEsimPackage(dto: PackageDto): EsimPackage {
+  // volume: backend returns GB, need to convert to bytes
+  const volumeBytes = dto.volume * 1024 * 1024 * 1024;
+
+  return {
+    packageCode: dto.packageCode,
+    name: dto.name,
+    price: dto.price * 10000, // backend returns USD, convert to micro-cents
+    currencyCode: dto.currency,
+    volume: volumeBytes,
+    unusedValidTime: 0,
+    duration: dto.duration,
+    durationUnit: dto.durationUnit,
+    location: dto.location,
+    description: dto.description || '',
+    activeType: 1,
+  };
+}
+
+type LocationInfo = {
+  code: string;
+  name: string;
+  packageCount: number;
+};
+
+// 多国区域信息 (用于显示区域如 "Asia (12 areas)")
+type MultiCountryRegion = {
+  code: string;
+  name: string;
+};
+
+// 单国家信息
+type SingleCountry = {
+  code: string;
+  name: string;
+  regionCode?: string; // 所属区域代码
+};
+
+// 区域代码到国家代码的映射 (从后端返回的数据构建)
+const REGION_TO_COUNTRIES: Record<string, string[]> = {
+  // 这些映射会在运行时从 multi_countries 数据中推断
+};
+
+function convertPackagesToGroups(
+  packages: PackageDto[],
+  locationMap?: Map<string, LocationInfo>
+): EsimCountryGroup[] {
+  const map = new Map<string, PackageDto[]>();
+
+  for (const pkg of packages) {
+    const key = pkg.location;
+    if (!map.has(key)) map.set(key, []);
+    map.get(key)!.push(pkg);
+  }
+
+  const groups: EsimCountryGroup[] = [];
+  for (const [loc, pkgs] of map.entries()) {
+    const primaryCode = loc.split(',')[0].trim().toUpperCase();
+    const isMultiRegion = loc.includes(',');
+
+    // 优先使用后端返回的地区信息，其次使用本地映射
+    const backendLocation = locationMap?.get(primaryCode);
+    const localCountry = COUNTRY_CODE_MAP[primaryCode];
+    const countryName = backendLocation?.name || localCountry?.name || primaryCode;
+    const continent = backendLocation?.packageCount !== undefined
+      ? (localCountry?.continent || 'Other')
+      : (localCountry?.continent || 'Other');
+
+    const esimPackages = pkgs
+      .sort((a, b) => a.volume - b.volume)
+      .map(convertPackageDtoToEsimPackage);
+
+    groups.push({
+      locationCode: loc.toUpperCase(),
+      locationName: countryName,
+      flag: primaryCode,
+      packages: esimPackages,
+      continent: isMultiRegion ? 'Multi-Region' : continent,
+      isMultiRegion,
+    });
+  }
+
+  groups.sort((a, b) => a.locationName.localeCompare(b.locationName));
+  return groups;
+}
+
+// 将多国区域和单国家分组
+interface LocationGroups {
+  multiCountryRegions: MultiCountryRegion[];
+  singleCountries: SingleCountry[];
+}
+
+// 全局存储区域到国家的映射
+let regionToCountriesMap: Record<string, string[]> = {};
+
+// 判断套餐是否属于某个区域 (通过检查套餐的 location 是否包含该区域的任一国家)
+function isPackageInRegion(packageLocation: string, regionCode: string): boolean {
+  const countries = regionToCountriesMap[regionCode];
+  if (!countries) return false;
+
+  // packageLocation 可能是逗号分隔的国家代码列表，如 "AF,AL,DZ"
+  const locationCodes = packageLocation.split(',').map(c => c.trim().toUpperCase());
+
+  // 检查是否有任何一个国家属于该区域
+  return locationCodes.some(code => countries.includes(code));
+}
+
+function parseLocationsResponse(
+  locationsResponse: any
+): LocationGroups {
+  const multiCountryRegions: MultiCountryRegion[] = [];
+  const singleCountries: SingleCountry[] = [];
+
+  // 优先检测 snake_case 格式 (后端实际返回)
+  const singleCountriesData = locationsResponse.single_countries || locationsResponse.singleCountries || [];
+  const multiCountriesData = locationsResponse.multi_countries || locationsResponse.multiCountries || [];
+
+  // 构建区域前缀到区域代码的映射
+  // 例如: "AF-29" 表示 Africa 区域，包含以 "AF" 开头的国家
+  const regionPrefixMap: Record<string, string> = {};
+
+  for (const region of multiCountriesData) {
+    multiCountryRegions.push({
+      code: region.code,
+      name: region.name || region.code,
+    });
+
+    // 提取区域前缀 (如 "AF-29" -> "AF")
+    const prefix = region.code.split('-')[0];
+    regionPrefixMap[prefix] = region.code;
+  }
+
+  // 重置映射
+  regionToCountriesMap = {};
+
+  for (const country of singleCountriesData) {
+    const countryCode = country.code;
+    const countryName = country.name || country.code;
+
+    // 找出这个国家属于哪个区域
+    let regionCode: string | undefined;
+    for (const [prefix, region] of Object.entries(regionPrefixMap)) {
+      if (countryCode.startsWith(prefix)) {
+        regionCode = region;
+        break;
+      }
+    }
+
+    singleCountries.push({
+      code: countryCode,
+      name: countryName,
+      regionCode,
+    });
+
+    // 添加到区域映射
+    if (regionCode) {
+      if (!regionToCountriesMap[regionCode]) {
+        regionToCountriesMap[regionCode] = [];
+      }
+      regionToCountriesMap[regionCode].push(countryCode);
+    }
+  }
+
+  return { multiCountryRegions, singleCountries };
 }
 
 const ShopView: React.FC<ShopViewProps> = ({ isLoggedIn, user, onLoginRequest, onPurchaseComplete, simType, onSwitchToMySims, hasActiveSims, onSwitchToSetup, onAddCard, onNavigate, onSwitchSimType, notifications = [] }) => {
@@ -51,6 +269,10 @@ const ShopView: React.FC<ShopViewProps> = ({ isLoggedIn, user, onLoginRequest, o
   const [orderError, setOrderError] = useState<string | null>(null);
   const [emailSent, setEmailSent] = useState(false);
   const [continentTab, setContinentTab] = useState<ContinentTab>('All');
+
+  // 后端返回的地区数据 (多国区域 + 单国家)
+  const [multiCountryRegions, setMultiCountryRegions] = useState<MultiCountryRegion[]>([]);
+  const [singleCountries, setSingleCountries] = useState<SingleCountry[]>([]);
 
   const [headerHidden, setHeaderHidden] = useState(false);
   const lastScrollY = useRef(0);
@@ -86,9 +308,67 @@ const ShopView: React.FC<ShopViewProps> = ({ isLoggedIn, user, onLoginRequest, o
     setEsimLoading(true);
     setEsimError(null);
     try {
-      const packages = force ? await fetchPackages() : await prefetchPackages();
-      const groups = groupPackagesByLocation(packages);
-      setEsimGroups(groups);
+      // 优先尝试从后端 API 获取套餐和地区列表
+      try {
+        // 先获取地区列表
+        const locationsResponse = await packageService.getLocations();
+
+        // 解析多国区域和单国家
+        const { multiCountryRegions: regions, singleCountries: countries } = parseLocationsResponse(locationsResponse);
+        setMultiCountryRegions(regions);
+        setSingleCountries(countries);
+
+        // 再获取套餐列表
+        const packagesResponse = await packageService.getPackages();
+
+        // 构建地区映射 - 支持两种响应格式
+        // 格式1 (后端返回 snake_case): { single_countries: [], multi_countries: [] }
+        // 格式2 (camelCase): { singleCountries: [], multiCountries: [] }
+        // 格式3 (标准化): { locations: [{ code, name, packageCount }] }
+        const locationMap = new Map<string, LocationInfo>();
+
+        if ('locations' in locationsResponse && Array.isArray(locationsResponse.locations)) {
+          // 格式3: 直接使用 locations 数组
+          for (const loc of locationsResponse.locations) {
+            locationMap.set(loc.code.toUpperCase(), loc);
+          }
+        } else {
+          // 格式1/2: 从 single_countries/countries 和 multi_countries/countries 构建
+          const singleCountriesData = (locationsResponse as any).single_countries ||
+                                       (locationsResponse as any).singleCountries || [];
+          const multiCountriesData = (locationsResponse as any).multi_countries ||
+                                      (locationsResponse as any).multiCountries || [];
+
+          for (const country of singleCountriesData) {
+            if (country.code) {
+              locationMap.set(country.code.toUpperCase(), {
+                code: country.code,
+                name: country.name || country.code,
+                packageCount: country.package_count || country.packageCount || 0,
+              });
+            }
+          }
+
+          for (const region of multiCountriesData) {
+            if (region.code) {
+              locationMap.set(region.code.toUpperCase(), {
+                code: region.code,
+                name: region.name || region.code,
+                packageCount: region.package_count || region.packageCount || 0,
+              });
+            }
+          }
+        }
+
+        const groups = convertPackagesToGroups(packagesResponse.packages, locationMap);
+        setEsimGroups(groups);
+      } catch (backendErr) {
+        // 后端 API 失败，使用 legacy ESIMAccess API 作为 fallback
+        console.warn('Backend package API failed, using legacy ESIMAccess API:', backendErr);
+        const packages = force ? await fetchPackages() : await prefetchPackages();
+        const groups = groupPackagesByLocation(packages);
+        setEsimGroups(groups);
+      }
     } catch (err: any) {
       setEsimError(err.message || 'Failed to load packages');
     } finally {
@@ -1109,37 +1389,135 @@ const ShopView: React.FC<ShopViewProps> = ({ isLoggedIn, user, onLoginRequest, o
                 {filteredEsimGroups.length === 0 ? (
                   <div className="text-center py-10 text-slate-400 text-sm">{t('shop.no_results')}</div>
                 ) : (
-                  <div className="bg-white rounded-xl border border-slate-100 divide-y divide-slate-100 overflow-hidden shadow-sm mb-5">
-                    {visibleEsimGroups.map((group) => {
-                      const cheapestPkg = group.packages.reduce((min, p) => p.price < min.price ? p : min, group.packages[0]);
-                      const cheapestPrice = cheapestPkg ? formatPrice(cheapestPkg.price) : 0;
-                      return (
-                        <button
-                          key={group.locationCode}
-                          onClick={() => setSelectedEsimGroup(group)}
-                          className="w-full flex items-center justify-between p-4 hover:bg-slate-50 transition-colors text-left group"
-                        >
-                          <div className="flex items-center gap-3 min-w-0">
-                            <FlagIcon countryCode={group.flag} size="md" />
-                            <div className="min-w-0">
-                              <p className="font-semibold text-slate-900 text-sm truncate">{group.locationName}</p>
-                              <p className="text-xs text-slate-400 mt-0.5">
-                                {group.packages.length} {group.packages.length === 1 ? 'Plan' : 'Plans'}
-                                {group.isMultiRegion && (
-                                  <span className="ml-1.5 text-[11px] font-semibold text-blue-500 bg-blue-50 px-1.5 py-0.5 rounded">{t('shop.multi_region')}</span>
-                                )}
-                              </p>
-                            </div>
-                          </div>
-                          <div className="flex items-center gap-2 flex-shrink-0">
-                            <span className="text-sm font-medium text-slate-400 group-hover:text-brand-orange transition-colors whitespace-nowrap">
-                              {t('shop.from')} ${cheapestPrice.toFixed(2)}
-                            </span>
-                            <ChevronRight size={16} className="text-slate-300 flex-shrink-0" />
-                          </div>
-                        </button>
-                      );
-                    })}
+                  <div className="space-y-4 mb-5">
+                    {/* ── Multi-Country Regions (显示多国区域如 "Asia (12 areas)") ── */}
+                    {!searchQuery && multiCountryRegions.length > 0 && (
+                      <>
+                        <div className="flex items-center gap-2 mb-2">
+                          <Globe size={16} className="text-blue-500" />
+                          <span className="text-sm font-semibold text-slate-600">Multi-Country Plans</span>
+                        </div>
+                        <div className="bg-white rounded-xl border border-slate-100 divide-y divide-slate-100 overflow-hidden shadow-sm">
+                          {multiCountryRegions
+                            .filter(region => filteredEsimGroups.some(g => isPackageInRegion(g.locationCode, region.code)))
+                            .map((region) => {
+                              // 找到属于该区域的套餐分组
+                              const regionGroups = filteredEsimGroups.filter(g => isPackageInRegion(g.locationCode, region.code));
+                              // 合并所有套餐并找出最低价
+                              const allPackages = regionGroups.flatMap(g => g.packages);
+                              const cheapestPkg = allPackages.reduce((min, p) => p.price < min.price ? p : min, allPackages[0]);
+                              const cheapestPrice = cheapestPkg ? formatPrice(cheapestPkg.price) : 0;
+                              // 使用第一个匹配的分组作为代表
+                              const group = regionGroups[0];
+                              return (
+                                <button
+                                  key={region.code}
+                                  onClick={() => setSelectedEsimGroup(group)}
+                                  className="w-full flex items-center justify-between p-4 hover:bg-slate-50 transition-colors text-left group"
+                                >
+                                  <div className="flex items-center gap-3 min-w-0">
+                                    <Globe size={24} className="text-blue-500 flex-shrink-0" />
+                                    <div className="min-w-0">
+                                      <p className="font-semibold text-slate-900 text-sm truncate">{region.name}</p>
+                                      <p className="text-xs text-slate-400 mt-0.5">
+                                        {allPackages.length} {allPackages.length === 1 ? 'Plan' : 'Plans'}
+                                        <span className="ml-1.5 text-[11px] font-semibold text-blue-500 bg-blue-50 px-1.5 py-0.5 rounded">Multi-Region</span>
+                                      </p>
+                                    </div>
+                                  </div>
+                                  <div className="flex items-center gap-2 flex-shrink-0">
+                                    <span className="text-sm font-medium text-slate-400 group-hover:text-brand-orange transition-colors whitespace-nowrap">
+                                      {t('shop.from')} ${cheapestPrice.toFixed(2)}
+                                    </span>
+                                    <ChevronRight size={16} className="text-slate-300 flex-shrink-0" />
+                                  </div>
+                                </button>
+                              );
+                            })}
+                        </div>
+                      </>
+                    )}
+
+                    {/* ── Single Countries (显示单国家如 "United States") ── */}
+                    {!searchQuery && singleCountries.length > 0 && (
+                      <>
+                        <div className="flex items-center gap-2 mt-4 mb-2">
+                          <MapPin size={16} className="text-slate-400" />
+                          <span className="text-sm font-semibold text-slate-600">Single Countries</span>
+                        </div>
+                        <div className="bg-white rounded-xl border border-slate-100 divide-y divide-slate-100 overflow-hidden shadow-sm">
+                          {singleCountries
+                            .filter(country => filteredEsimGroups.some(g => g.locationCode === country.code))
+                            .map((country) => {
+                              const group = filteredEsimGroups.find(g => g.locationCode === country.code);
+                              if (!group) return null;
+                              const cheapestPkg = group.packages.reduce((min, p) => p.price < min.price ? p : min, group.packages[0]);
+                              const cheapestPrice = cheapestPkg ? formatPrice(cheapestPkg.price) : 0;
+                              // 从 code 中提取国旗代码 (如 "US" 从 "United States")
+                              const flagCode = country.code.substring(0, 2).toUpperCase();
+                              return (
+                                <button
+                                  key={country.code}
+                                  onClick={() => setSelectedEsimGroup(group)}
+                                  className="w-full flex items-center justify-between p-4 hover:bg-slate-50 transition-colors text-left group"
+                                >
+                                  <div className="flex items-center gap-3 min-w-0">
+                                    <FlagIcon countryCode={flagCode} size="md" />
+                                    <div className="min-w-0">
+                                      <p className="font-semibold text-slate-900 text-sm truncate">{country.name}</p>
+                                      <p className="text-xs text-slate-400 mt-0.5">
+                                        {group.packages.length} {group.packages.length === 1 ? 'Plan' : 'Plans'}
+                                      </p>
+                                    </div>
+                                  </div>
+                                  <div className="flex items-center gap-2 flex-shrink-0">
+                                    <span className="text-sm font-medium text-slate-400 group-hover:text-brand-orange transition-colors whitespace-nowrap">
+                                      {t('shop.from')} ${cheapestPrice.toFixed(2)}
+                                    </span>
+                                    <ChevronRight size={16} className="text-slate-300 flex-shrink-0" />
+                                  </div>
+                                </button>
+                              );
+                            })}
+                        </div>
+                      </>
+                    )}
+
+                    {/* ── Fallback: 显示原始分组 (当没有地区数据时) ── */}
+                    {(!multiCountryRegions.length && !singleCountries.length) && (
+                      <div className="bg-white rounded-xl border border-slate-100 divide-y divide-slate-100 overflow-hidden shadow-sm">
+                        {visibleEsimGroups.map((group) => {
+                          const cheapestPkg = group.packages.reduce((min, p) => p.price < min.price ? p : min, group.packages[0]);
+                          const cheapestPrice = cheapestPkg ? formatPrice(cheapestPkg.price) : 0;
+                          return (
+                            <button
+                              key={group.locationCode}
+                              onClick={() => setSelectedEsimGroup(group)}
+                              className="w-full flex items-center justify-between p-4 hover:bg-slate-50 transition-colors text-left group"
+                            >
+                              <div className="flex items-center gap-3 min-w-0">
+                                <FlagIcon countryCode={group.flag} size="md" />
+                                <div className="min-w-0">
+                                  <p className="font-semibold text-slate-900 text-sm truncate">{group.locationName}</p>
+                                  <p className="text-xs text-slate-400 mt-0.5">
+                                    {group.packages.length} {group.packages.length === 1 ? 'Plan' : 'Plans'}
+                                    {group.isMultiRegion && (
+                                      <span className="ml-1.5 text-[11px] font-semibold text-blue-500 bg-blue-50 px-1.5 py-0.5 rounded">{t('shop.multi_region')}</span>
+                                    )}
+                                  </p>
+                                </div>
+                              </div>
+                              <div className="flex items-center gap-2 flex-shrink-0">
+                                <span className="text-sm font-medium text-slate-400 group-hover:text-brand-orange transition-colors whitespace-nowrap">
+                                  {t('shop.from')} ${cheapestPrice.toFixed(2)}
+                                </span>
+                                <ChevronRight size={16} className="text-slate-300 flex-shrink-0" />
+                              </div>
+                            </button>
+                          );
+                        })}
+                      </div>
+                    )}
                   </div>
                 )}
                 {!searchQuery && !showAllCountries && hiddenEsimCount > 0 && (

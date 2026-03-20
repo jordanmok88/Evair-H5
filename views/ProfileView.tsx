@@ -1,9 +1,11 @@
 import React, { useState, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
-import { ChevronRight, Share, ChevronLeft, Search, Lock, Bell, Download, Trash2, Check, Plus, Package, HelpCircle, FileText, Globe, Info, Coins, ShieldCheck, CreditCard, ShoppingBag, Briefcase, Phone, Settings, AlertCircle, Play, Smartphone } from 'lucide-react';
+import { ChevronRight, Share, ChevronLeft, Search, Lock, Bell, Download, Trash2, Check, Plus, Package, HelpCircle, FileText, Globe, Info, Coins, ShieldCheck, CreditCard, ShoppingBag, Briefcase, Phone, Settings, AlertCircle, Play, Smartphone, Loader2, X } from 'lucide-react';
 import { AppNotification } from '../types';
 import { useSwipeBack } from '../hooks/useSwipeBack';
 import { useEdgeSwipeBack } from '../hooks/useEdgeSwipeBack';
+import { userService } from '../services/api';
+import type { UserDto } from '../services/api/types';
 
 interface ProfileViewProps {
   isLoggedIn: boolean;
@@ -15,6 +17,7 @@ interface ProfileViewProps {
   onOpenInbox: () => void;
   notifications?: AppNotification[];
   onBack?: () => void;
+  onUserUpdate?: (user: { name: string; role: string; email: string }) => void;
 }
 
 type ProfileScreen = 'MAIN' | 'ACCOUNT' | 'INBOX' | 'ORDERS' | 'CURRENCY' | 'HELP' | 'INFO' | 'LANGUAGES' | 'REFUND' | 'TERMS' | 'ABOUT' | 'PRIVACY' | 'ACCEPTABLE' | 'COOKIE';
@@ -48,23 +51,118 @@ const ScreenHeader = ({ title, onBack }: { title: string, onBack: () => void }) 
 
 // --- Sub-Views ---
 
-const AccountInfoView = ({ onBack, user }: { onBack: () => void, user?: any }) => {
+const AccountInfoView = ({ onBack, user, onUserUpdate }: { onBack: () => void, user?: any, onUserUpdate?: (user: { name: string; role: string; email: string }) => void }) => {
     const [promoEnabled, setPromoEnabled] = useState(true);
+    const [isEditing, setIsEditing] = useState(false);
+    const [editName, setEditName] = useState(user?.name || '');
+    const [isSaving, setIsSaving] = useState(false);
+    const [saveError, setSaveError] = useState('');
+    const [saveSuccess, setSaveSuccess] = useState(false);
+
+    // Password change modal state
+    const [showPasswordModal, setShowPasswordModal] = useState(false);
+    const [currentPassword, setCurrentPassword] = useState('');
+    const [newPassword, setNewPassword] = useState('');
+    const [confirmPassword, setConfirmPassword] = useState('');
+    const [passwordErrors, setPasswordErrors] = useState<{ current?: string; new?: string; confirm?: string }>({});
+    const [passwordLoading, setPasswordLoading] = useState(false);
+    const [passwordSuccess, setPasswordSuccess] = useState(false);
+    const [passwordError, setPasswordError] = useState('');
+
     const { t } = useTranslation();
+
+    // Update editName when user changes
+    React.useEffect(() => {
+        if (user?.name) setEditName(user.name);
+    }, [user?.name]);
+
+    const handleSave = async () => {
+        if (!editName.trim()) {
+            setSaveError('Name is required');
+            return;
+        }
+        setIsSaving(true);
+        setSaveError('');
+        try {
+            const updated = await userService.updateProfile({ name: editName.trim() });
+            onUserUpdate?.({ name: updated.name, role: updated.role, email: updated.email });
+            setIsEditing(false);
+            setSaveSuccess(true);
+            setTimeout(() => setSaveSuccess(false), 2000);
+        } catch (err: any) {
+            setSaveError(err.message || 'Failed to update profile');
+        } finally {
+            setIsSaving(false);
+        }
+    };
+
+    const handlePasswordChange = async () => {
+        setPasswordErrors({});
+        setPasswordError('');
+
+        // Validation
+        if (newPassword.length < 8) {
+            setPasswordErrors({ new: 'Password must be at least 8 characters' });
+            return;
+        }
+        if (newPassword !== confirmPassword) {
+            setPasswordErrors({ confirm: 'Passwords do not match' });
+            return;
+        }
+
+        setPasswordLoading(true);
+        try {
+            await userService.changePassword({
+                currentPassword,
+                password: newPassword,
+                passwordConfirmation: confirmPassword,
+            });
+            setPasswordSuccess(true);
+            setCurrentPassword('');
+            setNewPassword('');
+            setConfirmPassword('');
+            setTimeout(() => {
+                setShowPasswordModal(false);
+                setPasswordSuccess(false);
+            }, 1500);
+        } catch (err: any) {
+            setPasswordError(err.message || 'Failed to change password');
+        } finally {
+            setPasswordLoading(false);
+        }
+    };
 
     return (
         <div className="sm:h-full flex flex-col bg-[#F2F4F7] sm:overflow-y-auto no-scrollbar relative">
             <ScreenHeader title={t('profile.account_info')} onBack={onBack} />
             <div className="px-5 pb-6">
+                {/* Success message */}
+                {saveSuccess && (
+                    <div className="bg-green-50 border border-green-100 rounded-xl px-4 py-2.5 mb-4 flex items-center gap-2">
+                        <Check size={16} className="text-green-500" />
+                        <p className="text-[13px] text-green-600 font-medium">Profile updated successfully</p>
+                    </div>
+                )}
+
                 <div className="space-y-4 mb-6">
                     <div>
                         <div className="bg-white border border-gray-200 rounded-xl px-4 py-3 mb-4">
                             <label className="text-sm text-slate-500 block mb-1">{t('profile.first_name')}</label>
-                            <input type="text" defaultValue={user?.name || "Jordan"} className="w-full text-slate-900 font-medium outline-none" />
+                            {isEditing ? (
+                                <input
+                                    type="text"
+                                    value={editName}
+                                    onChange={e => setEditName(e.target.value)}
+                                    className="w-full text-slate-900 font-medium outline-none border border-slate-300 rounded-lg px-2 py-1"
+                                    placeholder="Your name"
+                                />
+                            ) : (
+                                <div className="text-slate-900 font-medium">{user?.name || "Jordan"}</div>
+                            )}
                         </div>
                         <div className="bg-white border border-gray-200 rounded-xl px-4 py-3">
                             <label className="text-sm text-slate-500 block mb-1">{t('profile.last_name')}</label>
-                            <input type="text" placeholder="" className="w-full text-slate-900 font-medium outline-none" />
+                            <div className="text-slate-400 italic">Not available</div>
                         </div>
                     </div>
 
@@ -76,24 +174,30 @@ const AccountInfoView = ({ onBack, user }: { onBack: () => void, user?: any }) =
                         <Lock size={16} className="text-slate-400" />
                     </div>
 
-                    <button className="w-full bg-white border border-gray-200 rounded-full py-3 font-bold text-sm text-slate-900 shadow-sm active:scale-[0.99] transition-transform">
-                        {t('profile.edit')}
+                    <button
+                        onClick={() => setIsEditing(!isEditing)}
+                        className="w-full bg-white border border-gray-200 rounded-full py-3 font-bold text-sm text-slate-900 shadow-sm active:scale-[0.99] transition-transform"
+                    >
+                        {isEditing ? 'Cancel Edit' : t('profile.edit')}
                     </button>
 
                     <div className="bg-white border border-gray-200 rounded-xl px-4 py-3 flex items-center justify-between">
                          <div className="flex-1">
                             <label className="text-sm text-slate-500 block mb-1">{t('profile.current_password')}</label>
-                            <input type="password" value="********" readOnly className="w-full text-slate-900 font-medium outline-none" />
+                            <div className="text-slate-900 font-medium">********</div>
                         </div>
                         <Lock size={16} className="text-slate-400" />
                     </div>
 
-                    <button className="w-full bg-white border border-gray-200 rounded-full py-3 font-bold text-sm text-slate-900 shadow-sm active:scale-[0.99] transition-transform">
-                        {t('profile.edit')}
+                    <button
+                        onClick={() => setShowPasswordModal(true)}
+                        className="w-full bg-white border border-gray-200 rounded-full py-3 font-bold text-sm text-slate-900 shadow-sm active:scale-[0.99] transition-transform"
+                    >
+                        Change Password
                     </button>
 
                     <div className="flex items-center gap-3 py-2">
-                        <button 
+                        <button
                             onClick={() => setPromoEnabled(!promoEnabled)}
                             className={`w-12 h-7 rounded-full p-1 transition-colors relative ${promoEnabled ? 'bg-brand-orange' : 'bg-gray-300'}`}
                         >
@@ -102,6 +206,22 @@ const AccountInfoView = ({ onBack, user }: { onBack: () => void, user?: any }) =
                         <span className="text-slate-900 font-medium text-sm">{t('profile.promo_emails')}</span>
                     </div>
                 </div>
+
+                {saveError && (
+                    <div className="bg-red-50 border border-red-100 rounded-xl px-4 py-2.5 mb-4">
+                        <p className="text-[13px] text-red-600 font-medium">{saveError}</p>
+                    </div>
+                )}
+
+                {isEditing && (
+                    <button
+                        onClick={handleSave}
+                        disabled={isSaving}
+                        className="w-full bg-brand-orange text-white border border-gray-200 rounded-full py-4 font-bold text-lg shadow-sm mb-6 active:scale-[0.99] transition-transform flex items-center justify-center gap-2"
+                    >
+                        {isSaving ? <Loader2 size={20} className="animate-spin" /> : t('profile.save_changes')}
+                    </button>
+                )}
 
                 <div className="mb-8">
                     <h3 className="font-bold text-slate-900 mb-2">{t('profile.delete_account')}</h3>
@@ -112,11 +232,82 @@ const AccountInfoView = ({ onBack, user }: { onBack: () => void, user?: any }) =
                         {t('profile.delete_account_btn')}
                     </button>
                 </div>
-
-                <button className="w-full bg-white border border-gray-200 text-slate-400 rounded-full py-4 font-bold text-lg shadow-sm mb-6">
-                    {t('profile.save_changes')}
-                </button>
             </div>
+
+            {/* Password Change Modal */}
+            {showPasswordModal && (
+                <div className="fixed inset-0 z-[70] flex items-center justify-center bg-slate-900/40 backdrop-blur-sm px-4">
+                    <div className="bg-white w-full max-w-sm rounded-2xl p-5 shadow-2xl">
+                        <div className="flex justify-between items-center mb-5">
+                            <h2 className="text-lg font-bold text-slate-900">Change Password</h2>
+                            <button onClick={() => { setShowPasswordModal(false); setPasswordErrors({}); setPasswordError(''); }} className="p-2 bg-slate-100 rounded-full text-slate-500 hover:bg-slate-200">
+                                <X size={18} />
+                            </button>
+                        </div>
+
+                        {passwordSuccess ? (
+                            <div className="text-center py-4">
+                                <div className="w-16 h-16 rounded-full bg-green-50 flex items-center justify-center mx-auto mb-4">
+                                    <Check size={32} className="text-green-500" />
+                                </div>
+                                <p className="text-slate-900 font-medium">Password changed successfully!</p>
+                            </div>
+                        ) : (
+                            <div className="space-y-4">
+                                <div>
+                                    <label className="block text-xs font-semibold text-slate-500 uppercase mb-1.5">Current Password</label>
+                                    <input
+                                        type="password"
+                                        value={currentPassword}
+                                        onChange={e => setCurrentPassword(e.target.value)}
+                                        className="w-full bg-slate-50 border border-slate-200 rounded-xl py-2.5 px-4 text-slate-900 focus:outline-none focus:border-brand-orange"
+                                        placeholder="Enter current password"
+                                    />
+                                    {passwordErrors.current && <p className="text-[12px] text-red-500 mt-1">{passwordErrors.current}</p>}
+                                </div>
+
+                                <div>
+                                    <label className="block text-xs font-semibold text-slate-500 uppercase mb-1.5">New Password</label>
+                                    <input
+                                        type="password"
+                                        value={newPassword}
+                                        onChange={e => setNewPassword(e.target.value)}
+                                        className={"w-full bg-slate-50 border border-slate-200 rounded-xl py-2.5 px-4 text-slate-900 focus:outline-none focus:border-brand-orange" + (passwordErrors.new ? ' border-red-400' : '')}
+                                        placeholder="Min. 8 characters"
+                                    />
+                                    {passwordErrors.new && <p className="text-[12px] text-red-500 mt-1">{passwordErrors.new}</p>}
+                                </div>
+
+                                <div>
+                                    <label className="block text-xs font-semibold text-slate-500 uppercase mb-1.5">Confirm New Password</label>
+                                    <input
+                                        type="password"
+                                        value={confirmPassword}
+                                        onChange={e => setConfirmPassword(e.target.value)}
+                                        className={"w-full bg-slate-50 border border-slate-200 rounded-xl py-2.5 px-4 text-slate-900 focus:outline-none focus:border-brand-orange" + (passwordErrors.confirm ? ' border-red-400' : '')}
+                                        placeholder="Re-enter new password"
+                                    />
+                                    {passwordErrors.confirm && <p className="text-[12px] text-red-500 mt-1">{passwordErrors.confirm}</p>}
+                                </div>
+
+                                {passwordError && (
+                                    <div className="bg-red-50 border border-red-100 rounded-xl px-4 py-2.5">
+                                        <p className="text-[13px] text-red-600 font-medium">{passwordError}</p>
+                                    </div>
+                                )}
+
+                                <button
+                                    onClick={handlePasswordChange}
+                                    disabled={passwordLoading}
+                                    className="w-full bg-brand-orange text-white py-3.5 rounded-xl font-bold shadow-lg shadow-orange-500/20 active:scale-[0.98] transition-all flex items-center justify-center"
+                                >
+                                    {passwordLoading ? <Loader2 size={20} className="animate-spin" /> : 'Change Password'}
+                                </button>
+                            </div>
+                        )}
+                    </div>
+                </div>
+            )}
         </div>
     );
 };
@@ -979,7 +1170,7 @@ const HelpCenterView = ({ onBack }: { onBack: () => void }) => {
 };
 
 
-const ProfileView: React.FC<ProfileViewProps> = ({ isLoggedIn, user, onLogin, onSignup, onLogout, onOpenDialer, onOpenInbox, notifications = [], onBack }) => {
+const ProfileView: React.FC<ProfileViewProps> = ({ isLoggedIn, user, onLogin, onSignup, onLogout, onOpenDialer, onOpenInbox, notifications = [], onBack, onUserUpdate }) => {
   const [currentView, setCurrentView] = useState<ProfileScreen>('MAIN');
   const { t } = useTranslation();
 
@@ -996,7 +1187,7 @@ const ProfileView: React.FC<ProfileViewProps> = ({ isLoggedIn, user, onLogin, on
   useEdgeSwipeBack(handleSwipeBack);
 
   // If we are in a sub-view, render it
-  if (currentView === 'ACCOUNT') return <AccountInfoView onBack={() => setCurrentView('MAIN')} user={user} />;
+  if (currentView === 'ACCOUNT') return <AccountInfoView onBack={() => setCurrentView('MAIN')} user={user} onUserUpdate={onUserUpdate} />;
   if (currentView === 'INBOX') { onOpenInbox(); return null; }
   if (currentView === 'ORDERS') return <OrdersView onBack={() => setCurrentView('MAIN')} />;
   if (currentView === 'CURRENCY') return <CurrencyView onBack={() => setCurrentView('MAIN')} />;

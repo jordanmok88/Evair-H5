@@ -1,11 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { X, Mail, Lock, Loader2, User, Eye, EyeOff, CheckCircle2, ArrowLeft } from 'lucide-react';
+import { authService } from '../services/api';
+import type { UserDto } from '../services/api/types';
 
 interface LoginModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onLogin: () => void;
+  onLogin: (user: UserDto) => void;
   initialMode?: 'LOGIN' | 'REGISTER';
 }
 
@@ -14,6 +16,7 @@ type ModalMode = 'LOGIN' | 'REGISTER' | 'REGISTER_SUCCESS';
 const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose, onLogin, initialMode = 'LOGIN' }) => {
   const [mode, setMode] = useState<ModalMode>(initialMode);
   const [isLoading, setIsLoading] = useState(false);
+  const [loginError, setLoginError] = useState('');
 
   const [email, setEmail] = useState('demo@evairsim.com');
   const [password, setPassword] = useState('password123');
@@ -22,6 +25,7 @@ const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose, onLogin, initi
   const [regEmail, setRegEmail] = useState('');
   const [regPassword, setRegPassword] = useState('');
   const [regConfirm, setRegConfirm] = useState('');
+  const [regErrors, setRegErrors] = useState<{ name?: string; email?: string; password?: string }>({});
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
   const [agreeTerms, setAgreeTerms] = useState(false);
@@ -44,19 +48,30 @@ const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose, onLogin, initi
     setShowConfirm(false);
     setAgreeTerms(false);
     setRegError('');
+    setRegErrors({});
+    setLoginError('');
   };
 
-  const handleLogin = (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
-    setTimeout(() => {
-      setIsLoading(false);
-      onLogin();
+    setLoginError('');
+
+    try {
+      const response = await authService.login({ email, password });
+      onLogin(response.user);
       setMode('LOGIN');
-    }, 1500);
+      // 清空表单
+      setEmail('');
+      setPassword('');
+    } catch (err: any) {
+      setLoginError(err.message || 'Login failed. Please check your credentials.');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
-  const handleRegister = (e: React.FormEvent) => {
+  const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
     setRegError('');
 
@@ -74,15 +89,50 @@ const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose, onLogin, initi
     }
 
     setIsLoading(true);
-    setTimeout(() => {
-      setIsLoading(false);
+
+    try {
+      const response = await authService.register({
+        email: regEmail,
+        password: regPassword,
+        name: regName,
+      });
+      // 注册成功，自动登录并跳转到成功页面
+      onLogin(response.user);
       setMode('REGISTER_SUCCESS');
-    }, 1800);
+      // 清空表单
+      setRegName('');
+      setRegEmail('');
+      setRegPassword('');
+      setRegConfirm('');
+    } catch (err: any) {
+      // 解析字段级错误
+      const errorsData = err.data?.errors;
+      if (errorsData && typeof errorsData === 'object') {
+        const fieldErrors: { name?: string; email?: string; password?: string } = {};
+        if (errorsData.name) fieldErrors.name = Array.isArray(errorsData.name) ? errorsData.name[0] : errorsData.name;
+        if (errorsData.email) fieldErrors.email = Array.isArray(errorsData.email) ? errorsData.email[0] : errorsData.email;
+        if (errorsData.password) fieldErrors.password = Array.isArray(errorsData.password) ? errorsData.password[0] : errorsData.password;
+        setRegErrors(fieldErrors);
+        // 如果没有通用 msg，显示第一个字段错误
+        if (!err.message || err.message === 'Validation failed') {
+          const firstError = fieldErrors.name || fieldErrors.email || fieldErrors.password;
+          if (firstError) setRegError('');
+        } else {
+          setRegError('');
+        }
+      } else {
+        // 没有字段错误，显示通用错误
+        setRegErrors({});
+        setRegError(err.message || 'Registration failed. Please try again.');
+      }
+      setIsLoading(false);
+    }
   };
 
   const handleClose = () => {
     onClose();
     setMode('LOGIN');
+    setLoginError('');
     resetRegForm();
   };
 
@@ -145,6 +195,12 @@ const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose, onLogin, initi
                 </div>
               </div>
 
+              {loginError && (
+                <div className="bg-red-50 border border-red-100 rounded-xl px-4 py-2.5">
+                  <p className="text-[13px] text-red-600 font-medium">{loginError}</p>
+                </div>
+              )}
+
               <button
                 type="submit"
                 disabled={isLoading}
@@ -189,12 +245,13 @@ const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose, onLogin, initi
                   <input
                     type="text"
                     required
-                    className={inputClass}
+                    className={inputClass + (regErrors.name ? ' border-red-400 focus:border-red-400 focus:ring-red-400' : '')}
                     placeholder="John Smith"
                     value={regName}
-                    onChange={e => setRegName(e.target.value)}
+                    onChange={e => { setRegName(e.target.value); setRegErrors(prev => ({ ...prev, name: undefined })); }}
                   />
                 </div>
+                {regErrors.name && <p className="text-[12px] text-red-500 mt-1.5">{regErrors.name}</p>}
               </div>
 
               <div>
@@ -204,12 +261,13 @@ const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose, onLogin, initi
                   <input
                     type="email"
                     required
-                    className={inputClass}
+                    className={inputClass + (regErrors.email ? ' border-red-400 focus:border-red-400 focus:ring-red-400' : '')}
                     placeholder="you@example.com"
                     value={regEmail}
-                    onChange={e => setRegEmail(e.target.value)}
+                    onChange={e => { setRegEmail(e.target.value); setRegErrors(prev => ({ ...prev, email: undefined })); }}
                   />
                 </div>
+                {regErrors.email && <p className="text-[12px] text-red-500 mt-1.5">{regErrors.email}</p>}
               </div>
 
               <div>
@@ -219,15 +277,16 @@ const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose, onLogin, initi
                   <input
                     type={showPassword ? 'text' : 'password'}
                     required
-                    className={inputClass + ' pr-12'}
+                    className={inputClass + ' pr-12' + (regErrors.password ? ' border-red-400 focus:border-red-400 focus:ring-red-400' : '')}
                     placeholder="Min. 8 characters"
                     value={regPassword}
-                    onChange={e => setRegPassword(e.target.value)}
+                    onChange={e => { setRegPassword(e.target.value); setRegErrors(prev => ({ ...prev, password: undefined })); }}
                   />
                   <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-4 top-3.5 text-slate-400 hover:text-slate-600">
                     {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
                   </button>
                 </div>
+                {regErrors.password && <p className="text-[12px] text-red-500 mt-1.5">{regErrors.password}</p>}
                 {regPassword.length > 0 && (
                   <div className="flex items-center gap-2 mt-2">
                     <div className="flex-1 h-1 rounded-full bg-slate-100 overflow-hidden">

@@ -13,6 +13,7 @@ import { Lock } from 'lucide-react';
 import { MOCK_COUNTRIES, MOCK_PLANS_US, MOCK_ACTIVE_SIMS, MOCK_NOTIFICATIONS, CARRIER_MAP } from './constants';
 import { checkDataUsage, prefetchPackages } from './services/esimApi';
 import { supabaseConfigured, fetchNotifications } from './services/supabase';
+import { authService, userService, type UserDto } from './services/api';
 
 function App() {
 
@@ -42,6 +43,36 @@ function CustomerApp() {
   const lastSafariScrollY = useRef(0);
   const phoneRef = useRef<HTMLDivElement>(null);
 
+  // 初始化认证状态
+  const [isLoggedIn, setIsLoggedIn] = useState(() => authService.isLoggedIn());
+  const [user, setUser] = useState<User | undefined>(() => {
+    // TODO: 登录后从 userService.getProfile() 获取真实用户数据
+    // 目前从 localStorage 获取基本信息
+    return undefined;
+  });
+
+  // 如果有 token 但没有 user，从后端获取用户信息
+  const userFetched = useRef(false);
+  useEffect(() => {
+    if (userFetched.current) return;
+    if (!authService.isLoggedIn()) return;
+    userFetched.current = true;
+    userService.getProfile()
+      .then(profile => {
+        setUser({
+          id: profile.id,
+          name: profile.name,
+          email: profile.email,
+          role: profile.role,
+        });
+      })
+      .catch(() => {
+        // 如果获取失败，清除 token 让用户重新登录
+        authService.logout();
+        userFetched.current = false;
+      });
+  }, []);
+
   useEffect(() => {
     const handler = (e: Event) => {
       if (!phoneRef.current) return;
@@ -58,13 +89,122 @@ function CustomerApp() {
   }, []);
 
   const [activeTab, setActiveTab] = useState<Tab>(Tab.SIM_CARD);
-  const [isLoggedIn, setIsLoggedIn] = useState(true);
-  const [user, setUser] = useState<User | undefined>({ id: 'u1', name: 'Jordan', email: 'jordan@example.com', role: 'OWNER' });
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
   const [loginModalMode, setLoginModalMode] = useState<'LOGIN' | 'REGISTER'>('LOGIN');
   
   const [activeSims, setActiveSims] = useState<ActiveSim[]>(MOCK_ACTIVE_SIMS);
+  const [serverSims, setServerSims] = useState<ActiveSim[]>([]);
   const [notifications, setNotifications] = useState<AppNotification[]>(MOCK_NOTIFICATIONS);
+
+  // 转换后端 SIM 数据为前端格式
+  const convertUserSimToActiveSim = (userSim: {
+    id: string;
+    iccid: string;
+    type: 'ESIM' | 'PHYSICAL';
+    packageName: string;
+    countryCode: string;
+    status: 'ACTIVE' | 'EXPIRED' | 'PENDING';
+    totalVolume: number;
+    usedVolume: number;
+    expiredTime: string;
+    activationDate: string | null;
+  }): ActiveSim => {
+    const totalGB = userSim.totalVolume / (1024 * 1024 * 1024);
+    const usedGB = userSim.usedVolume / (1024 * 1024 * 1024);
+
+    // 转换国家码到国家信息
+    const countryCodeToInfo: Record<string, { name: string; flag: string }> = {
+      'US': { name: 'United States', flag: '🇺🇸' },
+      'CN': { name: 'China', flag: '🇨🇳' },
+      'JP': { name: 'Japan', flag: '🇯🇵' },
+      'KR': { name: 'South Korea', flag: '🇰🇷' },
+      'GB': { name: 'United Kingdom', flag: '🇬🇧' },
+      'AU': { name: 'Australia', flag: '🇦🇺' },
+      'CA': { name: 'Canada', flag: '🇨🇦' },
+      'DE': { name: 'Germany', flag: '🇩🇪' },
+      'FR': { name: 'France', flag: '🇫🇷' },
+      'SG': { name: 'Singapore', flag: '🇸🇬' },
+      'TH': { name: 'Thailand', flag: '🇹🇭' },
+      'MY': { name: 'Malaysia', flag: '🇲🇾' },
+      'ID': { name: 'Indonesia', flag: '🇮🇩' },
+      'VN': { name: 'Vietnam', flag: '🇻🇳' },
+      'PH': { name: 'Philippines', flag: '🇵🇭' },
+      'TW': { name: 'Taiwan', flag: '🇹🇼' },
+      'HK': { name: 'Hong Kong', flag: '🇭🇰' },
+      'IN': { name: 'India', flag: '🇮🇳' },
+      'BR': { name: 'Brazil', flag: '🇧🇷' },
+      'TR': { name: 'Turkey', flag: '🇹🇷' },
+      'MX': { name: 'Mexico', flag: '🇲🇽' },
+      'ES': { name: 'Spain', flag: '🇪🇸' },
+      'IT': { name: 'Italy', flag: '🇮🇹' },
+      'NL': { name: 'Netherlands', flag: '🇳🇱' },
+      'CH': { name: 'Switzerland', flag: '🇨🇭' },
+      'SE': { name: 'Sweden', flag: '🇸🇪' },
+      'NO': { name: 'Norway', flag: '🇳🇴' },
+      'DK': { name: 'Denmark', flag: '🇩🇰' },
+      'FI': { name: 'Finland', flag: '🇫🇮' },
+      'NZ': { name: 'New Zealand', flag: '🇳🇿' },
+    };
+
+    const countryInfo = countryCodeToInfo[userSim.countryCode] || {
+      name: userSim.countryCode,
+      flag: '🌍',
+    };
+
+    return {
+      id: userSim.id,
+      iccid: userSim.iccid,
+      country: {
+        id: userSim.countryCode.toLowerCase(),
+        name: countryInfo.name,
+        flag: countryInfo.flag,
+        countryCode: userSim.countryCode,
+        region: '',
+        startPrice: 0,
+        networkCount: 0,
+        networks: [],
+        vpmn: '',
+        vpn: true,
+        plans: [],
+        isPopular: false,
+      },
+      plan: {
+        id: userSim.id,
+        name: userSim.packageName,
+        data: `${totalGB.toFixed(1)} GB`,
+        days: 30, // 默认值
+        price: 0,
+        features: [],
+      },
+      type: userSim.type,
+      activationDate: userSim.activationDate || new Date().toISOString(),
+      expiryDate: userSim.expiredTime,
+      dataTotalGB: Math.round(totalGB * 10) / 10,
+      dataUsedGB: Math.round(usedGB * 10) / 10,
+      status: userSim.status === 'PENDING' ? 'PENDING_ACTIVATION' : userSim.status,
+    };
+  };
+
+  // 从后端获取用户 SIM 卡列表
+  const fetchUserSims = useCallback(async () => {
+    if (!authService.isLoggedIn()) return;
+    try {
+      const response = await userService.getSims();
+      const convertedSims = response.list.map(convertUserSimToActiveSim);
+      setServerSims(convertedSims);
+    } catch (err) {
+      console.error('Failed to fetch user SIMs:', err);
+    }
+  }, []);
+
+  // 登录成功后获取 SIM 卡列表
+  useEffect(() => {
+    if (isLoggedIn) {
+      fetchUserSims();
+    } else {
+      setServerSims([]);
+    }
+  }, [isLoggedIn, fetchUserSims]);
 
   useEffect(() => { prefetchPackages(); }, []);
 
@@ -153,12 +293,30 @@ function CustomerApp() {
     window.scrollTo(0, 0);
   };
 
-  const handleLoginSuccess = () => {
+  // 登录成功回调 - 接收后端返回的用户信息
+  const handleLoginSuccess = (userData: UserDto) => {
     setIsLoggedIn(true);
-    setUser({ id: 'u1', name: 'Jordan', email: 'jordan@example.com', role: 'OWNER' });
+    setUser({
+      id: userData.id,
+      name: userData.name,
+      email: userData.email,
+      role: userData.role,
+    });
     setIsLoginModalOpen(false);
-    
-    // Real SIMs will be populated from API / purchases
+
+    // TODO: 登录成功后可以从 userService.getSims() 获取用户的 SIM 卡列表
+  };
+
+  // 登出处理
+  const handleLogout = async () => {
+    try {
+      await authService.logout();
+    } finally {
+      setIsLoggedIn(false);
+      setUser(undefined);
+      setActiveSims([]);
+      setServerSims([]);
+    }
   };
 
   const handlePurchaseComplete = (purchaseInfo?: { planName?: string; countryCode?: string; type?: SimType; orderNo?: string; iccid?: string }) => {
@@ -298,7 +456,7 @@ function CustomerApp() {
       case Tab.SIM_CARD:
       case Tab.ESIM:
         return (
-            <ProductTab 
+            <ProductTab
                 key={currentSimType}
                 type={currentSimType}
                 isLoggedIn={isLoggedIn}
@@ -308,7 +466,7 @@ function CustomerApp() {
                 onAddCard={handleAddCard}
                 onDeleteSim={handleDeleteSim}
                 onUpdateSim={handleUpdateSim}
-                activeSims={activeSims}
+                activeSims={serverSims.length > 0 ? serverSims : activeSims}
                 onNavigate={handleTabChange}
                 onSwitchSimType={handleSwitchSimType}
                 notifications={notifications}
@@ -318,19 +476,17 @@ function CustomerApp() {
         return <InboxView notifications={notifications} onUpdateNotifications={setNotifications} onNavigate={(tab) => setActiveTab(tab as Tab)} onBack={() => { setActiveTab(currentSimType === 'PHYSICAL' ? Tab.SIM_CARD : Tab.ESIM); window.scrollTo(0,0); }} />;
       case Tab.PROFILE:
         return (
-            <ProfileView 
+            <ProfileView
                 isLoggedIn={isLoggedIn}
                 user={user}
                 onLogin={() => { setLoginModalMode('LOGIN'); setIsLoginModalOpen(true); }}
                 onSignup={() => { setLoginModalMode('REGISTER'); setIsLoginModalOpen(true); }}
-                onLogout={() => {
-                  setIsLoggedIn(false);
-                  setUser(undefined);
-                }}
+                onLogout={handleLogout}
                 onOpenDialer={() => setActiveTab(Tab.DIALER)}
                 onOpenInbox={() => setActiveTab(Tab.INBOX)}
                 notifications={notifications}
                 onBack={() => { setActiveTab(currentSimType === 'PHYSICAL' ? Tab.SIM_CARD : Tab.ESIM); window.scrollTo(0,0); }}
+                onUserUpdate={(updatedUser) => setUser(prev => prev ? { ...prev, ...updatedUser } : undefined)}
             />
         );
       case Tab.DIALER:

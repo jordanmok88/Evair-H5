@@ -58,12 +58,36 @@ export const packageService = {
 
   /**
    * 获取可用地区列表
+   * 支持两种响应格式:
+   * 格式1 (后端返回): { single_countries: [], multi_countries: [] }
+   * 格式2 (标准化): { locations: [{ code, name, package_count }] }
    */
   async getLocations(): Promise<{
-    locations: Array<{
+    locations?: Array<{
       code: string;
       name: string;
       packageCount: number;
+    }>;
+    singleCountries?: Array<{
+      code: string;
+      name?: string;
+      packageCount?: number;
+    }>;
+    multiCountries?: Array<{
+      code: string;
+      name?: string;
+      packageCount?: number;
+    }>;
+    // snake_case 格式 (后端实际返回)
+    single_countries?: Array<{
+      code: string;
+      name: string;
+      package_count?: number;
+    }>;
+    multi_countries?: Array<{
+      code: string;
+      name: string;
+      package_count?: number;
     }>;
   }> {
     return get(ENDPOINTS.PACKAGE_LOCATIONS);
