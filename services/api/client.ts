@@ -61,7 +61,7 @@ export function toCamelCase<T>(obj: T): T {
 // ─── 配置 ────────────────────────────────────────────────────────────────
 
 // 开发环境使用本地测试服务器，生产环境通过环境变量配置
-const DEFAULT_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8801/api/v1';
+const DEFAULT_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://evair.zhhwxt.cn/api/v1';
 const TOKEN_KEY = 'evair_access_token';
 const REFRESH_TOKEN_KEY = 'evair_refresh_token';
 

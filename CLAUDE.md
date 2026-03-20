@@ -30,7 +30,7 @@ EvairSIM H5 is a mobile-first web app for selling and managing eSIMs and physica
 - Token management via localStorage (`access_token`, `refresh_token`)
 - Auto case conversion: camelCase (frontend) ↔ snake_case (backend)
 - Pluggable interceptors: `addRequestInterceptor`, `addResponseInterceptor`, `addErrorInterceptor`
-- Base URL: `VITE_API_BASE_URL` env var, defaults to `localhost:8801`
+- Base URL: `VITE_API_BASE_URL` env var, defaults to `https://evair.zhhwxt.cn/api/v1`
 
 **Services**:
 - `authService` — login, register, logout, token refresh, password reset
