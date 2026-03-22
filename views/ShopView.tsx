@@ -418,40 +418,114 @@ const ShopView: React.FC<ShopViewProps> = ({ isLoggedIn, user, onLoginRequest, o
     if (!selectedEsimPkg) return;
     setIsProcessing(true);
     setOrderError(null);
-    setEmailSent(false);
+
+    const price = retailPrice(selectedEsimPkg.price);
+    const txnId = `evair_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+
     try {
-      const txnId = `evair_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
-      const result = await orderEsim({
+      const res = await fetch('/api/stripe-checkout', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          packageName: `${selectedEsimGroup?.locationName || selectedEsimPkg.name} — ${formatVolume(selectedEsimPkg.volume)} / ${selectedEsimPkg.duration} Days`,
+          priceUsd: price,
+          email: email || undefined,
+          packageCode: selectedEsimPkg.packageCode,
+          transactionId: txnId,
+        }),
+      });
+
+      const data = await res.json();
+      if (!res.ok || !data.url) throw new Error(data.error || 'Failed to create payment session');
+
+      localStorage.setItem('pending_esim_order', JSON.stringify({
         packageCode: selectedEsimPkg.packageCode,
         transactionId: txnId,
         amount: selectedEsimPkg.price,
-      });
-      setEsimOrderResult(result);
+        email,
+        packageName: selectedEsimGroup?.locationName || selectedEsimPkg.name,
+        sessionId: data.sessionId,
+      }));
 
-      if (email) {
-        fetch('/.netlify/functions/send-esim-email', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            email,
-            qrCodeUrl: result.qrCodeUrl,
-            smdpAddress: result.smdpAddress,
-            activationCode: result.activationCode,
-            lpaString: result.lpaString,
-            orderNo: result.orderNo,
-            packageName: selectedEsimGroup?.locationName || selectedEsimPkg.name,
-          }),
-        })
-          .then(r => { if (r.ok) setEmailSent(true); })
-          .catch(() => {});
-      }
+      window.location.href = data.url;
     } catch (err: any) {
-      console.error('eSIM order error:', err);
-      setOrderError(err.message || 'Order failed. Please try again.');
-    } finally {
+      console.error('Stripe checkout error:', err);
+      setOrderError(err.message || 'Payment failed. Please try again.');
       setIsProcessing(false);
     }
   };
+
+  // Handle return from Stripe Checkout
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const stripeStatus = params.get('stripe_status');
+    const sessionId = params.get('session_id');
+
+    if (!stripeStatus) return;
+
+    window.history.replaceState({}, '', window.location.pathname);
+
+    if (stripeStatus === 'cancelled') return;
+
+    if (stripeStatus === 'success' && sessionId) {
+      const pendingRaw = localStorage.getItem('pending_esim_order');
+      if (!pendingRaw) return;
+
+      const pending = JSON.parse(pendingRaw);
+      localStorage.removeItem('pending_esim_order');
+
+      setIsProcessing(true);
+      setOrderError(null);
+      setEmailSent(false);
+
+      (async () => {
+        try {
+          const verifyRes = await fetch('/api/stripe-verify', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ sessionId }),
+          });
+          const verifyData = await verifyRes.json();
+
+          if (!verifyData.paid) {
+            setOrderError('Payment not confirmed. Please contact support.');
+            setIsProcessing(false);
+            return;
+          }
+
+          const result = await orderEsim({
+            packageCode: pending.packageCode,
+            transactionId: pending.transactionId,
+            amount: pending.amount,
+          });
+          setEsimOrderResult(result);
+
+          if (pending.email) {
+            fetch('/.netlify/functions/send-esim-email', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                email: pending.email,
+                qrCodeUrl: result.qrCodeUrl,
+                smdpAddress: result.smdpAddress,
+                activationCode: result.activationCode,
+                lpaString: result.lpaString,
+                orderNo: result.orderNo,
+                packageName: pending.packageName,
+              }),
+            })
+              .then(r => { if (r.ok) setEmailSent(true); })
+              .catch(() => {});
+          }
+        } catch (err: any) {
+          console.error('Post-payment order error:', err);
+          setOrderError(err.message || 'Payment succeeded but eSIM order failed. Please contact support.');
+        } finally {
+          setIsProcessing(false);
+        }
+      })();
+    }
+  }, []);
 
   const handleCopyText = (text: string, field: string) => {
     navigator.clipboard.writeText(text).then(() => {
@@ -648,7 +722,7 @@ const ShopView: React.FC<ShopViewProps> = ({ isLoggedIn, user, onLoginRequest, o
                 disabled={isProcessing || !email.includes('@')}
                 className="w-full bg-brand-orange text-white py-3.5 rounded-xl font-bold text-base shadow-lg shadow-orange-500/20 active:scale-[0.98] transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-orange-600"
               >
-                {isProcessing ? <Loader2 className="animate-spin" /> : <>{t('shop.order_esim')} ${retailPrice(selectedEsimPkg.price).toFixed(2)}</>}
+                {isProcessing ? <Loader2 className="animate-spin" /> : <><CreditCard size={18} /> {t('shop.pay')} ${retailPrice(selectedEsimPkg.price).toFixed(2)}</>}
               </button>
             </div>
           </div>

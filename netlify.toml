@@ -19,6 +19,16 @@
   status = 200
 
 [[redirects]]
+  from = "/api/stripe-checkout"
+  to = "/.netlify/functions/stripe-checkout"
+  status = 200
+
+[[redirects]]
+  from = "/api/stripe-verify"
+  to = "/.netlify/functions/stripe-verify"
+  status = 200
+
+[[redirects]]
   from = "/*"
   to = "/index.html"
   status = 200
