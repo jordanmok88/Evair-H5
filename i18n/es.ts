@@ -27,6 +27,7 @@ const es = {
     purchase_sim_cards: 'Comprar tarjetas SIM',
     buy_new_esim: 'Comprar Nueva eSIM',
     view_all_countries: 'Ver Todos los Países',
+    view_all_regions: 'Ver Todas las Regiones',
     more: 'más',
     from: 'Desde',
     select_plan: 'Seleccionar Plan',

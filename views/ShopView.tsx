@@ -1410,7 +1410,7 @@ const ShopView: React.FC<ShopViewProps> = ({ isLoggedIn, user, onLoginRequest, o
                     onClick={() => setShowAllCountries(true)}
                     className="w-full py-3 rounded-xl bg-slate-900 text-white font-semibold text-sm shadow-lg shadow-slate-200 active:scale-[0.98] transition-transform mb-5"
                   >
-                    {t('shop.view_all_countries')} ({hiddenEsimCount} {t('shop.more')})
+                    {browseMode === 'region' ? t('shop.view_all_regions') : t('shop.view_all_countries')} ({hiddenEsimCount} {t('shop.more')})
                   </button>
                 )}
               </>
