@@ -44,7 +44,7 @@ export default async (req) => {
     const origin = req.headers.get('origin') || 'https://evair-h5.netlify.app';
 
     const flagUrl = countryCode
-      ? `https://wsrv.nl/?url=flagcdn.com/w320/${countryCode.toLowerCase()}.png&w=334&h=226&fit=contain&we&cbg=e2e5ea`
+      ? `https://wsrv.nl/?url=flagcdn.com/w320/${countryCode.toLowerCase()}.png&w=326&h=219&fit=contain&we&cbg=eceef1`
       : undefined;
 
     const session = await stripe.checkout.sessions.create({
