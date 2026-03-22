@@ -308,67 +308,10 @@ const ShopView: React.FC<ShopViewProps> = ({ isLoggedIn, user, onLoginRequest, o
     setEsimLoading(true);
     setEsimError(null);
     try {
-      // 优先尝试从后端 API 获取套餐和地区列表
-      try {
-        // 先获取地区列表
-        const locationsResponse = await packageService.getLocations();
-
-        // 解析多国区域和单国家
-        const { multiCountryRegions: regions, singleCountries: countries } = parseLocationsResponse(locationsResponse);
-        setMultiCountryRegions(regions);
-        setSingleCountries(countries);
-
-        // 再获取套餐列表
-        const packagesResponse = await packageService.getPackages();
-
-        // 构建地区映射 - 支持两种响应格式
-        // 格式1 (后端返回 snake_case): { single_countries: [], multi_countries: [] }
-        // 格式2 (camelCase): { singleCountries: [], multiCountries: [] }
-        // 格式3 (标准化): { locations: [{ code, name, packageCount }] }
-        const locationMap = new Map<string, LocationInfo>();
-
-        if ('locations' in locationsResponse && Array.isArray(locationsResponse.locations)) {
-          // 格式3: 直接使用 locations 数组
-          for (const loc of locationsResponse.locations) {
-            locationMap.set(loc.code.toUpperCase(), loc);
-          }
-        } else {
-          // 格式1/2: 从 single_countries/countries 和 multi_countries/countries 构建
-          const singleCountriesData = (locationsResponse as any).single_countries ||
-                                       (locationsResponse as any).singleCountries || [];
-          const multiCountriesData = (locationsResponse as any).multi_countries ||
-                                      (locationsResponse as any).multiCountries || [];
-
-          for (const country of singleCountriesData) {
-            if (country.code) {
-              locationMap.set(country.code.toUpperCase(), {
-                code: country.code,
-                name: country.name || country.code,
-                packageCount: country.package_count || country.packageCount || 0,
-              });
-            }
-          }
-
-          for (const region of multiCountriesData) {
-            if (region.code) {
-              locationMap.set(region.code.toUpperCase(), {
-                code: region.code,
-                name: region.name || region.code,
-                packageCount: region.package_count || region.packageCount || 0,
-              });
-            }
-          }
-        }
-
-        const groups = convertPackagesToGroups(packagesResponse.packages, locationMap);
-        setEsimGroups(groups);
-      } catch (backendErr) {
-        // 后端 API 失败，使用 legacy ESIMAccess API 作为 fallback
-        console.warn('Backend package API failed, using legacy ESIMAccess API:', backendErr);
-        const packages = force ? await fetchPackages() : await prefetchPackages();
-        const groups = groupPackagesByLocation(packages);
-        setEsimGroups(groups);
-      }
+      // Use eSIMAccess API directly via Netlify proxy (backend not yet syncing real package data)
+      const packages = force ? await fetchPackages() : await prefetchPackages();
+      const groups = groupPackagesByLocation(packages);
+      setEsimGroups(groups);
     } catch (err: any) {
       setEsimError(err.message || 'Failed to load packages');
     } finally {
