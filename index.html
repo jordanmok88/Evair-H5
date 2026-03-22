@@ -180,6 +180,9 @@
         document.getElementById('root').innerHTML =
           '<pre style="padding:20px;color:red;font-size:12px;">Error: ' + msg + '\n' + url + ':' + line + '</pre>';
       };
+      document.addEventListener('touchstart', function(e) { if (e.touches.length > 1) e.preventDefault(); }, { passive: false });
+      document.addEventListener('gesturestart', function(e) { e.preventDefault(); });
+      document.addEventListener('gesturechange', function(e) { e.preventDefault(); });
     </script>
   </body>
 </html>
