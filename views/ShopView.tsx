@@ -713,63 +713,56 @@ const ShopView: React.FC<ShopViewProps> = ({ isLoggedIn, user, onLoginRequest, o
         {/* eSIM Checkout Modal */}
         {selectedEsimPkg && (
           <div className="fixed md:absolute inset-0 z-[60] flex items-end sm:items-center justify-center bg-black/20 backdrop-blur-sm">
-            <div className="bg-white w-full sm:w-[90%] sm:max-w-sm max-h-[90vh] sm:max-h-[85vh] rounded-t-2xl sm:rounded-2xl p-5 shadow-2xl overflow-y-auto overscroll-contain">
-              <div className="flex justify-between items-center mb-5">
+            <div className="bg-white w-full sm:w-[90%] sm:max-w-sm max-h-[75vh] sm:max-h-[80vh] rounded-t-2xl sm:rounded-2xl shadow-2xl overflow-hidden flex flex-col">
+              <div className="flex justify-between items-center px-5 pt-5 pb-3 flex-shrink-0">
                 <h2 className="text-lg font-bold text-slate-900 tracking-tight">{t('shop.checkout')}</h2>
-                <button onClick={() => setSelectedEsimPkg(null)} className="p-2 bg-slate-100 rounded-full text-slate-500 hover:bg-slate-200">
-                  <X size={18} />
+                <button onClick={() => setSelectedEsimPkg(null)} className="p-1.5 bg-slate-100 rounded-full text-slate-500 hover:bg-slate-200">
+                  <X size={16} />
                 </button>
               </div>
 
-              <div className="bg-slate-50 border border-slate-100 p-4 rounded-xl mb-5">
-                <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider">{t('shop.selected_plan')}</p>
-                <p className="font-bold text-slate-900 text-base mt-1">{selectedEsimGroup.locationName}</p>
-                <p className="text-sm text-slate-500 font-medium">{selectedEsimPkg.name}</p>
-                <p className="text-sm text-slate-500">{formatVolume(selectedEsimPkg.volume)} / {selectedEsimPkg.duration} {selectedEsimPkg.durationUnit === 'DAY' ? t('shop.days') : 'Months'}</p>
-                <div className="flex justify-between items-center mt-3 pt-3 border-t border-slate-200">
-                  <span className="text-sm text-slate-500">eSIM (Digital)</span>
-                  <span className="text-xl font-bold text-brand-orange">${retailPrice(selectedEsimPkg.price).toFixed(2)}</span>
+              <div className="overflow-y-auto overscroll-contain px-5 pb-5 flex-1 min-h-0">
+                <div className="bg-slate-50 border border-slate-100 p-3.5 rounded-xl mb-4">
+                  <p className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider">{t('shop.selected_plan')}</p>
+                  <p className="font-bold text-slate-900 text-sm mt-1">{selectedEsimGroup.locationName}</p>
+                  <p className="text-xs text-slate-500">{formatVolume(selectedEsimPkg.volume)} / {selectedEsimPkg.duration} {selectedEsimPkg.durationUnit === 'DAY' ? t('shop.days') : 'Months'}</p>
+                  <div className="flex justify-between items-center mt-2.5 pt-2.5 border-t border-slate-200">
+                    <span className="text-xs text-slate-500">eSIM (Digital)</span>
+                    <span className="text-lg font-bold text-brand-orange">${retailPrice(selectedEsimPkg.price).toFixed(2)}</span>
+                  </div>
                 </div>
+
+                <div className="mb-4">
+                  <label className="block text-[10px] font-semibold text-slate-400 uppercase tracking-wider mb-1.5">{t('shop.email_address')}</label>
+                  <div className="relative">
+                    <Mail className="absolute left-3 top-2.5 text-slate-400 pointer-events-none" size={16} />
+                    <input
+                      type="email"
+                      placeholder={t('shop.email_placeholder')}
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      autoComplete="email"
+                      className="w-full bg-slate-50 border border-slate-200 rounded-xl py-2.5 pl-9 pr-4 text-sm focus:outline-none focus:border-brand-orange focus:ring-1 focus:ring-brand-orange"
+                    />
+                  </div>
+                </div>
+
+                {orderError && (
+                  <div className="mb-3 p-3 bg-red-50 border border-red-200 rounded-xl text-red-700 text-xs font-medium">
+                    {orderError}
+                  </div>
+                )}
+
+                <button
+                  onClick={handleOrderEsim}
+                  disabled={isProcessing || !email.includes('@')}
+                  className="w-full bg-brand-orange text-white py-3 rounded-xl font-bold text-sm shadow-lg shadow-orange-500/20 active:scale-[0.98] transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-orange-600"
+                >
+                  {isProcessing ? <><Loader2 size={18} className="animate-spin" /> Processing...</> : testMode
+                    ? <><Zap size={16} /> Test Order — ${retailPrice(selectedEsimPkg.price).toFixed(2)}</>
+                    : <><CreditCard size={16} /> {t('shop.pay')} ${retailPrice(selectedEsimPkg.price).toFixed(2)}</>}
+                </button>
               </div>
-
-              <div className="mb-5 bg-orange-50 border border-orange-100 p-4 rounded-xl flex items-center gap-3 text-brand-orange">
-                <Smartphone size={22} />
-                <div className="flex-1">
-                  <p className="text-xs font-semibold uppercase tracking-wider opacity-70">{t('shop.product_type')}</p>
-                  <p className="font-bold text-sm">{t('shop.esim_digital')}</p>
-                </div>
-              </div>
-
-              <div className="mb-5">
-                <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">{t('shop.email_address')}</label>
-                <div className="relative">
-                  <svg className="absolute left-3 top-3 text-slate-400 pointer-events-none" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></svg>
-                  <input
-                    type="email"
-                    placeholder={t('shop.email_placeholder')}
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    autoComplete="email"
-                    className="w-full bg-slate-50 border border-slate-200 rounded-xl py-2.5 pl-10 pr-4 text-sm focus:outline-none focus:border-brand-orange focus:ring-1 focus:ring-brand-orange"
-                  />
-                </div>
-              </div>
-
-              {orderError && (
-                <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-xl text-red-700 text-sm font-medium">
-                  {orderError}
-                </div>
-              )}
-
-              <button
-                onClick={handleOrderEsim}
-                disabled={isProcessing || !email.includes('@')}
-                className="w-full bg-brand-orange text-white py-3.5 rounded-xl font-bold text-base shadow-lg shadow-orange-500/20 active:scale-[0.98] transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-orange-600"
-              >
-                {isProcessing ? <Loader2 className="animate-spin" /> : testMode
-                  ? <><Zap size={18} /> Test Order — ${retailPrice(selectedEsimPkg.price).toFixed(2)}</>
-                  : <><CreditCard size={18} /> {t('shop.pay')} ${retailPrice(selectedEsimPkg.price).toFixed(2)}</>}
-              </button>
             </div>
           </div>
         )}

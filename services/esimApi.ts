@@ -21,7 +21,7 @@ const PROXY_URL = '/api/esim';
  * Browsing packages / checking usage still works against the real API.
  * Flip to `false` when ready to go live.
  */
-export const DEMO_MODE = true;
+export const DEMO_MODE = false;
 
 async function call<T>(endpoint: string, payload: Record<string, unknown> = {}): Promise<EsimApiResponse<T>> {
   const res = await fetch(PROXY_URL, {
