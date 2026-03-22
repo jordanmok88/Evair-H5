@@ -51,6 +51,7 @@ export default async (req) => {
       mode: 'payment',
       customer_email: email || undefined,
       allow_promotion_codes: true,
+      adaptive_pricing: { enabled: false },
       line_items: [
         {
           price_data: {
