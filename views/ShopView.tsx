@@ -254,7 +254,7 @@ const ShopView: React.FC<ShopViewProps> = ({ isLoggedIn, user, onLoginRequest, o
   
   // Checkout State
   const [address, setAddress] = useState('123 Tech Park, San Francisco, CA'); 
-  const [email, setEmail] = useState('');
+  const [email, setEmail] = useState(user?.email || '');
   const [isProcessing, setIsProcessing] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
 
@@ -325,6 +325,10 @@ const ShopView: React.FC<ShopViewProps> = ({ isLoggedIn, user, onLoginRequest, o
       loadEsimPackages();
     }
   }, [simType, loadEsimPackages]);
+
+  useEffect(() => {
+    if (user?.email && !email) setEmail(user.email);
+  }, [user?.email]);
 
   // Swipe-back gesture support
   const navDepth =
