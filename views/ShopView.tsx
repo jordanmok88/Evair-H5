@@ -439,8 +439,10 @@ const ShopView: React.FC<ShopViewProps> = ({ isLoggedIn, user, onLoginRequest, o
         }),
       });
 
-      const data = await res.json();
-      if (!res.ok || !data.url) throw new Error(data.error || 'Failed to create payment session');
+      const text = await res.text();
+      let data: any;
+      try { data = JSON.parse(text); } catch { throw new Error('Payment service unavailable. Please try again.'); }
+      if (!res.ok || !data.url) throw new Error(data.error || data.detail || 'Failed to create payment session');
 
       localStorage.setItem('pending_esim_order', JSON.stringify({
         packageCode: selectedEsimPkg.packageCode,
