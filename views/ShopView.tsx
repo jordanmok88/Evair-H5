@@ -1304,27 +1304,27 @@ const ShopView: React.FC<ShopViewProps> = ({ isLoggedIn, user, onLoginRequest, o
 
                 {/* ── Browse Mode Toggle: By Country / By Region ── */}
                 {!searchQuery && (
-                  <div className="flex bg-slate-100 rounded-xl p-1 mb-4">
+                  <div className="flex bg-slate-100/80 rounded-2xl p-1 mb-5 border border-slate-200/60">
                     <button
                       onClick={() => { setBrowseMode('country'); setShowAllCountries(false); }}
-                      className={`flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-lg text-sm font-semibold transition-all ${
+                      className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-xl text-[13px] font-bold tracking-wide transition-all duration-200 ${
                         browseMode === 'country'
-                          ? 'bg-white text-slate-900 shadow-sm'
-                          : 'text-slate-400'
+                          ? 'bg-white text-slate-800 shadow-md shadow-slate-200/60 ring-1 ring-slate-200/50'
+                          : 'text-slate-400 hover:text-slate-500'
                       }`}
                     >
-                      <MapPin size={14} />
+                      <MapPin size={15} strokeWidth={2.5} />
                       {t('shop.by_country')}
                     </button>
                     <button
                       onClick={() => { setBrowseMode('region'); setShowAllCountries(false); }}
-                      className={`flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-lg text-sm font-semibold transition-all ${
+                      className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-xl text-[13px] font-bold tracking-wide transition-all duration-200 ${
                         browseMode === 'region'
-                          ? 'bg-white text-slate-900 shadow-sm'
-                          : 'text-slate-400'
+                          ? 'bg-white text-slate-800 shadow-md shadow-slate-200/60 ring-1 ring-slate-200/50'
+                          : 'text-slate-400 hover:text-slate-500'
                       }`}
                     >
-                      <Globe size={14} />
+                      <Globe size={15} strokeWidth={2.5} />
                       {t('shop.by_region')}
                     </button>
                   </div>
@@ -1332,12 +1332,12 @@ const ShopView: React.FC<ShopViewProps> = ({ isLoggedIn, user, onLoginRequest, o
 
                 {/* ── Continent Filter Tabs (only in country mode) ── */}
                 {!searchQuery && browseMode === 'country' && (
-                  <div className="flex gap-2 overflow-x-auto no-scrollbar pb-2 -mx-4 px-4 mb-4">
+                  <div className="flex gap-2 overflow-x-auto no-scrollbar pb-3 -mx-4 px-4 mb-3">
                     {CONTINENT_TABS.filter(tab => tab !== 'Multi-Region').map((tab) => (
                       <button
                         key={tab}
                         onClick={() => { setContinentTab(tab); setShowAllCountries(false); }}
-                        className={`flex-shrink-0 px-4 py-2 rounded-full text-xs font-semibold transition-all active:scale-[0.97] ${
+                        className={`flex-shrink-0 px-4 py-2 rounded-full text-xs font-bold transition-all active:scale-[0.97] ${
                           continentTab === tab
                             ? 'bg-slate-900 text-white shadow-sm'
                             : 'bg-white text-slate-500 border border-slate-200 hover:bg-slate-50'
@@ -1351,12 +1351,14 @@ const ShopView: React.FC<ShopViewProps> = ({ isLoggedIn, user, onLoginRequest, o
                 )}
 
                 {/* ── Section title ── */}
-                <h3 className="text-lg font-bold text-slate-900 mb-3 tracking-tight">
-                  {searchQuery ? t('shop.search_results')
-                    : browseMode === 'region' ? t('shop.multi_country_plans')
-                    : t('shop.buy_new_esim')}
-                  <span className="ml-2 text-sm font-medium text-slate-400">({filteredEsimGroups.length})</span>
-                </h3>
+                <div className="flex items-baseline gap-2 mb-4">
+                  <h3 className="text-base font-extrabold text-slate-900 tracking-tight">
+                    {searchQuery ? t('shop.search_results')
+                      : browseMode === 'region' ? t('shop.multi_country_plans')
+                      : t('shop.buy_new_esim')}
+                  </h3>
+                  <span className="text-xs font-semibold text-slate-400 tabular-nums">({filteredEsimGroups.length})</span>
+                </div>
 
                 {/* ── Unified list ── */}
                 {filteredEsimGroups.length === 0 ? (
