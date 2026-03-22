@@ -41,7 +41,7 @@ async function call<T>(endpoint: string, payload: Record<string, unknown> = {}):
 // ─── Package List (with localStorage cache) ─────────────────────────
 
 const CACHE_KEY = 'evair_esim_packages';
-const CACHE_TTL_MS = 60 * 60 * 1000; // 1 hour
+const CACHE_TTL_MS = 30 * 60 * 1000; // 30 minutes — supplier may update prices daily
 
 interface PackageCache {
   ts: number;
@@ -78,9 +78,12 @@ export interface FetchPackagesParams {
 }
 
 let _prefetchPromise: Promise<EsimPackage[]> | null = null;
+let _prefetchTimestamp = 0;
 
 export function prefetchPackages() {
-  if (!_prefetchPromise) {
+  const now = Date.now();
+  if (!_prefetchPromise || (now - _prefetchTimestamp > CACHE_TTL_MS)) {
+    _prefetchTimestamp = now;
     _prefetchPromise = fetchPackages();
   }
   return _prefetchPromise;
