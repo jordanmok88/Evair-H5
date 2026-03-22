@@ -54,7 +54,6 @@ export default async (req) => {
             product_data: {
               name: packageName,
               description: 'eSIM Data Plan — Instant Digital Delivery',
-              images: ['https://evair-h5.netlify.app/evairsim-logo-v2.png'],
             },
             unit_amount: Math.round(priceUsd * 100),
           },
