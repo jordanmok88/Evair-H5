@@ -331,6 +331,11 @@ const ShopView: React.FC<ShopViewProps> = ({ isLoggedIn, user, onLoginRequest, o
     if (user?.email && !email) setEmail(user.email);
   }, [user?.email]);
 
+  useEffect(() => {
+    setIsProcessing(false);
+    setOrderError(null);
+  }, [selectedEsimPkg]);
+
   // Swipe-back gesture support
   const navDepth =
     (selectedCountry || selectedEsimGroup ? 1 : 0) +
