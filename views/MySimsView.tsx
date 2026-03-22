@@ -12,18 +12,20 @@ import type { PackageDto, TopupRequest } from '../services/api/types';
 // ─── 后端套餐数据转换为前端格式 ────────────────────────────────────────
 
 function convertPackageDtoToEsimPackage(dto: PackageDto): EsimPackage {
-  // volume: backend returns GB, need to convert to bytes
-  const volumeBytes = dto.volume * 1024 * 1024 * 1024;
+  // Detect units: if volume > 1_000_000 it's in bytes (supplier passthrough), otherwise GB
+  const volume = dto.volume > 1_000_000 ? dto.volume : dto.volume * 1024 * 1024 * 1024;
+  // Detect price: if price > 1000 it's in micro-cents (supplier passthrough), otherwise USD
+  const price = dto.price > 1000 ? dto.price : dto.price * 10000;
 
   return {
     packageCode: dto.packageCode,
     name: dto.name,
-    price: dto.price * 10000, // backend returns USD, convert to micro-cents
+    price,
     currencyCode: dto.currency,
-    volume: volumeBytes,
+    volume,
     unusedValidTime: 0,
-    duration: dto.duration,
-    durationUnit: dto.durationUnit,
+    duration: dto.duration || 30,
+    durationUnit: dto.durationUnit || 'DAY',
     location: dto.location,
     description: dto.description || '',
     activeType: 1,
