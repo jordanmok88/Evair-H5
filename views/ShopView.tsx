@@ -447,7 +447,7 @@ const ShopView: React.FC<ShopViewProps> = ({ isLoggedIn, user, onLoginRequest, o
               activationCode: result.activationCode,
               lpaString: result.lpaString,
               orderNo: result.orderNo,
-              packageName: selectedEsimGroup?.locationName || selectedEsimPkg.name,
+              packageName: `${selectedEsimGroup?.locationName || selectedEsimPkg.name} — ${formatVolume(selectedEsimPkg.volume)} / ${selectedEsimPkg.duration} Days`,
             }),
           })
             .then(r => { if (r.ok) setEmailSent(true); })
@@ -487,7 +487,7 @@ const ShopView: React.FC<ShopViewProps> = ({ isLoggedIn, user, onLoginRequest, o
         transactionId: txnId,
         amount: selectedEsimPkg.price,
         email,
-        packageName: selectedEsimGroup?.locationName || selectedEsimPkg.name,
+        packageName: `${selectedEsimGroup?.locationName || selectedEsimPkg.name} — ${formatVolume(selectedEsimPkg.volume)} / ${selectedEsimPkg.duration} Days`,
         sessionId: data.sessionId,
       }));
 
@@ -712,8 +712,8 @@ const ShopView: React.FC<ShopViewProps> = ({ isLoggedIn, user, onLoginRequest, o
       <div className="sm:h-full flex flex-col relative bg-[#F2F4F7]">
         {/* eSIM Checkout Modal */}
         {selectedEsimPkg && (
-          <div className="fixed md:absolute inset-0 z-[60] flex items-end sm:items-center justify-center bg-black/20 backdrop-blur-sm">
-            <div className="bg-white w-full sm:w-[90%] sm:max-w-sm max-h-[75vh] sm:max-h-[80vh] rounded-t-2xl sm:rounded-2xl shadow-2xl overflow-hidden flex flex-col">
+          <div className="fixed md:absolute inset-0 z-[60] flex items-end sm:items-center justify-center bg-black/20 backdrop-blur-sm" style={{ paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}>
+            <div className="bg-white w-full sm:w-[90%] sm:max-w-sm max-h-[70vh] sm:max-h-[80vh] rounded-t-2xl sm:rounded-2xl shadow-2xl overflow-hidden flex flex-col mb-[env(safe-area-inset-bottom)]">
               <div className="flex justify-between items-center px-5 pt-5 pb-3 flex-shrink-0">
                 <h2 className="text-lg font-bold text-slate-900 tracking-tight">{t('shop.checkout')}</h2>
                 <button onClick={() => setSelectedEsimPkg(null)} className="p-1.5 bg-slate-100 rounded-full text-slate-500 hover:bg-slate-200">
@@ -894,8 +894,8 @@ const ShopView: React.FC<ShopViewProps> = ({ isLoggedIn, user, onLoginRequest, o
     const total = selectedSimCardProduct.sellingPrice + shippingCost;
     return (
       <div className="sm:h-full flex flex-col relative bg-[#F2F4F7]">
-        <div className="fixed md:absolute inset-0 z-[60] flex items-end sm:items-center justify-center bg-black/20 backdrop-blur-sm">
-          <div className="bg-white w-full sm:w-[90%] sm:max-w-sm max-h-[90vh] sm:max-h-[85vh] rounded-t-2xl sm:rounded-2xl p-5 shadow-2xl overflow-y-auto overscroll-contain">
+        <div className="fixed md:absolute inset-0 z-[60] flex items-end sm:items-center justify-center bg-black/20 backdrop-blur-sm" style={{ paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}>
+          <div className="bg-white w-full sm:w-[90%] sm:max-w-sm max-h-[70vh] sm:max-h-[80vh] rounded-t-2xl sm:rounded-2xl p-5 shadow-2xl overflow-y-auto overscroll-contain mb-[env(safe-area-inset-bottom)]">
             <div className="flex justify-between items-center mb-5">
               <h2 className="text-lg font-bold text-slate-900 tracking-tight">{t('shop.checkout')}</h2>
               <button onClick={() => setSelectedSimCardProduct(null)} className="p-2 bg-slate-100 rounded-full text-slate-500 hover:bg-slate-200">
@@ -973,8 +973,8 @@ const ShopView: React.FC<ShopViewProps> = ({ isLoggedIn, user, onLoginRequest, o
       <div className="sm:h-full flex flex-col relative bg-[#F2F4F7]">
         {/* Checkout Modal */}
         {selectedPlan && (
-          <div className="fixed md:absolute inset-0 z-[60] flex items-end sm:items-center justify-center bg-black/20 backdrop-blur-sm">
-             <div className="bg-white w-full sm:w-[90%] sm:max-w-sm max-h-[90vh] sm:max-h-[85vh] rounded-t-2xl sm:rounded-2xl p-5 shadow-2xl overflow-y-auto overscroll-contain">
+          <div className="fixed md:absolute inset-0 z-[60] flex items-end sm:items-center justify-center bg-black/20 backdrop-blur-sm" style={{ paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}>
+             <div className="bg-white w-full sm:w-[90%] sm:max-w-sm max-h-[70vh] sm:max-h-[80vh] rounded-t-2xl sm:rounded-2xl p-5 shadow-2xl overflow-y-auto overscroll-contain mb-[env(safe-area-inset-bottom)]">
                 <div className="flex justify-between items-center mb-5">
                     <h2 className="text-lg font-bold text-slate-900 tracking-tight">{t('shop.checkout')}</h2>
                     <button onClick={() => setSelectedPlan(null)} className="p-2 bg-slate-100 rounded-full text-slate-500 hover:bg-slate-200">

@@ -861,7 +861,7 @@ const MySimsView: React.FC<MySimsViewProps> = ({ activeSims, onNavigate, filterT
       {deleteConfirmSimId && (
         <div
           style={{
-            position: 'absolute', inset: 0, zIndex: 200,
+            position: 'fixed', inset: 0, zIndex: 200,
             backgroundColor: 'rgba(0,0,0,0.4)',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
             padding: '0 32px',

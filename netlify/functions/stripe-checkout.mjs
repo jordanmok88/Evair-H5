@@ -44,9 +44,9 @@ export default async (req) => {
     const origin = req.headers.get('origin') || 'https://evair-h5.netlify.app';
 
     const session = await stripe.checkout.sessions.create({
-      payment_method_types: ['card'],
       mode: 'payment',
       customer_email: email || undefined,
+      allow_promotion_codes: true,
       line_items: [
         {
           price_data: {
@@ -54,6 +54,7 @@ export default async (req) => {
             product_data: {
               name: packageName,
               description: 'eSIM Data Plan — Instant Digital Delivery',
+              images: ['https://evair-h5.netlify.app/evairsim-logo-v2.png'],
             },
             unit_amount: Math.round(priceUsd * 100),
           },
