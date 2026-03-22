@@ -30,7 +30,7 @@ export default async (req) => {
   }
 
   try {
-    const { packageName, priceUsd, email, packageCode, transactionId } = await req.json();
+    const { packageName, priceUsd, email, packageCode, transactionId, countryCode } = await req.json();
 
     if (!packageName || !priceUsd || !packageCode) {
       return new Response(
@@ -43,6 +43,10 @@ export default async (req) => {
 
     const origin = req.headers.get('origin') || 'https://evair-h5.netlify.app';
 
+    const flagUrl = countryCode
+      ? `https://flagcdn.com/w320/${countryCode.toLowerCase()}.png`
+      : undefined;
+
     const session = await stripe.checkout.sessions.create({
       mode: 'payment',
       customer_email: email || undefined,
@@ -54,6 +58,7 @@ export default async (req) => {
             product_data: {
               name: packageName,
               description: 'eSIM Data Plan — Instant Digital Delivery',
+              ...(flagUrl ? { images: [flagUrl] } : {}),
             },
             unit_amount: Math.round(priceUsd * 100),
           },

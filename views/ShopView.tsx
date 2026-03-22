@@ -474,6 +474,7 @@ const ShopView: React.FC<ShopViewProps> = ({ isLoggedIn, user, onLoginRequest, o
           email: email || undefined,
           packageCode: selectedEsimPkg.packageCode,
           transactionId: txnId,
+          countryCode: selectedEsimGroup?.flag || selectedEsimGroup?.locationCode.split(',')[0],
         }),
       });
 
