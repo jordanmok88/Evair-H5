@@ -152,7 +152,7 @@ const MySimsView: React.FC<MySimsViewProps> = ({ activeSims, onNavigate, filterT
   // EMPTY STATE
   if (!currentSim) {
       return (
-          <div className="sm:h-full min-h-[60vh] flex flex-col items-center justify-center px-8 text-center bg-[#F2F4F7]">
+          <div className="lg:h-full min-h-[60vh] flex flex-col items-center justify-center px-8 text-center bg-[#F2F4F7]">
               <div className="relative mb-10">
                   <div className="w-60 h-36 bg-white rounded-2xl border border-slate-200 shadow-sm flex flex-col p-5 relative overflow-hidden">
                       <div className="w-12 h-16 rounded-lg border-2 border-slate-100 bg-slate-50 mb-3 grid grid-cols-2 gap-0.5 p-1">
@@ -216,7 +216,7 @@ const MySimsView: React.FC<MySimsViewProps> = ({ activeSims, onNavigate, filterT
 
   if (isInstallModalOpen) {
     return (
-      <div className="sm:h-full flex flex-col bg-[#1c1c1e]">
+      <div className="lg:h-full flex flex-col bg-[#1c1c1e]">
           <div className="px-4 pt-safe pb-3 flex items-center justify-between shrink-0 sticky top-0 bg-[#1c1c1e] z-10 border-b border-white/10">
               <h2 className="text-white text-lg font-bold tracking-tight">{t('my_sims.install_esim')}</h2>
               <button onClick={() => { setIsInstallModalOpen(false); setCopiedField(null); }} className="bg-white/10 p-2 rounded-full text-white hover:bg-white/20 transition-colors">
@@ -337,7 +337,7 @@ const MySimsView: React.FC<MySimsViewProps> = ({ activeSims, onNavigate, filterT
   }
 
   return (
-    <div className={`sm:h-full flex flex-col bg-[#F2F4F7] no-scrollbar relative ${isRechargeModalOpen ? 'overflow-hidden' : 'sm:overflow-y-auto'}`}>
+    <div className={`lg:h-full flex flex-col bg-[#F2F4F7] no-scrollbar relative ${isRechargeModalOpen ? 'overflow-hidden' : 'lg:overflow-y-auto'}`}>
       
       {/* Header */}
       <div className="bg-white/90 backdrop-blur-xl pt-safe px-4 pb-3 flex items-center justify-between shrink-0 sticky top-0 z-10 border-b border-slate-100">
@@ -572,7 +572,7 @@ const MySimsView: React.FC<MySimsViewProps> = ({ activeSims, onNavigate, filterT
       )}
 
       {/* Action Grid */}
-      <div className="px-4 grid grid-cols-2 gap-3 mb-5">
+      <div className="px-4 md:px-8 grid grid-cols-2 md:grid-cols-4 gap-3 mb-5">
           <button 
              onClick={() => setIsRechargeModalOpen(true)}
              className="bg-white p-4 rounded-xl shadow-sm flex flex-col items-center gap-2 border border-slate-100 active:scale-[0.98] transition-all hover:border-brand-orange/30 group"
@@ -757,7 +757,7 @@ const MySimsView: React.FC<MySimsViewProps> = ({ activeSims, onNavigate, filterT
           const closeModal = () => { setIsRechargeModalOpen(false); setSelectedTopUp(null); setTopUpPackages([]); };
 
           return (
-          <div className="fixed sm:absolute inset-0 z-[60] bg-white flex flex-col" style={{ touchAction: 'pan-y' }}>
+          <div className="fixed lg:absolute inset-0 z-[60] bg-white flex flex-col" style={{ touchAction: 'pan-y' }}>
               {/* Header */}
               <div className="shrink-0 px-4 pt-safe">
                 <div className="flex justify-between items-center py-3">
@@ -809,7 +809,7 @@ const MySimsView: React.FC<MySimsViewProps> = ({ activeSims, onNavigate, filterT
                           <span className="bg-brand-orange text-white text-sm font-bold px-3 py-1 rounded-lg">{label}</span>
                           <div className="flex-1 h-px bg-slate-200" />
                         </div>
-                        <div className="grid grid-cols-2 gap-2.5">
+                        <div className="grid grid-cols-2 md:grid-cols-3 gap-2.5">
                           {pkgs.map(pkg => {
                             const isSelected = selectedTopUp?.packageCode === pkg.packageCode;
                             const priceRetail = retailPrice(pkg.price);

@@ -133,7 +133,7 @@ const AccountInfoView = ({ onBack, user, onUserUpdate }: { onBack: () => void, u
     };
 
     return (
-        <div className="sm:h-full flex flex-col bg-[#F2F4F7] sm:overflow-y-auto no-scrollbar relative">
+        <div className="lg:h-full flex flex-col bg-[#F2F4F7] lg:overflow-y-auto no-scrollbar relative">
             <ScreenHeader title={t('profile.account_info')} onBack={onBack} />
             <div className="px-5 pb-6">
                 {/* Success message */}
@@ -315,7 +315,7 @@ const AccountInfoView = ({ onBack, user, onUserUpdate }: { onBack: () => void, u
 const OrdersView = ({ onBack }: { onBack: () => void }) => {
     const { t } = useTranslation();
     return (
-    <div className="sm:h-full flex flex-col bg-[#F2F4F7] sm:overflow-y-auto no-scrollbar relative">
+    <div className="lg:h-full flex flex-col bg-[#F2F4F7] lg:overflow-y-auto no-scrollbar relative">
         <ScreenHeader title={t('profile.orders')} onBack={onBack} />
         <div className="px-5 pb-6 pt-2">
             <div className="bg-white rounded-2xl p-5 shadow-sm border border-slate-100 flex gap-4 items-start active:scale-[0.99] transition-transform">
@@ -340,7 +340,7 @@ const CurrencyView = ({ onBack }: { onBack: () => void }) => {
     ];
 
     return (
-        <div className="sm:h-full flex flex-col bg-[#F2F4F7] sm:overflow-y-auto no-scrollbar relative">
+        <div className="lg:h-full flex flex-col bg-[#F2F4F7] lg:overflow-y-auto no-scrollbar relative">
             <ScreenHeader title={t('profile.currency')} onBack={onBack} />
             <div className="px-5 pb-6">
                 <div className="relative mb-6">
@@ -383,7 +383,7 @@ const LanguagesView = ({ onBack }: { onBack: () => void }) => {
     };
 
     return (
-        <div className="sm:h-full flex flex-col bg-[#F2F4F7] sm:overflow-y-auto no-scrollbar relative">
+        <div className="lg:h-full flex flex-col bg-[#F2F4F7] lg:overflow-y-auto no-scrollbar relative">
             <ScreenHeader title={t('profile.languages')} onBack={onBack} />
             <div className="px-5 pt-6 pb-6">
                 <div className="bg-white rounded-xl shadow-sm border border-slate-100 overflow-hidden">
@@ -407,7 +407,7 @@ const AboutEvairView = ({ onBack }: { onBack: () => void }) => {
     const { t } = useTranslation();
 
     return (
-        <div className="sm:h-full flex flex-col bg-[#F2F4F7] sm:overflow-y-auto no-scrollbar relative">
+        <div className="lg:h-full flex flex-col bg-[#F2F4F7] lg:overflow-y-auto no-scrollbar relative">
             <ScreenHeader title={t('profile.about_evair')} onBack={onBack} />
             <div className="px-5 pt-2 pb-6">
 
@@ -489,7 +489,7 @@ const TermsOfUseView = ({ onBack }: { onBack: () => void }) => {
     const numSpan = "absolute left-0 text-slate-400";
 
     return (
-        <div className="sm:h-full flex flex-col bg-[#F2F4F7] sm:overflow-y-auto no-scrollbar relative">
+        <div className="lg:h-full flex flex-col bg-[#F2F4F7] lg:overflow-y-auto no-scrollbar relative">
             <ScreenHeader title={t('profile.terms_of_use')} onBack={onBack} />
             <div className="px-5 pt-2 pb-6">
                 <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-5">
@@ -651,7 +651,7 @@ const AcceptableUsePolicyView = ({ onBack }: { onBack: () => void }) => {
     const sectionTitle = "text-[15px] font-bold text-slate-900 mb-2 mt-6";
 
     return (
-        <div className="sm:h-full flex flex-col bg-[#F2F4F7] sm:overflow-y-auto no-scrollbar relative">
+        <div className="lg:h-full flex flex-col bg-[#F2F4F7] lg:overflow-y-auto no-scrollbar relative">
             <ScreenHeader title={t('profile.acceptable_use')} onBack={onBack} />
             <div className="px-5 pt-2 pb-6">
                 <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-5">
@@ -702,7 +702,7 @@ const PrivacyPolicyView = ({ onBack }: { onBack: () => void }) => {
     const listItem = "text-[15px] text-slate-600 leading-relaxed pl-4 relative before:content-['•'] before:absolute before:left-0 before:text-slate-400";
 
     return (
-        <div className="sm:h-full flex flex-col bg-[#F2F4F7] sm:overflow-y-auto no-scrollbar relative">
+        <div className="lg:h-full flex flex-col bg-[#F2F4F7] lg:overflow-y-auto no-scrollbar relative">
             <ScreenHeader title={t('profile.privacy_policy')} onBack={onBack} />
             <div className="px-5 pt-2 pb-6">
                 <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-5">
@@ -875,7 +875,7 @@ const RefundPolicyView = ({ onBack }: { onBack: () => void }) => {
     const numberedItem = "text-[15px] text-slate-600 leading-relaxed pl-5 relative";
 
     return (
-        <div className="sm:h-full flex flex-col bg-[#F2F4F7] sm:overflow-y-auto no-scrollbar relative">
+        <div className="lg:h-full flex flex-col bg-[#F2F4F7] lg:overflow-y-auto no-scrollbar relative">
             <ScreenHeader title={t('profile.refund_policy')} onBack={onBack} />
             <div className="px-5 pt-2 pb-6">
                 <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-5">
@@ -985,7 +985,7 @@ const CookiePolicyView = ({ onBack }: { onBack: () => void }) => {
     const listItem = "text-[15px] text-slate-600 leading-relaxed pl-4 relative before:content-['•'] before:absolute before:left-0 before:text-slate-400";
 
     return (
-        <div className="sm:h-full flex flex-col bg-[#F2F4F7] sm:overflow-y-auto no-scrollbar relative">
+        <div className="lg:h-full flex flex-col bg-[#F2F4F7] lg:overflow-y-auto no-scrollbar relative">
             <ScreenHeader title={t('profile.cookie_policy')} onBack={onBack} />
             <div className="px-5 pt-2 pb-6">
                 <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-5">
@@ -1075,7 +1075,7 @@ const CookiePolicyView = ({ onBack }: { onBack: () => void }) => {
 const MoreInfoView = ({ onBack, onNavigate }: { onBack: () => void, onNavigate: (screen: ProfileScreen) => void }) => {
     const { t } = useTranslation();
     return (
-    <div className="sm:h-full flex flex-col bg-[#F2F4F7] sm:overflow-y-auto no-scrollbar relative">
+    <div className="lg:h-full flex flex-col bg-[#F2F4F7] lg:overflow-y-auto no-scrollbar relative">
         <ScreenHeader title={t('profile.more_info')} onBack={onBack} />
         <div className="px-5 pt-2">
             <MenuGroup>
@@ -1094,7 +1094,7 @@ const MoreInfoView = ({ onBack, onNavigate }: { onBack: () => void, onNavigate: 
 const HelpCenterView = ({ onBack }: { onBack: () => void }) => {
     const { t } = useTranslation();
     return (
-        <div className="sm:h-full flex flex-col bg-[#F2F4F7] relative">
+        <div className="lg:h-full flex flex-col bg-[#F2F4F7] relative">
             
             <div className="bg-white/90 backdrop-blur-xl px-4 pt-safe pb-3 flex justify-between items-center shrink-0 sticky top-0 z-20 border-b border-slate-100">
                  <button onClick={onBack} className="p-2 -ml-1 rounded-full hover:bg-black/5"><Settings size={0} className="hidden" /><ChevronLeft size={22} className="text-slate-900" /></button>
@@ -1102,7 +1102,7 @@ const HelpCenterView = ({ onBack }: { onBack: () => void }) => {
                  <div className="w-8"></div>
             </div>
 
-            <div className="sm:flex-1 sm:overflow-y-auto no-scrollbar px-4 pt-6 pb-6">
+            <div className="lg:flex-1 lg:overflow-y-auto no-scrollbar px-4 pt-6 pb-6">
                  <h1 className="text-2xl font-bold text-slate-900 mb-5 text-center">{t('profile.how_can_help')}</h1>
                  
                  <div className="relative mb-6">
@@ -1115,7 +1115,7 @@ const HelpCenterView = ({ onBack }: { onBack: () => void }) => {
                  </div>
 
                  <div className="space-y-4 mb-10">
-                     <div className="grid grid-cols-1 gap-4">
+                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                          {[
                              { icon: Info, label: t('profile.about_evair'), color: 'bg-blue-100 text-blue-600' },
                              { icon: Play, label: t('profile.getting_started'), color: 'bg-teal-100 text-teal-600' },
@@ -1203,7 +1203,7 @@ const ProfileView: React.FC<ProfileViewProps> = ({ isLoggedIn, user, onLogin, on
 
   // Main Profile Menu
   return (
-    <div className="sm:h-full flex flex-col bg-[#F2F4F7] sm:overflow-y-auto no-scrollbar relative">
+    <div className="lg:h-full flex flex-col bg-[#F2F4F7] lg:overflow-y-auto no-scrollbar relative">
         
         {/* Header */}
         <div className="bg-white/90 backdrop-blur-xl pt-safe px-4 pb-3 flex items-center gap-2 shrink-0 sticky top-0 z-10 border-b border-slate-100">

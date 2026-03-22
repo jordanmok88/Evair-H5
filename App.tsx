@@ -481,12 +481,12 @@ function CustomerApp() {
   };
 
   return (
-    <div className="sm:bg-[#E5E5E5] sm:h-full sm:min-h-screen sm:flex sm:items-center sm:justify-center sm:p-8 font-sans antialiased selection:bg-orange-100">
+    <div className="lg:bg-[#E5E5E5] lg:h-full lg:min-h-screen lg:flex lg:items-center lg:justify-center lg:p-8 font-sans antialiased selection:bg-orange-100">
       
-      <div ref={phoneRef} className="w-full sm:max-w-[430px] sm:h-[880px] bg-[#F2F4F7] sm:rounded-[3.5rem] sm:overflow-hidden sm:shadow-[0_50px_100px_-20px_rgba(0,0,0,0.25)] relative sm:border-[8px] sm:border-slate-900 sm:ring-1 sm:ring-black/50">
+      <div ref={phoneRef} className="w-full lg:max-w-[430px] lg:h-[880px] bg-[#F2F4F7] lg:rounded-[3.5rem] lg:overflow-hidden lg:shadow-[0_50px_100px_-20px_rgba(0,0,0,0.25)] relative lg:border-[8px] lg:border-slate-900 lg:ring-1 lg:ring-black/50">
         
-        {/* Generic status bar — only visible in tablet/desktop phone frame */}
-        <div className="hidden sm:block relative z-50 shrink-0 bg-[#F2F4F7]">
+        {/* Generic status bar — only visible in desktop phone frame */}
+        <div className="hidden lg:block relative z-50 shrink-0 bg-[#F2F4F7]">
           <div className="relative h-[54px]">
             <div className="absolute top-[10px] left-1/2 -translate-x-1/2 w-[126px] h-[37px] bg-black rounded-[24px] z-10" />
             <span className="absolute left-5 top-4 text-[15px] font-semibold text-[#1a1a1a]" style={{ fontFamily: 'system-ui, sans-serif' }}>12:18</span>
@@ -499,7 +499,7 @@ function CustomerApp() {
         </div>
 
         {/* Main Content Area */}
-        <main className="w-full relative sm:overflow-hidden" style={{ height: 'calc(100% - 54px)' }}>
+        <main className="w-full relative lg:overflow-hidden" style={{ height: 'calc(100% - 54px)' }}>
            {renderContent()}
         </main>
 

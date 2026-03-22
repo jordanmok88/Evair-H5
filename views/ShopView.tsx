@@ -605,7 +605,7 @@ const ShopView: React.FC<ShopViewProps> = ({ isLoggedIn, user, onLoginRequest, o
   if (esimOrderResult) {
     const { smdpAddress, activationCode, lpaString, qrCodeUrl } = esimOrderResult;
     return (
-      <div className="sm:h-full min-h-screen sm:min-h-0 flex flex-col bg-[#1c1c1e]">
+      <div className="lg:h-full min-h-screen lg:min-h-0 flex flex-col bg-[#1c1c1e]">
         <div className="px-5 pt-safe pb-2 flex items-center justify-between shrink-0">
           <h2 className="text-white text-xl font-bold tracking-tight">{t('shop.order_success_title')}</h2>
           <button onClick={() => {
@@ -716,11 +716,11 @@ const ShopView: React.FC<ShopViewProps> = ({ isLoggedIn, user, onLoginRequest, o
   // --- eSIM COUNTRY DETAIL: Package list for selected country group ---
   if (selectedEsimGroup) {
     return (
-      <div className="sm:h-full flex flex-col relative bg-[#F2F4F7]">
+      <div className="lg:h-full flex flex-col relative bg-[#F2F4F7]">
         {/* eSIM Checkout Modal */}
         {selectedEsimPkg && (
-          <div className="fixed sm:absolute inset-0 z-[60] flex items-end sm:items-center justify-center bg-black/20 backdrop-blur-sm" style={{ paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}>
-            <div className="bg-white w-full sm:w-[90%] sm:max-w-sm max-h-[70vh] sm:max-h-[80vh] rounded-t-2xl sm:rounded-2xl shadow-2xl overflow-hidden flex flex-col mb-[env(safe-area-inset-bottom)]">
+          <div className="fixed lg:absolute inset-0 z-[60] flex items-end lg:items-center justify-center bg-black/20 backdrop-blur-sm" style={{ paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}>
+            <div className="bg-white w-full md:w-[80%] md:max-w-md lg:w-[90%] lg:max-w-sm max-h-[70vh] lg:max-h-[80vh] rounded-t-2xl md:rounded-2xl shadow-2xl overflow-hidden flex flex-col mb-[env(safe-area-inset-bottom)] md:mb-0">
               <div className="flex justify-between items-center px-5 pt-5 pb-3 flex-shrink-0">
                 <h2 className="text-lg font-bold text-slate-900 tracking-tight">{t('shop.checkout')}</h2>
                 <button onClick={() => { setSelectedEsimPkg(null); setIsProcessing(false); setOrderError(null); }} className="p-1.5 bg-slate-100 rounded-full text-slate-500 hover:bg-slate-200">
@@ -788,7 +788,7 @@ const ShopView: React.FC<ShopViewProps> = ({ isLoggedIn, user, onLoginRequest, o
         </div>
 
         {/* Content */}
-        <div className="sm:flex-1 sm:overflow-y-auto no-scrollbar pb-6 px-4 pt-5">
+        <div className="lg:flex-1 lg:overflow-y-auto no-scrollbar pb-6 px-4 md:px-8 pt-5">
           {/* Country header */}
           <div className="flex items-center gap-4 mb-5">
             <FlagIcon countryCode={selectedEsimGroup.flag} size="lg" />
@@ -803,7 +803,7 @@ const ShopView: React.FC<ShopViewProps> = ({ isLoggedIn, user, onLoginRequest, o
 
           <h3 className="text-lg font-bold text-slate-900 mb-3 tracking-tight">{t('shop.select_plan')}</h3>
 
-          <div className="space-y-3">
+          <div className="space-y-3 md:grid md:grid-cols-2 md:gap-3 md:space-y-0">
             {selectedEsimGroup.packages.map((pkg) => {
               const priceUsd = retailPrice(pkg.price);
               const volumeStr = formatVolume(pkg.volume);
@@ -901,9 +901,9 @@ const ShopView: React.FC<ShopViewProps> = ({ isLoggedIn, user, onLoginRequest, o
     const shippingCost = 5.99;
     const total = selectedSimCardProduct.sellingPrice + shippingCost;
     return (
-      <div className="sm:h-full flex flex-col relative bg-[#F2F4F7]">
-        <div className="fixed sm:absolute inset-0 z-[60] flex items-end sm:items-center justify-center bg-black/20 backdrop-blur-sm" style={{ paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}>
-          <div className="bg-white w-full sm:w-[90%] sm:max-w-sm max-h-[70vh] sm:max-h-[80vh] rounded-t-2xl sm:rounded-2xl p-5 shadow-2xl overflow-y-auto overscroll-contain mb-[env(safe-area-inset-bottom)]">
+      <div className="lg:h-full flex flex-col relative bg-[#F2F4F7]">
+        <div className="fixed lg:absolute inset-0 z-[60] flex items-end lg:items-center justify-center bg-black/20 backdrop-blur-sm" style={{ paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}>
+          <div className="bg-white w-full md:w-[80%] md:max-w-md lg:w-[90%] lg:max-w-sm max-h-[70vh] lg:max-h-[80vh] rounded-t-2xl md:rounded-2xl p-5 shadow-2xl overflow-y-auto overscroll-contain mb-[env(safe-area-inset-bottom)] md:mb-0">
             <div className="flex justify-between items-center mb-5">
               <h2 className="text-lg font-bold text-slate-900 tracking-tight">{t('shop.checkout')}</h2>
               <button onClick={() => setSelectedSimCardProduct(null)} className="p-2 bg-slate-100 rounded-full text-slate-500 hover:bg-slate-200">
@@ -978,11 +978,11 @@ const ShopView: React.FC<ShopViewProps> = ({ isLoggedIn, user, onLoginRequest, o
     const total = discountedPrice + shippingCost;
 
     return (
-      <div className="sm:h-full flex flex-col relative bg-[#F2F4F7]">
+      <div className="lg:h-full flex flex-col relative bg-[#F2F4F7]">
         {/* Checkout Modal */}
         {selectedPlan && (
-          <div className="fixed sm:absolute inset-0 z-[60] flex items-end sm:items-center justify-center bg-black/20 backdrop-blur-sm" style={{ paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}>
-             <div className="bg-white w-full sm:w-[90%] sm:max-w-sm max-h-[70vh] sm:max-h-[80vh] rounded-t-2xl sm:rounded-2xl p-5 shadow-2xl overflow-y-auto overscroll-contain mb-[env(safe-area-inset-bottom)]">
+          <div className="fixed lg:absolute inset-0 z-[60] flex items-end lg:items-center justify-center bg-black/20 backdrop-blur-sm" style={{ paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}>
+             <div className="bg-white w-full md:w-[80%] md:max-w-md lg:w-[90%] lg:max-w-sm max-h-[70vh] lg:max-h-[80vh] rounded-t-2xl md:rounded-2xl p-5 shadow-2xl overflow-y-auto overscroll-contain mb-[env(safe-area-inset-bottom)] md:mb-0">
                 <div className="flex justify-between items-center mb-5">
                     <h2 className="text-lg font-bold text-slate-900 tracking-tight">{t('shop.checkout')}</h2>
                     <button onClick={() => setSelectedPlan(null)} className="p-2 bg-slate-100 rounded-full text-slate-500 hover:bg-slate-200">
@@ -1073,7 +1073,7 @@ const ShopView: React.FC<ShopViewProps> = ({ isLoggedIn, user, onLoginRequest, o
         </div>
 
         {/* Content */}
-        <div className="sm:flex-1 sm:overflow-y-auto no-scrollbar pb-6 px-4 pt-5">
+        <div className="lg:flex-1 lg:overflow-y-auto no-scrollbar pb-6 px-4 md:px-8 pt-5">
           
           {/* Visual Country Header */}
           <div className="flex items-center gap-4 mb-5">
@@ -1102,7 +1102,7 @@ const ShopView: React.FC<ShopViewProps> = ({ isLoggedIn, user, onLoginRequest, o
               </div>
           </div>
           
-          <div className="space-y-3">
+          <div className="space-y-3 md:grid md:grid-cols-2 md:gap-3 md:space-y-0">
             {selectedCountry.plans.map((plan) => (
               <div 
                 key={plan.id}
@@ -1174,14 +1174,14 @@ const ShopView: React.FC<ShopViewProps> = ({ isLoggedIn, user, onLoginRequest, o
 
   // --- MAIN VIEW: Shop Home ---
   return (
-    <div className="sm:h-full relative bg-[#F2F4F7]">
+    <div className="lg:h-full relative bg-[#F2F4F7]">
       {testMode && (
         <div className="bg-amber-400 text-amber-900 text-center text-xs font-bold py-1.5 tracking-wider z-50 relative flex items-center justify-center gap-2">
           <Zap size={12} /> STAFF TEST MODE — No Payment Required
           <button onClick={() => { setTestMode(false); window.history.replaceState({}, '', window.location.pathname); }} className="ml-2 bg-amber-900/20 hover:bg-amber-900/30 text-amber-900 px-2 py-0.5 rounded text-[10px] font-bold transition-colors">EXIT</button>
         </div>
       )}
-      <div ref={scrollContainerRef} className="h-full sm:overflow-y-auto no-scrollbar">
+      <div ref={scrollContainerRef} className="h-full lg:overflow-y-auto no-scrollbar">
         {/* Header - auto-hides on scroll down, reappears on scroll up */}
         <div
           className="bg-white px-4 pt-safe pb-3 sticky top-0 z-40 border-b border-slate-100 transition-transform duration-300 ease-out"
@@ -1236,7 +1236,7 @@ const ShopView: React.FC<ShopViewProps> = ({ isLoggedIn, user, onLoginRequest, o
           </div>
         </div>
 
-        <div className="pb-6 px-4 pt-4">
+        <div className="pb-6 px-4 md:px-8 pt-4">
         
         {/* HERO SECTION: 'Purchase' for eSIM, 'Bind' for Physical */}
         {!searchQuery && (
@@ -1321,7 +1321,7 @@ const ShopView: React.FC<ShopViewProps> = ({ isLoggedIn, user, onLoginRequest, o
               </div>
 
               {/* Plan cards grid */}
-              <div className="grid grid-cols-2 gap-3 mb-5">
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-3 mb-5">
                 {SIM_CARD_PRODUCTS.map((product) => {
                   const pricePerGb = product.sellingPrice / product.gbs;
                   const isBestValue = product.id === 'US_10_30';
@@ -1404,14 +1404,14 @@ const ShopView: React.FC<ShopViewProps> = ({ isLoggedIn, user, onLoginRequest, o
                       <Star size={16} className="text-amber-500" />
                       {t('shop.popular_destinations')}
                     </h3>
-                    <div className="flex gap-3 overflow-x-auto no-scrollbar pb-1 -mx-4 px-4">
+                    <div className="flex gap-3 overflow-x-auto no-scrollbar pb-1 -mx-4 px-4 md:mx-0 md:px-0 md:grid md:grid-cols-4 md:overflow-visible">
                       {popularGroups.map((group) => {
                         const cheapest = group.packages.reduce((min, p) => p.price < min.price ? p : min, group.packages[0]);
                         return (
                           <button
                             key={group.locationCode}
                             onClick={() => setSelectedEsimGroup(group)}
-                            className="flex-shrink-0 w-[110px] bg-white rounded-xl p-3 border border-slate-100 shadow-sm hover:shadow-md transition-all active:scale-[0.97] text-center"
+                            className="flex-shrink-0 w-[110px] md:w-auto bg-white rounded-xl p-3 border border-slate-100 shadow-sm hover:shadow-md transition-all active:scale-[0.97] text-center"
                           >
                             <div className="flex justify-center mb-2">
                               <FlagIcon countryCode={group.flag} size="md" />
@@ -1457,7 +1457,7 @@ const ShopView: React.FC<ShopViewProps> = ({ isLoggedIn, user, onLoginRequest, o
 
                 {/* ── Continent Filter Tabs (only in country mode) ── */}
                 {!searchQuery && browseMode === 'country' && (
-                  <div className="flex gap-2 overflow-x-auto no-scrollbar pb-3 -mx-4 px-4 mb-3">
+                  <div className="flex gap-2 overflow-x-auto no-scrollbar pb-3 -mx-4 px-4 md:mx-0 md:px-0 md:flex-wrap mb-3">
                     {CONTINENT_TABS.filter(tab => tab !== 'Multi-Region').map((tab) => (
                       <button
                         key={tab}
@@ -1489,7 +1489,7 @@ const ShopView: React.FC<ShopViewProps> = ({ isLoggedIn, user, onLoginRequest, o
                 {filteredEsimGroups.length === 0 ? (
                   <div className="text-center py-10 text-slate-400 text-sm">{t('shop.no_results')}</div>
                 ) : (
-                  <div className="bg-white rounded-xl border border-slate-100 divide-y divide-slate-100 overflow-hidden shadow-sm mb-5">
+                  <div className="bg-white rounded-xl border border-slate-100 divide-y divide-slate-100 overflow-hidden shadow-sm mb-5 md:grid md:grid-cols-2 md:divide-y-0 md:gap-[1px] md:bg-slate-100 md:border-0 md:[&>*]:bg-white">
                     {visibleEsimGroups.map((group) => {
                       const cheapestPkg = group.packages.reduce((min, p) => p.price < min.price ? p : min, group.packages[0]);
                       const cheapestPrice = cheapestPkg ? retailPrice(cheapestPkg.price) : 0;

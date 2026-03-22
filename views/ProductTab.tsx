@@ -43,7 +43,7 @@ const ProductTab: React.FC<ProductTabProps> = ({
   }, [mySims.length, viewMode]);
 
   return (
-    <div className="sm:h-full relative">
+    <div className="lg:h-full relative">
        {viewMode === 'SHOP' && (
           <ShopView 
             simType={type}
