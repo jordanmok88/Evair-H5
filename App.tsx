@@ -39,8 +39,6 @@ function App() {
 }
 
 function CustomerApp() {
-  const [safariCollapsed, setSafariCollapsed] = useState(false);
-  const lastSafariScrollY = useRef(0);
   const phoneRef = useRef<HTMLDivElement>(null);
 
   // 初始化认证状态
@@ -73,20 +71,6 @@ function CustomerApp() {
       });
   }, []);
 
-  useEffect(() => {
-    const handler = (e: Event) => {
-      if (!phoneRef.current) return;
-      const target = e.target as HTMLElement;
-      if (!phoneRef.current.contains(target)) return;
-      const y = target.scrollTop ?? 0;
-      if (y > lastSafariScrollY.current + 20 && y > 50) setSafariCollapsed(true);
-      else if (y < lastSafariScrollY.current - 20) setSafariCollapsed(false);
-      if (y <= 0) setSafariCollapsed(false);
-      lastSafariScrollY.current = y;
-    };
-    document.addEventListener('scroll', handler, { capture: true, passive: true });
-    return () => document.removeEventListener('scroll', handler, { capture: true });
-  }, []);
 
   const [activeTab, setActiveTab] = useState<Tab>(Tab.SIM_CARD);
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
@@ -501,44 +485,21 @@ function CustomerApp() {
       
       <div ref={phoneRef} className="w-full sm:max-w-[430px] sm:h-[880px] bg-[#F2F4F7] sm:rounded-[3.5rem] sm:overflow-hidden sm:shadow-[0_50px_100px_-20px_rgba(0,0,0,0.25)] relative sm:border-[8px] sm:border-slate-900 sm:ring-1 sm:ring-black/50">
         
-        {/* Safari chrome — only visible in tablet/desktop phone frame */}
-        <div className="hidden sm:block relative z-50 shrink-0 bg-[#F2F4F7]" style={{ transition: 'all 0.3s ease' }}>
-          {/* Status bar with Dynamic Island — always visible */}
+        {/* Generic status bar — only visible in tablet/desktop phone frame */}
+        <div className="hidden sm:block relative z-50 shrink-0 bg-[#F2F4F7]">
           <div className="relative h-[54px]">
             <div className="absolute top-[10px] left-1/2 -translate-x-1/2 w-[126px] h-[37px] bg-black rounded-[24px] z-10" />
-            <span className="absolute left-5 top-4 text-[15px] font-semibold" style={{ fontFamily: '-apple-system, sans-serif' }}>12:18</span>
-            <div className="absolute right-5 top-[18px] flex items-center gap-[5px]">
-              <svg width="18" height="12" viewBox="0 0 18 12" fill="none"><rect x="0.5" y="3" width="3" height="9" rx="1" fill="#1a1a1a"/><rect x="5" y="2" width="3" height="10" rx="1" fill="#1a1a1a"/><rect x="9.5" y="1" width="3" height="11" rx="1" fill="#1a1a1a"/><rect x="14" y="0" width="3" height="12" rx="1" fill="#1a1a1a"/></svg>
-              <span className="text-xs font-bold" style={{ fontFamily: '-apple-system, sans-serif' }}>LTE</span>
-              <svg width="27" height="13" viewBox="0 0 27 13" fill="none"><rect x="0" y="1" width="23" height="11" rx="3" stroke="#1a1a1a" strokeWidth="1"/><rect x="1.5" y="2.5" width="18" height="8" rx="2" fill="#34C759"/><rect x="24" y="4" width="2.5" height="5" rx="1" fill="#1a1a1a"/></svg>
-            </div>
-          </div>
-
-          {/* Address bar — full when expanded, compact pill when collapsed */}
-          <div className="overflow-hidden" style={{ maxHeight: safariCollapsed ? 32 : 50, transition: 'max-height 0.3s ease' }}>
-            {/* Full address bar */}
-            <div style={{ opacity: safariCollapsed ? 0 : 1, maxHeight: safariCollapsed ? 0 : 50, overflow: 'hidden', transition: 'opacity 0.3s ease, max-height 0.3s ease' }}>
-              <div className="px-4 pb-[10px] flex items-center">
-                <svg width="16" height="16" viewBox="0 0 16 16" fill="none" className="mr-2 shrink-0"><path d="M3 7.5V6C3 3.8 4.8 2 7 2s4 1.8 4 4v1.5" stroke="#8E8E93" strokeWidth="1.5" strokeLinecap="round"/><rect x="2" y="7" width="10" height="6" rx="1.5" fill="#8E8E93"/></svg>
-                <div className="flex-1 bg-[#E8E8ED] rounded-xl h-9 flex items-center justify-center">
-                  <span className="text-[15px] text-[#1a1a1a]" style={{ fontFamily: '-apple-system, sans-serif' }}>evair-h5.netlify.app</span>
-                </div>
-                <svg width="16" height="16" viewBox="0 0 16 16" fill="none" className="ml-2 shrink-0"><path d="M8 2v8M8 2L5 5M8 2l3 3" stroke="#007AFF" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/><path d="M3 9v4h10V9" stroke="#007AFF" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/></svg>
-              </div>
-            </div>
-            {/* Compact pill */}
-            <div style={{ opacity: safariCollapsed ? 1 : 0, maxHeight: safariCollapsed ? 32 : 0, overflow: 'hidden', transition: 'opacity 0.3s ease, max-height 0.3s ease' }}>
-              <div className="flex justify-center pb-1.5">
-                <div className="rounded-[18px] px-4 py-[5px] bg-[#E8E8ED]">
-                  <span className="text-[13px] font-medium whitespace-nowrap text-[#1a1a1a]" style={{ fontFamily: '-apple-system, sans-serif' }}>evair-h5.netlify.app</span>
-                </div>
-              </div>
+            <span className="absolute left-5 top-4 text-[15px] font-semibold text-[#1a1a1a]" style={{ fontFamily: 'system-ui, sans-serif' }}>12:18</span>
+            <div className="absolute right-5 top-[18px] flex items-center gap-[6px]">
+              <svg width="16" height="12" viewBox="0 0 16 12" fill="none"><rect x="0" y="5" width="3" height="7" rx="1" fill="#1a1a1a"/><rect x="4.5" y="3" width="3" height="9" rx="1" fill="#1a1a1a"/><rect x="9" y="1" width="3" height="11" rx="1" fill="#1a1a1a"/><rect x="13" y="0" width="3" height="12" rx="1" fill="#1a1a1a" opacity="0.3"/></svg>
+              <svg width="16" height="12" viewBox="0 0 16 12" fill="none"><path d="M8 2.5C5.5 2.5 3.3 3.5 1.7 5.1L0.3 3.7C2.3 1.7 4.9 0.5 8 0.5s5.7 1.2 7.7 3.2L14.3 5.1C12.7 3.5 10.5 2.5 8 2.5z" fill="#1a1a1a" opacity="0.3"/><path d="M8 6.5c-1.7 0-3.2.7-4.3 1.8L2.3 6.9C3.8 5.4 5.8 4.5 8 4.5s4.2.9 5.7 2.4L12.3 8.3C11.2 7.2 9.7 6.5 8 6.5z" fill="#1a1a1a"/><circle cx="8" cy="11" r="1.5" fill="#1a1a1a"/></svg>
+              <svg width="25" height="12" viewBox="0 0 25 12" fill="none"><rect x="0" y="0.5" width="21" height="11" rx="2.5" stroke="#1a1a1a" strokeWidth="1"/><rect x="1.5" y="2" width="16" height="8" rx="1.5" fill="#1a1a1a"/><rect x="22" y="3.5" width="2.5" height="5" rx="1" fill="#1a1a1a" opacity="0.4"/></svg>
             </div>
           </div>
         </div>
 
         {/* Main Content Area */}
-        <main className="w-full relative sm:overflow-hidden" style={{ height: safariCollapsed ? 'calc(100% - 86px)' : 'calc(100% - 104px)' }}>
+        <main className="w-full relative sm:overflow-hidden" style={{ height: 'calc(100% - 54px)' }}>
            {renderContent()}
         </main>
 
