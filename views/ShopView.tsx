@@ -345,7 +345,7 @@ const ShopView: React.FC<ShopViewProps> = ({ isLoggedIn, user, onLoginRequest, o
   const handleSwipeBack = useCallback(() => {
     if (showSuccess) { setShowSuccess(false); return; }
     if (esimOrderResult) { setEsimOrderResult(null); setSelectedEsimPkg(null); setSelectedEsimGroup(null); return; }
-    if (selectedEsimPkg) { setSelectedEsimPkg(null); return; }
+    if (selectedEsimPkg) { setSelectedEsimPkg(null); setIsProcessing(false); setOrderError(null); return; }
     if (selectedSimCardProduct) { setSelectedSimCardProduct(null); return; }
     if (selectedPlan) { setSelectedPlan(null); return; }
     if (selectedEsimGroup) { setSelectedEsimGroup(null); return; }
@@ -498,6 +498,7 @@ const ShopView: React.FC<ShopViewProps> = ({ isLoggedIn, user, onLoginRequest, o
       }));
 
       window.location.href = data.url;
+      setTimeout(() => setIsProcessing(false), 5000);
     } catch (err: any) {
       console.error('Stripe checkout error:', err);
       setOrderError(err.message || 'Payment failed. Please try again.');
@@ -722,7 +723,7 @@ const ShopView: React.FC<ShopViewProps> = ({ isLoggedIn, user, onLoginRequest, o
             <div className="bg-white w-full sm:w-[90%] sm:max-w-sm max-h-[70vh] sm:max-h-[80vh] rounded-t-2xl sm:rounded-2xl shadow-2xl overflow-hidden flex flex-col mb-[env(safe-area-inset-bottom)]">
               <div className="flex justify-between items-center px-5 pt-5 pb-3 flex-shrink-0">
                 <h2 className="text-lg font-bold text-slate-900 tracking-tight">{t('shop.checkout')}</h2>
-                <button onClick={() => setSelectedEsimPkg(null)} className="p-1.5 bg-slate-100 rounded-full text-slate-500 hover:bg-slate-200">
+                <button onClick={() => { setSelectedEsimPkg(null); setIsProcessing(false); setOrderError(null); }} className="p-1.5 bg-slate-100 rounded-full text-slate-500 hover:bg-slate-200">
                   <X size={16} />
                 </button>
               </div>
@@ -815,6 +816,7 @@ const ShopView: React.FC<ShopViewProps> = ({ isLoggedIn, user, onLoginRequest, o
                   key={pkg.packageCode}
                   onClick={() => {
                     if (!isLoggedIn) { onLoginRequest(); return; }
+                    setIsProcessing(false); setOrderError(null);
                     setSelectedEsimPkg(pkg);
                   }}
                   className="group relative bg-white rounded-xl p-4 border border-slate-100 shadow-sm hover:shadow-md transition-all cursor-pointer"
