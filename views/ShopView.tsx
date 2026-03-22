@@ -1314,7 +1314,7 @@ const ShopView: React.FC<ShopViewProps> = ({ isLoggedIn, user, onLoginRequest, o
                       }`}
                     >
                       <MapPin size={14} />
-                      {t('shop.by_country') || 'By Country'}
+                      {t('shop.by_country')}
                     </button>
                     <button
                       onClick={() => { setBrowseMode('region'); setShowAllCountries(false); }}
@@ -1325,7 +1325,7 @@ const ShopView: React.FC<ShopViewProps> = ({ isLoggedIn, user, onLoginRequest, o
                       }`}
                     >
                       <Globe size={14} />
-                      {t('shop.by_region') || 'By Region'}
+                      {t('shop.by_region')}
                     </button>
                   </div>
                 )}
@@ -1353,7 +1353,7 @@ const ShopView: React.FC<ShopViewProps> = ({ isLoggedIn, user, onLoginRequest, o
                 {/* ── Section title ── */}
                 <h3 className="text-lg font-bold text-slate-900 mb-3 tracking-tight">
                   {searchQuery ? t('shop.search_results')
-                    : browseMode === 'region' ? (t('shop.multi_country_plans') || 'Multi-Country Plans')
+                    : browseMode === 'region' ? t('shop.multi_country_plans')
                     : t('shop.buy_new_esim')}
                   <span className="ml-2 text-sm font-medium text-slate-400">({filteredEsimGroups.length})</span>
                 </h3>
@@ -1386,7 +1386,7 @@ const ShopView: React.FC<ShopViewProps> = ({ isLoggedIn, user, onLoginRequest, o
                                 {group.packages.length} {group.packages.length === 1 ? 'Plan' : 'Plans'}
                                 {group.isMultiRegion && countryCount > 1 && (
                                   <span className="ml-1.5 text-[11px] font-semibold text-blue-500 bg-blue-50 px-1.5 py-0.5 rounded">
-                                    {countryCount} {t('shop.countries') || 'countries'}
+                                    {countryCount} {t('shop.countries')}
                                   </span>
                                 )}
                               </p>
