@@ -6,31 +6,6 @@ import FlagIcon from '../components/FlagIcon';
 import { CARRIER_MAP } from '../constants';
 import { topUp, formatVolume, formatPrice, retailPrice } from '../services/esimApi';
 import { useEdgeSwipeBack } from '../hooks/useEdgeSwipeBack';
-import { packageService, esimService } from '../services/api';
-import type { PackageDto, TopupRequest } from '../services/api/types';
-
-// ─── 后端套餐数据转换为前端格式 ────────────────────────────────────────
-
-function convertPackageDtoToEsimPackage(dto: PackageDto): EsimPackage {
-  // Detect units: if volume > 1_000_000 it's in bytes (supplier passthrough), otherwise GB
-  const volume = dto.volume > 1_000_000 ? dto.volume : dto.volume * 1024 * 1024 * 1024;
-  // Detect price: if price > 1000 it's in micro-cents (supplier passthrough), otherwise USD
-  const price = dto.price > 1000 ? dto.price : dto.price * 10000;
-
-  return {
-    packageCode: dto.packageCode,
-    name: dto.name,
-    price,
-    currencyCode: dto.currency,
-    volume,
-    unusedValidTime: 0,
-    duration: dto.duration || 30,
-    durationUnit: dto.durationUnit || 'DAY',
-    location: dto.location,
-    description: dto.description || '',
-    activeType: 1,
-  };
-}
 
 interface MySimsViewProps {
   activeSims: ActiveSim[];
@@ -95,19 +70,12 @@ const MySimsView: React.FC<MySimsViewProps> = ({ activeSims, onNavigate, filterT
       setTopUpLoading(true);
       const iccid = resolveIccid(currentSim);
       if (currentSim.type === 'ESIM') {
-        // 优先使用后端 API 获取充值套餐
-        packageService.getRechargePackages(iccid)
-          .then(res => {
-            const converted = res.packages.map(convertPackageDtoToEsimPackage);
-            setTopUpPackages(converted);
-          })
-          .catch(() => {
-            // 失败时使用 legacy API
-            import('../services/esimApi').then(({ fetchTopUpPackages }) => {
-              fetchTopUpPackages(iccid).then(setTopUpPackages).catch(() => {});
-            });
-          })
-          .finally(() => setTopUpLoading(false));
+        import('../services/esimApi').then(({ fetchTopUpPackages }) => {
+          fetchTopUpPackages(iccid)
+            .then(setTopUpPackages)
+            .catch(() => {})
+            .finally(() => setTopUpLoading(false));
+        });
       } else {
         import('../services/esimApi').then(({ fetchPackages }) => {
           fetchPackages({ locationCode: currentSim.country.countryCode })
@@ -686,24 +654,13 @@ const MySimsView: React.FC<MySimsViewProps> = ({ activeSims, onNavigate, filterT
             setTopUpProcessing(true);
             try {
               const iccid = resolveIccid(currentSim);
-
-              // 优先使用后端 API
-              try {
-                const topupData: TopupRequest = {
-                  packageCode: selectedTopUp.packageCode,
-                  amount: selectedTopUp.price / 10000, // 转换回 USD
-                };
-                await esimService.topup(iccid, topupData);
-              } catch (apiErr) {
-                // 失败时使用 legacy API
-                const txnId = `topup_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
-                await topUp({
-                  iccid,
-                  packageCode: selectedTopUp.packageCode,
-                  transactionId: txnId,
-                  amount: selectedTopUp.price,
-                });
-              }
+              const txnId = `topup_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+              await topUp({
+                iccid,
+                packageCode: selectedTopUp.packageCode,
+                transactionId: txnId,
+                amount: selectedTopUp.price,
+              });
 
               const addedGB = selectedTopUp.volume / (1024 * 1024 * 1024);
               onUpdateSim?.(currentSim.id, {
