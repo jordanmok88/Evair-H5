@@ -270,6 +270,7 @@ const ShopView: React.FC<ShopViewProps> = ({ isLoggedIn, user, onLoginRequest, o
   const [emailSent, setEmailSent] = useState(false);
   const [continentTab, setContinentTab] = useState<ContinentTab>('All');
   const [browseMode, setBrowseMode] = useState<'country' | 'region'>('country');
+  const [testMode, setTestMode] = useState(() => new URLSearchParams(window.location.search).get('testmode') === '1');
 
   // 后端返回的地区数据 (多国区域 + 单国家)
   const [multiCountryRegions, setMultiCountryRegions] = useState<MultiCountryRegion[]>([]);
@@ -422,9 +423,46 @@ const ShopView: React.FC<ShopViewProps> = ({ isLoggedIn, user, onLoginRequest, o
     if (!selectedEsimPkg) return;
     setIsProcessing(true);
     setOrderError(null);
+    setEmailSent(false);
+
+    const txnId = `evair_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+
+    if (testMode) {
+      try {
+        const result = await orderEsim({
+          packageCode: selectedEsimPkg.packageCode,
+          transactionId: txnId,
+          amount: selectedEsimPkg.price,
+        });
+        setEsimOrderResult(result);
+
+        if (email) {
+          fetch('/.netlify/functions/send-esim-email', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              email,
+              qrCodeUrl: result.qrCodeUrl,
+              smdpAddress: result.smdpAddress,
+              activationCode: result.activationCode,
+              lpaString: result.lpaString,
+              orderNo: result.orderNo,
+              packageName: selectedEsimGroup?.locationName || selectedEsimPkg.name,
+            }),
+          })
+            .then(r => { if (r.ok) setEmailSent(true); })
+            .catch(() => {});
+        }
+      } catch (err: any) {
+        console.error('Test order error:', err);
+        setOrderError(err.message || 'Order failed. Please try again.');
+      } finally {
+        setIsProcessing(false);
+      }
+      return;
+    }
 
     const price = retailPrice(selectedEsimPkg.price);
-    const txnId = `evair_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
 
     try {
       const res = await fetch('/api/stripe-checkout', {
@@ -728,7 +766,9 @@ const ShopView: React.FC<ShopViewProps> = ({ isLoggedIn, user, onLoginRequest, o
                 disabled={isProcessing || !email.includes('@')}
                 className="w-full bg-brand-orange text-white py-3.5 rounded-xl font-bold text-base shadow-lg shadow-orange-500/20 active:scale-[0.98] transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-orange-600"
               >
-                {isProcessing ? <Loader2 className="animate-spin" /> : <><CreditCard size={18} /> {t('shop.pay')} ${retailPrice(selectedEsimPkg.price).toFixed(2)}</>}
+                {isProcessing ? <Loader2 className="animate-spin" /> : testMode
+                  ? <><Zap size={18} /> Test Order — ${retailPrice(selectedEsimPkg.price).toFixed(2)}</>
+                  : <><CreditCard size={18} /> {t('shop.pay')} ${retailPrice(selectedEsimPkg.price).toFixed(2)}</>}
               </button>
             </div>
           </div>
@@ -1134,6 +1174,12 @@ const ShopView: React.FC<ShopViewProps> = ({ isLoggedIn, user, onLoginRequest, o
   // --- MAIN VIEW: Shop Home ---
   return (
     <div className="sm:h-full relative bg-[#F2F4F7]">
+      {testMode && (
+        <div className="bg-amber-400 text-amber-900 text-center text-xs font-bold py-1.5 tracking-wider z-50 relative flex items-center justify-center gap-2">
+          <Zap size={12} /> STAFF TEST MODE — No Payment Required
+          <button onClick={() => { setTestMode(false); window.history.replaceState({}, '', window.location.pathname); }} className="ml-2 bg-amber-900/20 hover:bg-amber-900/30 text-amber-900 px-2 py-0.5 rounded text-[10px] font-bold transition-colors">EXIT</button>
+        </div>
+      )}
       <div ref={scrollContainerRef} className="h-full sm:overflow-y-auto no-scrollbar">
         {/* Header - auto-hides on scroll down, reappears on scroll up */}
         <div
