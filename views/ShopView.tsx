@@ -1247,13 +1247,11 @@ const ShopView: React.FC<ShopViewProps> = ({ isLoggedIn, user, onLoginRequest, o
                         <div className="absolute -bottom-12 -left-12 w-36 h-36 rounded-full opacity-15" style={{ background: 'radial-gradient(circle, #FF6600 0%, transparent 70%)' }} />
 
                         <div className="relative z-10 p-5">
-                            <div className="flex items-center justify-between mb-4">
+                            <div className="flex items-center gap-2 mb-4">
                                 <p className="text-lg font-extrabold text-white tracking-tight">
                                     Evair<span className="text-[#FFCC33]">SIM</span>
                                 </p>
-                                <div className="bg-white/15 backdrop-blur-sm border border-white/20 px-3 py-1 rounded-full">
-                                    <span className="text-[11px] font-semibold text-white/90 uppercase tracking-wider">{t('shop.official_store')}</span>
-                                </div>
+                                <Shield size={14} className="text-white/60" />
                             </div>
 
                             <h2 className="text-2xl font-extrabold text-white mb-2 tracking-tight leading-tight">
