@@ -4,7 +4,7 @@ import { Search, ChevronRight, ArrowLeft, Globe, Star, X, MapPin, Loader2, Smart
 import { Country, Plan, SimType, User, SimCardProduct, EsimPackage, EsimCountryGroup, EsimOrderResult } from '../types';
 import { MOCK_COUNTRIES, SIM_CARD_PRODUCTS } from '../constants';
 import FlagIcon from '../components/FlagIcon';
-import { fetchPackages, prefetchPackages, groupPackagesByLocation, formatVolume, formatPrice, orderEsim, getPopularGroups, CONTINENT_TABS, type ContinentTab } from '../services/esimApi';
+import { fetchPackages, prefetchPackages, groupPackagesByLocation, formatVolume, formatPrice, retailPrice, orderEsim, getPopularGroups, CONTINENT_TABS, type ContinentTab } from '../services/esimApi';
 import { useSwipeBack } from '../hooks/useSwipeBack';
 import { packageService } from '../services/api';
 import type { PackageDto } from '../services/api/types';
@@ -607,7 +607,7 @@ const ShopView: React.FC<ShopViewProps> = ({ isLoggedIn, user, onLoginRequest, o
                 <p className="text-sm text-slate-500">{formatVolume(selectedEsimPkg.volume)} / {selectedEsimPkg.duration} {selectedEsimPkg.durationUnit === 'DAY' ? t('shop.days') : 'Months'}</p>
                 <div className="flex justify-between items-center mt-3 pt-3 border-t border-slate-200">
                   <span className="text-sm text-slate-500">eSIM (Digital)</span>
-                  <span className="text-xl font-bold text-brand-orange">${formatPrice(selectedEsimPkg.price).toFixed(2)}</span>
+                  <span className="text-xl font-bold text-brand-orange">${retailPrice(selectedEsimPkg.price).toFixed(2)}</span>
                 </div>
               </div>
 
@@ -645,7 +645,7 @@ const ShopView: React.FC<ShopViewProps> = ({ isLoggedIn, user, onLoginRequest, o
                 disabled={isProcessing || !email.includes('@')}
                 className="w-full bg-brand-orange text-white py-3.5 rounded-xl font-bold text-base shadow-lg shadow-orange-500/20 active:scale-[0.98] transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-orange-600"
               >
-                {isProcessing ? <Loader2 className="animate-spin" /> : <>{t('shop.order_esim')} ${formatPrice(selectedEsimPkg.price).toFixed(2)}</>}
+                {isProcessing ? <Loader2 className="animate-spin" /> : <>{t('shop.order_esim')} ${retailPrice(selectedEsimPkg.price).toFixed(2)}</>}
               </button>
             </div>
           </div>
@@ -682,7 +682,7 @@ const ShopView: React.FC<ShopViewProps> = ({ isLoggedIn, user, onLoginRequest, o
 
           <div className="space-y-3">
             {selectedEsimGroup.packages.map((pkg) => {
-              const priceUsd = formatPrice(pkg.price);
+              const priceUsd = retailPrice(pkg.price);
               const volumeStr = formatVolume(pkg.volume);
               const gb = pkg.volume / (1024 * 1024 * 1024);
               const pricePerGb = gb > 0 ? priceUsd / gb : priceUsd;
@@ -1290,7 +1290,7 @@ const ShopView: React.FC<ShopViewProps> = ({ isLoggedIn, user, onLoginRequest, o
                             </div>
                             <p className="font-semibold text-slate-900 text-sm truncate">{group.locationName}</p>
                             <p className="text-[11px] text-brand-orange font-bold mt-1">
-                              {t('shop.from')} ${formatPrice(cheapest.price).toFixed(2)}
+                              {t('shop.from')} ${retailPrice(cheapest.price).toFixed(2)}
                             </p>
                           </button>
                         );
@@ -1349,7 +1349,7 @@ const ShopView: React.FC<ShopViewProps> = ({ isLoggedIn, user, onLoginRequest, o
                               // 合并所有套餐并找出最低价
                               const allPackages = regionGroups.flatMap(g => g.packages);
                               const cheapestPkg = allPackages.reduce((min, p) => p.price < min.price ? p : min, allPackages[0]);
-                              const cheapestPrice = cheapestPkg ? formatPrice(cheapestPkg.price) : 0;
+                              const cheapestPrice = cheapestPkg ? retailPrice(cheapestPkg.price) : 0;
                               // 使用第一个匹配的分组作为代表
                               const group = regionGroups[0];
                               return (
@@ -1395,7 +1395,7 @@ const ShopView: React.FC<ShopViewProps> = ({ isLoggedIn, user, onLoginRequest, o
                               const group = filteredEsimGroups.find(g => g.locationCode === country.code);
                               if (!group) return null;
                               const cheapestPkg = group.packages.reduce((min, p) => p.price < min.price ? p : min, group.packages[0]);
-                              const cheapestPrice = cheapestPkg ? formatPrice(cheapestPkg.price) : 0;
+                              const cheapestPrice = cheapestPkg ? retailPrice(cheapestPkg.price) : 0;
                               // 从 code 中提取国旗代码 (如 "US" 从 "United States")
                               const flagCode = country.code.substring(0, 2).toUpperCase();
                               return (
@@ -1431,7 +1431,7 @@ const ShopView: React.FC<ShopViewProps> = ({ isLoggedIn, user, onLoginRequest, o
                       <div className="bg-white rounded-xl border border-slate-100 divide-y divide-slate-100 overflow-hidden shadow-sm">
                         {visibleEsimGroups.map((group) => {
                           const cheapestPkg = group.packages.reduce((min, p) => p.price < min.price ? p : min, group.packages[0]);
-                          const cheapestPrice = cheapestPkg ? formatPrice(cheapestPkg.price) : 0;
+                          const cheapestPrice = cheapestPkg ? retailPrice(cheapestPkg.price) : 0;
                           return (
                             <button
                               key={group.locationCode}
