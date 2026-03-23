@@ -1,10 +1,10 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Search, ChevronRight, ArrowLeft, Globe, Star, X, MapPin, Loader2, Smartphone, Truck, CheckCircle, Calendar, Wifi, Signal, Info, CreditCard, ArrowDown, ShoppingBag, QrCode, Copy, Check, RefreshCw, Zap, Clock, Shield, Mail } from 'lucide-react';
-import { Country, Plan, SimType, User, SimCardProduct, EsimPackage, EsimCountryGroup, EsimOrderResult } from '../types';
+import { Country, Plan, SimType, User, SimCardProduct, EsimPackage, EsimCountryGroup, EsimOrderResult, ActiveSim } from '../types';
 import { MOCK_COUNTRIES, SIM_CARD_PRODUCTS } from '../constants';
 import FlagIcon from '../components/FlagIcon';
-import { fetchPackages, prefetchPackages, groupPackagesByLocation, formatVolume, formatPrice, retailPrice, orderEsim, getPopularGroups, CONTINENT_TABS, type ContinentTab } from '../services/esimApi';
+import { fetchPackages, prefetchPackages, groupPackagesByLocation, formatVolume, formatPrice, retailPrice, orderEsim, CONTINENT_TABS, type ContinentTab, formatGB, POPULAR_COUNTRY_CODES } from '../services/esimApi';
 import { useSwipeBack } from '../hooks/useSwipeBack';
 import { packageService } from '../services/api';
 import type { PackageDto } from '../services/api/types';
@@ -16,10 +16,11 @@ interface ShopViewProps {
   isLoggedIn: boolean;
   user?: User;
   onLoginRequest: () => void;
-  onPurchaseComplete: (purchaseInfo?: { planName?: string; countryCode?: string; type?: SimType; orderNo?: string; iccid?: string }) => void;
+  onPurchaseComplete: (purchaseInfo?: { planName?: string; countryCode?: string; type?: SimType; orderNo?: string; iccid?: string; dataTotalGB?: number; durationDays?: number }) => void;
   simType: SimType;
   onSwitchToMySims?: () => void;
   hasActiveSims?: boolean;
+  activeSims?: ActiveSim[];
   onSwitchToSetup?: () => void;
   onAddCard?: (iccid: string) => void;
   onNavigate?: (tab: string) => void;
@@ -243,7 +244,7 @@ function parseLocationsResponse(
   return { multiCountryRegions, singleCountries };
 }
 
-const ShopView: React.FC<ShopViewProps> = ({ isLoggedIn, user, onLoginRequest, onPurchaseComplete, simType, onSwitchToMySims, hasActiveSims, onSwitchToSetup, onAddCard, onNavigate, onSwitchSimType, notifications = [] }) => {
+const ShopView: React.FC<ShopViewProps> = ({ isLoggedIn, user, onLoginRequest, onPurchaseComplete, simType, onSwitchToMySims, hasActiveSims, activeSims = [], onSwitchToSetup, onAddCard, onNavigate, onSwitchSimType, notifications = [] }) => {
   const { t } = useTranslation();
   const TOP_COUNTRY_COUNT = 10;
   const [selectedCountry, setSelectedCountry] = useState<Country | null>(null);
@@ -354,9 +355,6 @@ const ShopView: React.FC<ShopViewProps> = ({ isLoggedIn, user, onLoginRequest, o
 
   useSwipeBack(navDepth, handleSwipeBack);
 
-  // Popular destinations (derived from full list)
-  const popularGroups = getPopularGroups(esimGroups);
-
   // Filter eSIM groups by search + browse mode + continent tab
   const filteredEsimGroups = esimGroups.filter(g => {
     const matchesSearch = !searchQuery ||
@@ -368,11 +366,19 @@ const ShopView: React.FC<ShopViewProps> = ({ isLoggedIn, user, onLoginRequest, o
     const matchesTab = browseMode === 'region' || continentTab === 'All' || g.continent === continentTab;
     return matchesBrowseMode && matchesTab;
   });
+  const popularSet = new Set(POPULAR_COUNTRY_CODES.map(c => c.toUpperCase()));
+  const popularOrder = new Map(POPULAR_COUNTRY_CODES.map((c, i) => [c.toUpperCase(), i]));
+  const sortedEsimGroups = searchQuery ? filteredEsimGroups : [
+    ...filteredEsimGroups
+      .filter(g => !g.isMultiRegion && popularSet.has(g.locationCode.toUpperCase()))
+      .sort((a, b) => (popularOrder.get(a.locationCode.toUpperCase()) ?? 99) - (popularOrder.get(b.locationCode.toUpperCase()) ?? 99)),
+    ...filteredEsimGroups.filter(g => g.isMultiRegion || !popularSet.has(g.locationCode.toUpperCase())),
+  ];
   const shouldLimitEsim = !searchQuery && !showAllCountries;
   const visibleEsimGroups = shouldLimitEsim
-    ? filteredEsimGroups.slice(0, TOP_COUNTRY_COUNT)
-    : filteredEsimGroups;
-  const hiddenEsimCount = Math.max(filteredEsimGroups.length - TOP_COUNTRY_COUNT, 0);
+    ? sortedEsimGroups.slice(0, TOP_COUNTRY_COUNT)
+    : sortedEsimGroups;
+  const hiddenEsimCount = Math.max(sortedEsimGroups.length - TOP_COUNTRY_COUNT, 0);
 
   // Filter mock countries (fallback / physical)
   const filteredCountries = MOCK_COUNTRIES.filter(c => 
@@ -402,7 +408,7 @@ const ShopView: React.FC<ShopViewProps> = ({ isLoggedIn, user, onLoginRequest, o
         // Wait for animation then redirect
         setTimeout(() => {
            setShowSuccess(false);
-           const planInfo = { planName: selectedPlan?.name, countryCode: selectedCountry?.countryCode, type: simType as SimType };
+           const planInfo = { planName: selectedPlan?.name, countryCode: selectedCountry?.countryCode, type: simType as SimType, dataTotalGB: selectedPlan ? parseFloat(selectedPlan.data) || 3 : 3, durationDays: selectedPlan?.days || 30 };
            setSelectedPlan(null);
            setSelectedCountry(null);
            onPurchaseComplete(planInfo);
@@ -417,7 +423,7 @@ const ShopView: React.FC<ShopViewProps> = ({ isLoggedIn, user, onLoginRequest, o
       setShowSuccess(true);
       setTimeout(() => {
         setShowSuccess(false);
-        const planInfo = { planName: `${selectedSimCardProduct?.gbs}GB ${selectedSimCardProduct?.validityDays}Days`, countryCode: 'US', type: 'PHYSICAL' as SimType };
+        const planInfo = { planName: `${selectedSimCardProduct?.gbs}GB ${selectedSimCardProduct?.validityDays}Days`, countryCode: 'US', type: 'PHYSICAL' as SimType, dataTotalGB: selectedSimCardProduct?.gbs || 3, durationDays: selectedSimCardProduct?.validityDays || 30 };
         setSelectedSimCardProduct(null);
         onPurchaseComplete(planInfo);
       }, 2000);
@@ -609,7 +615,7 @@ const ShopView: React.FC<ShopViewProps> = ({ isLoggedIn, user, onLoginRequest, o
         <div className="px-5 pt-safe pb-2 flex items-center justify-between shrink-0">
           <h2 className="text-white text-xl font-bold tracking-tight">{t('shop.order_success_title')}</h2>
           <button onClick={() => {
-            const info = { planName: selectedEsimGroup?.locationName, countryCode: selectedEsimGroup?.locationCode.split(',')[0], type: 'ESIM' as SimType, orderNo: esimOrderResult.orderNo, iccid: esimOrderResult.iccid };
+            const info = { planName: selectedEsimGroup?.locationName, countryCode: selectedEsimGroup?.locationCode.split(',')[0], type: 'ESIM' as SimType, orderNo: esimOrderResult.orderNo, iccid: esimOrderResult.iccid, dataTotalGB: selectedEsimPkg ? selectedEsimPkg.volume / (1024 * 1024 * 1024) : 3, durationDays: selectedEsimPkg?.duration || 30 };
             setEsimOrderResult(null); setSelectedEsimPkg(null); setSelectedEsimGroup(null); onPurchaseComplete(info);
           }} className="bg-white/10 p-2 rounded-full text-white hover:bg-white/20 transition-colors backdrop-blur-md">
             <X size={20} />
@@ -701,7 +707,7 @@ const ShopView: React.FC<ShopViewProps> = ({ isLoggedIn, user, onLoginRequest, o
         <div className="shrink-0 px-5 pt-3" style={{ paddingBottom: 'max(env(safe-area-inset-bottom, 0px), 16px)' }}>
           <button
             onClick={() => {
-              const info = { planName: selectedEsimGroup?.locationName, countryCode: selectedEsimGroup?.locationCode.split(',')[0], type: 'ESIM' as SimType, orderNo: esimOrderResult.orderNo, iccid: esimOrderResult.iccid };
+              const info = { planName: selectedEsimGroup?.locationName, countryCode: selectedEsimGroup?.locationCode.split(',')[0], type: 'ESIM' as SimType, orderNo: esimOrderResult.orderNo, iccid: esimOrderResult.iccid, dataTotalGB: selectedEsimPkg ? selectedEsimPkg.volume / (1024 * 1024 * 1024) : 3, durationDays: selectedEsimPkg?.duration || 30 };
               setEsimOrderResult(null); setSelectedEsimPkg(null); setSelectedEsimGroup(null); onPurchaseComplete(info);
             }}
             className="w-full bg-brand-orange text-white py-3.5 rounded-2xl font-bold shadow-lg shadow-orange-500/20 active:scale-[0.98] transition-all"
@@ -788,7 +794,7 @@ const ShopView: React.FC<ShopViewProps> = ({ isLoggedIn, user, onLoginRequest, o
         </div>
 
         {/* Content */}
-        <div className="lg:flex-1 lg:overflow-y-auto no-scrollbar pb-6 px-4 md:px-8 pt-5">
+        <div className="lg:flex-1 lg:overflow-y-auto no-scrollbar pb-6 px-4 md:px-8 lg:px-4 pt-5">
           {/* Country header */}
           <div className="flex items-center gap-4 mb-5">
             <FlagIcon countryCode={selectedEsimGroup.flag} size="lg" />
@@ -803,7 +809,7 @@ const ShopView: React.FC<ShopViewProps> = ({ isLoggedIn, user, onLoginRequest, o
 
           <h3 className="text-lg font-bold text-slate-900 mb-3 tracking-tight">{t('shop.select_plan')}</h3>
 
-          <div className="space-y-3 md:grid md:grid-cols-2 md:gap-3 md:space-y-0">
+          <div className="space-y-3 md:grid md:grid-cols-2 md:gap-3 md:space-y-0 lg:block lg:space-y-3">
             {selectedEsimGroup.packages.map((pkg) => {
               const priceUsd = retailPrice(pkg.price);
               const volumeStr = formatVolume(pkg.volume);
@@ -1073,7 +1079,7 @@ const ShopView: React.FC<ShopViewProps> = ({ isLoggedIn, user, onLoginRequest, o
         </div>
 
         {/* Content */}
-        <div className="lg:flex-1 lg:overflow-y-auto no-scrollbar pb-6 px-4 md:px-8 pt-5">
+        <div className="lg:flex-1 lg:overflow-y-auto no-scrollbar pb-6 px-4 md:px-8 lg:px-4 pt-5">
           
           {/* Visual Country Header */}
           <div className="flex items-center gap-4 mb-5">
@@ -1102,7 +1108,7 @@ const ShopView: React.FC<ShopViewProps> = ({ isLoggedIn, user, onLoginRequest, o
               </div>
           </div>
           
-          <div className="space-y-3 md:grid md:grid-cols-2 md:gap-3 md:space-y-0">
+          <div className="space-y-3 md:grid md:grid-cols-2 md:gap-3 md:space-y-0 lg:block lg:space-y-3">
             {selectedCountry.plans.map((plan) => (
               <div 
                 key={plan.id}
@@ -1196,11 +1202,6 @@ const ShopView: React.FC<ShopViewProps> = ({ isLoggedIn, user, onLoginRequest, o
                   <p className="text-xs text-slate-400 mt-0.5">Find the perfect plan for your trip</p>
               </div>
               <div className="flex items-center gap-2">
-                {hasActiveSims && onSwitchToMySims && (
-                  <button onClick={onSwitchToMySims} className="text-[11px] font-semibold text-brand-orange bg-orange-50 border border-orange-200 px-2.5 py-1 rounded-full active:scale-95 transition-transform">
-                    {simType === 'ESIM' ? t('shop.my_esims') : t('shop.my_sims')}
-                  </button>
-                )}
                 <button onClick={() => onNavigate?.('INBOX')} className="relative w-10 h-10 rounded-xl bg-slate-100 flex items-center justify-center active:scale-95 transition-all" style={{ WebkitTapHighlightColor: 'transparent' }}>
                   <Bell size={18} className="text-slate-700" />
                   {notifications.filter(n => !n.read).length > 0 && (
@@ -1220,26 +1221,74 @@ const ShopView: React.FC<ShopViewProps> = ({ isLoggedIn, user, onLoginRequest, o
           </div>
 
           {/* Row 2: Segmented product type toggle */}
-          <div className="flex bg-slate-200/80 rounded-xl p-1 mb-2">
+          <div className="relative flex bg-slate-100 rounded-xl p-1 mb-2">
+            <div
+              className="absolute top-1 bottom-1 w-[calc(50%-2px)] bg-brand-orange rounded-lg shadow-md shadow-orange-200/50 transition-all duration-300 ease-out"
+              style={{ left: simType === 'PHYSICAL' ? '4px' : 'calc(50% + 0px)' }}
+            />
             <button
               onClick={() => onSwitchSimType?.('PHYSICAL')}
-              className={`flex-1 py-2.5 rounded-lg text-sm font-bold transition-all ${simType === 'PHYSICAL' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500'}`}
+              className={`relative z-10 flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-lg text-sm font-bold transition-colors duration-300 ${simType === 'PHYSICAL' ? 'text-white' : 'text-slate-500'}`}
             >
+              <CreditCard size={15} />
               SIM Card
             </button>
             <button
               onClick={() => onSwitchSimType?.('ESIM')}
-              className={`flex-1 py-2.5 rounded-lg text-sm font-bold transition-all ${simType === 'ESIM' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500'}`}
+              className={`relative z-10 flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-lg text-sm font-bold transition-colors duration-300 ${simType === 'ESIM' ? 'text-white' : 'text-slate-500'}`}
             >
+              <Smartphone size={15} />
               eSIM
             </button>
           </div>
+
+          {/* Row 3: "My eSIMs" bar — only when user has active SIMs */}
+          {(() => {
+            const mySims = activeSims.filter(s => s.type === simType);
+            if (!hasActiveSims || mySims.length === 0 || !onSwitchToMySims) return null;
+            const simCount = mySims.length;
+            const uniqueCountries = [...new Map(mySims.map(s => [s.country.countryCode, s.country.countryCode])).values()];
+            const visibleFlags = uniqueCountries.slice(0, 3);
+            const extraCount = uniqueCountries.length - visibleFlags.length;
+            const FLAG_W = 32;
+            const OVERLAP = 14;
+            const stackWidth = FLAG_W + (visibleFlags.length - 1) * (FLAG_W - OVERLAP) + (extraCount > 0 ? (FLAG_W - OVERLAP) : 0);
+            return (
+              <button
+                onClick={onSwitchToMySims}
+                className="w-full flex items-center justify-between bg-orange-50 border border-orange-200 rounded-xl px-4 py-2.5 mt-2 active:scale-[0.98] transition-all"
+              >
+                <div className="flex items-center gap-2.5">
+                  <div className="relative" style={{ width: stackWidth, height: 22 }}>
+                    {visibleFlags.map((cc, i) => (
+                      <span key={cc} className="absolute top-0" style={{ left: i * (FLAG_W - OVERLAP), zIndex: visibleFlags.length - i }}>
+                        <FlagIcon countryCode={cc} size="sm" />
+                      </span>
+                    ))}
+                    {extraCount > 0 && (
+                      <span
+                        className="absolute top-0 flex items-center justify-center bg-slate-200 text-[10px] font-bold text-slate-600 rounded"
+                        style={{ left: visibleFlags.length * (FLAG_W - OVERLAP), zIndex: 0, width: 32, height: 22, border: '1px solid #e5e7eb' }}
+                      >
+                        +{extraCount}
+                      </span>
+                    )}
+                  </div>
+                  <span className="text-sm font-bold text-slate-900">
+                    {simCount} {simType === 'ESIM' ? 'eSIM' : 'SIM'}{simCount > 1 ? 's' : ''}
+                  </span>
+                  <span className="text-xs text-slate-500">· {simType === 'ESIM' ? t('shop.my_esims') : t('shop.my_sims')}</span>
+                </div>
+                <ChevronRight size={16} className="text-brand-orange" />
+              </button>
+            );
+          })()}
         </div>
 
-        <div className="pb-6 px-4 md:px-8 pt-4">
+        <div className="pb-6 px-4 md:px-8 lg:px-4 pt-4">
         
-        {/* HERO SECTION: 'Purchase' for eSIM, 'Bind' for Physical */}
-        {!searchQuery && (
+        {/* HERO SECTION: 'Purchase' for eSIM, 'Bind' for Physical — hidden when user already has SIMs */}
+        {!searchQuery && !hasActiveSims && (
             <div className="mb-5">
                 {simType === 'ESIM' ? (
                     <div className="relative rounded-2xl overflow-hidden shadow-lg shadow-[#CC0000]/15" style={{ background: 'linear-gradient(135deg, #FF6600 0%, #CC0000 100%)' }}>
@@ -1321,7 +1370,7 @@ const ShopView: React.FC<ShopViewProps> = ({ isLoggedIn, user, onLoginRequest, o
               </div>
 
               {/* Plan cards grid */}
-              <div className="grid grid-cols-2 md:grid-cols-3 gap-3 mb-5">
+              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-2 gap-3 mb-5">
                 {SIM_CARD_PRODUCTS.map((product) => {
                   const pricePerGb = product.sellingPrice / product.gbs;
                   const isBestValue = product.id === 'US_10_30';
@@ -1397,78 +1446,54 @@ const ShopView: React.FC<ShopViewProps> = ({ isLoggedIn, user, onLoginRequest, o
                   />
                 </div>
 
-                {/* ── Popular Destinations ── */}
-                {!searchQuery && popularGroups.length > 0 && (
-                  <div className="mb-5">
-                    <h3 className="text-lg font-bold text-slate-900 mb-3 tracking-tight flex items-center gap-2">
-                      <Star size={16} className="text-amber-500" />
-                      {t('shop.popular_destinations')}
-                    </h3>
-                    <div className="flex gap-3 overflow-x-auto no-scrollbar pb-1 -mx-4 px-4 md:mx-0 md:px-0 md:grid md:grid-cols-4 md:overflow-visible">
-                      {popularGroups.map((group) => {
-                        const cheapest = group.packages.reduce((min, p) => p.price < min.price ? p : min, group.packages[0]);
-                        return (
-                          <button
-                            key={group.locationCode}
-                            onClick={() => setSelectedEsimGroup(group)}
-                            className="flex-shrink-0 w-[110px] md:w-auto bg-white rounded-xl p-3 border border-slate-100 shadow-sm hover:shadow-md transition-all active:scale-[0.97] text-center"
-                          >
-                            <div className="flex justify-center mb-2">
-                              <FlagIcon countryCode={group.flag} size="md" />
-                            </div>
-                            <p className="font-semibold text-slate-900 text-sm truncate">{group.locationName}</p>
-                            <p className="text-[11px] text-brand-orange font-bold mt-1">
-                              {t('shop.from')} ${retailPrice(cheapest.price).toFixed(2)}
-                            </p>
-                          </button>
-                        );
-                      })}
-                    </div>
-                  </div>
-                )}
-
-                {/* ── Browse Mode Toggle: By Country / By Region ── */}
+                {/* ── Browse Mode Toggle: Single Country / Multi-Country ── */}
                 {!searchQuery && (
-                  <div className="flex bg-slate-100/80 rounded-2xl p-1 mb-5 border border-slate-200/60">
+                  <div className="flex gap-2 mb-5">
                     <button
                       onClick={() => { setBrowseMode('country'); setShowAllCountries(false); }}
-                      className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-xl text-[13px] font-bold tracking-wide transition-all duration-200 ${
+                      className={`flex-1 flex flex-col items-center justify-center gap-0.5 py-3.5 rounded-xl border transition-all duration-200 ${
                         browseMode === 'country'
-                          ? 'bg-white text-slate-800 shadow-md shadow-slate-200/60 ring-1 ring-slate-200/50'
-                          : 'text-slate-400 hover:text-slate-500'
+                          ? 'bg-orange-50 border-orange-200 shadow-sm shadow-orange-100'
+                          : 'bg-white border-slate-200 hover:border-slate-300'
                       }`}
                     >
-                      <MapPin size={15} strokeWidth={2.5} />
-                      {t('shop.by_country')}
+                      <div className="flex items-center gap-1.5">
+                        <MapPin size={14} strokeWidth={2.5} className={browseMode === 'country' ? 'text-brand-orange' : 'text-slate-400'} />
+                        <span className={`text-[13px] font-bold tracking-wide ${browseMode === 'country' ? 'text-orange-800' : 'text-slate-400'}`}>{t('shop.single_country')}</span>
+                      </div>
+                      <span className={`text-[10px] font-medium ${browseMode === 'country' ? 'text-orange-500/70' : 'text-slate-300'}`}>{t('shop.single_country_sub')}</span>
                     </button>
                     <button
                       onClick={() => { setBrowseMode('region'); setShowAllCountries(false); }}
-                      className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-xl text-[13px] font-bold tracking-wide transition-all duration-200 ${
+                      className={`flex-1 flex flex-col items-center justify-center gap-0.5 py-3.5 rounded-xl border transition-all duration-200 ${
                         browseMode === 'region'
-                          ? 'bg-white text-slate-800 shadow-md shadow-slate-200/60 ring-1 ring-slate-200/50'
-                          : 'text-slate-400 hover:text-slate-500'
+                          ? 'bg-blue-50 border-blue-200 shadow-sm shadow-blue-100'
+                          : 'bg-white border-slate-200 hover:border-slate-300'
                       }`}
                     >
-                      <Globe size={15} strokeWidth={2.5} />
-                      {t('shop.by_region')}
+                      <div className="flex items-center gap-1.5">
+                        <Globe size={14} strokeWidth={2.5} className={browseMode === 'region' ? 'text-blue-600' : 'text-slate-400'} />
+                        <span className={`text-[13px] font-bold tracking-wide ${browseMode === 'region' ? 'text-blue-800' : 'text-slate-400'}`}>{t('shop.multi_country')}</span>
+                      </div>
+                      <span className={`text-[10px] font-medium ${browseMode === 'region' ? 'text-blue-500/70' : 'text-slate-300'}`}>{t('shop.multi_country_sub')}</span>
                     </button>
                   </div>
                 )}
 
                 {/* ── Continent Filter Tabs (only in country mode) ── */}
                 {!searchQuery && browseMode === 'country' && (
-                  <div className="flex gap-2 overflow-x-auto no-scrollbar pb-3 -mx-4 px-4 md:mx-0 md:px-0 md:flex-wrap mb-3">
+                  <div className="flex gap-2 overflow-x-auto no-scrollbar pb-3 -mx-4 px-4 md:mx-0 md:px-0 md:flex-wrap lg:-mx-4 lg:px-4 lg:flex-nowrap lg:overflow-x-auto mb-3">
                     {CONTINENT_TABS.filter(tab => tab !== 'Multi-Region').map((tab) => (
                       <button
                         key={tab}
                         onClick={() => { setContinentTab(tab); setShowAllCountries(false); }}
                         className={`flex-shrink-0 px-4 py-2 rounded-full text-xs font-bold transition-all active:scale-[0.97] ${
                           continentTab === tab
-                            ? 'bg-slate-900 text-white shadow-sm'
+                            ? 'bg-brand-orange text-white shadow-sm shadow-orange-200'
                             : 'bg-white text-slate-500 border border-slate-200 hover:bg-slate-50'
                         }`}
                       >
-                        {tab === 'All' ? t('shop.all_regions')
+                        {tab === 'All' ? t('shop.all')
                           : t(`shop.continent_${tab.toLowerCase()}`)}
                       </button>
                     ))}
@@ -1480,52 +1505,69 @@ const ShopView: React.FC<ShopViewProps> = ({ isLoggedIn, user, onLoginRequest, o
                   <h3 className="text-base font-extrabold text-slate-900 tracking-tight">
                     {searchQuery ? t('shop.search_results')
                       : browseMode === 'region' ? t('shop.multi_country_plans')
-                      : t('shop.buy_new_esim')}
+                      : t('shop.single_country_esims')}
                   </h3>
-                  <span className="text-xs font-semibold text-slate-400 tabular-nums">({filteredEsimGroups.length})</span>
+                  <span className="text-xs font-semibold text-slate-400 tabular-nums">({sortedEsimGroups.length})</span>
                 </div>
 
                 {/* ── Unified list ── */}
-                {filteredEsimGroups.length === 0 ? (
+                {sortedEsimGroups.length === 0 ? (
                   <div className="text-center py-10 text-slate-400 text-sm">{t('shop.no_results')}</div>
                 ) : (
-                  <div className="bg-white rounded-xl border border-slate-100 divide-y divide-slate-100 overflow-hidden shadow-sm mb-5 md:grid md:grid-cols-2 md:divide-y-0 md:gap-[1px] md:bg-slate-100 md:border-0 md:[&>*]:bg-white">
-                    {visibleEsimGroups.map((group) => {
+                  <div className="bg-white rounded-xl border border-slate-100 divide-y divide-slate-100 overflow-hidden shadow-sm mb-5 md:grid md:grid-cols-2 md:divide-y-0 md:gap-[1px] md:bg-slate-100 md:border-0 md:[&>*]:bg-white lg:block lg:divide-y lg:divide-slate-100 lg:bg-white lg:border lg:border-slate-100 lg:[&>*]:bg-transparent">
+                    {visibleEsimGroups.map((group, idx) => {
                       const cheapestPkg = group.packages.reduce((min, p) => p.price < min.price ? p : min, group.packages[0]);
                       const cheapestPrice = cheapestPkg ? retailPrice(cheapestPkg.price) : 0;
                       const countryCodes = group.locationCode.split(',').map(c => c.trim());
                       const countryCount = countryCodes.length;
+                      const isPopular = !group.isMultiRegion && popularSet.has(group.locationCode.toUpperCase());
+                      const prevGroup = idx > 0 ? visibleEsimGroups[idx - 1] : null;
+                      const prevIsPopular = prevGroup ? !prevGroup.isMultiRegion && popularSet.has(prevGroup.locationCode.toUpperCase()) : false;
+                      const showSeparator = !searchQuery && !isPopular && (idx === 0 || prevIsPopular);
                       return (
-                        <button
-                          key={group.locationCode}
-                          onClick={() => setSelectedEsimGroup(group)}
-                          className="w-full flex items-center justify-between p-4 hover:bg-slate-50 transition-colors text-left group"
-                        >
-                          <div className="flex items-center gap-3 min-w-0">
-                            {group.isMultiRegion ? (
-                              <Globe size={24} className="text-blue-500 flex-shrink-0" />
-                            ) : (
-                              <FlagIcon countryCode={group.flag} size="md" />
-                            )}
-                            <div className="min-w-0">
-                              <p className="font-semibold text-slate-900 text-sm truncate">{group.locationName}</p>
-                              <p className="text-xs text-slate-400 mt-0.5">
-                                {group.packages.length} {group.packages.length === 1 ? 'Plan' : 'Plans'}
-                                {group.isMultiRegion && countryCount > 1 && (
-                                  <span className="ml-1.5 text-[11px] font-semibold text-blue-500 bg-blue-50 px-1.5 py-0.5 rounded">
-                                    {countryCount} {t('shop.countries')}
-                                  </span>
-                                )}
-                              </p>
+                        <React.Fragment key={group.locationCode}>
+                          {showSeparator && (
+                            <div className="px-4 py-2 bg-slate-50 border-y border-slate-100">
+                              <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400">{t('shop.all_countries_separator')}</span>
                             </div>
-                          </div>
-                          <div className="flex items-center gap-2 flex-shrink-0">
-                            <span className={`text-sm font-medium transition-colors whitespace-nowrap ${group.isMultiRegion ? 'text-brand-orange' : 'text-slate-400 group-hover:text-brand-orange'}`}>
-                              {t('shop.from')} ${cheapestPrice.toFixed(2)}
-                            </span>
-                            <ChevronRight size={16} className="text-slate-300 flex-shrink-0" />
-                          </div>
-                        </button>
+                          )}
+                          <button
+                            onClick={() => setSelectedEsimGroup(group)}
+                            className={`w-full flex items-center justify-between p-4 transition-colors text-left group ${
+                              isPopular ? 'bg-amber-50/50 hover:bg-amber-50' : 'hover:bg-slate-50'
+                            }`}
+                          >
+                            <div className="flex items-center gap-3 min-w-0">
+                              {group.isMultiRegion ? (
+                                <Globe size={24} className="text-blue-500 flex-shrink-0" />
+                              ) : (
+                                <FlagIcon countryCode={group.flag} size="md" />
+                              )}
+                              <div className="min-w-0">
+                                <p className="font-semibold text-slate-900 text-sm truncate">
+                                  {group.locationName}
+                                  {isPopular && (
+                                    <Star size={12} className="inline ml-1 text-amber-400 fill-amber-400 -translate-y-px" />
+                                  )}
+                                </p>
+                                <p className="text-xs text-slate-400 mt-0.5">
+                                  {group.packages.length} {group.packages.length === 1 ? 'Plan' : 'Plans'}
+                                  {group.isMultiRegion && countryCount > 1 && (
+                                    <span className="ml-1.5 text-[11px] font-semibold text-blue-500 bg-blue-50 px-1.5 py-0.5 rounded">
+                                      {countryCount} {t('shop.countries')}
+                                    </span>
+                                  )}
+                                </p>
+                              </div>
+                            </div>
+                            <div className="flex items-center gap-2 flex-shrink-0">
+                              <span className="text-sm font-medium text-brand-orange whitespace-nowrap">
+                                {t('shop.from')} ${cheapestPrice.toFixed(2)}
+                              </span>
+                              <ChevronRight size={16} className="text-slate-300 flex-shrink-0" />
+                            </div>
+                          </button>
+                        </React.Fragment>
                       );
                     })}
                   </div>

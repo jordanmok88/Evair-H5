@@ -90,7 +90,7 @@ const InboxView: React.FC<InboxViewProps> = ({ notifications, onUpdateNotificati
         <h1 className="text-lg font-bold tracking-tight text-slate-900">{t('profile.inbox')}</h1>
       </div>
 
-      <div className="lg:flex-1 lg:min-h-0 lg:overflow-y-auto no-scrollbar px-4 md:px-8 pb-6 pt-4">
+      <div className="lg:flex-1 lg:min-h-0 lg:overflow-y-auto no-scrollbar px-4 md:px-8 lg:px-4 pb-6 pt-4">
         {/* Unread count & mark all read */}
         {unreadCount > 0 && (
           <div className="flex items-center justify-between mb-3">

@@ -228,7 +228,14 @@ const AccountInfoView = ({ onBack, user, onUserUpdate }: { onBack: () => void, u
                     <p className="text-slate-500 text-sm leading-relaxed mb-4">
                         {t('profile.delete_account_desc')}
                     </p>
-                    <button className="w-full bg-white border border-red-100 text-red-600 rounded-full py-3.5 font-bold shadow-sm active:scale-[0.99] transition-transform hover:bg-red-50">
+                    <button
+                      onClick={() => {
+                        if (window.confirm(t('profile.delete_account_confirm'))) {
+                          alert(t('profile.delete_account_submitted'));
+                        }
+                      }}
+                      className="w-full bg-white border border-red-100 text-red-600 rounded-full py-3.5 font-bold shadow-sm active:scale-[0.99] transition-transform hover:bg-red-50"
+                    >
                         {t('profile.delete_account_btn')}
                     </button>
                 </div>
@@ -1115,7 +1122,7 @@ const HelpCenterView = ({ onBack }: { onBack: () => void }) => {
                  </div>
 
                  <div className="space-y-4 mb-10">
-                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-1 gap-4">
                          {[
                              { icon: Info, label: t('profile.about_evair'), color: 'bg-blue-100 text-blue-600' },
                              { icon: Play, label: t('profile.getting_started'), color: 'bg-teal-100 text-teal-600' },
@@ -1172,7 +1179,22 @@ const HelpCenterView = ({ onBack }: { onBack: () => void }) => {
 
 const ProfileView: React.FC<ProfileViewProps> = ({ isLoggedIn, user, onLogin, onSignup, onLogout, onOpenDialer, onOpenInbox, notifications = [], onBack, onUserUpdate }) => {
   const [currentView, setCurrentView] = useState<ProfileScreen>('MAIN');
+  const [rateToast, setRateToast] = useState(false);
   const { t } = useTranslation();
+
+  const handleShare = async () => {
+    const shareData = { title: 'EvairSIM', text: t('profile.share_text'), url: 'https://evairdigital.com' };
+    if (navigator.share) {
+      try { await navigator.share(shareData); } catch {}
+    } else {
+      await navigator.clipboard.writeText(shareData.url);
+    }
+  };
+
+  const handleRateApp = () => {
+    setRateToast(true);
+    setTimeout(() => setRateToast(false), 2500);
+  };
 
   const infoScreens = ['ABOUT', 'TERMS', 'REFUND', 'PRIVACY', 'ACCEPTABLE', 'COOKIE'];
   const navDepth = currentView === 'MAIN' ? (onBack ? 1 : 0) : infoScreens.includes(currentView) ? (onBack ? 3 : 2) : (onBack ? 2 : 1);
@@ -1243,8 +1265,8 @@ const ProfileView: React.FC<ProfileViewProps> = ({ isLoggedIn, user, onLogin, on
                     </MenuGroup>
 
                     <MenuGroup>
-                        <MenuItem label={t('profile.share_friends')} rightElement={<Share size={16} className="text-slate-900" />} />
-                        <MenuItem label={t('profile.rate_app')} isLast />
+                        <MenuItem label={t('profile.share_friends')} onClick={handleShare} rightElement={<Share size={16} className="text-slate-900" />} />
+                        <MenuItem label={t('profile.rate_app')} onClick={handleRateApp} isLast />
                     </MenuGroup>
                 </div>
             )}
@@ -1289,7 +1311,8 @@ const ProfileView: React.FC<ProfileViewProps> = ({ isLoggedIn, user, onLogin, on
                         <MenuItem label={`${t('profile.currency')}: ${t('profile.usd_name')} (USD) $`} onClick={() => setCurrentView('CURRENCY')} />
                         <MenuItem label={t('my_sims.contact_us')} onClick={onOpenDialer} />
                         <MenuItem label={t('profile.more_info')} onClick={() => setCurrentView('INFO')} />
-                        <MenuItem label={t('profile.rate_app')} isLast />
+                        <MenuItem label={t('profile.share_friends')} onClick={handleShare} rightElement={<Share size={16} className="text-slate-900" />} />
+                        <MenuItem label={t('profile.rate_app')} onClick={handleRateApp} isLast />
                     </MenuGroup>
 
                     <button 
@@ -1307,6 +1330,12 @@ const ProfileView: React.FC<ProfileViewProps> = ({ isLoggedIn, user, onLogin, on
             </div>
 
         </div>
+
+        {rateToast && (
+          <div className="fixed bottom-24 left-1/2 -translate-x-1/2 bg-slate-800 text-white px-5 py-3 rounded-xl shadow-xl z-50 text-sm font-semibold animate-in fade-in slide-in-from-bottom-4 duration-200">
+            Thank you! Rating will be available on the App Store soon.
+          </div>
+        )}
 
     </div>
   );

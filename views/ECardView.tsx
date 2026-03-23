@@ -4,6 +4,7 @@ import { CreditCard, Smartphone, Monitor, ChevronRight, ChevronDown, CheckCircle
 import { ECard, ECardProfile } from '../types';
 import { MOCK_ECARDS } from '../constants';
 import FlagIcon from '../components/FlagIcon';
+import { formatGB } from '../services/esimApi';
 
 interface ECardViewProps {
   onBack: () => void;
@@ -315,7 +316,7 @@ const ECardView: React.FC<ECardViewProps> = ({ onBack, onNavigateToEsimShop }) =
                       <FlagIcon countryCode={profile.country.countryCode} size="md" />
                       <div className="flex-1 min-w-0">
                         <p className="text-sm font-bold text-slate-900 truncate">{profile.name}</p>
-                        <p className="text-[11px] text-slate-400">{profile.dataUsedGB.toFixed(1)}/{profile.dataTotalGB.toFixed(0)} GB &middot; {profile.daysLeft} {t('ecard.days_left')}</p>
+                        <p className="text-[11px] text-slate-400">{formatGB(profile.dataUsedGB)}/{formatGB(profile.dataTotalGB)} &middot; {profile.daysLeft} {t('ecard.days_left')}</p>
                       </div>
                       {renderStatusBadge(profile)}
                       <ChevronDown size={16} className={`text-slate-300 shrink-0 transition-transform duration-200 ${isExpanded ? 'rotate-180' : ''}`} />
@@ -342,8 +343,8 @@ const ECardView: React.FC<ECardViewProps> = ({ onBack, onNavigateToEsimShop }) =
                             />
                           </div>
                           <div className="flex justify-between mt-1">
-                            <p className="text-[10px] text-slate-400">{profile.dataUsedGB.toFixed(1)} GB {t('ecard.data_used')}</p>
-                            <p className="text-[10px] text-slate-400">{profile.dataTotalGB.toFixed(0)} GB {t('ecard.data_total')}</p>
+                            <p className="text-[10px] text-slate-400">{formatGB(profile.dataUsedGB)} {t('ecard.data_used')}</p>
+                            <p className="text-[10px] text-slate-400">{formatGB(profile.dataTotalGB)} {t('ecard.data_total')}</p>
                           </div>
                         </div>
 

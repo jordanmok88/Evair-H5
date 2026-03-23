@@ -19,6 +19,14 @@ export default defineConfig(({ mode }) => {
             target: 'https://evair-h5.netlify.app',
             changeOrigin: true,
           },
+          '/api/stripe-checkout': {
+            target: 'https://evair-h5.netlify.app',
+            changeOrigin: true,
+          },
+          '/api/stripe-verify': {
+            target: 'https://evair-h5.netlify.app',
+            changeOrigin: true,
+          },
         },
       },
       plugins: [

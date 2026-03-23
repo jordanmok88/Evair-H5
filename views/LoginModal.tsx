@@ -30,6 +30,7 @@ const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose, onLogin, initi
   const [showConfirm, setShowConfirm] = useState(false);
   const [agreeTerms, setAgreeTerms] = useState(false);
   const [regError, setRegError] = useState('');
+  const [registeredUser, setRegisteredUser] = useState<UserDto | null>(null);
 
   const { t } = useTranslation();
 
@@ -96,10 +97,8 @@ const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose, onLogin, initi
         password: regPassword,
         name: regName,
       });
-      // 注册成功，自动登录并跳转到成功页面
-      onLogin(response.user);
+      setRegisteredUser(response.user);
       setMode('REGISTER_SUCCESS');
-      // 清空表单
       setRegName('');
       setRegEmail('');
       setRegPassword('');
@@ -372,10 +371,12 @@ const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose, onLogin, initi
             </p>
             <button
               onClick={() => {
-                setEmail(regEmail);
-                setPassword('');
+                if (registeredUser) {
+                  onLogin(registeredUser);
+                  setRegisteredUser(null);
+                }
                 resetRegForm();
-                setMode('LOGIN');
+                onClose();
               }}
               className="w-full py-4 rounded-xl font-bold text-[16px] flex items-center justify-center gap-2 active:scale-[0.98] transition-all"
               style={{
@@ -384,7 +385,7 @@ const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose, onLogin, initi
                 boxShadow: '0 4px 14px rgba(255,102,0,0.25)',
               }}
             >
-              Sign In Now
+              {t('profile.continue')}
             </button>
           </div>
         )}

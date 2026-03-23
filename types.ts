@@ -56,8 +56,11 @@ export interface ActiveSim {
   dataTotalGB: number;
   dataUsedGB: number;
   phoneNumber?: string;
-  status: 'ACTIVE' | 'EXPIRED' | 'NOT_ACTIVATED' | 'PENDING_ACTIVATION';
+  status: 'ACTIVE' | 'EXPIRED' | 'NOT_ACTIVATED' | 'PENDING_ACTIVATION' | 'NEW' | 'ONBOARD' | 'IN_USE';
   sharedWith?: User[];
+  orderNo?: string;
+  trackingNumber?: string;
+  purchaseSource?: 'IN_APP' | 'MARKETPLACE';
 }
 
 export interface Order {

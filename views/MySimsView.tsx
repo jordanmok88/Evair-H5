@@ -1,10 +1,10 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Wifi, Phone, Zap, ChevronDown, CheckCircle2, QrCode, Copy, X, Calendar, Clock, SignalHigh, Smartphone, RefreshCw, Plus, ShoppingBag, Settings, MoreHorizontal, Trash2, Check, AlertTriangle, Loader2, Globe, Database } from 'lucide-react';
+import { Wifi, Phone, Zap, ChevronDown, CheckCircle2, QrCode, Copy, X, Calendar, Clock, SignalHigh, Smartphone, RefreshCw, Plus, ShoppingBag, Settings, MoreHorizontal, Trash2, Check, AlertTriangle, Loader2, Globe, Database, Truck, ScanLine, Package, MapPin, ArrowLeft } from 'lucide-react';
 import { ActiveSim, Tab, SimType, EsimPackage } from '../types';
 import FlagIcon from '../components/FlagIcon';
 import { CARRIER_MAP } from '../constants';
-import { topUp, formatVolume, formatPrice, retailPrice } from '../services/esimApi';
+import { topUp, formatVolume, formatPrice, retailPrice, formatGB, queryProfile, mapRedTeaStatus } from '../services/esimApi';
 import { useEdgeSwipeBack } from '../hooks/useEdgeSwipeBack';
 import { packageService, esimService } from '../services/api';
 import type { PackageDto, TopupRequest } from '../services/api/types';
@@ -33,7 +33,7 @@ interface MySimsViewProps {
   filterType: SimType;
   onSwitchToShop?: () => void;
   onDeleteSim?: (simId: string) => void;
-  onSwitchToSetup?: () => void;
+  onSwitchToSetup?: (tab?: 'TRACKING' | 'ACTIVATE', trackingNumber?: string) => void;
   onUpdateSim?: (simId: string, updates: Partial<ActiveSim>) => void;
 }
 
@@ -76,8 +76,29 @@ const MySimsView: React.FC<MySimsViewProps> = ({ activeSims, onNavigate, filterT
   const [selectedTopUp, setSelectedTopUp] = useState<EsimPackage | null>(null);
   const [topUpProcessing, setTopUpProcessing] = useState(false);
   const [topUpSuccess, setTopUpSuccess] = useState(false);
+  const [refreshingSimId, setRefreshingSimId] = useState<string | null>(null);
 
   const currentSim = filteredSims.find(s => s.id === selectedSimId) || filteredSims[0];
+
+  const handleRefreshStatus = useCallback(async (sim: ActiveSim) => {
+    if (!sim.iccid || !onUpdateSim) return;
+    setRefreshingSimId(sim.id);
+    try {
+      const profile = await queryProfile(sim.iccid);
+      const newStatus = mapRedTeaStatus(profile.status);
+      const usedGB = profile.usedVolume ? profile.usedVolume / (1024 * 1024 * 1024) : sim.dataUsedGB;
+      const totalGB = profile.totalVolume ? profile.totalVolume / (1024 * 1024 * 1024) : sim.dataTotalGB;
+      onUpdateSim(sim.id, {
+        status: newStatus,
+        dataUsedGB: Math.round(usedGB * 100) / 100,
+        dataTotalGB: Math.round(totalGB * 10) / 10,
+      });
+    } catch {
+      // silently fail -- profile may not be queryable yet
+    } finally {
+      setRefreshingSimId(null);
+    }
+  }, [onUpdateSim]);
 
   useEffect(() => {
     if (filteredSims.length > 0 && (!selectedSimId || !filteredSims.find(s => s.id === selectedSimId))) {
@@ -338,13 +359,20 @@ const MySimsView: React.FC<MySimsViewProps> = ({ activeSims, onNavigate, filterT
       
       {/* Header */}
       <div className="bg-white/90 backdrop-blur-xl pt-safe px-4 pb-3 flex items-center justify-between shrink-0 sticky top-0 z-10 border-b border-slate-100">
-          <h1 className="text-lg font-bold tracking-tight text-slate-900">{filterType === 'ESIM' ? t('my_sims.title_esims') : t('my_sims.title_sims')}</h1>
+          <div className="flex items-center gap-2">
+            {onSwitchToShop && (
+              <button onClick={onSwitchToShop} className="w-9 h-9 rounded-full flex items-center justify-center text-slate-500 hover:bg-slate-100 active:scale-95 transition-all -ml-1">
+                <ArrowLeft size={20} />
+              </button>
+            )}
+            <h1 className="text-lg font-bold tracking-tight text-slate-900">{filterType === 'ESIM' ? t('my_sims.title_esims') : t('my_sims.title_sims')}</h1>
+          </div>
           <div className="flex gap-2">
              <button onClick={handleSync} className="w-9 h-9 bg-slate-100 rounded-full flex items-center justify-center text-slate-600 active:scale-95 transition-transform">
                  <RefreshCw size={16} className={isSyncing ? 'animate-spin' : ''} />
              </button>
              {onSwitchToShop && (
-                <button onClick={onSwitchToShop} className="w-9 h-9 bg-brand-orange text-white rounded-full flex items-center justify-center shadow-md active:scale-95 transition-transform">
+                <button onClick={filterType === 'PHYSICAL' && onSwitchToSetup ? () => onSwitchToSetup('ACTIVATE') : onSwitchToShop} className="w-9 h-9 bg-brand-orange text-white rounded-full flex items-center justify-center shadow-md active:scale-95 transition-transform">
                     <Plus size={18} />
                 </button>
              )}
@@ -364,7 +392,7 @@ const MySimsView: React.FC<MySimsViewProps> = ({ activeSims, onNavigate, filterT
               const isSelected = sim.id === selectedSimId;
               const simRemaining = Math.max(0, sim.dataTotalGB - sim.dataUsedGB);
               const simUsagePercent = sim.dataTotalGB > 0 ? (sim.dataUsedGB / sim.dataTotalGB) * 100 : 0;
-              const isDataLow = simUsagePercent >= 80 && sim.status === 'ACTIVE';
+              const isDataLow = simUsagePercent >= 80 && (sim.status === 'ACTIVE' || sim.status === 'IN_USE');
               return (
                 <div
                   key={sim.id}
@@ -415,32 +443,47 @@ const MySimsView: React.FC<MySimsViewProps> = ({ activeSims, onNavigate, filterT
                       <div style={{ fontSize: 15, fontWeight: 700, color: '#0f172a', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                         {sim.country.name}
                       </div>
-                      <div style={{ fontSize: 13, fontWeight: 600, color: isDataLow ? '#D97706' : '#94a3b8', marginTop: 2, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                        {isDataLow ? `⚠ ${simRemaining.toFixed(1)} GB ${t('my_sims.gb_remaining')}` : `${simRemaining.toFixed(1)} / ${sim.dataTotalGB.toFixed(0)} GB ${t('my_sims.gb_remaining')}`}
+                      <div style={{ fontSize: 13, fontWeight: 600, color:
+                        sim.type === 'PHYSICAL' && sim.status === 'PENDING_ACTIVATION' ? '#3b82f6'
+                        : sim.type === 'PHYSICAL' && sim.status === 'NOT_ACTIVATED' ? '#f97316'
+                        : sim.type === 'PHYSICAL' && sim.status === 'NEW' ? '#22c55e'
+                        : sim.type === 'PHYSICAL' && sim.status === 'EXPIRED' ? '#ef4444'
+                        : isDataLow ? '#D97706' : '#94a3b8', marginTop: 2, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                        {sim.type === 'PHYSICAL' && sim.status === 'PENDING_ACTIVATION'
+                          ? 'Arriving soon · tap to track'
+                          : sim.type === 'PHYSICAL' && sim.status === 'NOT_ACTIVATED'
+                          ? 'Delivered · tap to activate'
+                          : sim.type === 'PHYSICAL' && sim.status === 'NEW'
+                          ? `${formatGB(simRemaining)} / ${formatGB(sim.dataTotalGB)} · Ready`
+                          : sim.type === 'PHYSICAL' && sim.status === 'EXPIRED'
+                          ? 'Expired'
+                          : isDataLow ? `⚠ ${formatGB(simRemaining)} ${t('my_sims.gb_remaining')}` : `${formatGB(simRemaining)} / ${formatGB(sim.dataTotalGB)} ${t('my_sims.gb_remaining')}`}
                       </div>
                     </div>
                     <div
                       onClick={(e) => {
                         if ((sim.status === 'PENDING_ACTIVATION' || sim.status === 'NOT_ACTIVATED') && onSwitchToSetup) {
                           e.stopPropagation();
-                          onSwitchToSetup();
+                          onSwitchToSetup(sim.status === 'PENDING_ACTIVATION' ? 'TRACKING' : 'ACTIVATE', sim.trackingNumber);
                         }
                       }}
                       style={{
                       fontSize: 11, fontWeight: 700, padding: '3px 8px', borderRadius: 6,
                       whiteSpace: 'nowrap',
-                      backgroundColor: sim.status === 'ACTIVE' ? '#dcfce7'
-                        : (sim.status === 'PENDING_ACTIVATION' || sim.status === 'NOT_ACTIVATED') ? '#fef9c3'
+                      backgroundColor: sim.status === 'ACTIVE' || sim.status === 'IN_USE' ? '#dcfce7'
+                        : sim.status === 'NEW' ? '#dcfce7'
+                        : sim.status === 'PENDING_ACTIVATION' || sim.status === 'NOT_ACTIVATED' ? '#dbeafe'
+                        : sim.status === 'ONBOARD' ? '#fef3c7'
                         : '#fee2e2',
-                      color: sim.status === 'ACTIVE' ? '#15803d'
-                        : (sim.status === 'PENDING_ACTIVATION' || sim.status === 'NOT_ACTIVATED') ? '#a16207'
+                      color: sim.status === 'ACTIVE' || sim.status === 'IN_USE' ? '#15803d'
+                        : sim.status === 'NEW' ? '#15803d'
+                        : sim.status === 'PENDING_ACTIVATION' || sim.status === 'NOT_ACTIVATED' ? '#1d4ed8'
+                        : sim.status === 'ONBOARD' ? '#a16207'
                         : '#b91c1c',
                       flexShrink: 0,
                       cursor: (sim.status === 'PENDING_ACTIVATION' || sim.status === 'NOT_ACTIVATED') ? 'pointer' : 'default',
                     }}>
-                      {sim.status === 'ACTIVE' ? t('my_sims.active')
-                        : (sim.status === 'PENDING_ACTIVATION' || sim.status === 'NOT_ACTIVATED') ? t('my_sims.pending')
-                        : t('my_sims.expired')}
+                      {t(`my_sims.status_${sim.status.toLowerCase()}`, t('my_sims.inactive'))}
                     </div>
                     {onDeleteSim && (
                       <button
@@ -462,6 +505,138 @@ const MySimsView: React.FC<MySimsViewProps> = ({ activeSims, onNavigate, filterT
         </div>
       </div>
 
+      {/* ── Pending Physical SIM: Journey Stepper (only PENDING_ACTIVATION / NOT_ACTIVATED) ── */}
+      {currentSim.type === 'PHYSICAL' && (currentSim.status === 'PENDING_ACTIVATION' || currentSim.status === 'NOT_ACTIVATED') ? (() => {
+        const stepIndex = currentSim.status === 'PENDING_ACTIVATION' && !currentSim.trackingNumber ? 0
+          : currentSim.status === 'PENDING_ACTIVATION' && currentSim.trackingNumber ? 1
+          : 2;
+        const steps = [
+          { label: 'Ordered', icon: Package },
+          { label: 'Shipped', icon: Truck },
+          { label: 'Delivered', icon: MapPin },
+          { label: 'Activated', icon: CheckCircle2 },
+        ];
+        return (
+        <div className="px-4 mb-5">
+          <div className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
+            {/* Journey Stepper */}
+            <div className="px-5 pt-6 pb-4">
+              <div className="flex items-center justify-between mb-1">
+                {steps.map((step, i) => {
+                  const StepIcon = step.icon;
+                  const isComplete = i < stepIndex;
+                  const isCurrent = i === stepIndex;
+                  return (
+                    <React.Fragment key={step.label}>
+                      <div className="flex flex-col items-center" style={{ minWidth: 52 }}>
+                        <div className={`w-8 h-8 rounded-full flex items-center justify-center mb-1.5 transition-all ${
+                          isComplete ? 'bg-green-500 text-white' : isCurrent ? 'bg-brand-orange text-white shadow-md shadow-orange-200' : 'bg-slate-100 text-slate-300'
+                        }`}>
+                          {isComplete ? <Check size={14} strokeWidth={3} /> : <StepIcon size={14} />}
+                        </div>
+                        <span className={`text-[10px] font-semibold leading-tight ${
+                          isComplete ? 'text-green-600' : isCurrent ? 'text-brand-orange' : 'text-slate-300'
+                        }`}>{step.label}</span>
+                      </div>
+                      {i < steps.length - 1 && (
+                        <div className={`flex-1 h-0.5 mx-1 rounded-full -mt-4 ${i < stepIndex ? 'bg-green-400' : 'bg-slate-100'}`} />
+                      )}
+                    </React.Fragment>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Order info */}
+            <div className="px-5 pb-4">
+              {currentSim.orderNo && (
+                <div className="flex items-center gap-2 text-xs text-slate-400 mb-1">
+                  <span className="font-mono">Order {currentSim.orderNo}</span>
+                </div>
+              )}
+              {currentSim.trackingNumber && (
+                <div className="flex items-center gap-2 text-xs text-slate-400">
+                  <Truck size={11} className="shrink-0" />
+                  <span className="font-mono">{currentSim.trackingNumber}</span>
+                </div>
+              )}
+              <p className="text-xs text-slate-300 mt-1">{formatGB(currentSim.dataTotalGB)} · {currentSim.plan.days} {t('my_sims.days')}</p>
+            </div>
+
+            {/* Actions: Track + Activate */}
+            <div className="px-5 pb-5 space-y-2.5 border-t border-slate-50 pt-4">
+              {currentSim.trackingNumber && (
+                <button
+                  onClick={() => onSwitchToSetup?.('TRACKING', currentSim.trackingNumber)}
+                  className="w-full flex items-center justify-center gap-2 py-3 rounded-xl bg-slate-100 text-slate-700 font-semibold text-sm hover:bg-slate-200 active:scale-[0.98] transition-all"
+                >
+                  <Truck size={16} />
+                  {t('my_sims.track_my_order')}
+                </button>
+              )}
+
+              <div className="flex items-center gap-3 py-1">
+                <div className="flex-1 h-px bg-slate-100" />
+                <span className="text-[11px] font-semibold text-slate-300 uppercase tracking-wider">
+                  {stepIndex >= 2 ? 'Ready to activate' : 'Already received?'}
+                </span>
+                <div className="flex-1 h-px bg-slate-100" />
+              </div>
+
+              <button
+                onClick={() => onSwitchToSetup?.('ACTIVATE')}
+                className="w-full flex items-center justify-center gap-2 py-3.5 rounded-xl font-bold text-[15px] text-white active:scale-[0.98] transition-all"
+                style={{ background: 'linear-gradient(135deg, #FF6600 0%, #FF8A3D 100%)', boxShadow: '0 4px 14px rgba(255,102,0,0.25)' }}
+              >
+                <ScanLine size={18} />
+                {t('my_sims.activate_my_sim')}
+              </button>
+            </div>
+          </div>
+        </div>
+        );
+      })() : (
+        <>
+      {/* Activation nudge for NEW physical SIMs */}
+      {currentSim.type === 'PHYSICAL' && currentSim.status === 'NEW' && (
+        <div className="px-4 mb-3">
+          <div className="flex items-center gap-3 p-3 rounded-xl border border-green-200 bg-gradient-to-r from-green-50 to-emerald-50">
+            <div className="w-9 h-9 rounded-xl bg-green-100 flex items-center justify-center shrink-0">
+              <Smartphone size={16} className="text-green-600" />
+            </div>
+            <div className="flex-1">
+              <p className="text-sm font-bold text-green-900">{t('my_sims.insert_sim')}</p>
+              <p className="text-[11px] text-green-700/70">{t('my_sims.insert_sim_desc')}</p>
+            </div>
+          </div>
+        </div>
+      )}
+      {/* eSIM install prompt for uninstalled eSIMs */}
+      {currentSim.type === 'ESIM' && (currentSim.status === 'NEW' || currentSim.status === 'PENDING_ACTIVATION' || currentSim.status === 'NOT_ACTIVATED') && (
+        <div className="px-4 mb-4">
+          <div className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
+            <div className="flex flex-col items-center text-center px-6 pt-8 pb-5">
+              <div className="w-16 h-16 rounded-2xl bg-blue-50 flex items-center justify-center mb-4">
+                <QrCode size={28} className="text-blue-500" />
+              </div>
+              <h3 className="text-lg font-bold text-slate-900 mb-1">{t('my_sims.install_esim_title')}</h3>
+              <p className="text-sm text-slate-400 mb-1">{t('my_sims.install_esim_desc')}</p>
+              <p className="text-xs text-slate-300">{formatGB(currentSim.dataTotalGB)} · {currentSim.plan.days} {t('my_sims.days')}</p>
+            </div>
+            <div className="px-5 pb-5 space-y-2.5">
+              <button
+                onClick={() => setIsInstallModalOpen(true)}
+                className="w-full flex items-center justify-center gap-2 py-3.5 rounded-xl font-bold text-[15px] text-white active:scale-[0.98] transition-all"
+                style={{ background: 'linear-gradient(135deg, #FF6600 0%, #FF8A3D 100%)', boxShadow: '0 4px 14px rgba(255,102,0,0.25)' }}
+              >
+                <QrCode size={18} />
+                {t('my_sims.install_esim')}
+              </button>
+              <p className="text-[11px] text-slate-300 text-center">{t('my_sims.install_qr_hint')}</p>
+            </div>
+          </div>
+        </div>
+      )}
       {/* DATA USAGE CARD — Ring gauge for selected SIM */}
       <div className="px-4 mb-5">
           <div className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden flex flex-col">
@@ -548,7 +723,7 @@ const MySimsView: React.FC<MySimsViewProps> = ({ activeSims, onNavigate, filterT
           </div>
       </div>
       {/* Low data warning banner */}
-      {currentSim.status === 'ACTIVE' && percentUsed >= 80 && (
+      {(currentSim.status === 'ACTIVE' || currentSim.status === 'IN_USE') && percentUsed >= 80 && (
         <div className="px-4 mb-4">
           <button
             onClick={() => setIsRechargeModalOpen(true)}
@@ -569,7 +744,7 @@ const MySimsView: React.FC<MySimsViewProps> = ({ activeSims, onNavigate, filterT
       )}
 
       {/* Action Grid */}
-      <div className="px-4 md:px-8 grid grid-cols-2 md:grid-cols-4 gap-3 mb-5">
+      <div className="px-4 md:px-8 lg:px-4 grid grid-cols-2 md:grid-cols-4 lg:grid-cols-2 gap-3 mb-5">
           <button 
              onClick={() => setIsRechargeModalOpen(true)}
              className="bg-white p-4 rounded-xl shadow-sm flex flex-col items-center gap-2 border border-slate-100 active:scale-[0.98] transition-all hover:border-brand-orange/30 group"
@@ -586,6 +761,8 @@ const MySimsView: React.FC<MySimsViewProps> = ({ activeSims, onNavigate, filterT
               <span className="text-sm font-semibold text-slate-700">{t('my_sims.contact_us')}</span>
           </button>
       </div>
+        </>
+      )}
       {/* Details List */}
       <div className="px-4 pb-6 space-y-3">
           <h3 className="text-xs font-semibold text-slate-400 uppercase tracking-wider ml-1">{t('my_sims.plan_details')}</h3>
@@ -598,9 +775,26 @@ const MySimsView: React.FC<MySimsViewProps> = ({ activeSims, onNavigate, filterT
                       </div>
                       <span className="text-sm font-bold text-slate-900">{t('my_sims.network_status')}</span>
                   </div>
-                  <span className={`text-sm font-bold px-2 py-1 rounded-md ${currentSim.status === 'ACTIVE' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
-                      {currentSim.status === 'ACTIVE' ? t('my_sims.active') : t('my_sims.inactive')}
-                  </span>
+                  <div className="flex items-center gap-2">
+                    <span className={`text-sm font-bold px-2 py-1 rounded-md ${
+                      currentSim.status === 'ACTIVE' || currentSim.status === 'IN_USE' ? 'bg-green-100 text-green-700'
+                      : currentSim.status === 'NEW' || currentSim.status === 'PENDING_ACTIVATION' ? 'bg-blue-100 text-blue-700'
+                      : currentSim.status === 'ONBOARD' ? 'bg-amber-100 text-amber-700'
+                      : currentSim.status === 'EXPIRED' ? 'bg-red-100 text-red-700'
+                      : 'bg-slate-100 text-slate-600'
+                    }`}>
+                        {t(`my_sims.status_${currentSim.status.toLowerCase()}`, t('my_sims.inactive'))}
+                    </span>
+                    {currentSim.iccid && (
+                      <button
+                        onClick={() => handleRefreshStatus(currentSim)}
+                        disabled={refreshingSimId === currentSim.id}
+                        className="w-7 h-7 rounded-lg bg-slate-100 flex items-center justify-center text-slate-400 hover:text-brand-orange hover:bg-orange-50 transition-colors active:scale-95 disabled:opacity-50"
+                      >
+                        <RefreshCw size={13} className={refreshingSimId === currentSim.id ? 'animate-spin' : ''} />
+                      </button>
+                    )}
+                  </div>
               </div>
 
               <div className="flex justify-between items-center">
@@ -620,7 +814,7 @@ const MySimsView: React.FC<MySimsViewProps> = ({ activeSims, onNavigate, filterT
                       </div>
                       <span className="text-sm font-bold text-slate-900">Data Allowance</span>
                   </div>
-                  <span className="text-sm font-bold text-slate-500">{currentSim.dataTotalGB} GB</span>
+                  <span className="text-sm font-bold text-slate-500">{formatGB(currentSim.dataTotalGB)}</span>
               </div>
 
               <div className="flex justify-between items-center">
@@ -806,7 +1000,7 @@ const MySimsView: React.FC<MySimsViewProps> = ({ activeSims, onNavigate, filterT
                           <span className="bg-brand-orange text-white text-sm font-bold px-3 py-1 rounded-lg">{label}</span>
                           <div className="flex-1 h-px bg-slate-200" />
                         </div>
-                        <div className="grid grid-cols-2 md:grid-cols-3 gap-2.5">
+                        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-2 gap-2.5">
                           {pkgs.map(pkg => {
                             const isSelected = selectedTopUp?.packageCode === pkg.packageCode;
                             const priceRetail = retailPrice(pkg.price);

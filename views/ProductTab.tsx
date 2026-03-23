@@ -35,6 +35,16 @@ const ProductTab: React.FC<ProductTabProps> = ({
   const mySims = activeSims.filter(s => s.type === type);
   
   const [viewMode, setViewMode] = useState<'SHOP' | 'MINE' | 'SETUP'>(mySims.length > 0 ? 'MINE' : 'SHOP');
+  const [setupTab, setSetupTab] = useState<'TRACKING' | 'ACTIVATE' | undefined>();
+  const [setupTrackingNumber, setSetupTrackingNumber] = useState<string | undefined>();
+  const [setupEntryPoint, setSetupEntryPoint] = useState<'SHOP' | 'MINE'>('SHOP');
+
+  const handleSwitchToSetup = (tab?: 'TRACKING' | 'ACTIVATE', trackingNumber?: string) => {
+    setSetupTab(tab);
+    setSetupTrackingNumber(trackingNumber);
+    setSetupEntryPoint(viewMode === 'MINE' ? 'MINE' : 'SHOP');
+    setViewMode('SETUP');
+  };
 
   useEffect(() => {
     if (viewMode === 'MINE' && mySims.length === 0) {
@@ -55,8 +65,9 @@ const ProductTab: React.FC<ProductTabProps> = ({
                 setViewMode('MINE');
             }}
             hasActiveSims={mySims.length > 0}
+            activeSims={activeSims}
             onSwitchToMySims={() => setViewMode('MINE')}
-            onSwitchToSetup={() => setViewMode('SETUP')}
+            onSwitchToSetup={() => handleSwitchToSetup()}
             onAddCard={(iccid) => {
                 onAddCard?.(iccid);
                 setViewMode('MINE');
@@ -74,19 +85,21 @@ const ProductTab: React.FC<ProductTabProps> = ({
             onNavigate={onNavigate}
             onSwitchToShop={() => setViewMode('SHOP')}
             onDeleteSim={onDeleteSim}
-            onSwitchToSetup={() => setViewMode('SETUP')}
+            onSwitchToSetup={handleSwitchToSetup}
             onUpdateSim={onUpdateSim}
           />
        )}
 
        {viewMode === 'SETUP' && (
           <PhysicalSimSetupView 
-             onSwitchToShop={() => setViewMode('SHOP')}
+             onSwitchToShop={() => setViewMode(setupEntryPoint)}
              onSwitchToList={() => setViewMode('MINE')}
              onAddCard={(iccid, profile) => {
                 onAddCard?.(iccid, profile);
                 setViewMode('MINE');
              }}
+             initialTab={setupTab}
+             trackingNumber={setupTrackingNumber}
           />
        )}
 

@@ -21,7 +21,7 @@ const PROXY_URL = '/api/esim';
  * Browsing packages / checking usage still works against the real API.
  * Flip to `false` when ready to go live.
  */
-export const DEMO_MODE = false;
+export const DEMO_MODE = true;
 
 async function call<T>(endpoint: string, payload: Record<string, unknown> = {}): Promise<EsimApiResponse<T>> {
   const res = await fetch(PROXY_URL, {
@@ -321,7 +321,7 @@ function getContinent(code: string): string {
   return CONTINENT_MAP[code.toUpperCase()] ?? 'Other';
 }
 
-export const POPULAR_COUNTRY_CODES = ['JP', 'US', 'TH', 'KR', 'AU', 'SG', 'GB', 'FR'];
+export const POPULAR_COUNTRY_CODES = ['MX', 'CA', 'JP', 'GB', 'FR', 'IT', 'KR', 'TH', 'DO', 'DE', 'ES', 'CO'];
 
 export function groupPackagesByLocation(packages: EsimPackage[]): EsimCountryGroup[] {
   const map = new Map<string, EsimPackage[]>();
@@ -369,6 +369,12 @@ export function formatVolume(bytes: number): string {
   return `${mb.toFixed(0)} MB`;
 }
 
+export function formatGB(gb: number): string {
+  if (gb >= 1) return `${gb % 1 === 0 ? gb.toFixed(0) : gb.toFixed(1)} GB`;
+  const mb = Math.round(gb * 1024);
+  return `${mb} MB`;
+}
+
 export function formatPrice(microCents: number): number {
   return microCents / 10000;
 }
@@ -378,4 +384,25 @@ export function retailPrice(microCents: number): number {
   const cost = microCents / 10000;
   const marked = cost * 2;
   return Math.ceil(marked) - 0.01;
+}
+
+/**
+ * Map Red Tea profile status strings to the unified ActiveSim status.
+ * Red Tea returns two status fields:
+ *   - smdpStatus: RELEASED | DOWNLOADED | INSTALLED | ENABLED | DISABLED
+ *   - esimStatus: NEW | ONBOARD | IN_USE
+ * We check esimStatus first (more granular), then fall back to smdpStatus.
+ */
+export type ActiveSimStatus = 'ACTIVE' | 'EXPIRED' | 'NOT_ACTIVATED' | 'PENDING_ACTIVATION' | 'NEW' | 'ONBOARD' | 'IN_USE';
+
+export function mapRedTeaStatus(statusStr: string): ActiveSimStatus {
+  const s = (statusStr || '').toUpperCase().trim();
+
+  if (s === 'IN_USE' || s === 'ENABLED') return 'IN_USE';
+  if (s === 'ACTIVE') return 'ACTIVE';
+  if (s === 'ONBOARD' || s === 'INSTALLED') return 'ONBOARD';
+  if (s === 'NEW' || s === 'RELEASED' || s === 'DOWNLOADED') return 'NEW';
+  if (s === 'DISABLED' || s === 'EXPIRED') return 'EXPIRED';
+
+  return 'NEW';
 }

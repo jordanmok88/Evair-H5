@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ArrowLeft, Package, Truck, MapPin, CheckCircle2, Wifi, Globe, CreditCard, ShieldCheck, Copy, Check, Clock, Search, Loader2, AlertCircle, RotateCcw, ScanLine, Smartphone, Unlock, RotateCw, Signal, Mail } from 'lucide-react';
 import BarcodeScanner from '../components/BarcodeScanner';
@@ -25,6 +25,8 @@ interface PhysicalSimSetupViewProps {
   onSwitchToShop: () => void;
   onSwitchToList: () => void;
   onAddCard?: (iccid: string, profile?: EsimProfileResult) => void;
+  initialTab?: 'TRACKING' | 'ACTIVATE';
+  trackingNumber?: string;
 }
 
 type SetupTab = 'TRACKING' | 'ACTIVATE';
@@ -144,10 +146,10 @@ function getProgressSteps(status: TrackingResult['status']) {
   return steps.map((s, i) => ({ key: s, done: i <= currentIdx }));
 }
 
-const PhysicalSimSetupView: React.FC<PhysicalSimSetupViewProps> = ({ onSwitchToShop, onSwitchToList, onAddCard }) => {
+const PhysicalSimSetupView: React.FC<PhysicalSimSetupViewProps> = ({ onSwitchToShop, onSwitchToList, onAddCard, initialTab, trackingNumber: propTrackingNumber }) => {
   useEdgeSwipeBack(onSwitchToShop);
-  const [activeTab, setActiveTab] = useState<SetupTab>('ACTIVATE');
-  const [trackingInput, setTrackingInput] = useState('');
+  const [activeTab, setActiveTab] = useState<SetupTab>(initialTab ?? 'ACTIVATE');
+  const [trackingInput, setTrackingInput] = useState(propTrackingNumber ?? '');
   const [trackingState, setTrackingState] = useState<TrackingState>('IDLE');
   const [trackingResult, setTrackingResult] = useState<TrackingResult | null>(null);
   const [trackingError, setTrackingError] = useState('');
@@ -183,6 +185,14 @@ const PhysicalSimSetupView: React.FC<PhysicalSimSetupViewProps> = ({ onSwitchToS
     setTimeout(() => setCopied(false), 2000);
   };
 
+  const autoTrackedRef = useRef(false);
+  useEffect(() => {
+    if (propTrackingNumber && activeTab === 'TRACKING' && !autoTrackedRef.current) {
+      autoTrackedRef.current = true;
+      handleTrack();
+    }
+  }, [propTrackingNumber, activeTab, handleTrack]);
+
   const handleReset = () => {
     setTrackingInput('');
     setTrackingResult(null);
@@ -191,10 +201,10 @@ const PhysicalSimSetupView: React.FC<PhysicalSimSetupViewProps> = ({ onSwitchToS
   };
 
   const activationSteps = [
-    { step: 1, title: 'Insert the SIM Card', desc: 'Power off your device. Insert the EvairSIM card into the SIM tray. Power your device back on.', icon: CreditCard },
-    { step: 2, title: 'Enable Mobile Data & Roaming', desc: 'Go to Settings → Mobile Data → turn on Data Roaming. Select the EvairSIM line if prompted.', icon: Wifi },
-    { step: 3, title: 'Set Up APN', desc: 'Go to Settings → Mobile Data → APN Settings. Enter the APN name provided with your SIM card (usually "evairsim" or as shown on the included instruction card).', icon: ShieldCheck },
-    { step: 4, title: 'Restart & Connect', desc: 'Restart your device. Your SIM will automatically register on a local partner network within 1-2 minutes. You\'re ready to browse!', icon: Globe },
+    { step: 1, title: t('sim_setup.step_insert_title'), desc: t('sim_setup.step_insert_desc'), icon: CreditCard },
+    { step: 2, title: t('sim_setup.step_settings_title'), desc: t('sim_setup.step_settings_desc'), icon: Wifi },
+    { step: 3, title: t('sim_setup.step_apn_title'), desc: t('sim_setup.step_apn_desc'), icon: ShieldCheck },
+    { step: 4, title: t('sim_setup.step_connect_title'), desc: t('sim_setup.step_connect_desc'), icon: Globe },
   ];
 
   const stepIcons = [Package, Package, Truck, MapPin, CheckCircle2];
@@ -207,7 +217,7 @@ const PhysicalSimSetupView: React.FC<PhysicalSimSetupViewProps> = ({ onSwitchToS
         <button onClick={onSwitchToShop} className="w-9 h-9 rounded-full flex items-center justify-center hover:bg-black/5 -ml-1">
           <ArrowLeft size={22} className="text-slate-900" />
         </button>
-        <h1 className="text-lg font-bold text-slate-900 tracking-tight">SIM Card Setup</h1>
+        <h1 className="text-lg font-bold text-slate-900 tracking-tight">{t('sim_setup.add_sim_card')}</h1>
       </div>
 
       <div className="px-4 pt-4 pb-2">
@@ -216,13 +226,13 @@ const PhysicalSimSetupView: React.FC<PhysicalSimSetupViewProps> = ({ onSwitchToS
             onClick={() => setActiveTab('TRACKING')}
             className={`flex-1 py-2 rounded-xl text-sm font-semibold transition-all ${activeTab === 'TRACKING' ? 'bg-brand-orange text-white shadow-sm' : 'text-slate-500'}`}
           >
-            Delivery Tracking
+            {t('sim_setup.track_tab')}
           </button>
           <button
             onClick={() => setActiveTab('ACTIVATE')}
             className={`flex-1 py-2 rounded-xl text-sm font-semibold transition-all ${activeTab === 'ACTIVATE' ? 'bg-brand-orange text-white shadow-sm' : 'text-slate-500'}`}
           >
-            Activate SIM
+            {t('sim_setup.activate_tab')}
           </button>
         </div>
       </div>
@@ -234,8 +244,8 @@ const PhysicalSimSetupView: React.FC<PhysicalSimSetupViewProps> = ({ onSwitchToS
 
             {/* Search Input */}
             <div className="bg-white rounded-xl shadow-sm border border-slate-100 p-4 mb-4">
-              <h3 className="text-base font-bold text-slate-900 mb-1">Track Your Parcel</h3>
-              <p className="text-sm text-slate-400 mb-4">Enter your tracking number to see live delivery status</p>
+              <h3 className="text-base font-bold text-slate-900 mb-1">{t('sim_setup.enter_tracking')}</h3>
+              <p className="text-sm text-slate-400 mb-4">{t('sim_setup.enter_tracking_hint')}</p>
 
               <div className="flex gap-2">
                 <div className="flex-1 border border-slate-200 focus-within:border-brand-orange rounded-xl h-11 flex items-center px-3 bg-slate-50 transition-colors">
@@ -300,9 +310,9 @@ const PhysicalSimSetupView: React.FC<PhysicalSimSetupViewProps> = ({ onSwitchToS
                 <div className="w-16 h-16 rounded-2xl bg-orange-50 flex items-center justify-center mb-4">
                   <Package size={28} className="text-brand-orange" />
                 </div>
-                <p className="text-[15px] font-bold text-slate-900 mb-1">Enter Your Tracking Number</p>
+                <p className="text-[15px] font-bold text-slate-900 mb-1">{t('sim_setup.enter_tracking')}</p>
                 <p className="text-[14px] text-slate-400 leading-relaxed max-w-[260px]">
-                  Paste the tracking number from your order confirmation email to see real-time delivery updates.
+                  {t('sim_setup.enter_tracking_desc')}
                 </p>
                 <div className="flex flex-wrap gap-2 mt-4 justify-center">
                   {['SF Express', 'USPS', 'FedEx', 'UPS', 'DHL'].map(c => (
@@ -322,7 +332,7 @@ const PhysicalSimSetupView: React.FC<PhysicalSimSetupViewProps> = ({ onSwitchToS
                   {/* Tracking Number Card */}
                   <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-5 mb-4">
                     <div className="flex items-center justify-between mb-1">
-                      <p className="text-[13px] font-bold text-slate-400 uppercase tracking-wider">Tracking Number</p>
+                      <p className="text-[13px] font-bold text-slate-400 uppercase tracking-wider">{t('sim_setup.tracking_number')}</p>
                       <div style={{ backgroundColor: statusColor.bg, color: statusColor.text }} className="px-3 py-1 rounded-lg">
                         <p className="text-[13px] font-bold">{getStatusLabel(trackingResult.status)}</p>
                       </div>
@@ -356,7 +366,7 @@ const PhysicalSimSetupView: React.FC<PhysicalSimSetupViewProps> = ({ onSwitchToS
                           <Clock size={18} className="text-brand-orange" />
                         </div>
                         <div>
-                          <p className="text-[13px] text-slate-400 font-semibold">Estimated Delivery</p>
+                          <p className="text-[13px] text-slate-400 font-semibold">{t('sim_setup.estimated_delivery')}</p>
                           <p className="text-[15px] font-bold text-slate-900">{trackingResult.estimatedDelivery}</p>
                         </div>
                       </div>
@@ -410,9 +420,7 @@ const PhysicalSimSetupView: React.FC<PhysicalSimSetupViewProps> = ({ onSwitchToS
                   </div>
 
                   <div className="bg-amber-50 border border-amber-100 rounded-xl px-4 py-3 mt-4">
-                    <p className="text-[14px] text-amber-700 font-medium">
-                      Already received your SIM card? Switch to the <strong>"Activate SIM"</strong> tab to get started.
-                    </p>
+                    <p className="text-[14px] text-amber-700 font-medium" dangerouslySetInnerHTML={{ __html: t('sim_setup.received_sim_hint') }} />
                   </div>
                 </>
               );
@@ -426,8 +434,8 @@ const PhysicalSimSetupView: React.FC<PhysicalSimSetupViewProps> = ({ onSwitchToS
             <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-5 mb-4">
               <div className="flex justify-between items-start mb-4">
                 <div>
-                  <h3 className="text-[15px] font-bold text-slate-900 mb-0.5">Activate Your SIM</h3>
-                  <p className="text-[14px] text-slate-400">Enter ICCID or scan the barcode on your SIM card</p>
+                  <h3 className="text-[15px] font-bold text-slate-900 mb-0.5">{t('sim_setup.activate_sim_card')}</h3>
+                  <p className="text-[14px] text-slate-400">{t('sim_setup.enter_iccid_desc')}</p>
                 </div>
                 <div className="w-9 h-9 bg-orange-50 rounded-xl flex items-center justify-center shrink-0">
                   <Smartphone size={18} className="text-brand-orange" />
@@ -545,9 +553,29 @@ const PhysicalSimSetupView: React.FC<PhysicalSimSetupViewProps> = ({ onSwitchToS
               </div>
 
               {activated ? (
-                <div className="w-full bg-green-500 text-white py-4 rounded-xl font-bold text-[15px] flex items-center justify-center gap-2">
-                  <CheckCircle2 size={18} />
-                  SIM Card Activated
+                <div className="space-y-3">
+                  <div className="w-full bg-green-500 text-white py-3 rounded-xl font-bold text-sm flex items-center justify-center gap-2">
+                    <CheckCircle2 size={16} />
+                    {t('sim_setup.sim_activated')}
+                  </div>
+                  <button
+                    onClick={() => onSwitchToList()}
+                    className="w-full py-3.5 rounded-xl font-bold text-[15px] flex items-center justify-center gap-2 text-white active:scale-[0.98] transition-all"
+                    style={{ background: 'linear-gradient(135deg, #FF6600 0%, #FF8A3D 100%)', boxShadow: '0 4px 14px rgba(255,102,0,0.25)' }}
+                  >
+                    {t('sim_setup.go_to_my_sims')}
+                  </button>
+                  <button
+                    onClick={() => {
+                      setActivated(false);
+                      setIccidInput('');
+                      setActivationError('');
+                    }}
+                    className="w-full py-3 rounded-xl font-semibold text-sm text-slate-600 bg-slate-100 hover:bg-slate-200 active:scale-[0.98] transition-all flex items-center justify-center gap-2"
+                  >
+                    <ScanLine size={16} />
+                    {t('sim_setup.activate_another')}
+                  </button>
                 </div>
               ) : (
                 <button
@@ -556,7 +584,7 @@ const PhysicalSimSetupView: React.FC<PhysicalSimSetupViewProps> = ({ onSwitchToS
                     if (!trimmed) return;
 
                     if (!/^\d{18,22}$/.test(trimmed)) {
-                      setActivationError('ICCID must be 18–22 digits. Please check the number on your SIM card.');
+                      setActivationError(t('sim_setup.iccid_error'));
                       return;
                     }
 
@@ -564,11 +592,6 @@ const PhysicalSimSetupView: React.FC<PhysicalSimSetupViewProps> = ({ onSwitchToS
                     setActivationError('');
                     try {
                       const profile = await queryProfile(trimmed);
-
-                      const pkg = (profile.packageName || '').toLowerCase();
-                      if (!pkg.startsWith('united states') && !pkg.startsWith('usa') && !pkg.startsWith('us ')) {
-                        throw new Error('This ICCID belongs to a non-US plan. Only US SIM cards can be activated here.');
-                      }
 
                       setActivated(true);
                       onAddCard?.(trimmed, profile);
@@ -588,9 +611,9 @@ const PhysicalSimSetupView: React.FC<PhysicalSimSetupViewProps> = ({ onSwitchToS
                   }}
                 >
                   {activating ? (
-                    <><Loader2 size={18} className="animate-spin" /> Activating...</>
+                    <><Loader2 size={18} className="animate-spin" /> {t('sim_setup.activating')}</>
                   ) : (
-                    'Activate SIM Card'
+                    t('sim_setup.activate_sim_card')
                   )}
                 </button>
               )}

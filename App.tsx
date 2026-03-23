@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import BottomNav from './components/BottomNav';
 import ProductTab from './views/ProductTab';
 import ProfileView from './views/ProfileView';
@@ -11,7 +11,7 @@ import ApiTestPage from './views/ApiTestPage';
 import { Tab, ActiveSim, SimType, User, AppNotification, EsimProfileResult } from './types';
 import { Lock } from 'lucide-react';
 import { MOCK_COUNTRIES, MOCK_PLANS_US, MOCK_ACTIVE_SIMS, MOCK_NOTIFICATIONS, CARRIER_MAP } from './constants';
-import { checkDataUsage, prefetchPackages } from './services/esimApi';
+import { checkDataUsage, prefetchPackages, DEMO_MODE, mapRedTeaStatus } from './services/esimApi';
 import { supabaseConfigured, fetchNotifications } from './services/supabase';
 import { authService, userService, type UserDto } from './services/api';
 
@@ -76,9 +76,28 @@ function CustomerApp() {
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
   const [loginModalMode, setLoginModalMode] = useState<'LOGIN' | 'REGISTER'>('LOGIN');
   
-  const [activeSims, setActiveSims] = useState<ActiveSim[]>(MOCK_ACTIVE_SIMS);
+  const [activeSims, setActiveSims] = useState<ActiveSim[]>(() => {
+    try {
+      const saved = localStorage.getItem('evair_demo_sims');
+      if (saved) {
+        const parsed: ActiveSim[] = JSON.parse(saved);
+        if (parsed.length > 0) return [...parsed, ...MOCK_ACTIVE_SIMS];
+      }
+    } catch { /* ignore */ }
+    return MOCK_ACTIVE_SIMS;
+  });
   const [serverSims, setServerSims] = useState<ActiveSim[]>([]);
   const [notifications, setNotifications] = useState<AppNotification[]>(MOCK_NOTIFICATIONS);
+
+  const mockSimIds = useMemo(() => new Set(MOCK_ACTIVE_SIMS.map(s => s.id)), []);
+  useEffect(() => {
+    if (!DEMO_MODE) return;
+    const userSims = activeSims.filter(s => !mockSimIds.has(s.id));
+    try {
+      if (userSims.length > 0) localStorage.setItem('evair_demo_sims', JSON.stringify(userSims));
+      else localStorage.removeItem('evair_demo_sims');
+    } catch { /* storage full */ }
+  }, [activeSims, mockSimIds]);
 
   // 转换后端 SIM 数据为前端格式
   const convertUserSimToActiveSim = (userSim: {
@@ -303,20 +322,44 @@ function CustomerApp() {
     }
   };
 
-  const handlePurchaseComplete = (purchaseInfo?: { planName?: string; countryCode?: string; type?: SimType; orderNo?: string; iccid?: string }) => {
+  const handlePurchaseComplete = (purchaseInfo?: { planName?: string; countryCode?: string; type?: SimType; orderNo?: string; iccid?: string; dataTotalGB?: number; durationDays?: number }) => {
     const currentType: SimType = purchaseInfo?.type ?? (activeTab === Tab.SIM_CARD ? 'PHYSICAL' : 'ESIM');
+    const cc = purchaseInfo?.countryCode || 'US';
+    const ccToFlag = (code: string) => code.toUpperCase().split('').map(c => String.fromCodePoint(127397 + c.charCodeAt(0))).join('');
+    const dataGB = purchaseInfo?.dataTotalGB || 3.0;
+    const days = purchaseInfo?.durationDays || 30;
     
+    const country = MOCK_COUNTRIES.find(c => c.countryCode === cc) || {
+        id: cc.toLowerCase(),
+        name: purchaseInfo?.planName || cc,
+        flag: ccToFlag(cc),
+        countryCode: cc,
+        region: '',
+        startPrice: 0,
+        networkCount: 0,
+        networks: [],
+        vpmn: '',
+        vpn: false,
+        plans: [],
+    };
+
+    const isPhysical = currentType === 'PHYSICAL';
     const newSim: ActiveSim = {
         id: `${currentType}-${Math.floor(Math.random() * 10000)}`,
         iccid: purchaseInfo?.iccid,
-        country: MOCK_COUNTRIES[0],
-        plan: MOCK_PLANS_US[1],
+        country,
+        plan: { id: `plan-${Date.now()}`, name: purchaseInfo?.planName || 'eSIM Plan', data: `${dataGB} GB`, days, price: 0, features: [] },
         type: currentType,
         activationDate: new Date().toISOString(),
-        expiryDate: new Date(Date.now() + 15 * 24 * 60 * 60 * 1000).toISOString(),
-        dataTotalGB: 3.0,
+        expiryDate: new Date(Date.now() + days * 24 * 60 * 60 * 1000).toISOString(),
+        dataTotalGB: dataGB,
         dataUsedGB: 0.0,
-        status: 'PENDING_ACTIVATION'
+        status: currentType === 'ESIM' ? 'NEW' : 'PENDING_ACTIVATION',
+        ...(isPhysical && {
+            orderNo: `ORD-${Date.now()}`,
+            trackingNumber: `SF${Math.floor(1000000000 + Math.random() * 9000000000)}HK`,
+            purchaseSource: 'IN_APP' as const,
+        }),
     };
     setActiveSims([newSim, ...activeSims]);
 
@@ -348,7 +391,6 @@ function CustomerApp() {
   const handleAddCard = (iccid: string, profile?: EsimProfileResult) => {
     const pkgName = profile?.packageName || '';
 
-    // Map well-known country names from Red Tea package names to ISO codes
     const COUNTRY_NAME_TO_CODE: Record<string, string> = {
       'united states': 'US', 'usa': 'US', 'china': 'CN', 'china mainland': 'CN',
       'japan': 'JP', 'korea': 'KR', 'south korea': 'KR', 'canada': 'CA',
@@ -357,6 +399,10 @@ function CustomerApp() {
       'thailand': 'TH', 'singapore': 'SG', 'malaysia': 'MY', 'taiwan': 'TW',
       'hong kong': 'HK', 'macau': 'MO', 'india': 'IN', 'indonesia': 'ID',
       'vietnam': 'VN', 'philippines': 'PH', 'brazil': 'BR', 'turkey': 'TR',
+      'dominican republic': 'DO', 'colombia': 'CO', 'costa rica': 'CR',
+      'new zealand': 'NZ', 'ireland': 'IE', 'netherlands': 'NL', 'portugal': 'PT',
+      'greece': 'GR', 'sweden': 'SE', 'norway': 'NO', 'denmark': 'DK',
+      'switzerland': 'CH', 'austria': 'AT', 'belgium': 'BE', 'poland': 'PL',
     };
 
     let countryCode = 'US';
@@ -374,6 +420,18 @@ function CustomerApp() {
       ? profile.totalVolume / (1024 * 1024 * 1024)
       : 10;
     const durationDays = profile?.totalDuration || 30;
+    const redTeaStatus = mapRedTeaStatus(profile?.status || '');
+
+    const existingSim = activeSims.find(s => s.iccid === iccid);
+    if (existingSim) {
+      setActiveSims(prev => prev.map(s => s.iccid === iccid ? {
+        ...s,
+        status: redTeaStatus,
+        dataTotalGB: Math.round(totalGB * 10) / 10,
+        dataUsedGB: profile?.usedVolume ? profile.usedVolume / (1024 * 1024 * 1024) : s.dataUsedGB,
+      } : s));
+      return;
+    }
 
     const flag = countryCode.toUpperCase().split('').map(c => String.fromCodePoint(127397 + c.charCodeAt(0))).join('');
     const carrier = CARRIER_MAP[countryCode];
@@ -404,8 +462,8 @@ function CustomerApp() {
       activationDate: new Date().toISOString(),
       expiryDate: new Date(Date.now() + durationDays * 24 * 60 * 60 * 1000).toISOString(),
       dataTotalGB: Math.round(totalGB * 10) / 10,
-      dataUsedGB: 0,
-      status: 'ACTIVE',
+      dataUsedGB: profile?.usedVolume ? profile.usedVolume / (1024 * 1024 * 1024) : 0,
+      status: redTeaStatus,
     };
     setActiveSims([newSim, ...activeSims]);
   };
@@ -500,7 +558,16 @@ function CustomerApp() {
 
         {/* Main Content Area */}
         <main className="w-full relative lg:overflow-hidden" style={{ height: 'calc(100% - 54px)' }}>
-           {renderContent()}
+           <div className={activeTab !== Tab.DIALER ? 'pb-16' : ''} style={{ height: '100%', overflowY: 'auto' }}>
+             {renderContent()}
+           </div>
+           {activeTab !== Tab.DIALER && (
+             <BottomNav
+               activeTab={activeTab}
+               onTabChange={handleTabChange}
+               notifications={notifications}
+             />
+           )}
         </main>
 
         <LoginModal 
