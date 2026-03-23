@@ -558,16 +558,7 @@ function CustomerApp() {
 
         {/* Main Content Area */}
         <main className="w-full relative lg:overflow-hidden" style={{ height: 'calc(100% - 54px)' }}>
-           <div className={activeTab !== Tab.DIALER ? 'pb-16' : ''} style={{ height: '100%', overflowY: 'auto' }}>
-             {renderContent()}
-           </div>
-           {activeTab !== Tab.DIALER && (
-             <BottomNav
-               activeTab={activeTab}
-               onTabChange={handleTabChange}
-               notifications={notifications}
-             />
-           )}
+           {renderContent()}
         </main>
 
         <LoginModal 
