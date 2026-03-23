@@ -192,10 +192,17 @@ export interface EsimProfileResult {
   packageCode: string;
   packageName: string;
   status: string;
+  /** Raw SM-DP+ status from supplier (RELEASED | DOWNLOADED | INSTALLED | ENABLED | DISABLED) */
+  smdpStatus?: string;
   expiredTime: string;
   totalVolume: number;
   usedVolume: number;
   totalDuration: number;
+}
+
+export interface EnableProfileResult {
+  success: boolean;
+  status: string;
 }
 
 export interface DataUsageResult {

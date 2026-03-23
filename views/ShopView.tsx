@@ -4,10 +4,8 @@ import { Search, ChevronRight, ArrowLeft, Globe, Star, X, MapPin, Loader2, Smart
 import { Country, Plan, SimType, User, SimCardProduct, EsimPackage, EsimCountryGroup, EsimOrderResult, ActiveSim } from '../types';
 import { MOCK_COUNTRIES, SIM_CARD_PRODUCTS } from '../constants';
 import FlagIcon from '../components/FlagIcon';
-import { fetchPackages, prefetchPackages, groupPackagesByLocation, formatVolume, formatPrice, retailPrice, orderEsim, CONTINENT_TABS, type ContinentTab, formatGB, POPULAR_COUNTRY_CODES } from '../services/esimApi';
+import { fetchPackages, prefetchPackages, groupPackagesByLocation, formatVolume, formatPrice, retailPrice, orderEsim, CONTINENT_TABS, type ContinentTab, formatGB, POPULAR_COUNTRY_CODES } from '../services/dataService';
 import { useSwipeBack } from '../hooks/useSwipeBack';
-import { packageService } from '../services/api';
-import type { PackageDto } from '../services/api/types';
 
 import { Bell, UserCircle } from 'lucide-react';
 import { AppNotification } from '../types';
@@ -76,95 +74,9 @@ const COUNTRY_CODE_MAP: Record<string, { name: string; continent: string }> = {
   'IE': { name: 'Ireland', continent: 'Europe' },
 };
 
-// ─── 后端套餐数据转换为前端格式 ────────────────────────────────────────
-
-function convertPackageDtoToEsimPackage(dto: PackageDto): EsimPackage {
-  // volume: backend returns GB, need to convert to bytes
-  const volumeBytes = dto.volume * 1024 * 1024 * 1024;
-
-  return {
-    packageCode: dto.packageCode,
-    name: dto.name,
-    price: dto.price * 10000, // backend returns USD, convert to micro-cents
-    currencyCode: dto.currency,
-    volume: volumeBytes,
-    unusedValidTime: 0,
-    duration: dto.duration,
-    durationUnit: dto.durationUnit,
-    location: dto.location,
-    description: dto.description || '',
-    activeType: 1,
-  };
-}
-
-type LocationInfo = {
-  code: string;
-  name: string;
-  packageCount: number;
-};
-
-// 多国区域信息 (用于显示区域如 "Asia (12 areas)")
-type MultiCountryRegion = {
-  code: string;
-  name: string;
-};
-
-// 单国家信息
-type SingleCountry = {
-  code: string;
-  name: string;
-  regionCode?: string; // 所属区域代码
-};
-
-// 区域代码到国家代码的映射 (从后端返回的数据构建)
-const REGION_TO_COUNTRIES: Record<string, string[]> = {
-  // 这些映射会在运行时从 multi_countries 数据中推断
-};
-
-function convertPackagesToGroups(
-  packages: PackageDto[],
-  locationMap?: Map<string, LocationInfo>
-): EsimCountryGroup[] {
-  const map = new Map<string, PackageDto[]>();
-
-  for (const pkg of packages) {
-    const key = pkg.location;
-    if (!map.has(key)) map.set(key, []);
-    map.get(key)!.push(pkg);
-  }
-
-  const groups: EsimCountryGroup[] = [];
-  for (const [loc, pkgs] of map.entries()) {
-    const primaryCode = loc.split(',')[0].trim().toUpperCase();
-    const isMultiRegion = loc.includes(',');
-
-    // 优先使用后端返回的地区信息，其次使用本地映射
-    const backendLocation = locationMap?.get(primaryCode);
-    const localCountry = COUNTRY_CODE_MAP[primaryCode];
-    const countryName = backendLocation?.name || localCountry?.name || primaryCode;
-    const continent = backendLocation?.packageCount !== undefined
-      ? (localCountry?.continent || 'Other')
-      : (localCountry?.continent || 'Other');
-
-    const esimPackages = pkgs
-      .sort((a, b) => a.volume - b.volume)
-      .map(convertPackageDtoToEsimPackage);
-
-    groups.push({
-      locationCode: loc.toUpperCase(),
-      locationName: countryName,
-      flag: primaryCode,
-      packages: esimPackages,
-      continent: isMultiRegion ? 'Multi-Region' : continent,
-      isMultiRegion,
-    });
-  }
-
-  groups.sort((a, b) => a.locationName.localeCompare(b.locationName));
-  return groups;
-}
-
 // 将多国区域和单国家分组
+type MultiCountryRegion = { code: string; name: string };
+type SingleCountry = { code: string; name: string; regionCode?: string };
 interface LocationGroups {
   multiCountryRegions: MultiCountryRegion[];
   singleCountries: SingleCountry[];

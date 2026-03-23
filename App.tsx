@@ -11,7 +11,7 @@ import ApiTestPage from './views/ApiTestPage';
 import { Tab, ActiveSim, SimType, User, AppNotification, EsimProfileResult } from './types';
 import { Lock } from 'lucide-react';
 import { MOCK_COUNTRIES, MOCK_PLANS_US, MOCK_ACTIVE_SIMS, MOCK_NOTIFICATIONS, CARRIER_MAP } from './constants';
-import { checkDataUsage, prefetchPackages, DEMO_MODE, mapRedTeaStatus } from './services/esimApi';
+import { checkDataUsage, prefetchPackages, DEMO_MODE, mapRedTeaStatus } from './services/dataService';
 import { supabaseConfigured, fetchNotifications } from './services/supabase';
 import { authService, userService, type UserDto } from './services/api';
 
@@ -73,6 +73,7 @@ function CustomerApp() {
 
 
   const [activeTab, setActiveTab] = useState<Tab>(Tab.SIM_CARD);
+  const previousTab = useRef<Tab>(Tab.SIM_CARD);
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
   const [loginModalMode, setLoginModalMode] = useState<'LOGIN' | 'REGISTER'>('LOGIN');
   
@@ -515,7 +516,7 @@ function CustomerApp() {
             />
         );
       case Tab.INBOX:
-        return <InboxView notifications={notifications} onUpdateNotifications={setNotifications} onNavigate={(tab) => setActiveTab(tab as Tab)} onBack={() => { setActiveTab(currentSimType === 'PHYSICAL' ? Tab.SIM_CARD : Tab.ESIM); window.scrollTo(0,0); }} />;
+        return <InboxView notifications={notifications} onUpdateNotifications={setNotifications} onNavigate={(tab) => setActiveTab(tab as Tab)} onBack={() => { setActiveTab(previousTab.current); window.scrollTo(0,0); }} />;
       case Tab.PROFILE:
         return (
             <ProfileView
@@ -524,15 +525,15 @@ function CustomerApp() {
                 onLogin={() => { setLoginModalMode('LOGIN'); setIsLoginModalOpen(true); }}
                 onSignup={() => { setLoginModalMode('REGISTER'); setIsLoginModalOpen(true); }}
                 onLogout={handleLogout}
-                onOpenDialer={() => setActiveTab(Tab.DIALER)}
-                onOpenInbox={() => setActiveTab(Tab.INBOX)}
+                onOpenDialer={() => { previousTab.current = activeTab; setActiveTab(Tab.DIALER); }}
+                onOpenInbox={() => { previousTab.current = activeTab; setActiveTab(Tab.INBOX); }}
                 notifications={notifications}
                 onBack={() => { setActiveTab(currentSimType === 'PHYSICAL' ? Tab.SIM_CARD : Tab.ESIM); window.scrollTo(0,0); }}
                 onUserUpdate={(updatedUser) => setUser(prev => prev ? { ...prev, ...updatedUser } : undefined)}
             />
         );
       case Tab.DIALER:
-        return <ContactUsView onBack={() => { setActiveTab(currentSimType === 'PHYSICAL' ? Tab.SIM_CARD : Tab.ESIM); window.scrollTo(0,0); }} userName={user?.name} />;
+        return <ContactUsView onBack={() => { setActiveTab(previousTab.current); window.scrollTo(0,0); }} userName={user?.name} />;
       default:
         return null;
     }

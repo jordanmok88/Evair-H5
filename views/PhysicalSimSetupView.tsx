@@ -1,10 +1,12 @@
 import React, { useState, useCallback, useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
-import { ArrowLeft, Package, Truck, MapPin, CheckCircle2, Wifi, Globe, CreditCard, ShieldCheck, Copy, Check, Clock, Search, Loader2, AlertCircle, RotateCcw, ScanLine, Smartphone, Unlock, RotateCw, Signal, Mail } from 'lucide-react';
+import { ArrowLeft, Package, Truck, MapPin, CheckCircle2, Wifi, Globe, CreditCard, ShieldCheck, Copy, Check, Clock, Search, Loader2, AlertCircle, RotateCcw, ScanLine, Smartphone, UserPlus } from 'lucide-react';
 import BarcodeScanner from '../components/BarcodeScanner';
-import { queryProfile } from '../services/esimApi';
+import { queryProfile } from '../services/dataService';
 import { useEdgeSwipeBack } from '../hooks/useEdgeSwipeBack';
 import { EsimProfileResult } from '../types';
+
+type ActivateStep = 'SCAN' | 'CONFIRM' | 'DONE';
 
 interface TrackingEvent {
   label: string;
@@ -27,6 +29,8 @@ interface PhysicalSimSetupViewProps {
   onAddCard?: (iccid: string, profile?: EsimProfileResult) => void;
   initialTab?: 'TRACKING' | 'ACTIVATE';
   trackingNumber?: string;
+  isLoggedIn?: boolean;
+  onLoginRequest?: () => void;
 }
 
 type SetupTab = 'TRACKING' | 'ACTIVATE';
@@ -146,7 +150,7 @@ function getProgressSteps(status: TrackingResult['status']) {
   return steps.map((s, i) => ({ key: s, done: i <= currentIdx }));
 }
 
-const PhysicalSimSetupView: React.FC<PhysicalSimSetupViewProps> = ({ onSwitchToShop, onSwitchToList, onAddCard, initialTab, trackingNumber: propTrackingNumber }) => {
+const PhysicalSimSetupView: React.FC<PhysicalSimSetupViewProps> = ({ onSwitchToShop, onSwitchToList, onAddCard, initialTab, trackingNumber: propTrackingNumber, isLoggedIn, onLoginRequest }) => {
   useEdgeSwipeBack(onSwitchToShop);
   const [activeTab, setActiveTab] = useState<SetupTab>(initialTab ?? 'ACTIVATE');
   const [trackingInput, setTrackingInput] = useState(propTrackingNumber ?? '');
@@ -157,8 +161,9 @@ const PhysicalSimSetupView: React.FC<PhysicalSimSetupViewProps> = ({ onSwitchToS
   const [iccidInput, setIccidInput] = useState('');
   const [scannerOpen, setScannerOpen] = useState(false);
   const [activating, setActivating] = useState(false);
-  const [activated, setActivated] = useState(false);
   const [activationError, setActivationError] = useState('');
+  const [activateStep, setActivateStep] = useState<ActivateStep>('SCAN');
+  const [profileResult, setProfileResult] = useState<EsimProfileResult | null>(null);
   const { t, i18n } = useTranslation();
 
   const handleTrack = useCallback(async () => {
@@ -431,172 +436,115 @@ const PhysicalSimSetupView: React.FC<PhysicalSimSetupViewProps> = ({ onSwitchToS
         {activeTab === 'ACTIVATE' && (
           <div className="pt-3">
 
-            <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-5 mb-4">
-              <div className="flex justify-between items-start mb-4">
-                <div>
-                  <h3 className="text-[15px] font-bold text-slate-900 mb-0.5">{t('sim_setup.activate_sim_card')}</h3>
-                  <p className="text-[14px] text-slate-400">{t('sim_setup.enter_iccid_desc')}</p>
-                </div>
-                <div className="w-9 h-9 bg-orange-50 rounded-xl flex items-center justify-center shrink-0">
-                  <Smartphone size={18} className="text-brand-orange" />
-                </div>
-              </div>
-
-              <div className="border-2 border-brand-orange rounded-xl h-14 flex items-center px-4 bg-white shadow-sm mb-4">
-                <input
-                  type="text"
-                  value={iccidInput}
-                  onChange={(e) => setIccidInput(e.target.value.replace(/[^0-9]/g, ''))}
-                  placeholder="ICCID / EID Number"
-                  className="flex-1 h-full outline-none text-slate-900 font-semibold placeholder:text-slate-400 placeholder:font-normal bg-transparent text-[16px] tracking-wider"
-                  maxLength={22}
-                />
-                <button onClick={() => setScannerOpen(true)} className="p-2 -mr-2 text-slate-400 hover:text-brand-orange transition-colors">
-                  <ScanLine size={22} />
-                </button>
-              </div>
-
-              <div className="w-full rounded-2xl bg-white border border-slate-200 p-5 mb-4 relative overflow-hidden" style={{ aspectRatio: '1.6/1', boxShadow: '0 2px 12px rgba(0,0,0,0.04)' }}>
-                {/* Top row: Logo + Barcode */}
-                <div className="absolute top-4 left-5 right-4 flex items-start justify-between">
-                  {/* Logo */}
-                  <img src="/evairsim-logo.png" alt="EvairSIM" className="h-14 object-contain" />
-
-                  {/* Barcode area with ICCID highlight */}
-                  <div className="flex flex-col items-center gap-1">
-                    <div className="relative flex flex-col items-center">
-                      <div className="absolute -inset-x-4 -inset-y-3 rounded-xl border-2 border-brand-orange" style={{ boxShadow: '0 0 8px rgba(255,102,0,0.15)' }} />
-                      <div className="flex gap-[1px]">
-                        {Array.from({ length: 45 }).map((_, i) => (
-                          <div key={i} className="bg-slate-800 rounded-[0.5px]" style={{ width: i % 3 === 0 ? 2 : i % 2 === 0 ? 1.5 : 1, height: 22, opacity: 0.35 + (i % 3) * 0.2 }} />
-                        ))}
+            {/* ── Step Progress Indicator ── */}
+            <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-4 mb-4">
+              <div className="flex items-center justify-between">
+                {(['SCAN', 'CONFIRM', 'DONE'] as const).map((step, i) => {
+                  const stepLabelsMap = [
+                    t('sim_setup.wizard_scan'),
+                    t('sim_setup.wizard_confirm'),
+                    t('sim_setup.wizard_done'),
+                  ];
+                  const stepOrder = { SCAN: 0, CONFIRM: 1, DONE: 2 };
+                  const current = stepOrder[activateStep];
+                  const isDone = i < current;
+                  const isActive = i === current;
+                  const StepIcon = [ScanLine, UserPlus, CheckCircle2][i];
+                  return (
+                    <React.Fragment key={step}>
+                      {i > 0 && (
+                        <div className={`flex-1 h-0.5 mx-1.5 rounded-full ${isDone ? 'bg-brand-orange' : 'bg-slate-200'}`} />
+                      )}
+                      <div className="flex flex-col items-center gap-1">
+                        <div className={`w-9 h-9 rounded-full flex items-center justify-center transition-all ${
+                          isDone ? 'bg-brand-orange text-white' :
+                          isActive ? 'bg-orange-50 text-brand-orange ring-2 ring-brand-orange' :
+                          'bg-slate-100 text-slate-400'
+                        }`}>
+                          {isDone ? <Check size={16} /> : <StepIcon size={16} />}
+                        </div>
+                        <span className={`text-[11px] font-bold ${isActive || isDone ? 'text-brand-orange' : 'text-slate-400'}`}>
+                          {stepLabelsMap[i]}
+                        </span>
                       </div>
-                      <div className="h-[5px] w-28 rounded-full bg-slate-200 mt-1.5" />
-                    </div>
-                    <div className="flex items-center gap-1.5 mt-3">
-                      <div className="w-0 h-0 border-l-[5px] border-l-transparent border-r-[5px] border-r-transparent border-b-[7px] border-b-brand-orange" />
-                      <span className="text-[11px] font-extrabold text-brand-orange tracking-widest">This is your ICCID</span>
-                    </div>
-                  </div>
-                </div>
-
-                {/* SIM chip */}
-                <div className="absolute top-[55%] -translate-y-1/2 left-5 w-12 h-10 rounded-lg bg-gradient-to-br from-amber-100 to-amber-200 border border-amber-300/60 flex items-center justify-center">
-                  <div className="w-8 h-6 rounded-sm border border-amber-300/80 bg-amber-50" />
-                </div>
-
-
-
-                {/* Placeholder text lines */}
-                <div className="absolute bottom-12 left-5 right-16 space-y-2.5">
-                  <div className="h-[5px] w-[75%] rounded-full" style={{ backgroundColor: '#e8ecf0' }} />
-                  <div className="h-[5px] w-[50%] rounded-full" style={{ backgroundColor: '#e8ecf0' }} />
-                </div>
-
-                {/* Top-up QR code */}
-                <div className="absolute bottom-10 right-4 flex items-center gap-2">
-                  <span className="text-[7px] font-bold text-slate-400 tracking-wider">SCAN TO<br/>TOP UP</span>
-                  <div className="w-10 h-10 rounded-md bg-white border border-slate-200 flex items-center justify-center p-0.5" style={{ boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
-                    <svg viewBox="0 0 100 100" className="w-full h-full">
-                      <rect x="5" y="5" width="28" height="28" rx="3" fill="none" stroke="#1e293b" strokeWidth="4"/>
-                      <rect x="12" y="12" width="14" height="14" rx="2" fill="#1e293b"/>
-                      <rect x="67" y="5" width="28" height="28" rx="3" fill="none" stroke="#1e293b" strokeWidth="4"/>
-                      <rect x="74" y="12" width="14" height="14" rx="2" fill="#1e293b"/>
-                      <rect x="5" y="67" width="28" height="28" rx="3" fill="none" stroke="#1e293b" strokeWidth="4"/>
-                      <rect x="12" y="74" width="14" height="14" rx="2" fill="#1e293b"/>
-                      <rect x="42" y="5" width="6" height="6" fill="#1e293b"/>
-                      <rect x="52" y="15" width="6" height="6" fill="#1e293b"/>
-                      <rect x="42" y="25" width="6" height="6" fill="#1e293b"/>
-                      <rect x="42" y="42" width="6" height="6" fill="#1e293b"/>
-                      <rect x="52" y="52" width="6" height="6" fill="#1e293b"/>
-                      <rect x="15" y="52" width="6" height="6" fill="#1e293b"/>
-                      <rect x="25" y="42" width="6" height="6" fill="#1e293b"/>
-                      <rect x="67" y="42" width="6" height="6" fill="#1e293b"/>
-                      <rect x="77" y="52" width="6" height="6" fill="#1e293b"/>
-                      <rect x="87" y="42" width="6" height="6" fill="#1e293b"/>
-                      <rect x="67" y="67" width="6" height="6" fill="#1e293b"/>
-                      <rect x="77" y="77" width="6" height="6" fill="#1e293b"/>
-                      <rect x="87" y="87" width="6" height="6" fill="#1e293b"/>
-                      <rect x="67" y="87" width="6" height="6" fill="#1e293b"/>
-                      <rect x="52" y="67" width="6" height="6" fill="#1e293b"/>
-                      <rect x="42" y="87" width="6" height="6" fill="#1e293b"/>
-                    </svg>
-                  </div>
-                </div>
-
-                {/* App Store badges */}
-                <div className="absolute bottom-3 right-4 flex items-center gap-1.5">
-                  {/* Apple App Store */}
-                  <div className="flex items-center gap-1 bg-white rounded-md px-2 py-1 border border-slate-300">
-                    <svg viewBox="0 0 24 24" className="w-3 h-3 text-black fill-current">
-                      <path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.8-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z"/>
-                    </svg>
-                    <div className="flex flex-col">
-                      <span className="text-black text-[4px] leading-none">Download on the</span>
-                      <span className="text-black text-[7px] font-bold leading-tight">App Store</span>
-                    </div>
-                  </div>
-                  {/* Google Play */}
-                  <div className="flex items-center gap-1 bg-white rounded-md px-2 py-1 border border-slate-300">
-                    <svg viewBox="0 0 24 24" className="w-3 h-3 fill-current">
-                      <path d="M3.18 23.72c-.36-.18-.64-.46-.82-.82L13.41 12 2.36 1.1c.18-.36.46-.64.82-.82l12.34 7.18L3.18 23.72z" fill="#4285F4"/>
-                      <path d="M22.18 10.87L18.6 8.77 15.52 12l3.08 3.23 3.58-2.1c.74-.43.74-1.83 0-2.26z" fill="#FBBC04"/>
-                      <path d="M2.36 1.1L15.52 12l-3.08-3.23L3.18.28c-.36.18-.64.46-.82.82z" fill="#EA4335"/>
-                      <path d="M15.52 12L2.36 22.9c.18.36.46.64.82.82L18.6 15.23 15.52 12z" fill="#34A853"/>
-                    </svg>
-                    <div className="flex flex-col">
-                      <span className="text-black text-[4px] leading-none">GET IT ON</span>
-                      <span className="text-black text-[7px] font-bold leading-tight">Google Play</span>
-                    </div>
-                  </div>
-                </div>
+                    </React.Fragment>
+                  );
+                })}
               </div>
+            </div>
 
-              {activated ? (
-                <div className="space-y-3">
-                  <div className="w-full bg-green-500 text-white py-3 rounded-xl font-bold text-sm flex items-center justify-center gap-2">
-                    <CheckCircle2 size={16} />
-                    {t('sim_setup.sim_activated')}
+            {/* ── Step 1: SCAN ── */}
+            {activateStep === 'SCAN' && (
+              <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-5 mb-4">
+                <div className="flex justify-between items-start mb-4">
+                  <div>
+                    <h3 className="text-[15px] font-bold text-slate-900 mb-0.5">{t('sim_setup.bind_title')}</h3>
+                    <p className="text-[14px] text-slate-400">{t('sim_setup.bind_scan_desc')}</p>
                   </div>
-                  <button
-                    onClick={() => onSwitchToList()}
-                    className="w-full py-3.5 rounded-xl font-bold text-[15px] flex items-center justify-center gap-2 text-white active:scale-[0.98] transition-all"
-                    style={{ background: 'linear-gradient(135deg, #FF6600 0%, #FF8A3D 100%)', boxShadow: '0 4px 14px rgba(255,102,0,0.25)' }}
-                  >
-                    {t('sim_setup.go_to_my_sims')}
-                  </button>
-                  <button
-                    onClick={() => {
-                      setActivated(false);
-                      setIccidInput('');
-                      setActivationError('');
-                    }}
-                    className="w-full py-3 rounded-xl font-semibold text-sm text-slate-600 bg-slate-100 hover:bg-slate-200 active:scale-[0.98] transition-all flex items-center justify-center gap-2"
-                  >
-                    <ScanLine size={16} />
-                    {t('sim_setup.activate_another')}
+                  <div className="w-9 h-9 bg-orange-50 rounded-xl flex items-center justify-center shrink-0">
+                    <Smartphone size={18} className="text-brand-orange" />
+                  </div>
+                </div>
+
+                <div className="border-2 border-brand-orange rounded-xl h-14 flex items-center px-4 bg-white shadow-sm mb-4">
+                  <input
+                    type="text"
+                    value={iccidInput}
+                    onChange={(e) => setIccidInput(e.target.value.replace(/[^0-9]/g, ''))}
+                    placeholder="ICCID / EID Number"
+                    className="flex-1 h-full outline-none text-slate-900 font-semibold placeholder:text-slate-400 placeholder:font-normal bg-transparent text-[16px] tracking-wider"
+                    maxLength={22}
+                  />
+                  <button onClick={() => setScannerOpen(true)} className="p-2 -mr-2 text-slate-400 hover:text-brand-orange transition-colors">
+                    <ScanLine size={22} />
                   </button>
                 </div>
-              ) : (
+
+                {/* SIM card illustration */}
+                <div className="w-full rounded-2xl bg-white border border-slate-200 p-5 mb-4 relative overflow-hidden" style={{ aspectRatio: '1.6/1', boxShadow: '0 2px 12px rgba(0,0,0,0.04)' }}>
+                  <div className="absolute top-4 left-5 right-4 flex items-start justify-between">
+                    <img src="/evairsim-logo.png" alt="EvairSIM" className="h-14 object-contain" />
+                    <div className="flex flex-col items-center gap-1">
+                      <div className="relative flex flex-col items-center">
+                        <div className="absolute -inset-x-4 -inset-y-3 rounded-xl border-2 border-brand-orange" style={{ boxShadow: '0 0 8px rgba(255,102,0,0.15)' }} />
+                        <div className="flex gap-[1px]">
+                          {Array.from({ length: 45 }).map((_, i) => (
+                            <div key={i} className="bg-slate-800 rounded-[0.5px]" style={{ width: i % 3 === 0 ? 2 : i % 2 === 0 ? 1.5 : 1, height: 22, opacity: 0.35 + (i % 3) * 0.2 }} />
+                          ))}
+                        </div>
+                        <div className="h-[5px] w-28 rounded-full bg-slate-200 mt-1.5" />
+                      </div>
+                      <div className="flex items-center gap-1.5 mt-3">
+                        <div className="w-0 h-0 border-l-[5px] border-l-transparent border-r-[5px] border-r-transparent border-b-[7px] border-b-brand-orange" />
+                        <span className="text-[11px] font-extrabold text-brand-orange tracking-widest">{t('sim_setup.this_is_iccid')}</span>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="absolute top-[55%] -translate-y-1/2 left-5 w-12 h-10 rounded-lg bg-gradient-to-br from-amber-100 to-amber-200 border border-amber-300/60 flex items-center justify-center">
+                    <div className="w-8 h-6 rounded-sm border border-amber-300/80 bg-amber-50" />
+                  </div>
+                  <div className="absolute bottom-12 left-5 right-16 space-y-2.5">
+                    <div className="h-[5px] w-[75%] rounded-full" style={{ backgroundColor: '#e8ecf0' }} />
+                    <div className="h-[5px] w-[50%] rounded-full" style={{ backgroundColor: '#e8ecf0' }} />
+                  </div>
+                </div>
+
                 <button
                   onClick={async () => {
                     const trimmed = iccidInput.trim().replace(/\s/g, '');
                     if (!trimmed) return;
-
-                    if (!/^\d{18,22}$/.test(trimmed)) {
-                      setActivationError(t('sim_setup.iccid_error'));
+                    if (!/^\d{12,22}$/.test(trimmed)) {
+                      setActivationError(t('sim_setup.iccid_eid_error'));
                       return;
                     }
-
                     setActivating(true);
                     setActivationError('');
                     try {
                       const profile = await queryProfile(trimmed);
-
-                      setActivated(true);
-                      onAddCard?.(trimmed, profile);
+                      setProfileResult(profile);
+                      setActivateStep('CONFIRM');
                     } catch (err: any) {
-                      setActivationError(err.message || 'Could not verify this ICCID. Please check the number and try again.');
+                      setActivationError(err.message || t('sim_setup.verify_failed'));
                     } finally {
                       setActivating(false);
                     }
@@ -611,75 +559,170 @@ const PhysicalSimSetupView: React.FC<PhysicalSimSetupViewProps> = ({ onSwitchToS
                   }}
                 >
                   {activating ? (
-                    <><Loader2 size={18} className="animate-spin" /> {t('sim_setup.activating')}</>
+                    <><Loader2 size={18} className="animate-spin" /> {t('sim_setup.verifying')}</>
                   ) : (
-                    t('sim_setup.activate_sim_card')
+                    <><Search size={16} /> {t('sim_setup.verify_sim')}</>
                   )}
                 </button>
-              )}
 
-              {activationError && (
-                <div className="flex items-start gap-2 mt-3 bg-red-50 border border-red-100 rounded-xl px-3 py-2.5">
-                  <AlertCircle size={16} className="text-red-500 shrink-0 mt-0.5" />
-                  <p className="text-xs text-red-600">{activationError}</p>
+                {activationError && (
+                  <div className="flex items-start gap-2 mt-3 bg-red-50 border border-red-100 rounded-xl px-3 py-2.5">
+                    <AlertCircle size={16} className="text-red-500 shrink-0 mt-0.5" />
+                    <p className="text-xs text-red-600">{activationError}</p>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* ── Step 2: CONFIRM (bind to account) ── */}
+            {activateStep === 'CONFIRM' && profileResult && (
+              <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-5 mb-4">
+                <div className="flex items-center gap-3 mb-4">
+                  <div className="w-10 h-10 rounded-xl bg-green-50 flex items-center justify-center shrink-0">
+                    <CheckCircle2 size={20} className="text-green-600" />
+                  </div>
+                  <div>
+                    <h3 className="text-[15px] font-bold text-slate-900">{t('sim_setup.profile_found')}</h3>
+                    <p className="text-[13px] text-slate-400">{t('sim_setup.bind_confirm_desc')}</p>
+                  </div>
                 </div>
-              )}
-            </div>
 
-            <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-5 mb-4">
-              <h3 className="text-[15px] font-bold text-slate-900 mb-1">Activation Guide</h3>
-              <p className="text-[14px] text-slate-400 mb-5">Follow these steps to activate your EvairSIM card</p>
-              <div className="space-y-5">
-                {activationSteps.map((step) => {
-                  const Icon = step.icon;
-                  return (
-                    <div key={step.step} className="flex gap-4">
-                      <div className="w-9 h-9 rounded-xl bg-orange-50 flex items-center justify-center shrink-0">
-                        <Icon size={18} className="text-brand-orange" />
-                      </div>
-                      <div className="min-w-0 pt-0.5">
-                        <p className="text-[15px] font-bold text-slate-900">
-                          <span className="text-brand-orange mr-1.5">Step {step.step}</span>{step.title}
-                        </p>
-                        <p className="text-[14px] text-slate-500 leading-relaxed mt-1">{step.desc}</p>
-                      </div>
+                <div className="bg-slate-50 rounded-xl p-4 space-y-3 mb-4">
+                  <div className="flex justify-between">
+                    <span className="text-[13px] text-slate-500">ICCID</span>
+                    <span className="text-[13px] font-bold text-slate-900 font-mono">{profileResult.iccid}</span>
+                  </div>
+                  {profileResult.packageName && (
+                    <div className="flex justify-between">
+                      <span className="text-[13px] text-slate-500">{t('sim_setup.package_label')}</span>
+                      <span className="text-[13px] font-bold text-slate-900">{profileResult.packageName}</span>
                     </div>
-                  );
-                })}
-              </div>
-            </div>
+                  )}
+                  {profileResult.totalVolume > 0 && (
+                    <div className="flex justify-between">
+                      <span className="text-[13px] text-slate-500">{t('sim_setup.data_label')}</span>
+                      <span className="text-[13px] font-bold text-slate-900">
+                        {(profileResult.totalVolume / (1024 * 1024 * 1024)).toFixed(profileResult.totalVolume >= 1073741824 ? 0 : 1)} GB
+                      </span>
+                    </div>
+                  )}
+                  {profileResult.totalDuration > 0 && (
+                    <div className="flex justify-between">
+                      <span className="text-[13px] text-slate-500">{t('sim_setup.validity_label')}</span>
+                      <span className="text-[13px] font-bold text-slate-900">{profileResult.totalDuration} {t('sim_setup.days_label')}</span>
+                    </div>
+                  )}
+                  <div className="flex justify-between">
+                    <span className="text-[13px] text-slate-500">{t('sim_setup.profile_status')}</span>
+                    <span className="text-[13px] font-bold px-2 py-0.5 rounded-lg bg-green-50 text-green-700">
+                      {t('sim_setup.status_ready')}
+                    </span>
+                  </div>
+                </div>
 
-            <div className="mb-4 space-y-2.5">
-              <p className="text-[13px] font-semibold text-slate-400 px-1 mb-1">Troubleshooting</p>
+                <div className="bg-green-50 border border-green-100 rounded-xl px-4 py-3 mb-4">
+                  <p className="text-[13px] text-green-800 font-medium">
+                    {t('sim_setup.bind_info')}
+                  </p>
+                </div>
 
-              <div className="rounded-xl overflow-hidden border border-orange-100" style={{ background: 'linear-gradient(135deg, #FFF7ED 0%, #FFF1E6 100%)' }}>
-                <div className="flex items-center gap-3 px-4 py-3">
-                  <div className="w-1 h-8 rounded-full bg-brand-orange shrink-0" />
-                  <p className="text-[14px] text-slate-700 leading-snug">Ensure your device is <strong className="text-slate-900">unlocked</strong> — not locked to a carrier.</p>
+                {!isLoggedIn && (
+                  <div className="bg-amber-50 border border-amber-100 rounded-xl px-4 py-3 mb-4 flex items-start gap-2.5">
+                    <AlertCircle size={16} className="text-amber-600 shrink-0 mt-0.5" />
+                    <p className="text-[13px] text-amber-800 font-medium">
+                      {t('sim_setup.login_to_bind')}
+                    </p>
+                  </div>
+                )}
+
+                <div className="space-y-2.5">
+                  <button
+                    onClick={() => {
+                      if (!isLoggedIn) {
+                        onLoginRequest?.();
+                        return;
+                      }
+                      onAddCard?.(profileResult.iccid, profileResult);
+                      setActivateStep('DONE');
+                    }}
+                    className="w-full py-4 rounded-xl font-bold text-[15px] flex items-center justify-center gap-2 text-white active:scale-[0.98] transition-all"
+                    style={{ background: 'linear-gradient(135deg, #FF6600 0%, #FF8A3D 100%)', boxShadow: '0 4px 14px rgba(255,102,0,0.25)' }}
+                  >
+                    <UserPlus size={16} /> {isLoggedIn ? t('sim_setup.bind_to_account') : t('sim_setup.sign_in_to_bind')}
+                  </button>
+                  <button
+                    onClick={() => { setActivateStep('SCAN'); setProfileResult(null); setActivationError(''); }}
+                    className="w-full py-3 rounded-xl font-semibold text-sm text-slate-600 bg-slate-100 hover:bg-slate-200 active:scale-[0.98] transition-all"
+                  >
+                    {t('sim_setup.back_to_scan')}
+                  </button>
                 </div>
               </div>
+            )}
 
-              <div className="rounded-xl overflow-hidden border border-orange-100" style={{ background: 'linear-gradient(135deg, #FFF7ED 0%, #FFF1E6 100%)' }}>
-                <div className="flex items-center gap-3 px-4 py-3">
-                  <div className="w-1 h-8 rounded-full bg-brand-orange shrink-0" />
-                  <p className="text-[14px] text-slate-700 leading-snug"><strong className="text-slate-900">Restart your device</strong> if network doesn't appear in 2 min.</p>
+            {/* ── Step 3: DONE ── */}
+            {activateStep === 'DONE' && (
+              <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-5 mb-4">
+                <div className="flex flex-col items-center text-center py-4">
+                  <div className="w-16 h-16 rounded-full bg-green-50 flex items-center justify-center mb-4">
+                    <CheckCircle2 size={32} className="text-green-600" />
+                  </div>
+                  <h3 className="text-[18px] font-bold text-slate-900 mb-1">{t('sim_setup.bind_success')}</h3>
+                  <p className="text-[14px] text-slate-500 mb-1">
+                    {profileResult?.packageName || 'eSIM Profile'}
+                  </p>
+                  {profileResult && profileResult.totalVolume > 0 && (
+                    <p className="text-[13px] text-slate-400">
+                      {(profileResult.totalVolume / (1024 * 1024 * 1024)).toFixed(profileResult.totalVolume >= 1073741824 ? 0 : 1)} GB &middot; {profileResult.totalDuration} {t('sim_setup.days_label')}
+                    </p>
+                  )}
+                </div>
+
+                <div className="space-y-2.5 mt-2">
+                  <button
+                    onClick={() => onSwitchToList()}
+                    className="w-full py-3.5 rounded-xl font-bold text-[15px] flex items-center justify-center gap-2 text-white active:scale-[0.98] transition-all"
+                    style={{ background: 'linear-gradient(135deg, #FF6600 0%, #FF8A3D 100%)', boxShadow: '0 4px 14px rgba(255,102,0,0.25)' }}
+                  >
+                    {t('sim_setup.go_to_my_sims')}
+                  </button>
+                  <button
+                    onClick={() => {
+                      setActivateStep('SCAN');
+                      setIccidInput('');
+                      setProfileResult(null);
+                      setActivationError('');
+                    }}
+                    className="w-full py-3 rounded-xl font-semibold text-sm text-slate-600 bg-slate-100 hover:bg-slate-200 active:scale-[0.98] transition-all flex items-center justify-center gap-2"
+                  >
+                    <ScanLine size={16} />
+                    {t('sim_setup.add_another')}
+                  </button>
+                </div>
+
+                {/* Setup tips */}
+                <div className="mt-5 pt-4 border-t border-slate-100">
+                  <p className="text-[13px] font-bold text-slate-900 mb-3">{t('sim_setup.next_steps')}</p>
+                  <div className="space-y-3">
+                    {activationSteps.map((step) => {
+                      const Icon = step.icon;
+                      return (
+                        <div key={step.step} className="flex gap-3">
+                          <div className="w-7 h-7 rounded-lg bg-orange-50 flex items-center justify-center shrink-0">
+                            <Icon size={14} className="text-brand-orange" />
+                          </div>
+                          <div className="min-w-0">
+                            <p className="text-[13px] font-bold text-slate-900">{step.title}</p>
+                            <p className="text-[12px] text-slate-500 leading-relaxed">{step.desc}</p>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
                 </div>
               </div>
+            )}
 
-              <div className="rounded-xl overflow-hidden border border-orange-100" style={{ background: 'linear-gradient(135deg, #FFF7ED 0%, #FFF1E6 100%)' }}>
-                <div className="flex items-center gap-3 px-4 py-3">
-                  <div className="w-1 h-8 rounded-full bg-brand-orange shrink-0" />
-                  <p className="text-[14px] text-slate-700 leading-snug">Turn on <strong className="text-slate-900">Data Roaming</strong> in your device settings.</p>
-                </div>
-              </div>
-
-              <div className="rounded-xl overflow-hidden border border-orange-100" style={{ background: 'linear-gradient(135deg, #FFF7ED 0%, #FFF1E6 100%)' }}>
-                <div className="flex items-center gap-3 px-4 py-3">
-                  <div className="w-1 h-8 rounded-full bg-brand-orange shrink-0" />
-                  <p className="text-[14px] text-slate-700 leading-snug">Need help? <span className="text-brand-orange font-semibold">service@evairdigital.com</span></p>
-                </div>
-              </div>
-            </div>
           </div>
         )}
 

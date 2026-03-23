@@ -27,6 +27,7 @@ const ENDPOINTS = {
   ESIM_BY_ICCID: (iccid: string) => `/h5/esim/${iccid}`,
   ESIM_USAGE: (iccid: string) => `/h5/esim/${iccid}/usage`,
   ESIM_TOPUP: (iccid: string) => `/h5/esim/${iccid}/topup`,
+  ESIM_ENABLE: (iccid: string) => `/h5/esim/${iccid}/enable`,
 } as const;
 
 // ─── 套餐服务 ────────────────────────────────────────────────────────────
@@ -121,6 +122,15 @@ export const esimService = {
    */
   async topup(iccid: string, data: TopupRequest): Promise<TopupResponse> {
     return post<TopupResponse>(ENDPOINTS.ESIM_TOPUP(iccid), data);
+  },
+
+  /**
+   * 启用 eSIM Profile (LPA enable)
+   * 后端调用 CSM SM-DP+ 平台远程启用 profile
+   * @param iccid eSIM ICCID
+   */
+  async enableProfile(iccid: string): Promise<{ status: string }> {
+    return post<{ status: string }>(ENDPOINTS.ESIM_ENABLE(iccid), {});
   },
 
   // ============ 辅助方法 ============

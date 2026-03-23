@@ -100,6 +100,8 @@ const ProductTab: React.FC<ProductTabProps> = ({
              }}
              initialTab={setupTab}
              trackingNumber={setupTrackingNumber}
+             isLoggedIn={isLoggedIn}
+             onLoginRequest={onLoginRequest}
           />
        )}
 

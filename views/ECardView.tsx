@@ -4,7 +4,7 @@ import { CreditCard, Smartphone, Monitor, ChevronRight, ChevronDown, CheckCircle
 import { ECard, ECardProfile } from '../types';
 import { MOCK_ECARDS } from '../constants';
 import FlagIcon from '../components/FlagIcon';
-import { formatGB } from '../services/esimApi';
+import { formatGB } from '../services/dataService';
 
 interface ECardViewProps {
   onBack: () => void;

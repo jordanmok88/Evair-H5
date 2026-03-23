@@ -218,6 +218,7 @@ export async function queryProfile(iccid: string): Promise<EsimProfileResult> {
     packageCode: esim.packageList?.[0]?.packageCode || '',
     packageName: esim.packageList?.[0]?.packageName || '',
     status: esim.smdpStatus || esim.esimStatus || '',
+    smdpStatus: esim.smdpStatus || '',
     expiredTime: esim.expiredTime || '',
     totalVolume: esim.totalVolume || 0,
     usedVolume: 0,
