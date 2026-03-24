@@ -1,0 +1,44 @@
+---
+description: Key business and technical decisions made during development
+alwaysApply: true
+---
+
+# Business & Technical Decisions Log
+
+## Physical SIM Strategy
+- **Only US data plans** sold as physical SIM cards (for now)
+- Uses **eUICC** technology — Red Tea eSIM profiles stored in physical SIM cards
+- Factory (CSM) pre-writes and pre-enables profiles
+- Activation in H5 = **binding only** (associates card with customer account)
+- Login required before binding
+
+## Billing Problem (Red Tea)
+- Red Tea charges when profile is **enabled**, not when data is first used
+- This means factory-enabled cards lose validity days during shipping
+- **Decision**: Push Red Tea to implement "charge on first data use"
+- **Status**: Waiting for Red Tea to update their system
+
+## Future Native App
+- Plan to upgrade H5 to native Android app
+- Will integrate LPA via OMAPI for direct eUICC profile management
+- CSM needs to pre-write app signing certificate hash into ARA-M access rules on chips
+- Reference implementations: OpenEUICC / EasyEUICC
+
+## Data Service Layer (留口子)
+- All API calls go through `services/dataService.ts`
+- Currently uses supplier API (Red Tea) directly
+- Backend API at `evair.zhhwxt.cn` exists but only has 15 packages (needs 2,489)
+- When backend is ready, flip one config flag in dataService.ts to switch
+
+## Features Removed
+- **Bottom navigation bar**: Removed — blocked too much screen area on mobile
+
+## i18n Policy
+- Every user-facing string MUST use `t()` translation keys
+- Three languages: English (en), Chinese (zh), Spanish (es)
+- Chinese translations are for both customers and internal staff communications
+
+## Marketplace Sales
+- SIM cards also sold on Amazon.com and Temu.com
+- Marketplace customers download H5 app to activate/bind their cards
+- Same binding flow works for both in-app and marketplace purchases

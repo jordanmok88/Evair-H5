@@ -1,46 +1,47 @@
 ---
-description: ESIMAccess API integration details and SIM card activation flow
-globs: services/esimApi.ts,views/ShopView.tsx,views/MySimsView.tsx,views/PhysicalSimSetupView.tsx,netlify/functions/**
+description: API integration, data service layer, and SIM activation flow
+globs: services/**,views/ShopView.tsx,views/MySimsView.tsx,views/PhysicalSimSetupView.tsx,netlify/functions/**
 alwaysApply: false
 ---
 
-# ESIMAccess (Red Tea) API
+# API Architecture
 
-## API Proxy
-All API calls go through Netlify function proxy at `/.netlify/functions/esim-proxy` to keep credentials server-side.
+## Unified Data Service Layer (留口子)
+All components MUST import from `services/dataService.ts`, NOT directly from `esimApi.ts`.
+This abstraction allows switching from supplier API to backend API with a single config flag.
 
-## Environment Variables (on Netlify)
-- `ESIM_ACCESS_CODE` — supplier access code
-- `ESIM_SECRET` — supplier secret key
-- `RESEND_API_KEY` — Resend email API key
-- `RESEND_FROM` — email sender, set to `EvairSIM <service@evairdigital.com>`
+```
+Component → dataService.ts → esimApi.ts (supplier, current)
+                            → api/esim.ts (backend, future)
+```
 
-## Key API Endpoints (in `services/esimApi.ts`)
-- `fetchPackages()` — GET `/package/list` — fetches all available eSIM plans
-- `orderEsim(packageCode)` — POST `/esim/order` — creates new eSIM order, returns QR code + LPA
-- `queryProfile(iccid)` — POST `/esim/query` — looks up eSIM profile by ICCID (requires `pager: { pageNum: 1, pageSize: 20 }`)
-- `topUp(iccid, packageCode)` — POST `/esim/topup` — adds data plan to existing eSIM
-- `queryUsage(iccid)` — POST `/esim/usage` — checks data usage
+## Supplier API (ESIMAccess / Red Tea)
+Proxied through `/.netlify/functions/esim-proxy` to keep credentials server-side.
 
-## SIM Card Activation Flow
-1. Customer enters ICCID (18-22 digits) or scans barcode
-2. `queryProfile(iccid)` validates ICCID exists in ESIMAccess system
-3. `packageName` from response is checked — must start with "United States" / "USA" / "US "
-4. If valid, SIM is added to user's list with data from the profile (totalVolume, totalDuration)
-5. Top-up uses the same `topUp()` API call as eSIM
+Key functions in `services/esimApi.ts`:
+- `fetchPackages()` — all available eSIM plans
+- `orderEsim(packageCode)` — create order, returns QR + LPA
+- `queryProfile(iccid)` — lookup by ICCID (returns `smdpStatus`)
+- `topUp(iccid, packageCode)` — add data to existing eSIM
+- `queryUsage(iccid)` — check data consumption
 
-## eSIM Purchase Flow
-1. Customer selects plan in ShopView
-2. `orderEsim(packageCode)` creates the order
-3. QR code + LPA details displayed in-app
-4. `send-esim-email.mjs` Netlify function sends confirmation email via Resend API
-5. Email includes: logo image, QR code, SM-DP+ address, activation code, LPA string, install instructions
+## Backend API (future, `evair.zhhwxt.cn`)
+Client in `services/api/esim.ts`. Currently only 15 packages (needs sync to 2,489).
+Backend team requirements documented in `docs/API_INTEGRATION_PLAN.md`:
+- Price unit: cents (分), volume: bytes, need `duration` + `duration_unit` fields
 
-## After Top-Up
-- `onUpdateSim` callback flows from App.tsx → ProductTab → MySimsView
-- After successful `topUp()`, `dataTotalGB` is optimistically updated in state
+## Physical SIM Card Binding Flow (3 steps)
+1. **SCAN**: Customer enters ICCID (18-22 digits) or scans barcode
+2. **CONFIRM**: Profile verified via `queryProfile()`. Must be logged in to bind (login gate). Shows profile details + "Add to My Account" button
+3. **DONE**: Success — navigate to My SIMs or add another
 
-## Important: queryProfile Response Handling
-- API may return `success: true` with empty `esimList` for non-existent ICCIDs
-- Code explicitly checks `if (!list || list.length === 0)` and throws error
-- Returns `packageName` from `esim.packageList?.[0]?.packageName`
+## eUICC Technical Context
+- Physical SIMs use eUICC technology with Red Tea eSIM profiles pre-loaded
+- Profiles are pre-enabled by factory (CSM)
+- H5 web app CANNOT directly call LPA (hardware limitation)
+- Waiting for Red Tea to implement "charge on first data use" billing (currently charges on profile enable)
+- Future: Native Android app with LPA/OMAPI integration, ARA-M certificates from CSM
+
+## Environment Variables (Netlify)
+- `ESIM_ACCESS_CODE`, `ESIM_SECRET` — supplier credentials
+- `RESEND_API_KEY`, `RESEND_FROM` — email service
