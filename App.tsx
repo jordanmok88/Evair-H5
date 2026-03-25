@@ -106,8 +106,8 @@ function CustomerApp() {
     iccid: string;
     type: 'ESIM' | 'PHYSICAL';
     packageName: string;
-    countryCode: string;
-    status: 'ACTIVE' | 'EXPIRED' | 'PENDING';
+    countryCode: string | null;
+    status: 'ACTIVE' | 'EXPIRED' | 'PENDING' | 'INACTIVE';
     totalVolume: number;
     usedVolume: number;
     expiredTime: string;
@@ -116,7 +116,7 @@ function CustomerApp() {
     const totalGB = userSim.totalVolume / (1024 * 1024 * 1024);
     const usedGB = userSim.usedVolume / (1024 * 1024 * 1024);
 
-    // 转换国家码到国家信息
+    // 国家码到信息映射
     const countryCodeToInfo: Record<string, { name: string; flag: string }> = {
       'US': { name: 'United States', flag: '🇺🇸' },
       'CN': { name: 'China', flag: '🇨🇳' },
@@ -150,19 +150,40 @@ function CustomerApp() {
       'NZ': { name: 'New Zealand', flag: '🇳🇿' },
     };
 
-    const countryInfo = countryCodeToInfo[userSim.countryCode] || {
-      name: userSim.countryCode,
-      flag: '🌍',
+    // 从 packageName 提取国家信息（如 "United States 1GB 7Days" -> "US"）
+    const extractCountryFromPackageName = (packageName: string): { code: string; name: string; flag: string } => {
+      // 匹配包名开头可能是国家名的地方
+      for (const [code, info] of Object.entries(countryCodeToInfo)) {
+        if (packageName.toLowerCase().startsWith(info.name.toLowerCase()) ||
+            packageName.toLowerCase().startsWith(code.toLowerCase())) {
+          return { code, ...info };
+        }
+      }
+      return { code: '', name: 'Unknown', flag: '🌍' };
+    };
+
+    // 优先使用 countryCode，否则从 packageName 提取
+    const countryCode = userSim.countryCode ||
+      (userSim.packageName.startsWith('United States') || userSim.packageName.startsWith('USA') ? 'US' : '');
+    const countryInfo = countryCode && countryCodeToInfo[countryCode]
+      ? { code: countryCode, ...countryCodeToInfo[countryCode] }
+      : extractCountryFromPackageName(userSim.packageName);
+
+    // 转换状态：inactive/INACTIVE -> PENDING_ACTIVATION
+    const mapStatus = (status: string): ActiveSim['status'] => {
+      const upper = status.toUpperCase();
+      if (upper === 'PENDING' || upper === 'INACTIVE') return 'PENDING_ACTIVATION';
+      return status as ActiveSim['status'];
     };
 
     return {
       id: userSim.id,
       iccid: userSim.iccid,
       country: {
-        id: userSim.countryCode.toLowerCase(),
+        id: countryInfo.code.toLowerCase(),
         name: countryInfo.name,
         flag: countryInfo.flag,
-        countryCode: userSim.countryCode,
+        countryCode: countryInfo.code,
         region: '',
         startPrice: 0,
         networkCount: 0,
@@ -185,7 +206,7 @@ function CustomerApp() {
       expiryDate: userSim.expiredTime,
       dataTotalGB: Math.round(totalGB * 10) / 10,
       dataUsedGB: Math.round(usedGB * 10) / 10,
-      status: userSim.status === 'PENDING' ? 'PENDING_ACTIVATION' : userSim.status,
+      status: mapStatus(userSim.status),
     };
   };
 

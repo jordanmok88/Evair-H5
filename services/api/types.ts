@@ -149,8 +149,8 @@ export interface UserSimDto {
   iccid: string;
   type: 'ESIM' | 'PHYSICAL';
   packageName: string;
-  countryCode: string;
-  status: 'ACTIVE' | 'EXPIRED' | 'PENDING';
+  countryCode: string | null;
+  status: 'ACTIVE' | 'EXPIRED' | 'PENDING' | 'INACTIVE';
   totalVolume: number;
   usedVolume: number;
   expiredTime: string;

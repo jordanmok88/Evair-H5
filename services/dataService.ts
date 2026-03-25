@@ -4,8 +4,7 @@
  * Abstracts the data source so all views import from here instead of
  * directly from esimApi (supplier) or services/api (backend).
  *
- * When the backend finishes syncing all 2,489 packages, flip
- * USE_BACKEND_API to true -- no other files need to change.
+ * USE_BACKEND_API is read from .env.local VITE_USE_BACKEND_API.
  */
 
 import type {
@@ -52,9 +51,10 @@ import {
 import { packageService, esimService } from './api';
 
 // =====================================================================
-// SWITCH FLAG: flip to true when backend has all packages synced
+// SWITCH FLAG: reads from .env.local VITE_USE_BACKEND_API
+// Defaults to false, set to true when backend has all packages synced
 // =====================================================================
-export const USE_BACKEND_API = false;
+export const USE_BACKEND_API = import.meta.env.VITE_USE_BACKEND_API === 'true';
 
 // ─── Data normalization: backend PackageDto → supplier EsimPackage ───
 
