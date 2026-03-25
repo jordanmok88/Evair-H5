@@ -3,8 +3,9 @@ import { useTranslation } from 'react-i18next';
 import { Wifi, Phone, Zap, ChevronDown, CheckCircle2, QrCode, Copy, X, Calendar, Clock, SignalHigh, Smartphone, RefreshCw, Plus, ShoppingBag, Settings, MoreHorizontal, Trash2, Check, AlertTriangle, Loader2, Globe, Database, Truck, ScanLine, Package, MapPin, ArrowLeft } from 'lucide-react';
 import { ActiveSim, Tab, SimType, EsimPackage } from '../types';
 import FlagIcon from '../components/FlagIcon';
+import StripePaymentModal from '../components/StripePaymentModal';
 import { CARRIER_MAP } from '../constants';
-import { topUp, fetchTopUpPackages, fetchPackages, checkDataUsage, formatVolume, formatPrice, retailPrice, formatGB, queryProfile, mapRedTeaStatus } from '../services/dataService';
+import { topUp, fetchTopUpPackages, fetchPackages, checkDataUsage, formatVolume, formatPrice, retailPrice, formatGB, queryProfile, mapRedTeaStatus, USE_BACKEND_API } from '../services/dataService';
 import { useEdgeSwipeBack } from '../hooks/useEdgeSwipeBack';
 
 interface MySimsViewProps {
@@ -57,6 +58,14 @@ const MySimsView: React.FC<MySimsViewProps> = ({ activeSims, onNavigate, filterT
   const [topUpProcessing, setTopUpProcessing] = useState(false);
   const [topUpSuccess, setTopUpSuccess] = useState(false);
   const [refreshingSimId, setRefreshingSimId] = useState<string | null>(null);
+
+  // Stripe payment states (simplified)
+  const [paymentModalOpen, setPaymentModalOpen] = useState(false);
+  const [rechargeConfig, setRechargeConfig] = useState<{
+    iccid: string;
+    packageCode: string;
+    amount: number;
+  } | null>(null);
 
   const currentSim = filteredSims.find(s => s.id === selectedSimId) || filteredSims[0];
 
@@ -831,12 +840,12 @@ const MySimsView: React.FC<MySimsViewProps> = ({ activeSims, onNavigate, filterT
           const carrierInfo = CARRIER_MAP[currentSim.country.countryCode] || { carrier: 'Carrier', network: '4G' };
           const iccid = resolveIccid(currentSim);
 
-          const handleTopUpPurchase = async () => {
+          // 非后端模式：直接调用供应商 API（旧流程）
+          const handleTopUpPurchaseLegacy = async () => {
             if (!selectedTopUp) return;
             setTopUpProcessing(true);
             try {
               const iccid = resolveIccid(currentSim);
-
               const txnId = `topup_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
               await topUp({
                 iccid,
@@ -863,6 +872,18 @@ const MySimsView: React.FC<MySimsViewProps> = ({ activeSims, onNavigate, filterT
             } finally {
               setTopUpProcessing(false);
             }
+          };
+
+          // 后端模式：打开 Stripe 支付弹窗（组件内部处理 topup + pay 请求）
+          const handleTopUpPurchase = () => {
+            if (!selectedTopUp) return;
+            // 设置充值配置，组件会自动创建订单和支付会话
+            setRechargeConfig({
+              iccid,
+              packageCode: selectedTopUp.packageCode,
+              amount: retailPrice(selectedTopUp.price),
+            });
+            setPaymentModalOpen(true);
           };
 
           const filtered = topUpPackages.filter(pkg => !(pkg.durationUnit === 'DAY' && (pkg.duration === 1 || pkg.duration === 7 || pkg.duration === 15 || pkg.duration === 365)));
@@ -979,7 +1000,7 @@ const MySimsView: React.FC<MySimsViewProps> = ({ activeSims, onNavigate, filterT
                   {/* Sticky purchase button */}
                   <div className="shrink-0 px-4 pb-6 pt-3 border-t border-slate-100 bg-white">
                     <button
-                      onClick={selectedTopUp ? handleTopUpPurchase : closeModal}
+                      onClick={selectedTopUp ? (USE_BACKEND_API ? handleTopUpPurchase : handleTopUpPurchaseLegacy) : closeModal}
                       disabled={topUpProcessing || !selectedTopUp}
                       className="w-full bg-brand-orange text-white py-4 rounded-2xl font-bold shadow-lg shadow-orange-500/20 active:scale-[0.98] transition-transform flex items-center justify-center gap-2 disabled:opacity-50"
                     >
@@ -998,6 +1019,49 @@ const MySimsView: React.FC<MySimsViewProps> = ({ activeSims, onNavigate, filterT
           );
       })()}
 
+
+      {/* Stripe Payment Modal */}
+      <StripePaymentModal
+        isOpen={paymentModalOpen}
+        onClose={() => {
+          setPaymentModalOpen(false);
+          setRechargeConfig(null);
+        }}
+        amount={rechargeConfig?.amount || 0}
+        items={selectedTopUp ? [{
+          label: formatVolume(selectedTopUp.volume),
+          amount: retailPrice(selectedTopUp.price),
+        }] : []}
+        rechargeConfig={rechargeConfig || undefined}
+        onSuccess={() => {
+          // 支付成功后更新 SIM 数据
+          const addedGB = selectedTopUp ? selectedTopUp.volume / (1024 * 1024 * 1024) : 0;
+          onUpdateSim?.(currentSim?.id || '', {
+            dataTotalGB: (currentSim?.dataTotalGB || 0) + addedGB,
+            status: 'ACTIVE',
+          });
+          // 刷新 SIM 状态
+          if (currentSim) {
+            handleRefreshStatus(currentSim);
+          }
+        }}
+        onComplete={(success) => {
+          // 流程完成后关闭充值选择弹窗
+          setPaymentModalOpen(false);
+          setRechargeConfig(null);
+          setIsRechargeModalOpen(false);
+          setSelectedTopUp(null);
+          setTopUpPackages([]);
+        }}
+        onBack={() => {
+          // 返回充值选择页面
+          setPaymentModalOpen(false);
+          setRechargeConfig(null);
+          setIsRechargeModalOpen(true);
+        }}
+        title="Complete Payment"
+        successMessage="Top-up Successful!"
+      />
 
       {/* Delete Confirmation Modal */}
       {deleteConfirmSimId && (

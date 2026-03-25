@@ -12,6 +12,9 @@ import type {
   EsimUsageParams,
   TopupRequest,
   TopupResponse,
+  CreatePaymentSessionRequest,
+  CreatePaymentSessionResponse,
+  RechargeRecordDetailResponse,
 } from './types';
 
 // ─── API 端点 ────────────────────────────────────────────────────────────
@@ -26,8 +29,14 @@ const ENDPOINTS = {
   // eSIM
   ESIM_BY_ICCID: (iccid: string) => `/h5/esim/${iccid}`,
   ESIM_USAGE: (iccid: string) => `/h5/esim/${iccid}/usage`,
-  ESIM_TOPUP: (iccid: string) => `/h5/esim/${iccid}/topup`,
   ESIM_ENABLE: (iccid: string) => `/h5/esim/${iccid}/enable`,
+
+  // 充值订单
+  TOPUP_ORDERS: '/h5/orders/topup',
+
+  // 充值支付
+  RECHARGE_PAY: (rechargeId: number) => `/h5/recharge/${rechargeId}/pay`,
+  RECHARGE_DETAIL: (rechargeId: number) => `/h5/recharge/${rechargeId}`,
 } as const;
 
 // ─── 套餐服务 ────────────────────────────────────────────────────────────
@@ -116,12 +125,31 @@ export const esimService = {
   },
 
   /**
-   * eSIM 充值
-   * @param iccid eSIM ICCID
-   * @param data 充值套餐信息
+   * 创建充值订单
+   * POST /h5/orders/topup
+   * @param data 充值参数
    */
-  async topup(iccid: string, data: TopupRequest): Promise<TopupResponse> {
-    return post<TopupResponse>(ENDPOINTS.ESIM_TOPUP(iccid), data);
+  async topup(data: TopupRequest): Promise<TopupResponse> {
+    return post<TopupResponse>(ENDPOINTS.TOPUP_ORDERS, data);
+  },
+
+  /**
+   * 创建充值支付会话
+   * POST /h5/recharge/{recharge_id}/pay
+   * @param rechargeId 充值记录 ID
+   * @param data 支付参数
+   */
+  async createRechargePayment(rechargeId: number, data?: CreatePaymentSessionRequest): Promise<CreatePaymentSessionResponse> {
+    return post<CreatePaymentSessionResponse>(ENDPOINTS.RECHARGE_PAY(rechargeId), data || {});
+  },
+
+  /**
+   * 查询充值记录详情
+   * GET /h5/recharge/{recharge_id}
+   * @param rechargeId 充值记录 ID
+   */
+  async getRechargeDetail(rechargeId: number): Promise<RechargeRecordDetailResponse> {
+    return get<RechargeRecordDetailResponse>(ENDPOINTS.RECHARGE_DETAIL(rechargeId));
   },
 
   /**

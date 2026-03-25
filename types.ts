@@ -217,6 +217,7 @@ export interface TopUpRequest {
   packageCode: string;
   transactionId: string;
   amount: number;
+  supplierType?: 'esimaccess' | 'pccw';
 }
 
 export interface TopUpResult {

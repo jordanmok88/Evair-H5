@@ -126,8 +126,29 @@ export async function orderEsim(req: EsimOrderRequest): Promise<EsimOrderResult>
 // ─── Top Up ──────────────────────────────────────────────────────────
 
 export async function topUp(req: TopUpRequest): Promise<TopUpResult> {
-  // Top-up goes through supplier (backend top-up flow TBD)
-  return supplierTopUp(req);
+  if (!USE_BACKEND_API) {
+    return supplierTopUp(req);
+  }
+
+  try {
+    const resp = await esimService.topup({
+      iccid: req.iccid,
+      packageCode: req.packageCode,
+      amount: req.amount,
+      supplierType: req.supplierType || 'esimaccess',
+    });
+    return {
+      transactionId: resp.orderId,
+      iccid: resp.iccid,
+      expiredTime: '', // 后端未返回过期时间，充值成功后由后端更新
+      totalVolume: 0,  // 后端未返回总量，充值成功后由后端更新
+      totalDuration: 30,
+      orderUsage: 0,
+    };
+  } catch (err) {
+    console.error('Backend topup failed, falling back to supplier:', err);
+    return supplierTopUp(req);
+  }
 }
 
 // ─── Data Usage ──────────────────────────────────────────────────────
