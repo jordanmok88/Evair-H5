@@ -183,7 +183,7 @@ const StripePaymentModal: React.FC<StripePaymentModalProps> = ({
     return () => {
       cancelled = true;
     };
-  }, [isOpen, rechargeConfig, effectiveClientSecret, internalStatus, onError]);
+  }, [isOpen, rechargeConfig, effectiveClientSecret, onError]);
 
   // 初始化 Stripe Card Element
   useEffect(() => {
@@ -294,7 +294,7 @@ const StripePaymentModal: React.FC<StripePaymentModalProps> = ({
         // 如果有 rechargeId，轮询充值状态直到完成
         if (effectiveRechargeId) {
           setInternalStatus('processing');
-          const pollResult = await pollRechargeStatus(effectiveRechargeId);
+          const pollResult = await pollRechargeStatus(effectiveRechargeId, 30, 2000);
           if (pollResult.success) {
             setPaymentStatus('success');
             onSuccess?.(effectiveRechargeId);
@@ -594,6 +594,21 @@ const StripePaymentModal: React.FC<StripePaymentModalProps> = ({
                     <p style={{ fontSize: 12, color: '#ef4444', marginTop: 8 }}>
                       {cardError}
                     </p>
+                  )}
+
+                  {import.meta.env.DEV && (
+                    <div style={{
+                      marginTop: 8,
+                      padding: '8px 12px',
+                      backgroundColor: '#f0fdf4',
+                      border: '1px solid #bbf7d0',
+                      borderRadius: 8,
+                      fontSize: 12,
+                      color: '#166534',
+                    }}>
+                      <strong>测试卡号：</strong>4242 4242 4242 4242<br/>
+                      有效期：12/30 | CVC：123 | 邮编：10001
+                    </div>
                   )}
                 </div>
 

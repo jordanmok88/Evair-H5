@@ -11,7 +11,7 @@ import ApiTestPage from './views/ApiTestPage';
 import { Tab, ActiveSim, SimType, User, AppNotification, EsimProfileResult } from './types';
 import { Lock } from 'lucide-react';
 import { MOCK_COUNTRIES, MOCK_PLANS_US, MOCK_ACTIVE_SIMS, MOCK_NOTIFICATIONS, CARRIER_MAP } from './constants';
-import { checkDataUsage, prefetchPackages, DEMO_MODE, mapRedTeaStatus } from './services/dataService';
+import { checkDataUsage, prefetchPackages, DEMO_MODE, mapRedTeaStatus, bindSim } from './services/dataService';
 import { supabaseConfigured, fetchNotifications } from './services/supabase';
 import { authService, userService, type UserDto } from './services/api';
 
@@ -212,13 +212,19 @@ function CustomerApp() {
 
   // 从后端获取用户 SIM 卡列表
   const fetchUserSims = useCallback(async () => {
-    if (!authService.isLoggedIn()) return;
+    if (!authService.isLoggedIn()) {
+      console.log('[fetchUserSims] Not logged in, skipping');
+      return;
+    }
     try {
+      console.log('[fetchUserSims] Fetching from API...');
       const response = await userService.getSims();
+      console.log('[fetchUserSims] API response:', response);
       const convertedSims = response.list.map(convertUserSimToActiveSim);
+      console.log('[fetchUserSims] Converted sims:', convertedSims);
       setServerSims(convertedSims);
     } catch (err) {
-      console.error('Failed to fetch user SIMs:', err);
+      console.error('[fetchUserSims] Failed:', err);
     }
   }, []);
 
@@ -404,13 +410,25 @@ function CustomerApp() {
 
   const handleDeleteSim = (simId: string) => {
     setActiveSims(prev => prev.filter(s => s.id !== simId));
+    setServerSims(prev => prev.filter(s => s.id !== simId));
+    // Re-fetch from server to ensure consistency
+    fetchUserSims();
   };
 
   const handleUpdateSim = useCallback((simId: string, updates: Partial<ActiveSim>) => {
     setActiveSims(prev => prev.map(s => s.id === simId ? { ...s, ...updates } : s));
   }, []);
 
-  const handleAddCard = (iccid: string, profile?: EsimProfileResult) => {
+  const handleAddCard = async (iccid: string, profile?: EsimProfileResult, activationCode?: string) => {
+    try {
+      console.log('[handleAddCard] Calling bindSim API with iccid:', iccid);
+      await bindSim(iccid, activationCode);
+      console.log('[handleAddCard] bindSim succeeded, updating local state');
+    } catch (err) {
+      console.error('[handleAddCard] bindSim failed:', err);
+      throw err; // Re-throw to let UI handle the error
+    }
+
     const pkgName = profile?.packageName || '';
 
     const COUNTRY_NAME_TO_CODE: Record<string, string> = {
@@ -444,50 +462,55 @@ function CustomerApp() {
     const durationDays = profile?.totalDuration || 30;
     const redTeaStatus = mapRedTeaStatus(profile?.status || '');
 
-    const existingSim = activeSims.find(s => s.iccid === iccid);
-    if (existingSim) {
-      setActiveSims(prev => prev.map(s => s.iccid === iccid ? {
-        ...s,
-        status: redTeaStatus,
+    // Use functional update to avoid stale closure
+    setActiveSims(prev => {
+      const existingSim = prev.find(s => s.iccid === iccid);
+      if (existingSim) {
+        return prev.map(s => s.iccid === iccid ? {
+          ...s,
+          status: redTeaStatus,
+          dataTotalGB: Math.round(totalGB * 10) / 10,
+          dataUsedGB: profile?.usedVolume ? profile.usedVolume / (1024 * 1024 * 1024) : s.dataUsedGB,
+        } : s);
+      }
+
+      const flag = countryCode.toUpperCase().split('').map(c => String.fromCodePoint(127397 + c.charCodeAt(0))).join('');
+      const carrier = CARRIER_MAP[countryCode];
+
+      const country = {
+        id: countryCode.toLowerCase(),
+        name: countryName,
+        flag,
+        countryCode,
+        region: '',
+        startPrice: 0,
+        networkCount: 0,
+        networks: carrier ? [carrier.carrier] : [],
+        vpmn: '',
+        vpn: true,
+        plans: [],
+        isPopular: false,
+      };
+
+      const plan = MOCK_PLANS_US[0];
+
+      const newSim: ActiveSim = {
+        id: `SIM-PHYS-${Math.floor(Math.random() * 10000)}`,
+        iccid,
+        country,
+        plan,
+        type: 'PHYSICAL',
+        activationDate: new Date().toISOString(),
+        expiryDate: new Date(Date.now() + durationDays * 24 * 60 * 60 * 1000).toISOString(),
         dataTotalGB: Math.round(totalGB * 10) / 10,
-        dataUsedGB: profile?.usedVolume ? profile.usedVolume / (1024 * 1024 * 1024) : s.dataUsedGB,
-      } : s));
-      return;
-    }
+        dataUsedGB: profile?.usedVolume ? profile.usedVolume / (1024 * 1024 * 1024) : 0,
+        status: redTeaStatus,
+      };
+      return [newSim, ...prev];
+    });
 
-    const flag = countryCode.toUpperCase().split('').map(c => String.fromCodePoint(127397 + c.charCodeAt(0))).join('');
-    const carrier = CARRIER_MAP[countryCode];
-
-    const country = {
-      id: countryCode.toLowerCase(),
-      name: countryName,
-      flag,
-      countryCode,
-      region: '',
-      startPrice: 0,
-      networkCount: 0,
-      networks: carrier ? [carrier.carrier] : [],
-      vpmn: '',
-      vpn: true,
-      plans: [],
-      isPopular: false,
-    };
-
-    const plan = MOCK_PLANS_US[0];
-
-    const newSim: ActiveSim = {
-      id: `SIM-PHYS-${Math.floor(Math.random() * 10000)}`,
-      iccid,
-      country,
-      plan,
-      type: 'PHYSICAL',
-      activationDate: new Date().toISOString(),
-      expiryDate: new Date(Date.now() + durationDays * 24 * 60 * 60 * 1000).toISOString(),
-      dataTotalGB: Math.round(totalGB * 10) / 10,
-      dataUsedGB: profile?.usedVolume ? profile.usedVolume / (1024 * 1024 * 1024) : 0,
-      status: redTeaStatus,
-    };
-    setActiveSims([newSim, ...activeSims]);
+    // Re-fetch user SIMs to ensure serverSims is in sync
+    fetchUserSims();
   };
 
   const ProtectedView = ({ title }: { title: string }) => (

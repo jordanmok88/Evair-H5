@@ -28,6 +28,7 @@ const ENDPOINTS = {
 
   // eSIM
   ESIM_BY_ICCID: (iccid: string) => `/h5/esim/${iccid}`,
+  ESIM_PREVIEW: (iccid: string) => `/h5/esim/preview/${iccid}`,
   ESIM_USAGE: (iccid: string) => `/h5/esim/${iccid}/usage`,
   ESIM_ENABLE: (iccid: string) => `/h5/esim/${iccid}/enable`,
 
@@ -107,6 +108,26 @@ export const packageService = {
 // ─── eSIM 服务 ────────────────────────────────────────────────────────────
 
 export const esimService = {
+  /**
+   * 获取 eSIM 预览（绑定前查看）
+   * GET /h5/esim/preview/{iccid}
+   * @param iccid eSIM ICCID
+   */
+  async getPreview(iccid: string): Promise<{
+    iccid: string;
+    status: string;
+    package: {
+      packageCode: string;
+      name: string;
+      volume: number;
+      duration: number;
+      location: string;
+    };
+    expiredTime: string;
+  }> {
+    return get(ENDPOINTS.ESIM_PREVIEW(iccid));
+  },
+
   /**
    * 获取 eSIM 详情
    * @param iccid eSIM ICCID

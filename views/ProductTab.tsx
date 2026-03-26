@@ -9,7 +9,7 @@ interface ProductTabProps {
   user?: User;
   onLoginRequest: () => void;
   onPurchaseComplete: (purchaseInfo?: { planName?: string; countryCode?: string; type?: SimType; orderNo?: string; iccid?: string }) => void;
-  onAddCard?: (iccid: string, profile?: EsimProfileResult) => void;
+  onAddCard?: (iccid: string, profile?: EsimProfileResult, activationCode?: string) => Promise<void>;
   onDeleteSim?: (simId: string) => void;
   onUpdateSim?: (simId: string, updates: Partial<ActiveSim>) => void;
   activeSims: ActiveSim[];
@@ -68,8 +68,8 @@ const ProductTab: React.FC<ProductTabProps> = ({
             activeSims={activeSims}
             onSwitchToMySims={() => setViewMode('MINE')}
             onSwitchToSetup={() => handleSwitchToSetup()}
-            onAddCard={(iccid) => {
-                onAddCard?.(iccid);
+            onAddCard={async (iccid) => {
+                await onAddCard?.(iccid);
                 setViewMode('MINE');
             }}
             onNavigate={(tab) => onNavigate(tab as Tab)}
@@ -94,8 +94,8 @@ const ProductTab: React.FC<ProductTabProps> = ({
           <PhysicalSimSetupView 
              onSwitchToShop={() => setViewMode(setupEntryPoint)}
              onSwitchToList={() => setViewMode('MINE')}
-             onAddCard={(iccid, profile) => {
-                onAddCard?.(iccid, profile);
+             onAddCard={async (iccid, profile) => {
+                await onAddCard?.(iccid, profile);
                 setViewMode('MINE');
              }}
              initialTab={setupTab}
