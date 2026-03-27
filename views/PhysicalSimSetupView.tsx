@@ -164,6 +164,8 @@ const PhysicalSimSetupView: React.FC<PhysicalSimSetupViewProps> = ({ onSwitchToS
   const [activationError, setActivationError] = useState('');
   const [activateStep, setActivateStep] = useState<ActivateStep>('SCAN');
   const [profileResult, setProfileResult] = useState<EsimProfileResult | null>(null);
+  const [binding, setBinding] = useState(false);
+  const [bindError, setBindError] = useState('');
   const { t, i18n } = useTranslation();
 
   const handleTrack = useCallback(async () => {
@@ -637,21 +639,47 @@ const PhysicalSimSetupView: React.FC<PhysicalSimSetupViewProps> = ({ onSwitchToS
 
                 <div className="space-y-2.5">
                   <button
-                    onClick={() => {
+                    onClick={async () => {
                       if (!isLoggedIn) {
                         onLoginRequest?.();
                         return;
                       }
-                      onAddCard?.(profileResult.iccid, profileResult);
-                      setActivateStep('DONE');
+                      console.log('[Bind Button] Clicked, profileResult:', profileResult);
+                      setBinding(true);
+                      setBindError('');
+                      try {
+                        if (!profileResult?.iccid) {
+                          throw new Error('ICCID not found. Please scan again.');
+                        }
+                        console.log('[Bind Button] Calling onAddCard with iccid:', profileResult.iccid);
+                        await onAddCard?.(profileResult.iccid, profileResult);
+                        console.log('[Bind Button] onAddCard completed, setting DONE');
+                        setActivateStep('DONE');
+                      } catch (err: any) {
+                        console.error('[Bind Button] Error:', err);
+                        setBindError(err?.message || 'Failed to bind SIM. Please try again.');
+                      } finally {
+                        setBinding(false);
+                      }
                     }}
-                    className="w-full py-4 rounded-xl font-bold text-[15px] flex items-center justify-center gap-2 text-white active:scale-[0.98] transition-all"
-                    style={{ background: 'linear-gradient(135deg, #FF6600 0%, #FF8A3D 100%)', boxShadow: '0 4px 14px rgba(255,102,0,0.25)' }}
+                    disabled={binding}
+                    className="w-full py-4 rounded-xl font-bold text-[15px] flex items-center justify-center gap-2 text-white active:scale-[0.98] transition-all disabled:opacity-70"
+                    style={{ background: 'linear-gradient(135deg, #FF6600 0%, #FF8A3D 100%)', boxShadow: binding ? 'none' : '0 4px 14px rgba(255,102,0,0.25)' }}
                   >
-                    <UserPlus size={16} /> {isLoggedIn ? t('sim_setup.bind_to_account') : t('sim_setup.sign_in_to_bind')}
+                    {binding ? (
+                      <><Loader2 size={16} className="animate-spin" /> {t('sim_setup.binding')}</>
+                    ) : (
+                      <><UserPlus size={16} /> {isLoggedIn ? t('sim_setup.bind_to_account') : t('sim_setup.sign_in_to_bind')}</>
+                    )}
                   </button>
+                  {bindError && (
+                    <div className="flex items-start gap-2 bg-red-50 border border-red-100 rounded-xl px-3 py-2.5">
+                      <AlertCircle size={16} className="text-red-500 shrink-0 mt-0.5" />
+                      <p className="text-xs text-red-600">{bindError}</p>
+                    </div>
+                  )}
                   <button
-                    onClick={() => { setActivateStep('SCAN'); setProfileResult(null); setActivationError(''); }}
+                    onClick={() => { setActivateStep('SCAN'); setProfileResult(null); setActivationError(''); setBindError(''); }}
                     className="w-full py-3 rounded-xl font-semibold text-sm text-slate-600 bg-slate-100 hover:bg-slate-200 active:scale-[0.98] transition-all"
                   >
                     {t('sim_setup.back_to_scan')}

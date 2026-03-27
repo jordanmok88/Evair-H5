@@ -3,8 +3,9 @@ import { useTranslation } from 'react-i18next';
 import { Wifi, Phone, Zap, ChevronDown, CheckCircle2, QrCode, Copy, X, Calendar, Clock, SignalHigh, Smartphone, RefreshCw, Plus, ShoppingBag, Settings, MoreHorizontal, Trash2, Check, AlertTriangle, Loader2, Globe, Database, Truck, ScanLine, Package, MapPin, ArrowLeft } from 'lucide-react';
 import { ActiveSim, Tab, SimType, EsimPackage } from '../types';
 import FlagIcon from '../components/FlagIcon';
+import StripePaymentModal from '../components/StripePaymentModal';
 import { CARRIER_MAP } from '../constants';
-import { topUp, fetchTopUpPackages, fetchPackages, checkDataUsage, formatVolume, formatPrice, retailPrice, formatGB, queryProfile, mapRedTeaStatus } from '../services/dataService';
+import { topUp, fetchTopUpPackages, fetchPackages, checkDataUsage, formatVolume, formatPrice, retailPrice, formatGB, queryProfile, mapRedTeaStatus, USE_BACKEND_API, unbindSim } from '../services/dataService';
 import { useEdgeSwipeBack } from '../hooks/useEdgeSwipeBack';
 
 interface MySimsViewProps {
@@ -48,7 +49,9 @@ const MySimsView: React.FC<MySimsViewProps> = ({ activeSims, onNavigate, filterT
   const [isSyncing, setIsSyncing] = useState(false);
   const [copied, setCopied] = useState(false);
   const [copiedField, setCopiedField] = useState<'smdp' | 'activation' | 'qr' | null>(null);
-  const [deleteConfirmSimId, setDeleteConfirmSimId] = useState<string | null>(null);
+  const [deleteConfirmSim, setDeleteConfirmSim] = useState<ActiveSim | null>(null);
+  const [deleteLoading, setDeleteLoading] = useState(false);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
 
   // eSIM API states for top-up
   const [topUpPackages, setTopUpPackages] = useState<EsimPackage[]>([]);
@@ -57,6 +60,14 @@ const MySimsView: React.FC<MySimsViewProps> = ({ activeSims, onNavigate, filterT
   const [topUpProcessing, setTopUpProcessing] = useState(false);
   const [topUpSuccess, setTopUpSuccess] = useState(false);
   const [refreshingSimId, setRefreshingSimId] = useState<string | null>(null);
+
+  // Stripe payment states (simplified)
+  const [paymentModalOpen, setPaymentModalOpen] = useState(false);
+  const [rechargeConfig, setRechargeConfig] = useState<{
+    iccid: string;
+    packageCode: string;
+    amount: number;
+  } | null>(null);
 
   const currentSim = filteredSims.find(s => s.id === selectedSimId) || filteredSims[0];
 
@@ -349,7 +360,7 @@ const MySimsView: React.FC<MySimsViewProps> = ({ activeSims, onNavigate, filterT
             : (filteredSims.length - 1) * CARD_PEEK + CARD_HEIGHT,
           transition: 'height 0.35s cubic-bezier(0.4, 0, 0.2, 1)',
         }}>
-          {(isExpanded ? filteredSims : [currentSim, ...filteredSims.filter(s => s.id !== selectedSimId)]).map((sim, index) => {
+          {(isExpanded ? filteredSims : [currentSim, ...filteredSims.filter(s => s.id !== selectedSimId && s.id !== currentSim.id)]).map((sim, index) => {
               const isSelected = sim.id === selectedSimId;
               const simRemaining = Math.max(0, sim.dataTotalGB - sim.dataUsedGB);
               const simUsagePercent = sim.dataTotalGB > 0 ? (sim.dataUsedGB / sim.dataTotalGB) * 100 : 0;
@@ -448,7 +459,7 @@ const MySimsView: React.FC<MySimsViewProps> = ({ activeSims, onNavigate, filterT
                     </div>
                     {onDeleteSim && (
                       <button
-                        onClick={(e) => { e.stopPropagation(); setDeleteConfirmSimId(sim.id); }}
+                        onClick={(e) => { e.stopPropagation(); setDeleteConfirmSim(sim); setDeleteError(null); }}
                         style={{
                           width: 26, height: 26, borderRadius: 8,
                           backgroundColor: '#f1f5f9',
@@ -831,12 +842,12 @@ const MySimsView: React.FC<MySimsViewProps> = ({ activeSims, onNavigate, filterT
           const carrierInfo = CARRIER_MAP[currentSim.country.countryCode] || { carrier: 'Carrier', network: '4G' };
           const iccid = resolveIccid(currentSim);
 
-          const handleTopUpPurchase = async () => {
+          // 非后端模式：直接调用供应商 API（旧流程）
+          const handleTopUpPurchaseLegacy = async () => {
             if (!selectedTopUp) return;
             setTopUpProcessing(true);
             try {
               const iccid = resolveIccid(currentSim);
-
               const txnId = `topup_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
               await topUp({
                 iccid,
@@ -863,6 +874,18 @@ const MySimsView: React.FC<MySimsViewProps> = ({ activeSims, onNavigate, filterT
             } finally {
               setTopUpProcessing(false);
             }
+          };
+
+          // 后端模式：打开 Stripe 支付弹窗（组件内部处理 topup + pay 请求）
+          const handleTopUpPurchase = () => {
+            if (!selectedTopUp) return;
+            // 设置充值配置，组件会自动创建订单和支付会话
+            setRechargeConfig({
+              iccid,
+              packageCode: selectedTopUp.packageCode,
+              amount: retailPrice(selectedTopUp.price),
+            });
+            setPaymentModalOpen(true);
           };
 
           const filtered = topUpPackages.filter(pkg => !(pkg.durationUnit === 'DAY' && (pkg.duration === 1 || pkg.duration === 7 || pkg.duration === 15 || pkg.duration === 365)));
@@ -979,7 +1002,7 @@ const MySimsView: React.FC<MySimsViewProps> = ({ activeSims, onNavigate, filterT
                   {/* Sticky purchase button */}
                   <div className="shrink-0 px-4 pb-6 pt-3 border-t border-slate-100 bg-white">
                     <button
-                      onClick={selectedTopUp ? handleTopUpPurchase : closeModal}
+                      onClick={selectedTopUp ? (USE_BACKEND_API ? handleTopUpPurchase : handleTopUpPurchaseLegacy) : closeModal}
                       disabled={topUpProcessing || !selectedTopUp}
                       className="w-full bg-brand-orange text-white py-4 rounded-2xl font-bold shadow-lg shadow-orange-500/20 active:scale-[0.98] transition-transform flex items-center justify-center gap-2 disabled:opacity-50"
                     >
@@ -999,8 +1022,51 @@ const MySimsView: React.FC<MySimsViewProps> = ({ activeSims, onNavigate, filterT
       })()}
 
 
+      {/* Stripe Payment Modal */}
+      <StripePaymentModal
+        isOpen={paymentModalOpen}
+        onClose={() => {
+          setPaymentModalOpen(false);
+          setRechargeConfig(null);
+        }}
+        amount={rechargeConfig?.amount || 0}
+        items={selectedTopUp ? [{
+          label: formatVolume(selectedTopUp.volume),
+          amount: retailPrice(selectedTopUp.price),
+        }] : []}
+        rechargeConfig={rechargeConfig || undefined}
+        onSuccess={() => {
+          // 支付成功后更新 SIM 数据
+          const addedGB = selectedTopUp ? selectedTopUp.volume / (1024 * 1024 * 1024) : 0;
+          onUpdateSim?.(currentSim?.id || '', {
+            dataTotalGB: (currentSim?.dataTotalGB || 0) + addedGB,
+            status: 'ACTIVE',
+          });
+          // 刷新 SIM 状态
+          if (currentSim) {
+            handleRefreshStatus(currentSim);
+          }
+        }}
+        onComplete={(success) => {
+          // 流程完成后关闭充值选择弹窗
+          setPaymentModalOpen(false);
+          setRechargeConfig(null);
+          setIsRechargeModalOpen(false);
+          setSelectedTopUp(null);
+          setTopUpPackages([]);
+        }}
+        onBack={() => {
+          // 返回充值选择页面
+          setPaymentModalOpen(false);
+          setRechargeConfig(null);
+          setIsRechargeModalOpen(true);
+        }}
+        title="Complete Payment"
+        successMessage="Top-up Successful!"
+      />
+
       {/* Delete Confirmation Modal */}
-      {deleteConfirmSimId && (
+      {deleteConfirmSim && (
         <div
           style={{
             position: 'fixed', inset: 0, zIndex: 200,
@@ -1008,7 +1074,7 @@ const MySimsView: React.FC<MySimsViewProps> = ({ activeSims, onNavigate, filterT
             display: 'flex', alignItems: 'center', justifyContent: 'center',
             padding: '0 32px',
           }}
-          onClick={() => setDeleteConfirmSimId(null)}
+          onClick={() => { if (!deleteLoading) { setDeleteConfirmSim(null); setDeleteError(null); } }}
         >
           <div
             onClick={(e) => e.stopPropagation()}
@@ -1031,34 +1097,67 @@ const MySimsView: React.FC<MySimsViewProps> = ({ activeSims, onNavigate, filterT
             <h3 style={{ fontSize: 17, fontWeight: 700, color: '#0f172a', marginBottom: 6 }}>
               {t('my_sims.delete_sim')}
             </h3>
-            <p style={{ fontSize: 15, color: '#64748b', lineHeight: 1.5, marginBottom: 24 }}>
+            <p style={{ fontSize: 15, color: '#64748b', lineHeight: 1.5, marginBottom: deleteError ? 12 : 24 }}>
               {t('my_sims.delete_confirm')}
             </p>
+            {deleteError && (
+              <div style={{
+                fontSize: 13, color: '#ef4444', marginBottom: 16,
+                padding: '10px 12px', backgroundColor: '#fef2f2',
+                borderRadius: 10, textAlign: 'left',
+              }}>
+                {deleteError}
+              </div>
+            )}
             <div style={{ display: 'flex', gap: 10 }}>
               <button
-                onClick={() => setDeleteConfirmSimId(null)}
+                onClick={() => { setDeleteConfirmSim(null); setDeleteError(null); }}
+                disabled={deleteLoading}
                 style={{
                   flex: 1, padding: '12px 0', borderRadius: 14,
                   backgroundColor: '#f1f5f9', border: 'none',
                   fontSize: 15, fontWeight: 600, color: '#475569',
-                  cursor: 'pointer',
+                  cursor: deleteLoading ? 'not-allowed' : 'pointer',
+                  opacity: deleteLoading ? 0.6 : 1,
                 }}
               >
                 {t('my_sims.cancel')}
               </button>
               <button
-                onClick={() => {
-                  onDeleteSim?.(deleteConfirmSimId);
-                  setDeleteConfirmSimId(null);
+                onClick={async () => {
+                  const iccid = deleteConfirmSim.iccid || deleteConfirmSim.id;
+                  console.log('[Delete SIM] iccid:', iccid, 'sim:', deleteConfirmSim);
+                  setDeleteLoading(true);
+                  setDeleteError(null);
+                  try {
+                    await unbindSim(iccid);
+                    onDeleteSim?.(deleteConfirmSim.id);
+                    setDeleteConfirmSim(null);
+                  } catch (err: any) {
+                    console.error('[Delete SIM] Error:', err);
+                    setDeleteError(err?.message || 'Failed to delete. Please try again.');
+                  } finally {
+                    setDeleteLoading(false);
+                  }
                 }}
+                disabled={deleteLoading}
                 style={{
                   flex: 1, padding: '12px 0', borderRadius: 14,
                   backgroundColor: '#ef4444', border: 'none',
                   fontSize: 15, fontWeight: 600, color: '#fff',
-                  cursor: 'pointer',
+                  cursor: deleteLoading ? 'not-allowed' : 'pointer',
+                  opacity: deleteLoading ? 0.7 : 1,
+                  display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
                 }}
               >
-                {t('my_sims.delete')}
+                {deleteLoading ? (
+                  <>
+                    <Loader2 size={16} style={{ animation: 'spin 1s linear infinite' }} />
+                    {t('my_sims.deleting')}
+                  </>
+                ) : (
+                  t('my_sims.delete')
+                )}
               </button>
             </div>
           </div>

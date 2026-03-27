@@ -4,8 +4,7 @@
  * Abstracts the data source so all views import from here instead of
  * directly from esimApi (supplier) or services/api (backend).
  *
- * When the backend finishes syncing all 2,489 packages, flip
- * USE_BACKEND_API to true -- no other files need to change.
+ * USE_BACKEND_API is read from .env.local VITE_USE_BACKEND_API.
  */
 
 import type {
@@ -52,9 +51,10 @@ import {
 import { packageService, esimService } from './api';
 
 // =====================================================================
-// SWITCH FLAG: flip to true when backend has all packages synced
+// SWITCH FLAG: reads from .env.local VITE_USE_BACKEND_API
+// Defaults to false, set to true when backend has all packages synced
 // =====================================================================
-export const USE_BACKEND_API = false;
+export const USE_BACKEND_API = import.meta.env.VITE_USE_BACKEND_API === 'true';
 
 // ─── Data normalization: backend PackageDto → supplier EsimPackage ───
 
@@ -126,8 +126,29 @@ export async function orderEsim(req: EsimOrderRequest): Promise<EsimOrderResult>
 // ─── Top Up ──────────────────────────────────────────────────────────
 
 export async function topUp(req: TopUpRequest): Promise<TopUpResult> {
-  // Top-up goes through supplier (backend top-up flow TBD)
-  return supplierTopUp(req);
+  if (!USE_BACKEND_API) {
+    return supplierTopUp(req);
+  }
+
+  try {
+    const resp = await esimService.topup({
+      iccid: req.iccid,
+      packageCode: req.packageCode,
+      amount: req.amount,
+      supplierType: req.supplierType || 'esimaccess',
+    });
+    return {
+      transactionId: resp.orderId,
+      iccid: resp.iccid,
+      expiredTime: '', // 后端未返回过期时间，充值成功后由后端更新
+      totalVolume: 0,  // 后端未返回总量，充值成功后由后端更新
+      totalDuration: 30,
+      orderUsage: 0,
+    };
+  } catch (err) {
+    console.error('Backend topup failed, falling back to supplier:', err);
+    return supplierTopUp(req);
+  }
 }
 
 // ─── Data Usage ──────────────────────────────────────────────────────
@@ -158,17 +179,17 @@ export async function queryProfile(iccid: string): Promise<EsimProfileResult> {
   }
 
   try {
-    const detail = await esimService.getDetail(iccid);
+    const preview = await esimService.getPreview(iccid);
     return {
-      iccid: detail.iccid,
-      packageCode: detail.package?.packageCode || '',
-      packageName: detail.package?.name || '',
-      status: detail.status,
-      smdpStatus: detail.status,
-      expiredTime: detail.validity?.expiredTime || '',
-      totalVolume: detail.usage?.totalVolume || 0,
-      usedVolume: detail.usage?.usedVolume || 0,
-      totalDuration: detail.package?.duration || 0,
+      iccid: preview.iccid,
+      packageCode: preview.package?.packageCode || '',
+      packageName: preview.package?.name || '',
+      status: preview.status,
+      smdpStatus: preview.status,
+      expiredTime: preview.expiredTime || '',
+      totalVolume: preview.package?.volume || 0,
+      usedVolume: 0,
+      totalDuration: preview.package?.duration || 0,
     };
   } catch {
     return supplierQueryProfile(iccid);
@@ -187,6 +208,38 @@ export async function enableProfile(iccid: string): Promise<EnableProfileResult>
     return { success: true, status: result.status };
   } catch {
     return { success: false, status: 'API_ERROR' };
+  }
+}
+
+// ─── Unbind SIM ──────────────────────────────────────────────────────
+
+export async function unbindSim(iccid: string): Promise<{ success: boolean }> {
+  const { userService } = await import('./api');
+
+  try {
+    console.log('[unbindSim] Calling API with iccid:', iccid);
+    const result = await userService.unbindSim({ iccid });
+    console.log('[unbindSim] API result:', result);
+    return result;
+  } catch (err: any) {
+    console.error('[unbindSim] API error:', err?.message, 'code:', err?.code);
+    throw err;
+  }
+}
+
+// ─── Bind SIM ────────────────────────────────────────────────────────
+
+export async function bindSim(iccid: string, activationCode?: string): Promise<{ success: boolean; sim?: any }> {
+  const { userService } = await import('./api');
+
+  try {
+    console.log('[bindSim] Calling API with iccid:', iccid, 'activationCode:', activationCode);
+    const result = await userService.bindSim({ iccid, activationCode });
+    console.log('[bindSim] API result:', result);
+    return result;
+  } catch (err: any) {
+    console.error('[bindSim] API error:', err?.message, 'code:', err?.code);
+    throw err;
   }
 }
 

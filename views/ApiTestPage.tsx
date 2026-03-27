@@ -634,10 +634,11 @@ async function executeEsimMethod(method: string, params: Record<string, string>)
         size: params.size ? parseInt(params.size) : undefined,
       });
     case 'topup':
-      return esimService.topup(params.iccid || DEFAULT_PARAMS.iccid, {
+      return esimService.topup({
+        iccid: params.iccid || DEFAULT_PARAMS.iccid,
         packageCode: params.packageCode || DEFAULT_PARAMS.packageCode,
         amount: parseInt(params.amount || DEFAULT_PARAMS.amount),
-      } as TopupRequest);
+      });
     default:
       throw new Error(`Unknown method: ${method}`);
   }

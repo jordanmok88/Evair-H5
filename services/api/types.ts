@@ -149,8 +149,8 @@ export interface UserSimDto {
   iccid: string;
   type: 'ESIM' | 'PHYSICAL';
   packageName: string;
-  countryCode: string;
-  status: 'ACTIVE' | 'EXPIRED' | 'PENDING';
+  countryCode: string | null;
+  status: 'ACTIVE' | 'EXPIRED' | 'PENDING' | 'INACTIVE';
   totalVolume: number;
   usedVolume: number;
   expiredTime: string;
@@ -498,18 +498,62 @@ export interface EsimUsageDto {
   size?: number;
 }
 
+// ─── 充值订单类型 ───────────────────────────────────────────────────────
+
 export interface TopupRequest {
+  iccid: string;
   packageCode: string;
   amount: number;
+  supplierType?: 'esimaccess' | 'pccw';
 }
 
 export interface TopupResponse {
-  orderNo: string;
+  rechargeId: number;
+  orderId: string;
+  status: 'PENDING_PAYMENT';
+  amount: number;
+  currency: string;
   iccid: string;
   packageCode: string;
-  addedVolume: number;
-  newTotalVolume: number;
-  newExpiredTime: string;
+  createdAt: string;
+}
+
+// ─── 充值支付类型 ───────────────────────────────────────────────────────
+
+export type RechargePaymentMethod = 'stripe' | 'alipay' | 'wechat';
+
+export interface CreatePaymentSessionRequest {
+  paymentMethod?: RechargePaymentMethod;
+}
+
+export interface CreatePaymentSessionResponse {
+  id: number;
+  orderId: string;
+  amount: number;
+  currency: string;
+  clientSecret: string;
+  paymentIntentId: string;
+}
+
+export interface RechargeRecordDetailResponse {
+  id: number;
+  orderId: string;
+  iccid: string;
+  planName: string;
+  packageCode: string;
+  supplierType: string;
+  dataAmount: number | null;
+  dataDisplay: string;
+  validityDays: number | null;
+  amount: number;
+  currency: string;
+  orderStatus: 'Pending' | 'Processing' | 'Completed' | 'Failed' | 'Cancelled' | 'Refunded';
+  paymentStatus: 'Unpaid' | 'Pending' | 'Paid' | 'Failed' | 'Refunded';
+  createdAt: string | null;
+  paidAt: string | null;
+  completedAt: string | null;
+  failedAt: string | null;
+  failureReason: string | null;
 }
 
 // ─── 邮件模块类型 ────────────────────────────────────────────────────────
