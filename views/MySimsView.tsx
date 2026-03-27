@@ -927,7 +927,8 @@ const MySimsView: React.FC<MySimsViewProps> = ({ activeSims, onNavigate, filterT
           const closeModal = () => { setIsRechargeModalOpen(false); setSelectedTopUp(null); setTopUpPackages([]); };
 
           return (
-          <div className="fixed lg:absolute inset-0 z-[60] bg-white flex flex-col" style={{ touchAction: 'pan-y' }}>
+          <div className="fixed inset-0 z-[60] bg-black/40 backdrop-blur-sm flex items-end sm:items-center justify-center" onClick={closeModal}>
+          <div className="bg-white w-full sm:max-w-md sm:rounded-2xl rounded-t-2xl max-h-[90vh] flex flex-col" style={{ touchAction: 'pan-y' }} onClick={e => e.stopPropagation()}>
               {/* Header */}
               <div className="shrink-0 px-4 pt-safe">
                 <div className="flex justify-between items-center py-3">
@@ -1022,6 +1023,7 @@ const MySimsView: React.FC<MySimsViewProps> = ({ activeSims, onNavigate, filterT
                   </div>
                 </>
               )}
+          </div>
           </div>
           );
       })()}
