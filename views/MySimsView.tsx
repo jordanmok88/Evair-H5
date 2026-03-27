@@ -932,9 +932,9 @@ const MySimsView: React.FC<MySimsViewProps> = ({ activeSims, onNavigate, filterT
 
           return (
           <div className="fixed inset-0 z-[60] bg-black/40 backdrop-blur-sm flex items-end sm:items-center justify-center" onClick={closeModal}>
-          <div className="bg-white w-full sm:max-w-md sm:rounded-2xl rounded-t-2xl max-h-[90vh] flex flex-col" style={{ touchAction: 'pan-y' }} onClick={e => e.stopPropagation()}>
+          <div className="bg-white w-full sm:max-w-md sm:rounded-2xl rounded-t-2xl flex flex-col" style={{ touchAction: 'pan-y', maxHeight: 'min(90vh, calc(100dvh - 40px))' }} onClick={e => e.stopPropagation()}>
               {/* Header */}
-              <div className="shrink-0 px-4 pt-safe">
+              <div className="shrink-0 px-4 pt-4">
                 <div className="flex justify-between items-center py-3">
                   <h3 className="text-lg font-bold text-slate-900 tracking-tight">{t('my_sims.top_up_data')}</h3>
                   <button onClick={closeModal} className="bg-gray-100 p-2 rounded-full text-slate-500 active:scale-95 transition-transform"><X size={18}/></button>
@@ -967,7 +967,7 @@ const MySimsView: React.FC<MySimsViewProps> = ({ activeSims, onNavigate, filterT
               ) : (
                 <>
                   {/* All plans — scrollable with section headers */}
-                  <div className="flex-1 overflow-y-auto px-4 pt-3 pb-4">
+                  <div className="flex-1 overflow-y-auto px-4 pt-3 pb-4 overscroll-contain">
                     {topUpLoading && (
                       <div className="flex items-center justify-center py-16">
                         <Loader2 size={28} className="animate-spin text-brand-orange" />
