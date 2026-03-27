@@ -23,9 +23,9 @@ function hoursAgo(h: number): string {
 }
 
 const DEMO_CONVERSATIONS: DbConversation[] = [
-  { id: 'demo-c1', customer_id: 'a1b2c3d4-ef56-7890-abcd-ef1234567890', status: 'needs_human', topic: 'SIM Activation', created_at: hoursAgo(2), updated_at: hoursAgo(1) },
-  { id: 'demo-c2', customer_id: 'b2c3d4e5-fg67-8901-bcde-f12345678901', status: 'open', topic: 'Data Top-Up', created_at: hoursAgo(24), updated_at: hoursAgo(20) },
-  { id: 'demo-c3', customer_id: 'c3d4e5f6-gh78-9012-cdef-123456789012', status: 'resolved', topic: 'Billing Issue', created_at: hoursAgo(72), updated_at: hoursAgo(70) },
+  { id: 'demo-c1', customer_id: 'a1b2c3d4-ef56-7890-abcd-ef1234567890', customer_name: 'Sarah Chen', status: 'needs_human', topic: 'SIM Activation', created_at: hoursAgo(2), updated_at: hoursAgo(1) },
+  { id: 'demo-c2', customer_id: 'b2c3d4e5-fg67-8901-bcde-f12345678901', customer_name: 'Mike Johnson', status: 'open', topic: 'Data Top-Up', created_at: hoursAgo(24), updated_at: hoursAgo(20) },
+  { id: 'demo-c3', customer_id: 'c3d4e5f6-gh78-9012-cdef-123456789012', customer_name: 'Guest', status: 'resolved', topic: 'Billing Issue', created_at: hoursAgo(72), updated_at: hoursAgo(70) },
 ];
 
 const DEMO_MESSAGES: Record<string, DbChatMessage[]> = {
@@ -196,7 +196,7 @@ const AdminChat: React.FC = () => {
                         <User size={14} className="text-slate-400" />
                       </div>
                       <span className="text-sm font-semibold text-slate-900 truncate max-w-[120px]">
-                        {conv.customer_id.slice(0, 8)}...
+                        {conv.customer_name || 'Guest'}
                       </span>
                     </div>
                     <span className="text-[11px] text-slate-400">{formatTime(conv.updated_at)}</span>
@@ -230,7 +230,7 @@ const AdminChat: React.FC = () => {
             <div className="px-6 py-4 border-b border-slate-100 bg-white flex items-center justify-between">
               <div>
                 <h3 className="text-[15px] font-bold text-slate-900">
-                  Customer {selectedConv?.customer_id.slice(0, 8)}...
+                  {selectedConv?.customer_name || 'Guest'}
                 </h3>
                 <div className="flex items-center gap-2 mt-0.5">
                   {selectedConv?.topic && <span className="text-xs text-slate-500">{selectedConv.topic}</span>}

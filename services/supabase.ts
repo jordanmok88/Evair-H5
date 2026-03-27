@@ -123,6 +123,7 @@ export async function adminDeleteNotification(id: string): Promise<void> {
 export interface DbConversation {
   id: string;
   customer_id: string;
+  customer_name: string | null;
   status: 'open' | 'needs_human' | 'resolved';
   topic: string | null;
   created_at: string;
@@ -151,11 +152,11 @@ export function getOrCreateCustomerId(): string {
   return getCustomerId();
 }
 
-export async function createConversation(topic?: string): Promise<DbConversation | null> {
+export async function createConversation(topic?: string, customerName?: string): Promise<DbConversation | null> {
   if (!supabase) return null;
   const { data, error } = await supabase
     .from('conversations')
-    .insert({ customer_id: getCustomerId(), topic, status: 'open' })
+    .insert({ customer_id: getCustomerId(), customer_name: customerName || 'Guest', topic, status: 'open' })
     .select()
     .single();
   if (error) return null;

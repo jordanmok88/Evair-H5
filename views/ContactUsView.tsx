@@ -136,7 +136,7 @@ const ContactUsView: React.FC<ContactUsViewProps> = ({ onBack, userName = 'Jorda
       setConversationId(fakeId);
       return fakeId;
     }
-    const conv = await createConversation(topic);
+    const conv = await createConversation(topic, userName);
     if (conv) {
       setConversationId(conv.id);
       setupRealtime(conv.id);
