@@ -136,6 +136,7 @@ export interface DbChatMessage {
   sender: 'customer' | 'ai' | 'agent';
   agent_name: string | null;
   content: string;
+  english_content: string | null;
   created_at: string;
 }
 
@@ -181,11 +182,12 @@ export async function sendMessage(
   sender: 'customer' | 'ai' | 'agent',
   content: string,
   agentName?: string,
+  englishContent?: string,
 ): Promise<DbChatMessage | null> {
   if (!supabase) return null;
   const { data, error } = await supabase
     .from('chat_messages')
-    .insert({ conversation_id: conversationId, sender, content, agent_name: agentName ?? null })
+    .insert({ conversation_id: conversationId, sender, content, agent_name: agentName ?? null, english_content: englishContent ?? null })
     .select()
     .single();
   if (error) return null;

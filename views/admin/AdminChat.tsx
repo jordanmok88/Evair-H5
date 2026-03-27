@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Send, CheckCircle2, MessageSquare, Loader2, Circle, User } from 'lucide-react';
+import { Send, CheckCircle2, MessageSquare, Loader2, Circle, User, Globe, Zap } from 'lucide-react';
 import {
   DbConversation,
   DbChatMessage,
@@ -30,22 +30,31 @@ const DEMO_CONVERSATIONS: DbConversation[] = [
 
 const DEMO_MESSAGES: Record<string, DbChatMessage[]> = {
   'demo-c1': [
-    { id: 'dm1', conversation_id: 'demo-c1', sender: 'customer', agent_name: null, content: 'I need help with: SIM Activation', created_at: hoursAgo(2) },
-    { id: 'dm2', conversation_id: 'demo-c1', sender: 'ai', agent_name: null, content: 'To activate your EvairSIM:\n\n📱 eSIM: After purchase, go to Settings > Cellular > Add eSIM, then scan the QR code we provided via email.\n\n💳 Physical SIM: Insert the card into your device, then open the Evair app and enter your ICCID number to bind and activate it.', created_at: hoursAgo(2) },
-    { id: 'dm3', conversation_id: 'demo-c1', sender: 'customer', agent_name: null, content: 'I already scanned the QR code but it says "Cannot Activate" — can I speak to a real person?', created_at: hoursAgo(1.5) },
-    { id: 'dm4', conversation_id: 'demo-c1', sender: 'ai', agent_name: null, content: "I understand you'd like to speak with a human agent. 🙋‍♂️\n\nI've flagged your conversation for our support team. A live agent will join this chat shortly.", created_at: hoursAgo(1) },
+    { id: 'dm1', conversation_id: 'demo-c1', sender: 'customer', agent_name: null, content: '我需要帮助激活SIM卡', english_content: 'I need help activating my SIM card', created_at: hoursAgo(2) },
+    { id: 'dm2', conversation_id: 'demo-c1', sender: 'ai', agent_name: null, content: '激活您的 EvairSIM：\n\n📱 eSIM：购买后，前往 设置 > 蜂窝网络 > 添加 eSIM，然后扫描二维码。\n\n💳 实体 SIM 卡：将卡插入手机，打开 Evair 应用输入 ICCID 号码。', english_content: 'To activate your EvairSIM:\n\n📱 eSIM: After purchase, go to Settings > Cellular > Add eSIM, then scan the QR code.\n\n💳 Physical SIM: Insert the card, then enter your ICCID in the Evair app.', created_at: hoursAgo(2) },
+    { id: 'dm3', conversation_id: 'demo-c1', sender: 'customer', agent_name: null, content: '我扫描了二维码但是显示"无法激活"，我可以找真人客服吗？', english_content: 'I scanned the QR code but it says "Cannot Activate" — can I speak to a real person?', created_at: hoursAgo(1.5) },
+    { id: 'dm4', conversation_id: 'demo-c1', sender: 'ai', agent_name: null, content: '我理解您想与人工客服交流。🙋‍♂️\n\n已为您转接到客服团队。', english_content: "I understand you'd like to speak with a human agent. 🙋‍♂️\n\nI've flagged your conversation for our support team.", created_at: hoursAgo(1) },
   ],
   'demo-c2': [
-    { id: 'dm5', conversation_id: 'demo-c2', sender: 'customer', agent_name: null, content: 'I need help with: Data Top-Up', created_at: hoursAgo(24) },
-    { id: 'dm6', conversation_id: 'demo-c2', sender: 'ai', agent_name: null, content: 'You can check and manage your data in the Evair app:\n\n📊 Check remaining data: Go to My eSIMs/SIMs tab.\n\n➕ Top up: Tap "Add Data" on your active SIM.', created_at: hoursAgo(23.5) },
-    { id: 'dm7', conversation_id: 'demo-c2', sender: 'customer', agent_name: null, content: 'Thanks, how do I know when my data is about to run out?', created_at: hoursAgo(20) },
+    { id: 'dm5', conversation_id: 'demo-c2', sender: 'customer', agent_name: null, content: 'I need help with: Data Top-Up', english_content: null, created_at: hoursAgo(24) },
+    { id: 'dm6', conversation_id: 'demo-c2', sender: 'ai', agent_name: null, content: 'You can check and manage your data in the Evair app:\n\n📊 Check remaining data: Go to My eSIMs/SIMs tab.\n\n➕ Top up: Tap "Add Data" on your active SIM.', english_content: null, created_at: hoursAgo(23.5) },
+    { id: 'dm7', conversation_id: 'demo-c2', sender: 'customer', agent_name: null, content: 'Thanks, how do I know when my data is about to run out?', english_content: null, created_at: hoursAgo(20) },
   ],
   'demo-c3': [
-    { id: 'dm8', conversation_id: 'demo-c3', sender: 'customer', agent_name: null, content: 'I was charged twice for my order ORD-123', created_at: hoursAgo(72) },
-    { id: 'dm9', conversation_id: 'demo-c3', sender: 'ai', agent_name: null, content: 'I\'m sorry to hear about the double charge. Let me connect you with our billing team.', created_at: hoursAgo(71.5) },
-    { id: 'dm10', conversation_id: 'demo-c3', sender: 'agent', agent_name: 'Jordan', content: 'Hi! I\'ve checked your account and I can see the duplicate charge. I\'ve initiated a refund — you should see it within 3-5 business days. Sorry for the inconvenience!', created_at: hoursAgo(70) },
+    { id: 'dm8', conversation_id: 'demo-c3', sender: 'customer', agent_name: null, content: '我被重复扣费了，订单号 ORD-123', english_content: 'I was charged twice for my order ORD-123', created_at: hoursAgo(72) },
+    { id: 'dm9', conversation_id: 'demo-c3', sender: 'ai', agent_name: null, content: '很抱歉听到重复扣费的问题。让我为您转接到账单团队。', english_content: "I'm sorry to hear about the double charge. Let me connect you with our billing team.", created_at: hoursAgo(71.5) },
+    { id: 'dm10', conversation_id: 'demo-c3', sender: 'agent', agent_name: 'Jordan', content: 'Hi! I\'ve checked your account and I can see the duplicate charge. I\'ve initiated a refund — you should see it within 3-5 business days. Sorry for the inconvenience!', english_content: null, created_at: hoursAgo(70) },
   ],
 };
+
+const SUGGESTED_REPLIES = [
+  "Hi! I'm looking into your issue now. Please give me a moment.",
+  "I've checked your account and everything looks good. Is there anything else I can help with?",
+  "I've initiated a refund for you — it should appear within 3-5 business days.",
+  "Could you please share your ICCID or order number so I can look into this?",
+  "I've resolved the issue. Please restart your device and try again.",
+  "I'm escalating this to our technical team. We'll follow up within 24 hours.",
+];
 
 const AdminChat: React.FC = () => {
   const [conversations, setConversations] = useState<DbConversation[]>([]);
@@ -263,6 +272,7 @@ const AdminChat: React.FC = () => {
                   const isCustomer = msg.sender === 'customer';
                   const isAgent = msg.sender === 'agent';
                   const isAI = msg.sender === 'ai';
+                  const hasTranslation = msg.english_content && msg.english_content !== msg.content;
                   return (
                     <div key={msg.id} className={`flex mb-4 ${isCustomer ? 'justify-start' : 'justify-end'}`}>
                       <div className="max-w-[70%]">
@@ -271,7 +281,7 @@ const AdminChat: React.FC = () => {
                           {isAI && <Circle size={8} className="text-orange-400 fill-orange-400" />}
                           {isAgent && <Circle size={8} className="text-green-400 fill-green-400" />}
                           <span className="text-[11px] font-semibold text-slate-500">
-                            {isCustomer ? 'Customer' : isAI ? 'AI Bot' : msg.agent_name || 'Agent'}
+                            {isCustomer ? (selectedConv?.customer_name || 'Customer') : isAI ? 'AI Bot' : msg.agent_name || 'Agent'}
                           </span>
                           <span className="text-[10px] text-slate-400">{formatTime(msg.created_at)}</span>
                         </div>
@@ -282,6 +292,14 @@ const AdminChat: React.FC = () => {
                         }`}>
                           <p className="whitespace-pre-wrap">{msg.content}</p>
                         </div>
+                        {hasTranslation && (
+                          <div className="mt-1.5 px-3 py-2 rounded-xl bg-blue-50 border border-blue-100 text-[12px] text-blue-700 leading-relaxed">
+                            <div className="flex items-center gap-1 mb-0.5 text-[10px] font-bold text-blue-400 uppercase">
+                              <Globe size={10} /> English
+                            </div>
+                            <p className="whitespace-pre-wrap">{msg.english_content}</p>
+                          </div>
+                        )}
                       </div>
                     </div>
                   );
@@ -292,25 +310,44 @@ const AdminChat: React.FC = () => {
 
             {/* Reply Box */}
             {selectedConv?.status !== 'resolved' && (
-              <div className="p-4 border-t border-slate-100 bg-white">
-                <div className="flex items-end gap-3">
-                  <textarea
-                    value={replyText}
-                    onChange={e => setReplyText(e.target.value)}
-                    onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleReply(); } }}
-                    placeholder="Type your reply as an agent..."
-                    rows={2}
-                    className="flex-1 px-4 py-3 rounded-xl border border-slate-200 text-sm outline-none focus:ring-2 focus:ring-orange-500/20 resize-none"
-                  />
-                  <button
-                    onClick={handleReply}
-                    disabled={!replyText.trim() || sending}
-                    className="w-11 h-11 rounded-xl bg-orange-500 text-white flex items-center justify-center shrink-0 disabled:opacity-40 hover:bg-orange-600 active:scale-95 transition-all"
-                  >
-                    {sending ? <Loader2 size={16} className="animate-spin" /> : <Send size={16} />}
-                  </button>
+              <div className="border-t border-slate-100 bg-white">
+                <div className="px-4 pt-3 pb-1">
+                  <div className="flex items-center gap-1.5 mb-2">
+                    <Zap size={12} className="text-amber-500" />
+                    <span className="text-[11px] font-bold text-slate-400 uppercase">Quick Replies</span>
+                  </div>
+                  <div className="flex flex-wrap gap-1.5">
+                    {SUGGESTED_REPLIES.map((reply, i) => (
+                      <button
+                        key={i}
+                        onClick={() => setReplyText(reply)}
+                        className="px-3 py-1.5 rounded-full bg-slate-100 text-[11px] text-slate-600 font-medium hover:bg-orange-50 hover:text-orange-600 transition-colors truncate max-w-[280px]"
+                      >
+                        {reply.length > 50 ? reply.slice(0, 50) + '...' : reply}
+                      </button>
+                    ))}
+                  </div>
                 </div>
-                <p className="text-[11px] text-slate-400 mt-2">Your reply will appear as "Admin" to the customer in real-time.</p>
+                <div className="p-4 pt-2">
+                  <div className="flex items-end gap-3">
+                    <textarea
+                      value={replyText}
+                      onChange={e => setReplyText(e.target.value)}
+                      onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleReply(); } }}
+                      placeholder="Type your reply as an agent..."
+                      rows={2}
+                      className="flex-1 px-4 py-3 rounded-xl border border-slate-200 text-sm outline-none focus:ring-2 focus:ring-orange-500/20 resize-none"
+                    />
+                    <button
+                      onClick={handleReply}
+                      disabled={!replyText.trim() || sending}
+                      className="w-11 h-11 rounded-xl bg-orange-500 text-white flex items-center justify-center shrink-0 disabled:opacity-40 hover:bg-orange-600 active:scale-95 transition-all"
+                    >
+                      {sending ? <Loader2 size={16} className="animate-spin" /> : <Send size={16} />}
+                    </button>
+                  </div>
+                  <p className="text-[11px] text-slate-400 mt-2">Your reply will appear as "Admin" to the customer in real-time.</p>
+                </div>
               </div>
             )}
           </>

@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ChevronLeft, Send, Paperclip, CheckCheck, Bot, Sparkles } from 'lucide-react';
-import { getAIResponse } from '../ai/evairAssistant';
+import { getMultilingualResponse } from '../ai/evairAssistant';
 import { ChatMessage } from '../types';
 import { useEdgeSwipeBack } from '../hooks/useEdgeSwipeBack';
 import {
@@ -147,7 +147,7 @@ const ContactUsView: React.FC<ContactUsViewProps> = ({ onBack, userName = 'Jorda
     return fakeId;
   }
 
-  const addMessage = async (text: string, sender: 'customer' | 'ai', convId: string) => {
+  const addMessage = async (text: string, sender: 'customer' | 'ai', convId: string, englishText?: string) => {
     const msg: ChatMessage = {
       id: `${sender}-${Date.now()}-${Math.random()}`,
       text,
@@ -158,7 +158,7 @@ const ContactUsView: React.FC<ContactUsViewProps> = ({ onBack, userName = 'Jorda
     setMessages(prev => [...prev, msg]);
 
     if (supabaseConfigured && !convId.startsWith('local-')) {
-      await sbSend(convId, sender, text);
+      await sbSend(convId, sender, text, undefined, englishText);
     }
 
     return msg;
@@ -184,14 +184,14 @@ const ContactUsView: React.FC<ContactUsViewProps> = ({ onBack, userName = 'Jorda
       }
     }
 
-    // AI responds
-    const aiReply = getAIResponse(trimmed);
-    const typingDelay = Math.min(1200 + aiReply.length * 8, 3000);
+    // AI responds in the customer's language
+    const aiResult = getMultilingualResponse(trimmed);
+    const typingDelay = Math.min(1200 + aiResult.text.length * 8, 3000);
 
     setIsTyping(true);
     setTimeout(async () => {
       setIsTyping(false);
-      await addMessage(aiReply, 'ai', convId);
+      await addMessage(aiResult.text, 'ai', convId, aiResult.text !== aiResult.english ? aiResult.english : undefined);
       setMessages(prev => prev.map(m => m.id === userMsg.id ? { ...m, status: 'read' } : m));
     }, typingDelay);
   };
@@ -201,11 +201,11 @@ const ContactUsView: React.FC<ContactUsViewProps> = ({ onBack, userName = 'Jorda
     const convId = await ensureConversation(cat);
     await addMessage(`${t('contact.need_help_with')} ${cat}`, 'customer', convId);
 
-    const aiReply = getAIResponse(cat);
+    const aiResult = getMultilingualResponse(cat);
     setIsTyping(true);
     setTimeout(async () => {
       setIsTyping(false);
-      await addMessage(aiReply, 'ai', convId);
+      await addMessage(aiResult.text, 'ai', convId, aiResult.text !== aiResult.english ? aiResult.english : undefined);
     }, 1800);
   };
 

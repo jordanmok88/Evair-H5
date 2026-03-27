@@ -73,6 +73,7 @@ create table if not exists chat_messages (
   sender          text not null check (sender in ('customer','ai','agent')),
   agent_name      text,                   -- e.g. "Jordan" for human agents
   content         text not null,
+  english_content text,                   -- English translation for admin reference
   created_at      timestamptz not null default now()
 );
 
