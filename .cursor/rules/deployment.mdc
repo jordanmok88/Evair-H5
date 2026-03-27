@@ -13,10 +13,12 @@ alwaysApply: true
 - Git author: `Jordan Mok <jordanmok@Jordans-MacBook-Air.local>`
 - Git config must be set per-repo (not global): `git config user.name` / `user.email`
 
-## Three-Way Sync (always do all three)
-1. **Git**: `git add -A && git commit && git push origin <branch>`
+## Three-Way Sync (ALWAYS do all three after EVERY change — see `auto-save-workflow.mdc`)
+1. **Git**: `git add -A && git commit && git push origin feature/api-integration`
 2. **iCloud**: `rsync -av --exclude='node_modules' --exclude='.git' --exclude='dist' "Evair-H5/" "~/Library/Mobile Documents/com~apple~CloudDocs/Evair-H5-Backup/"`
 3. **Local**: Already on Desktop (source of truth)
+
+**Do NOT ask for permission to push. Auto-push after every change.**
 
 ## Netlify
 - Auto-deploys on push (GitHub integration)

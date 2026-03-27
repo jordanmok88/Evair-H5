@@ -1,0 +1,46 @@
+---
+description: Auto-save workflow - push changes, sync context, and update history after every modification
+alwaysApply: true
+---
+
+# Auto-Save Workflow
+
+## CRITICAL: After EVERY Code Change
+After making any code change (no matter how small), ALWAYS do all three steps:
+1. **Build**: `npx vite build` — verify no errors
+2. **Git**: `git add -A && git commit -m "..." && git push origin feature/api-integration`
+3. **iCloud**: `rsync -av --exclude='node_modules' --exclude='.git' --exclude='dist' "Evair-H5/" "~/Library/Mobile Documents/com~apple~CloudDocs/Evair-H5-Backup/"`
+
+Do NOT ask the user for permission to push. Just do it automatically.
+
+## CRITICAL: Context Persistence
+This project has been developed over a month across many sessions. To preserve institutional knowledge:
+
+### Where Context Lives
+- **Cursor rules** (`.cursor/rules/*.mdc`): Auto-loaded in every chat. Contains architecture, decisions, API docs, deployment workflow.
+- **Conversation history** (`docs/CONVERSATION_HISTORY.md`): Detailed log of all sessions, decisions, and changes.
+- **Git log**: Every commit has descriptive messages. Use `git log` to see recent history.
+- **Agent transcripts**: Cursor auto-saves full chat transcripts.
+
+### When to Update Context Files
+Update the cursor rules AND `docs/CONVERSATION_HISTORY.md` when:
+- A new feature is implemented
+- A business decision is made
+- A bug fix reveals important context
+- Architecture or UX patterns change
+- The user explicitly asks to save
+
+### What to Update
+- `project-overview.mdc`: File structure, UI/UX decisions, business rules
+- `business-decisions.mdc`: Strategy decisions, feature removals, billing/supplier info
+- `esim-api-services.mdc`: API changes, new endpoints, data flow changes
+- `deployment.mdc`: Git workflow, environment changes
+- `docs/CONVERSATION_HISTORY.md`: Add a new dated section with all changes
+
+## Lessons Learned (Apply These Always)
+- When changing a status badge/label in one place, check ALL places that display the same status (banner card, detail card, network status row)
+- When fixing spacing/padding, use shared CSS classes (`.pt-safe`) instead of one-off inline styles
+- Always test build before committing
+- The user's phone browser (Netlify) and Cursor browser (localhost) have separate localStorage — test purchases don't sync across devices
+- Chinese IT staff instructions should be written in Chinese
+- Explain technical decisions clearly so the user can relay to their team
