@@ -427,9 +427,14 @@ function CustomerApp() {
       console.log('[handleAddCard] Calling bindSim API with iccid:', iccid);
       await bindSim(iccid, activationCode);
       console.log('[handleAddCard] bindSim succeeded, updating local state');
-    } catch (err) {
-      console.error('[handleAddCard] bindSim failed:', err);
-      throw err; // Re-throw to let UI handle the error
+    } catch (err: any) {
+      const msg = err?.message?.toLowerCase() || '';
+      if (msg.includes('already bound') || msg.includes('already exist')) {
+        console.warn('[handleAddCard] SIM already bound — treating as success, adding to wallet');
+      } else {
+        console.error('[handleAddCard] bindSim failed:', err);
+        throw err;
+      }
     }
 
     const pkgName = profile?.packageName || '';
