@@ -254,8 +254,8 @@ const PhysicalSimSetupView: React.FC<PhysicalSimSetupViewProps> = ({ onSwitchToS
               <h3 className="text-base font-bold text-slate-900 mb-1">{t('sim_setup.enter_tracking')}</h3>
               <p className="text-sm text-slate-400 mb-4">{t('sim_setup.enter_tracking_hint')}</p>
 
-              <div className="flex gap-2">
-                <div className="flex-1 border border-slate-200 focus-within:border-brand-orange rounded-xl h-11 flex items-center px-3 bg-slate-50 transition-colors">
+              <div className="flex gap-2 items-center">
+                <div className="flex-1 min-w-0 border border-slate-200 focus-within:border-brand-orange rounded-xl h-11 flex items-center px-3 bg-slate-50 transition-colors">
                   <Search size={16} className="text-slate-400 shrink-0 mr-2" />
                   <input
                     type="text"
@@ -263,7 +263,7 @@ const PhysicalSimSetupView: React.FC<PhysicalSimSetupViewProps> = ({ onSwitchToS
                     onChange={e => setTrackingInput(e.target.value.replace(/\s/g, ''))}
                     onKeyDown={e => e.key === 'Enter' && handleTrack()}
                     placeholder="e.g. SF1029384756HK"
-                    className="flex-1 h-full outline-none text-slate-900 font-semibold placeholder:text-slate-400 placeholder:font-normal bg-transparent text-sm tracking-wide"
+                    className="flex-1 min-w-0 h-full outline-none text-slate-900 font-semibold placeholder:text-slate-400 placeholder:font-normal bg-transparent text-sm tracking-wide"
                   />
                   {trackingResult && (
                     <button onClick={handleReset} className="p-1 text-slate-400 hover:text-slate-600">
@@ -274,7 +274,7 @@ const PhysicalSimSetupView: React.FC<PhysicalSimSetupViewProps> = ({ onSwitchToS
                 <button
                   onClick={handleTrack}
                   disabled={!trackingInput.trim() || trackingState === 'LOADING'}
-                  className="h-11 px-4 rounded-xl font-bold text-sm flex items-center justify-center gap-1.5 active:scale-[0.97] transition-all shrink-0"
+                  className="h-11 px-3 rounded-xl font-bold text-sm flex items-center justify-center gap-1 active:scale-[0.97] transition-all shrink-0"
                   style={{
                     background: trackingInput.trim() ? 'linear-gradient(135deg, #FF6600 0%, #FF8A3D 100%)' : '#e2e8f0',
                     color: trackingInput.trim() ? '#fff' : '#94a3b8',
