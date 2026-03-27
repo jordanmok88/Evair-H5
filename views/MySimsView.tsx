@@ -102,7 +102,9 @@ const MySimsView: React.FC<MySimsViewProps> = ({ activeSims, onNavigate, filterT
       setTopUpLoading(true);
       const iccid = resolveIccid(currentSim);
       const pkgPromise = currentSim.type === 'ESIM'
-        ? fetchTopUpPackages(iccid)
+        ? fetchTopUpPackages(iccid).then(pkgs =>
+            pkgs.length > 0 ? pkgs : fetchPackages({ locationCode: currentSim.country.countryCode })
+          )
         : fetchPackages({ locationCode: currentSim.country.countryCode });
       pkgPromise
         .then(setTopUpPackages)
@@ -888,7 +890,8 @@ const MySimsView: React.FC<MySimsViewProps> = ({ activeSims, onNavigate, filterT
             setPaymentModalOpen(true);
           };
 
-          const filtered = topUpPackages.filter(pkg => !(pkg.durationUnit === 'DAY' && (pkg.duration === 1 || pkg.duration === 7 || pkg.duration === 15 || pkg.duration === 365)));
+          const _filtered = topUpPackages.filter(pkg => !(pkg.durationUnit === 'DAY' && (pkg.duration === 1 || pkg.duration === 7 || pkg.duration === 15 || pkg.duration === 365)));
+          const filtered = _filtered.length > 0 ? _filtered : topUpPackages;
 
           const grouped = new Map<string, EsimPackage[]>();
           filtered.forEach(pkg => {
