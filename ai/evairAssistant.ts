@@ -27,18 +27,21 @@ const KNOWLEDGE_BASE: KnowledgeEntry[] = [
     keywords_es: ['activar', 'activación', 'cómo activar', 'encender', 'habilitar'],
     response:
       "To activate your EvairSIM:\n\n" +
-      "📱 **eSIM**: After purchase, go to Settings > Cellular > Add eSIM, then scan the QR code we provided via email.\n\n" +
-      "💳 **Physical SIM**: Insert the card into your device, then open the Evair app and enter your ICCID number to bind and activate it.\n\n" +
+      "📱 **eSIM**: Tap your eSIM card in My eSIMs, then tap \"Install\" to see the QR code and step-by-step instructions.\n\n" +
+      "⚠️ **Important**: eSIM profiles can only be installed **once**. Do not delete it from your device after installation.\n\n" +
+      "💳 **Physical SIM (US only)**: Insert the card, open the Evair app, go to SIM Card tab > Set Up Now, and scan/enter your ICCID to bind it to your account.\n\n" +
       "Activation is usually instant for eSIMs and takes up to 5 minutes for physical SIMs.",
     response_zh:
       "激活您的 EvairSIM：\n\n" +
-      "📱 **eSIM**：购买后，前往 设置 > 蜂窝网络 > 添加 eSIM，然后扫描我们通过邮件发送的二维码。\n\n" +
-      "💳 **实体 SIM 卡**：将卡插入手机，然后打开 Evair 应用，输入 ICCID 号码进行绑定激活。\n\n" +
+      "📱 **eSIM**：在'我的 eSIM'中点击您的卡片，然后点击'安装'查看二维码和安装步骤。\n\n" +
+      "⚠️ **重要提示**：eSIM 配置文件只能安装**一次**。安装后请勿从设备中删除。\n\n" +
+      "💳 **实体 SIM 卡（仅限美国）**：插入卡片，打开 Evair 应用，前往 SIM 卡标签 > 立即设置，扫描或输入 ICCID 绑定到您的账户。\n\n" +
       "eSIM 通常即时激活，实体 SIM 卡最多需要 5 分钟。",
     response_es:
       "Para activar tu EvairSIM:\n\n" +
-      "📱 **eSIM**: Después de la compra, ve a Ajustes > Datos móviles > Añadir eSIM y escanea el código QR que te enviamos por email.\n\n" +
-      "💳 **SIM física**: Inserta la tarjeta en tu dispositivo, luego abre la app Evair e ingresa tu número ICCID para vincular y activar.\n\n" +
+      "📱 **eSIM**: Toca tu tarjeta en Mis eSIMs, luego toca \"Instalar\" para ver el código QR e instrucciones.\n\n" +
+      "⚠️ **Importante**: Los perfiles eSIM solo se pueden instalar **una vez**. No lo elimines después de la instalación.\n\n" +
+      "💳 **SIM física (solo EE.UU.)**: Inserta la tarjeta, abre la app Evair, ve a SIM Card > Configurar ahora, y escanea/ingresa tu ICCID.\n\n" +
       "La activación es instantánea para eSIMs y tarda hasta 5 minutos para SIMs físicas.",
     followUp: "Would you like step-by-step instructions for your specific device?",
     followUp_zh: "需要针对您手机型号的详细教程吗？",
@@ -82,7 +85,8 @@ const KNOWLEDGE_BASE: KnowledgeEntry[] = [
       "1. Go to Settings > Network & Internet > SIMs\n" +
       "2. Tap \"Add eSIM\" or \"Download SIM\"\n" +
       "3. Scan the QR code\n\n" +
-      "💡 Make sure you're connected to WiFi during installation.",
+      "💡 Make sure you're connected to WiFi during installation.\n\n" +
+      "⚠️ **One-time installation only** — your eSIM can only be installed once. If you delete it from your device, it cannot be recovered and you would need to purchase a new one.",
     response_zh:
       "安装您的 eSIM：\n\n" +
       "**iPhone (iOS 12.1+)：**\n" +
@@ -94,7 +98,8 @@ const KNOWLEDGE_BASE: KnowledgeEntry[] = [
       "1. 前往 设置 > 网络和互联网 > SIM 卡\n" +
       "2. 点击'添加 eSIM'或'下载 SIM'\n" +
       "3. 扫描二维码\n\n" +
-      "💡 安装过程中请确保连接 WiFi。",
+      "💡 安装过程中请确保连接 WiFi。\n\n" +
+      "⚠️ **仅可安装一次** — 您的 eSIM 只能安装一次。如果从设备中删除，将无法恢复，您需要重新购买。",
     response_es:
       "Para instalar tu eSIM:\n\n" +
       "**iPhone (iOS 12.1+):**\n" +
@@ -106,7 +111,8 @@ const KNOWLEDGE_BASE: KnowledgeEntry[] = [
       "1. Ve a Ajustes > Red e Internet > SIMs\n" +
       "2. Toca \"Añadir eSIM\" o \"Descargar SIM\"\n" +
       "3. Escanea el código QR\n\n" +
-      "💡 Asegúrate de estar conectado a WiFi durante la instalación.",
+      "💡 Asegúrate de estar conectado a WiFi durante la instalación.\n\n" +
+      "⚠️ **Instalación única** — tu eSIM solo se puede instalar una vez. Si lo eliminas, no se puede recuperar.",
   },
   {
     keywords: ['compatible', 'compatibility', 'support', 'supported', 'work with', 'which phone', 'device', 'iphone', 'android', 'samsung', 'pixel', 'does my phone'],
@@ -119,7 +125,7 @@ const KNOWLEDGE_BASE: KnowledgeEntry[] = [
       "✅ **Google Pixel**: Pixel 3a and newer\n" +
       "✅ **iPad**: Pro (3rd gen+), Air (3rd gen+), Mini (5th gen+)\n\n" +
       "⚠️ Your device must be **carrier-unlocked** to use EvairSIM.\n\n" +
-      "Physical SIM cards work with any unlocked device that accepts nano-SIM.",
+      "Physical SIM cards & Evair eCard work with any unlocked device that accepts nano-SIM — even phones without built-in eSIM support!",
     response_zh:
       "EvairSIM eSIM 兼容大多数现代智能手机：\n\n" +
       "✅ **iPhone**：XS、XR、11、12、13、14、15、16 及更新机型\n" +
@@ -127,14 +133,14 @@ const KNOWLEDGE_BASE: KnowledgeEntry[] = [
       "✅ **Google Pixel**：Pixel 3a 及更新\n" +
       "✅ **iPad**：Pro（第3代+）、Air（第3代+）、Mini（第5代+）\n\n" +
       "⚠️ 您的设备必须是**无锁版**才能使用 EvairSIM。\n\n" +
-      "实体 SIM 卡适用于任何支持 nano-SIM 的无锁设备。",
+      "实体 SIM 卡和 Evair eCard 适用于任何支持 nano-SIM 的无锁设备 — 即使手机不支持内置 eSIM！",
     response_es:
       "EvairSIM eSIM es compatible con la mayoría de smartphones modernos:\n\n" +
       "✅ **iPhone**: XS, XR, 11, 12, 13, 14, 15, 16 y posteriores\n" +
       "✅ **Samsung**: Galaxy S20+ y posteriores, serie Galaxy Z\n" +
       "✅ **Google Pixel**: Pixel 3a y posteriores\n\n" +
       "⚠️ Tu dispositivo debe estar **desbloqueado** para usar EvairSIM.\n\n" +
-      "Las tarjetas SIM físicas funcionan con cualquier dispositivo desbloqueado que acepte nano-SIM.",
+      "Las SIMs físicas y Evair eCard funcionan con cualquier dispositivo desbloqueado que acepte nano-SIM — ¡incluso sin eSIM integrado!",
   },
   {
     keywords: ['data', 'top up', 'topup', 'recharge', 'more data', 'add data', 'ran out', 'gb', 'usage', 'how much data', 'data left', 'remaining'],
@@ -142,19 +148,25 @@ const KNOWLEDGE_BASE: KnowledgeEntry[] = [
     keywords_es: ['datos', 'recargar', 'más datos', 'agregar datos', 'se acabó', 'cuántos datos', 'datos restantes'],
     response:
       "You can check and manage your data in the Evair app:\n\n" +
-      "📊 **Check remaining data**: Go to My eSIMs/SIMs tab — the ring gauge shows your usage.\n\n" +
-      "➕ **Top up**: Tap \"Add Data\" on your active SIM to purchase additional data packages starting from $3.00 for 1GB.\n\n" +
-      "Data packages are available in various sizes and can be added at any time, even before your current plan expires.",
+      "📊 **Check remaining data**: Go to My eSIMs/SIMs tab — the data donut shows your usage at a glance.\n\n" +
+      "➕ **Top up**: Tap \"Add Data\" on your active SIM to purchase additional data packages.\n\n" +
+      "📌 **Reloadable plans**: Some plans support top-ups — you can add data before your current plan expires.\n" +
+      "📌 **Non-reloadable plans**: These have a fixed allowance and cannot be topped up. You'll need to purchase a new plan when data runs out.\n\n" +
+      "Top-up packs are available in various sizes (1GB, 3GB, 5GB, 10GB+) and durations (7, 15, 30 days). Prices vary by country.",
     response_zh:
       "您可以在 Evair 应用中查看和管理流量：\n\n" +
-      "📊 **查看剩余流量**：前往'我的 SIM 卡'标签页 — 环形图显示您的使用量。\n\n" +
-      "➕ **充值**：点击已激活 SIM 卡上的'添加流量'，购买额外流量包，1GB 起价 $3.00。\n\n" +
-      "流量包有多种规格，可以随时添加，即使当前套餐尚未到期。",
+      "📊 **查看剩余流量**：前往'我的 SIM 卡'标签页 — 流量圆环直观显示使用量。\n\n" +
+      "➕ **充值**：点击已激活 SIM 卡上的'添加流量'，购买额外流量包。\n\n" +
+      "📌 **可充值套餐**：部分套餐支持充值 — 您可以在当前套餐到期前添加流量。\n" +
+      "📌 **不可充值套餐**：这类套餐有固定流量，用完后需要购买新套餐。\n\n" +
+      "充值包有多种规格（1GB、3GB、5GB、10GB+）和时长（7、15、30天）。价格因国家而异。",
     response_es:
       "Puedes verificar y gestionar tus datos en la app Evair:\n\n" +
       "📊 **Ver datos restantes**: Ve a la pestaña Mis SIMs — el indicador circular muestra tu uso.\n\n" +
-      "➕ **Recargar**: Toca \"Agregar datos\" en tu SIM activa para comprar paquetes adicionales desde $3.00 por 1GB.\n\n" +
-      "Los paquetes de datos están disponibles en varios tamaños y se pueden agregar en cualquier momento.",
+      "➕ **Recargar**: Toca \"Agregar datos\" en tu SIM activa para comprar paquetes adicionales.\n\n" +
+      "📌 **Planes recargables**: Algunos planes permiten recargas — puedes agregar datos antes de que expire.\n" +
+      "📌 **Planes no recargables**: Tienen una cantidad fija; necesitarás comprar un plan nuevo.\n\n" +
+      "Los paquetes vienen en varios tamaños (1GB, 3GB, 5GB, 10GB+) y duraciones (7, 15, 30 días). Los precios varían por país.",
   },
   {
     keywords: ['price', 'pricing', 'cost', 'how much', 'plan', 'plans', 'cheap', 'expensive', 'discount', 'offer', 'promotion', '50%', 'first order'],
@@ -163,30 +175,41 @@ const KNOWLEDGE_BASE: KnowledgeEntry[] = [
     response:
       "EvairSIM offers competitive pricing with coverage in 190+ countries:\n\n" +
       "🎉 **New customer?** Get 50% OFF your first order!\n\n" +
-      "Sample plans (prices vary by country):\n" +
-      "• 1 GB / 7 days — from $2.25\n" +
-      "• 3 GB / 15 days — from $4.50\n" +
+      "We have two product types:\n\n" +
+      "📱 **eSIM plans** (single-country & multi-country):\n" +
+      "• 1 GB / 7 days — from $0.99\n" +
+      "• 3 GB / 30 days — from $3.99\n" +
       "• 5 GB / 30 days — from $7.50\n" +
-      "• 10 GB / 30 days — from $12.50\n\n" +
-      "All plans include hotspot sharing and 5G where available.",
+      "• 10 GB / 30 days — from $12.50\n" +
+      "• Multi-country plans also available!\n\n" +
+      "💳 **Physical SIM plans** (US data only):\n" +
+      "• US plans start from $8.99\n\n" +
+      "All plans include hotspot sharing and 5G/4G LTE where available. Prices vary by country and plan duration.",
     response_zh:
       "EvairSIM 提供覆盖 190+ 国家的超值套餐：\n\n" +
       "🎉 **新用户？** 首单享受5折优惠！\n\n" +
-      "参考套餐（价格因国家而异）：\n" +
-      "• 1 GB / 7 天 — 低至 $2.25\n" +
-      "• 3 GB / 15 天 — 低至 $4.50\n" +
+      "两种产品类型：\n\n" +
+      "📱 **eSIM 套餐**（单国/多国）：\n" +
+      "• 1 GB / 7 天 — 低至 $0.99\n" +
+      "• 3 GB / 30 天 — 低至 $3.99\n" +
       "• 5 GB / 30 天 — 低至 $7.50\n" +
-      "• 10 GB / 30 天 — 低至 $12.50\n\n" +
-      "所有套餐均支持热点共享和 5G（视运营商而定）。",
+      "• 10 GB / 30 天 — 低至 $12.50\n" +
+      "• 还有多国套餐可选！\n\n" +
+      "💳 **实体 SIM 卡套餐**（仅限美国数据）：\n" +
+      "• 美国套餐起价 $8.99\n\n" +
+      "所有套餐均支持热点共享和 5G/4G LTE。价格因国家和时长而异。",
     response_es:
       "EvairSIM ofrece precios competitivos con cobertura en más de 190 países:\n\n" +
       "🎉 **¿Cliente nuevo?** ¡50% de descuento en tu primer pedido!\n\n" +
-      "Planes de ejemplo (precios varían por país):\n" +
-      "• 1 GB / 7 días — desde $2.25\n" +
-      "• 3 GB / 15 días — desde $4.50\n" +
+      "Dos tipos de productos:\n\n" +
+      "📱 **Planes eSIM** (un país y multi-país):\n" +
+      "• 1 GB / 7 días — desde $0.99\n" +
+      "• 3 GB / 30 días — desde $3.99\n" +
       "• 5 GB / 30 días — desde $7.50\n" +
       "• 10 GB / 30 días — desde $12.50\n\n" +
-      "Todos los planes incluyen hotspot y 5G donde esté disponible.",
+      "💳 **Planes SIM física** (solo datos de EE.UU.):\n" +
+      "• Planes desde $8.99\n\n" +
+      "Todos incluyen hotspot y 5G/4G LTE donde esté disponible.",
   },
   {
     keywords: ['network', 'coverage', 'country', 'countries', 'roaming', 'signal', '5g', '4g', 'lte', 'speed', 'slow'],
@@ -276,53 +299,53 @@ const KNOWLEDGE_BASE: KnowledgeEntry[] = [
     keywords_es: ['envío', 'entrega', 'llegar', 'rastreo', 'correo', 'cuánto tarda'],
     response:
       "Physical SIM card shipping details:\n\n" +
-      "📦 **Shipping fee**: $5.99 flat rate worldwide\n" +
+      "📦 **Currently available**: US shipping only\n" +
       "🚀 **Processing time**: 1-2 business days\n" +
-      "📬 **Delivery time**:\n" +
-      "   • US/Canada: 3-5 business days\n" +
-      "   • Europe: 5-7 business days\n" +
-      "   • Rest of world: 7-14 business days\n\n" +
-      "Tracking info is sent via email once your order ships.\n\n" +
-      "💡 Need it faster? Consider our eSIM — it's delivered instantly!",
+      "📬 **US delivery**: 3-5 business days via USPS/UPS\n\n" +
+      "Tracking info is sent via email once your order ships. You can also check your tracking number in the app under SIM Card > Track My Order.\n\n" +
+      "💡 Need it today? Our **eSIM** is delivered instantly — no waiting for mail!\n\n" +
+      "🌍 We're also available on **Amazon** and other marketplaces for convenient US shipping.",
     response_zh:
       "实体 SIM 卡配送详情：\n\n" +
-      "📦 **运费**：全球统一 $5.99\n" +
+      "📦 **目前可用**：仅限美国境内配送\n" +
       "🚀 **处理时间**：1-2 个工作日\n" +
-      "📬 **配送时间**：\n" +
-      "   • 美国/加拿大：3-5 个工作日\n" +
-      "   • 欧洲：5-7 个工作日\n" +
-      "   • 其他地区：7-14 个工作日\n\n" +
-      "发货后会通过邮件发送物流追踪信息。\n\n" +
-      "💡 需要更快？试试我们的 eSIM — 即时交付！",
+      "📬 **美国配送**：通过 USPS/UPS 3-5 个工作日\n\n" +
+      "发货后会通过邮件发送物流追踪信息。您也可以在应用中 SIM 卡 > 追踪订单 查看物流。\n\n" +
+      "💡 急需使用？我们的 **eSIM** 即时交付 — 无需等待快递！\n\n" +
+      "🌍 也可以在 **Amazon** 等电商平台购买。",
     response_es:
       "Detalles de envío de tarjeta SIM física:\n\n" +
-      "📦 **Costo de envío**: $5.99 tarifa fija mundial\n" +
+      "📦 **Disponible actualmente**: Solo envío en EE.UU.\n" +
       "🚀 **Tiempo de procesamiento**: 1-2 días hábiles\n" +
-      "📬 **Tiempo de entrega**:\n" +
-      "   • EE.UU./Canadá: 3-5 días hábiles\n" +
-      "   • Europa: 5-7 días hábiles\n" +
-      "   • Resto del mundo: 7-14 días hábiles\n\n" +
-      "💡 ¿Lo necesitas más rápido? Prueba nuestro eSIM — ¡entrega instantánea!",
+      "📬 **Entrega en EE.UU.**: 3-5 días hábiles vía USPS/UPS\n\n" +
+      "💡 ¿Lo necesitas hoy? Nuestro **eSIM** se entrega al instante.\n\n" +
+      "🌍 También disponible en **Amazon** para envío conveniente.",
   },
   {
     keywords: ['expire', 'expiry', 'expiration', 'validity', 'valid', 'how long last', 'duration', 'renew', 'extend'],
     keywords_zh: ['过期', '有效期', '到期', '多长时间', '续期', '延长', '有效'],
     keywords_es: ['expirar', 'vencimiento', 'validez', 'cuánto dura', 'duración', 'renovar', 'extender'],
     response:
-      "Your data plan validity starts when you first connect to a network in your destination country, not when you purchase it.\n\n" +
-      "⏱️ **Plan duration**: Ranges from 7 to 30 days depending on your plan.\n\n" +
-      "📅 **Check expiry**: Open My SIMs tab — the expiry date is shown on your SIM card details.\n\n" +
-      "You can purchase a new plan or top up before your current one expires to keep your connection active.",
+      "Your data plan validity depends on the plan type:\n\n" +
+      "⏱️ **Most eSIM plans**: Validity starts when you first use data in your destination country (not when you purchase).\n\n" +
+      "💳 **Physical SIM plans**: Validity starts from the moment the profile is enabled/activated.\n\n" +
+      "📅 **Check expiry**: Open My eSIMs/SIMs tab — the expiry date and remaining data are shown on your SIM card details.\n\n" +
+      "📌 **Plan durations**: Available in 7, 15, 30, 60, 90, and 180-day options depending on the country.\n\n" +
+      "You can purchase a new plan or top up (if reloadable) before your current one expires to keep your connection active.",
     response_zh:
-      "您的流量套餐有效期从到达目的地国家首次连接网络时开始计算，而非购买时。\n\n" +
-      "⏱️ **套餐时长**：根据套餐不同，从 7 天到 30 天不等。\n\n" +
-      "📅 **查看到期时间**：打开'我的 SIM 卡'标签页，到期日期会显示在卡片详情中。\n\n" +
-      "您可以在当前套餐到期前购买新套餐或充值，以保持网络连接。",
+      "套餐有效期取决于套餐类型：\n\n" +
+      "⏱️ **大多数 eSIM 套餐**：有效期从到达目的地国家首次使用数据时开始计算（非购买时）。\n\n" +
+      "💳 **实体 SIM 卡套餐**：有效期从配置文件启用/激活时开始。\n\n" +
+      "📅 **查看到期时间**：打开'我的 SIM 卡'标签页，卡片详情中显示到期日期和剩余流量。\n\n" +
+      "📌 **套餐时长**：根据国家不同，有 7、15、30、60、90、180 天等选择。\n\n" +
+      "您可以在当前套餐到期前购买新套餐或充值（可充值套餐），以保持网络连接。",
     response_es:
-      "La validez de tu plan comienza cuando te conectas por primera vez en tu país de destino, no cuando lo compras.\n\n" +
-      "⏱️ **Duración**: De 7 a 30 días según el plan.\n\n" +
+      "La validez del plan depende del tipo:\n\n" +
+      "⏱️ **Mayoría de planes eSIM**: La validez comienza cuando usas datos por primera vez en tu país de destino.\n\n" +
+      "💳 **Planes SIM física**: La validez comienza al activar el perfil.\n\n" +
       "📅 **Ver vencimiento**: Abre la pestaña Mis SIMs.\n\n" +
-      "Puedes comprar un nuevo plan o recargar antes de que expire para mantener tu conexión.",
+      "📌 **Duraciones**: 7, 15, 30, 60, 90 y 180 días según el país.\n\n" +
+      "Puedes comprar un nuevo plan o recargar (si es recargable) antes de que expire.",
   },
   {
     keywords: ['hotspot', 'tether', 'tethering', 'share', 'wifi', 'share data', 'personal hotspot'],
@@ -466,24 +489,214 @@ const KNOWLEDGE_BASE: KnowledgeEntry[] = [
       "¡Explora planes en la pestaña Tienda o pregúntame lo que quieras!",
   },
   {
-    keywords: ['ecard', 'e-card', 'evair ecard', 'what is ecard', 'physical esim', 'esim card', 'esim chip'],
-    keywords_zh: ['eCard', '实体eSIM', 'eSIM卡', '芯片卡'],
+    keywords: ['ecard', 'e-card', 'evair ecard', 'what is ecard', 'physical esim', 'esim card', 'esim chip', 'euicc'],
+    keywords_zh: ['eCard', '实体eSIM', 'eSIM卡', '芯片卡', 'eUICC'],
+    keywords_es: ['ecard', 'tarjeta esim', 'chip esim', 'esim física'],
     response:
-      "**Evair eCard** is a physical SIM card with an embedded eSIM chip — it brings eSIM technology to any phone, even those without built-in eSIM support.\n\n" +
-      "🔹 Simply insert the eCard like a regular SIM card\n" +
-      "🔹 Download up to **15–20 eSIM profiles** onto a single card (1.5MB capacity)\n" +
-      "🔹 Switch between profiles anytime — travel data, local plans, and more\n" +
-      "🔹 Works on both **Android** and **iPhone**\n\n" +
-      "It's GSMA certified, follows the **SGP.22 V2.5** RSP standard, and supports **5G** networks with MEP compatibility.",
+      "**Evair eCard** is a revolutionary physical SIM card with an embedded eUICC chip — it brings eSIM technology to ANY phone, even those without built-in eSIM support.\n\n" +
+      "🔹 Simply insert the eCard like a regular nano-SIM card\n" +
+      "🔹 The eSIM profiles are **pre-loaded** at the factory — no need to download\n" +
+      "🔹 Just bind the card in the Evair app and start using data\n" +
+      "🔹 Works on both **Android** and **iPhone**\n" +
+      "🔹 Supports **5G** networks\n\n" +
+      "It uses eUICC technology (GSMA SGP.22 standard), the same tech inside modern smartphones but in a physical nano-SIM form factor.",
     response_zh:
-      "**Evair eCard** 是一张内置 eSIM 芯片的实体 SIM 卡 — 让任何手机都能使用 eSIM 技术，即使手机本身不支持 eSIM。\n\n" +
-      "🔹 像普通 SIM 卡一样插入即可\n" +
-      "🔹 一张卡可下载 **15-20 个 eSIM 配置文件**（1.5MB 容量）\n" +
-      "🔹 随时切换配置文件 — 旅行数据、本地套餐等\n" +
-      "🔹 **安卓**和 **iPhone** 都支持\n\n" +
-      "GSMA 认证，遵循 **SGP.22 V2.5** RSP 标准，支持 **5G** 网络。",
-    followUp: "Would you like to know how to set up an eCard, or how it works on iPhone vs Android?",
-    followUp_zh: "想了解如何设置 eCard，或者在 iPhone 和安卓上的使用方法吗？",
+      "**Evair eCard** 是一张内置 eUICC 芯片的革命性实体 SIM 卡 — 让任何手机都能使用 eSIM 技术，即使手机不支持内置 eSIM。\n\n" +
+      "🔹 像普通 nano-SIM 卡一样插入即可\n" +
+      "🔹 eSIM 配置文件由工厂**预装** — 无需下载\n" +
+      "🔹 在 Evair 应用中绑定卡片即可开始使用\n" +
+      "🔹 **安卓**和 **iPhone** 都支持\n" +
+      "🔹 支持 **5G** 网络\n\n" +
+      "采用 eUICC 技术（GSMA SGP.22 标准），与现代智能手机内置的 eSIM 技术相同，但以实体 nano-SIM 形态呈现。",
+    response_es:
+      "**Evair eCard** es una tarjeta SIM física revolucionaria con chip eUICC — trae la tecnología eSIM a CUALQUIER teléfono.\n\n" +
+      "🔹 Solo insértala como una nano-SIM normal\n" +
+      "🔹 Los perfiles están **precargados** de fábrica\n" +
+      "🔹 Vincula la tarjeta en la app y empieza a usar datos\n" +
+      "🔹 Funciona en **Android** y **iPhone**\n" +
+      "🔹 Soporta redes **5G**",
+    followUp: "Would you like to know how to set up an eCard, or check which plans are available?",
+    followUp_zh: "想了解如何设置 eCard，或者查看有哪些可用套餐吗？",
+    followUp_es: "¿Quieres saber cómo configurar un eCard o ver qué planes hay disponibles?",
+  },
+  {
+    keywords: ['amazon', 'marketplace', 'temu', 'bought online', 'bought from', 'third party', 'ebay', 'already have sim', 'received sim', 'got my sim'],
+    keywords_zh: ['亚马逊', '电商', '第三方', '已收到', '拿到卡了', '淘宝', '拼多多'],
+    keywords_es: ['amazon', 'mercado', 'tercero', 'ya recibí', 'compré en'],
+    response:
+      "Welcome! If you purchased your EvairSIM from Amazon or another marketplace, here's how to get started:\n\n" +
+      "1️⃣ **Create an account**: Open the Evair app and sign up with your email\n" +
+      "2️⃣ **Bind your SIM**: Go to the SIM Card tab > \"Set Up Now\"\n" +
+      "3️⃣ **Scan or enter ICCID**: The 19-20 digit number on your SIM card\n" +
+      "4️⃣ **Start using data**: Insert the SIM and you're ready to go!\n\n" +
+      "Your SIM card comes pre-activated with an eSIM profile. Just bind it to your account to manage your data and top up.",
+    response_zh:
+      "欢迎！如果您在亚马逊或其他电商平台购买了 EvairSIM，以下是开始使用的步骤：\n\n" +
+      "1️⃣ **创建账户**：打开 Evair 应用，使用邮箱注册\n" +
+      "2️⃣ **绑定 SIM 卡**：前往 SIM 卡标签 > '立即设置'\n" +
+      "3️⃣ **扫描或输入 ICCID**：SIM 卡上的 19-20 位数字\n" +
+      "4️⃣ **开始使用**：插入 SIM 卡即可使用数据！\n\n" +
+      "您的 SIM 卡已预装 eSIM 配置文件，只需绑定到您的账户即可管理流量和充值。",
+    response_es:
+      "¡Bienvenido! Si compraste tu EvairSIM en Amazon u otro marketplace:\n\n" +
+      "1️⃣ **Crear cuenta**: Abre la app Evair y regístrate\n" +
+      "2️⃣ **Vincular SIM**: Ve a SIM Card > \"Configurar ahora\"\n" +
+      "3️⃣ **Escanear ICCID**: El número de 19-20 dígitos en tu tarjeta\n" +
+      "4️⃣ **Empezar**: Inserta la SIM y listo!\n\n" +
+      "Tu SIM viene pre-activada. Solo vincúlala a tu cuenta para gestionar tus datos.",
+  },
+  {
+    keywords: ['delete esim', 'remove esim', 'uninstall esim', 'deleted esim', 'accidentally deleted', 'lost esim', 'reinstall', 'recover esim', 'restore esim'],
+    keywords_zh: ['删除eSIM', '卸载eSIM', '误删', '恢复eSIM', '重新安装', '丢失', 'eSIM没了'],
+    keywords_es: ['eliminar esim', 'borrar esim', 'desinstalar', 'eliminé accidentalmente', 'recuperar esim', 'restaurar'],
+    response:
+      "⚠️ **Important warning about eSIM deletion**:\n\n" +
+      "eSIM profiles can only be installed **ONE TIME**. If you delete/remove an eSIM from your device, it **cannot be recovered or reinstalled**.\n\n" +
+      "If you accidentally deleted your eSIM:\n" +
+      "• Unfortunately, the profile cannot be restored\n" +
+      "• You would need to purchase a new eSIM plan\n" +
+      "• Contact our support team — we may be able to offer a discount on a replacement\n\n" +
+      "💡 **Pro tip**: If you're not traveling, you can simply **disable** the eSIM in your phone settings instead of deleting it. This keeps the profile safe for future use.",
+    response_zh:
+      "⚠️ **关于删除 eSIM 的重要警告**：\n\n" +
+      "eSIM 配置文件只能安装**一次**。如果从设备中删除 eSIM，将**无法恢复或重新安装**。\n\n" +
+      "如果您不小心删除了 eSIM：\n" +
+      "• 很遗憾，配置文件无法恢复\n" +
+      "• 您需要购买新的 eSIM 套餐\n" +
+      "• 请联系客服团队 — 我们可能会为补购提供折扣\n\n" +
+      "💡 **小技巧**：如果暂时不旅行，可以在手机设置中**停用** eSIM，而不是删除它。这样配置文件会保留以备将来使用。",
+    response_es:
+      "⚠️ **Advertencia importante sobre eliminar eSIM**:\n\n" +
+      "Los perfiles eSIM solo se pueden instalar **UNA VEZ**. Si eliminas el eSIM de tu dispositivo, **no se puede recuperar**.\n\n" +
+      "Si eliminaste accidentalmente tu eSIM:\n" +
+      "• Lamentablemente, no se puede restaurar\n" +
+      "• Necesitarás comprar un nuevo plan\n" +
+      "• Contacta a nuestro equipo — podemos ofrecer un descuento en reemplazo\n\n" +
+      "💡 **Consejo**: Si no estás viajando, simplemente **desactiva** el eSIM en los ajustes en lugar de eliminarlo.",
+  },
+  {
+    keywords: ['multi country', 'regional', 'global plan', 'multiple countries', 'many countries', 'travel to several', 'europe plan', 'asia plan', 'world plan'],
+    keywords_zh: ['多国', '地区套餐', '全球套餐', '多个国家', '欧洲套餐', '亚洲套餐', '跨国'],
+    keywords_es: ['multi país', 'regional', 'plan global', 'múltiples países', 'plan europa', 'plan asia', 'plan mundial'],
+    response:
+      "Yes! We offer multi-country plans for travelers visiting several destinations:\n\n" +
+      "🌍 **Regional plans**: Cover groups of countries in one region (e.g., Europe, Southeast Asia, Middle East)\n" +
+      "🌐 **Global plans**: Cover 50+ countries worldwide with a single SIM\n\n" +
+      "**How it works**:\n" +
+      "• Buy one plan, use data across all covered countries\n" +
+      "• No need to switch SIMs between countries\n" +
+      "• Seamless handover as you cross borders\n\n" +
+      "Browse multi-country plans in the Shop tab by selecting \"1 SIM = Many Countries\".",
+    response_zh:
+      "是的！我们为访问多个目的地的旅行者提供多国套餐：\n\n" +
+      "🌍 **地区套餐**：覆盖同一地区的多个国家（如欧洲、东南亚、中东）\n" +
+      "🌐 **全球套餐**：一张 SIM 卡覆盖 50+ 个国家\n\n" +
+      "**使用方式**：\n" +
+      "• 购买一个套餐，在所有覆盖国家使用数据\n" +
+      "• 无需在国家之间更换 SIM 卡\n" +
+      "• 跨越国境时无缝切换\n\n" +
+      "在商店标签页选择'1 SIM = Many Countries'浏览多国套餐。",
+    response_es:
+      "¡Sí! Ofrecemos planes multi-país para viajeros:\n\n" +
+      "🌍 **Planes regionales**: Cubren grupos de países (ej: Europa, Sudeste Asiático)\n" +
+      "🌐 **Planes globales**: Cubren más de 50 países con una sola SIM\n\n" +
+      "• Compra un plan, usa datos en todos los países cubiertos\n" +
+      "• Sin cambiar SIM entre países\n\n" +
+      "Explora planes multi-país en la Tienda seleccionando \"1 SIM = Many Countries\".",
+  },
+  {
+    keywords: ['bind', 'binding', 'link', 'connect sim', 'register sim', 'pair', 'set up sim', 'setup sim'],
+    keywords_zh: ['绑定', '注册卡', '关联', '配对', '设置卡', '绑卡'],
+    keywords_es: ['vincular', 'registrar sim', 'conectar sim', 'emparejar', 'configurar sim'],
+    response:
+      "To bind/link your SIM card to your Evair account:\n\n" +
+      "1️⃣ **Sign in** to the Evair app (create an account if you don't have one)\n" +
+      "2️⃣ Go to the **SIM Card** tab at the top\n" +
+      "3️⃣ Tap **\"Set Up Now\"** in the activation section\n" +
+      "4️⃣ **Scan** the barcode on your SIM card, or **enter the ICCID** manually\n" +
+      "5️⃣ Confirm the details and tap **\"Bind SIM Card\"**\n\n" +
+      "Once bound, your SIM appears in My SIMs where you can check data usage, top up, and manage your plan.\n\n" +
+      "⚠️ You must be logged in to bind a SIM card to your account.",
+    response_zh:
+      "将 SIM 卡绑定到您的 Evair 账户：\n\n" +
+      "1️⃣ **登录** Evair 应用（没有账户请先注册）\n" +
+      "2️⃣ 前往顶部的 **SIM 卡**标签\n" +
+      "3️⃣ 点击激活区域的 **'立即设置'**\n" +
+      "4️⃣ **扫描** SIM 卡上的条形码，或**手动输入 ICCID**\n" +
+      "5️⃣ 确认信息后点击 **'绑定 SIM 卡'**\n\n" +
+      "绑定后，您的 SIM 卡会出现在'我的 SIM 卡'中，可以查看流量、充值和管理套餐。\n\n" +
+      "⚠️ 绑定 SIM 卡前必须先登录账户。",
+    response_es:
+      "Para vincular tu tarjeta SIM a tu cuenta Evair:\n\n" +
+      "1️⃣ **Inicia sesión** en la app (crea una cuenta si no tienes)\n" +
+      "2️⃣ Ve a la pestaña **SIM Card**\n" +
+      "3️⃣ Toca **\"Configurar ahora\"**\n" +
+      "4️⃣ **Escanea** el código de barras o **ingresa el ICCID** manualmente\n" +
+      "5️⃣ Confirma y toca **\"Vincular SIM\"**\n\n" +
+      "Una vez vinculada, tu SIM aparece en Mis SIMs para gestionar datos y recargar.\n\n" +
+      "⚠️ Debes iniciar sesión para vincular una SIM.",
+  },
+  {
+    keywords: ['no data', 'data not working', 'connected but no internet', 'connected no data', 'apn', 'apn settings', 'access point'],
+    keywords_zh: ['没有数据', '连上了但没网', '无法上网', 'APN', '接入点', '有信号没网'],
+    keywords_es: ['sin datos', 'conectado sin internet', 'apn', 'punto de acceso', 'no hay internet'],
+    response:
+      "If you're connected to a network but have no internet access, try these steps:\n\n" +
+      "1️⃣ **Check Data Roaming**: Make sure it's turned ON\n" +
+      "   • iOS: Settings > Cellular > Cellular Data Options > Data Roaming\n" +
+      "   • Android: Settings > Network > Mobile Data > Roaming\n\n" +
+      "2️⃣ **Check APN settings**: Some networks require manual APN configuration\n" +
+      "   • iOS: Settings > Cellular > Cellular Data Network\n" +
+      "   • Android: Settings > Network > Access Point Names\n" +
+      "   • Try setting APN to: **internet** or **globaldata**\n\n" +
+      "3️⃣ **Select EvairSIM as data line**: If you have dual SIM, go to Settings > Cellular > Cellular Data and select your EvairSIM line\n\n" +
+      "4️⃣ **Toggle Airplane Mode** on and off\n\n" +
+      "5️⃣ **Restart your device**\n\n" +
+      "If none of these work, tell me your device model and country and I'll help further!",
+    response_zh:
+      "如果已连接到网络但无法上网，请尝试以下步骤：\n\n" +
+      "1️⃣ **检查数据漫游**：确保已打开\n" +
+      "   • iOS：设置 > 蜂窝网络 > 蜂窝数据选项 > 数据漫游\n" +
+      "   • 安卓：设置 > 网络 > 移动数据 > 漫游\n\n" +
+      "2️⃣ **检查 APN 设置**：部分网络需要手动配置 APN\n" +
+      "   • 尝试将 APN 设置为：**internet** 或 **globaldata**\n\n" +
+      "3️⃣ **选择 EvairSIM 为数据线路**：双卡手机请在设置中选择 EvairSIM 作为蜂窝数据\n\n" +
+      "4️⃣ **开关飞行模式**\n\n" +
+      "5️⃣ **重启设备**\n\n" +
+      "如果以上都无效，请告诉我您的手机型号和所在国家！",
+    response_es:
+      "Si estás conectado pero sin internet:\n\n" +
+      "1️⃣ **Verifica Roaming de datos**: Que esté activado\n" +
+      "2️⃣ **Revisa APN**: Intenta configurar APN como: **internet** o **globaldata**\n" +
+      "3️⃣ **Selecciona EvairSIM como línea de datos** (si tienes dual SIM)\n" +
+      "4️⃣ **Activa/desactiva modo avión**\n" +
+      "5️⃣ **Reinicia tu dispositivo**\n\n" +
+      "Si nada funciona, dime tu modelo de dispositivo y país.",
+  },
+  {
+    keywords: ['call', 'calls', 'phone call', 'voice', 'sms', 'text message', 'can i call', 'phone number', 'make calls'],
+    keywords_zh: ['打电话', '通话', '语音', '短信', '电话号码', '能打电话吗', '拨号'],
+    keywords_es: ['llamar', 'llamada', 'voz', 'sms', 'mensaje de texto', 'número de teléfono', 'puedo llamar'],
+    response:
+      "EvairSIM is a **data-only** service — it does not include voice calls or SMS by default.\n\n" +
+      "However, you can still make calls using apps over data:\n\n" +
+      "📞 **Voice calls**: Use WhatsApp, FaceTime, Skype, or any VoIP app\n" +
+      "💬 **Messaging**: Use WhatsApp, iMessage (over data), Telegram, WeChat, etc.\n\n" +
+      "💡 **Tip**: Keep your home SIM installed alongside EvairSIM (dual SIM) to receive SMS verification codes while abroad.\n\n" +
+      "Your home phone number stays active for receiving calls/texts, while EvairSIM handles all your data needs.",
+    response_zh:
+      "EvairSIM 是**纯数据**服务 — 默认不包含语音通话或短信。\n\n" +
+      "但您可以使用数据应用进行通话：\n\n" +
+      "📞 **语音通话**：使用 WhatsApp、FaceTime、Skype 或任何 VoIP 应用\n" +
+      "💬 **消息**：使用 WhatsApp、iMessage（通过数据）、Telegram、微信等\n\n" +
+      "💡 **提示**：保留您的本国 SIM 卡（双卡）以在国外接收短信验证码。\n\n" +
+      "本国号码继续接收电话/短信，EvairSIM 负责所有数据需求。",
+    response_es:
+      "EvairSIM es un servicio **solo de datos** — no incluye llamadas de voz ni SMS.\n\n" +
+      "Sin embargo, puedes llamar usando apps:\n\n" +
+      "📞 **Llamadas**: WhatsApp, FaceTime, Skype o cualquier app VoIP\n" +
+      "💬 **Mensajes**: WhatsApp, iMessage, Telegram, WeChat, etc.\n\n" +
+      "💡 **Consejo**: Mantén tu SIM local para recibir SMS de verificación mientras viajas.",
   },
 ];
 
@@ -491,9 +704,32 @@ const GREETING_PATTERNS = /^(hi|hello|hey|good morning|good afternoon|good eveni
 const THANKS_PATTERNS = /^(thanks|thank you|thx|ty|appreciate|cheers|gracias|谢谢|感谢|多谢)\b/i;
 
 const GREETING_RESPONSES: Record<DetectedLang, string> = {
-  en: "Hello! 👋 I'm Evair's AI assistant. I can help you with SIM activation, eSIM setup, Evair eCard, data plans, troubleshooting, billing, and more. What would you like to know?",
-  zh: "您好！👋 我是 Evair 的 AI 助手。我可以帮助您处理 SIM 激活、eSIM 设置、eCard、流量套餐、故障排查、账单等问题。请问有什么可以帮您？",
-  es: "¡Hola! 👋 Soy el asistente de IA de Evair. Puedo ayudarte con activación de SIM, configuración de eSIM, planes de datos, facturación y más. ¿En qué te puedo ayudar?",
+  en: "Hello! 👋 I'm Evair's AI assistant. I can help you with:\n\n" +
+    "• 📱 eSIM & Physical SIM activation\n" +
+    "• 💳 Evair eCard setup\n" +
+    "• 📊 Data plans, top-ups & pricing\n" +
+    "• 🌍 Coverage in 190+ countries\n" +
+    "• 🔧 Troubleshooting connectivity issues\n" +
+    "• 💰 Billing, refunds & payments\n" +
+    "• 📦 Shipping & delivery\n\n" +
+    "What would you like to know?",
+  zh: "您好！👋 我是 Evair 的 AI 助手。我可以帮助您：\n\n" +
+    "• 📱 eSIM 和实体 SIM 卡激活\n" +
+    "• 💳 Evair eCard 设置\n" +
+    "• 📊 流量套餐、充值和价格\n" +
+    "• 🌍 190+ 国家覆盖\n" +
+    "• 🔧 网络连接故障排查\n" +
+    "• 💰 账单、退款和付款\n" +
+    "• 📦 配送和物流\n\n" +
+    "请问有什么可以帮您？",
+  es: "¡Hola! 👋 Soy el asistente de IA de Evair. Puedo ayudarte con:\n\n" +
+    "• 📱 Activación de eSIM y SIM física\n" +
+    "• 💳 Configuración de Evair eCard\n" +
+    "• 📊 Planes de datos y recargas\n" +
+    "• 🌍 Cobertura en más de 190 países\n" +
+    "• 🔧 Solución de problemas\n" +
+    "• 💰 Facturación y pagos\n\n" +
+    "¿En qué te puedo ayudar?",
 };
 
 const THANKS_RESPONSES: Record<DetectedLang, string> = {
@@ -554,13 +790,22 @@ function normalizeText(text: string): string {
 
 function scoreMatch(normalized: string, keywords: string[]): number {
   let score = 0;
+  const words = normalized.split(/\s+/);
   for (const kw of keywords) {
     const kwNorm = kw.toLowerCase();
     if (normalized.includes(kwNorm)) {
-      const exactWord = new RegExp(`\\b${kwNorm.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\b`);
+      const escaped = kwNorm.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      const exactWord = new RegExp(`\\b${escaped}\\b`);
       score += exactWord.test(normalized) ? 3 : 1;
       if (kwNorm.split(' ').length > 1) score += 2;
       if (/[\u4e00-\u9fff]/.test(kwNorm)) score += 2;
+    } else {
+      for (const w of words) {
+        if (w.length >= 4 && kwNorm.length >= 4 && (w.startsWith(kwNorm.slice(0, 4)) || kwNorm.startsWith(w.slice(0, 4)))) {
+          score += 1;
+          break;
+        }
+      }
     }
   }
   return score;
