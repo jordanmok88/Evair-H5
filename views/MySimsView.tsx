@@ -341,7 +341,7 @@ const MySimsView: React.FC<MySimsViewProps> = ({ activeSims, onNavigate, filterT
     <div className={`lg:h-full flex flex-col bg-[#F2F4F7] no-scrollbar relative ${isRechargeModalOpen ? 'overflow-hidden' : 'lg:overflow-y-auto'}`}>
       
       {/* Header */}
-      <div className="bg-white/90 backdrop-blur-xl pt-safe px-4 pb-3 flex items-center justify-between shrink-0 sticky top-0 z-10 border-b border-slate-100">
+      <div className="bg-white/90 backdrop-blur-xl px-4 pb-3 flex items-center justify-between shrink-0 sticky top-0 z-10 border-b border-slate-100" style={{ paddingTop: 'max(env(safe-area-inset-top, 0px), 16px)' }}>
           <div className="flex items-center gap-2">
             {onSwitchToShop && (
               <button onClick={onSwitchToShop} className="w-9 h-9 rounded-full flex items-center justify-center text-slate-500 hover:bg-slate-100 active:scale-95 transition-all -ml-1">
