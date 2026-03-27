@@ -14,7 +14,7 @@ interface ShopViewProps {
   isLoggedIn: boolean;
   user?: User;
   onLoginRequest: () => void;
-  onPurchaseComplete: (purchaseInfo?: { planName?: string; countryCode?: string; type?: SimType; orderNo?: string; iccid?: string; dataTotalGB?: number; durationDays?: number }) => void;
+  onPurchaseComplete: (purchaseInfo?: { planName?: string; countryCode?: string; locationCode?: string; type?: SimType; orderNo?: string; iccid?: string; dataTotalGB?: number; durationDays?: number }) => void;
   simType: SimType;
   onSwitchToMySims?: () => void;
   hasActiveSims?: boolean;
@@ -527,7 +527,7 @@ const ShopView: React.FC<ShopViewProps> = ({ isLoggedIn, user, onLoginRequest, o
         <div className="px-5 pt-safe pb-2 flex items-center justify-between shrink-0">
           <h2 className="text-white text-xl font-bold tracking-tight">{t('shop.order_success_title')}</h2>
           <button onClick={() => {
-            const info = { planName: selectedEsimGroup?.locationName, countryCode: selectedEsimGroup?.locationCode.split(',')[0], type: 'ESIM' as SimType, orderNo: esimOrderResult.orderNo, iccid: esimOrderResult.iccid, dataTotalGB: selectedEsimPkg ? selectedEsimPkg.volume / (1024 * 1024 * 1024) : 3, durationDays: selectedEsimPkg?.duration || 30 };
+            const info = { planName: selectedEsimGroup?.locationName, countryCode: selectedEsimGroup?.locationCode.split(',')[0], locationCode: selectedEsimGroup?.locationCode, type: 'ESIM' as SimType, orderNo: esimOrderResult.orderNo, iccid: esimOrderResult.iccid, dataTotalGB: selectedEsimPkg ? selectedEsimPkg.volume / (1024 * 1024 * 1024) : 3, durationDays: selectedEsimPkg?.duration || 30 };
             setEsimOrderResult(null); setSelectedEsimPkg(null); setSelectedEsimGroup(null); onPurchaseComplete(info);
           }} className="bg-white/10 p-2 rounded-full text-white hover:bg-white/20 transition-colors backdrop-blur-md">
             <X size={20} />
@@ -619,7 +619,7 @@ const ShopView: React.FC<ShopViewProps> = ({ isLoggedIn, user, onLoginRequest, o
         <div className="shrink-0 px-5 pt-3" style={{ paddingBottom: 'max(env(safe-area-inset-bottom, 0px), 16px)' }}>
           <button
             onClick={() => {
-              const info = { planName: selectedEsimGroup?.locationName, countryCode: selectedEsimGroup?.locationCode.split(',')[0], type: 'ESIM' as SimType, orderNo: esimOrderResult.orderNo, iccid: esimOrderResult.iccid, dataTotalGB: selectedEsimPkg ? selectedEsimPkg.volume / (1024 * 1024 * 1024) : 3, durationDays: selectedEsimPkg?.duration || 30 };
+              const info = { planName: selectedEsimGroup?.locationName, countryCode: selectedEsimGroup?.locationCode.split(',')[0], locationCode: selectedEsimGroup?.locationCode, type: 'ESIM' as SimType, orderNo: esimOrderResult.orderNo, iccid: esimOrderResult.iccid, dataTotalGB: selectedEsimPkg ? selectedEsimPkg.volume / (1024 * 1024 * 1024) : 3, durationDays: selectedEsimPkg?.duration || 30 };
               setEsimOrderResult(null); setSelectedEsimPkg(null); setSelectedEsimGroup(null); onPurchaseComplete(info);
             }}
             className="w-full bg-brand-orange text-white py-3.5 rounded-2xl font-bold shadow-lg shadow-orange-500/20 active:scale-[0.98] transition-all"

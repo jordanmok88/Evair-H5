@@ -49,6 +49,7 @@ export interface ActiveSim {
   id: string;
   iccid?: string;
   country: Country;
+  locationCode?: string;
   plan: Plan;
   type: SimType;
   activationDate: string;

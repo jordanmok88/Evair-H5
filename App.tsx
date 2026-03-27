@@ -350,7 +350,7 @@ function CustomerApp() {
     }
   };
 
-  const handlePurchaseComplete = (purchaseInfo?: { planName?: string; countryCode?: string; type?: SimType; orderNo?: string; iccid?: string; dataTotalGB?: number; durationDays?: number }) => {
+  const handlePurchaseComplete = (purchaseInfo?: { planName?: string; countryCode?: string; locationCode?: string; type?: SimType; orderNo?: string; iccid?: string; dataTotalGB?: number; durationDays?: number }) => {
     const currentType: SimType = purchaseInfo?.type ?? (activeTab === Tab.SIM_CARD ? 'PHYSICAL' : 'ESIM');
     const cc = purchaseInfo?.countryCode || 'US';
     const ccToFlag = (code: string) => code.toUpperCase().split('').map(c => String.fromCodePoint(127397 + c.charCodeAt(0))).join('');
@@ -376,6 +376,7 @@ function CustomerApp() {
         id: `${currentType}-${Math.floor(Math.random() * 10000)}`,
         iccid: purchaseInfo?.iccid,
         country,
+        locationCode: purchaseInfo?.locationCode,
         plan: { id: `plan-${Date.now()}`, name: purchaseInfo?.planName || 'eSIM Plan', data: `${dataGB} GB`, days, price: 0, features: [] },
         type: currentType,
         activationDate: new Date().toISOString(),

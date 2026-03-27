@@ -17,7 +17,7 @@ html, body, #root {
 body {
   -webkit-tap-highlight-color: transparent;
   background-color: #F2F4F7;
-  overscroll-behavior-x: none;
+  overscroll-behavior: none;
 }
 
 /* Phone frame: contained layout for tablet/desktop */

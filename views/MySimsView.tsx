@@ -101,9 +101,10 @@ const MySimsView: React.FC<MySimsViewProps> = ({ activeSims, onNavigate, filterT
     if (isRechargeModalOpen && topUpPackages.length === 0 && !topUpLoading && currentSim) {
       setTopUpLoading(true);
       const iccid = resolveIccid(currentSim);
+      const fallbackLocation = currentSim.locationCode || currentSim.country.countryCode;
       const pkgPromise = currentSim.type === 'ESIM'
         ? fetchTopUpPackages(iccid).then(pkgs =>
-            pkgs.length > 0 ? pkgs : fetchPackages({ locationCode: currentSim.country.countryCode })
+            pkgs.length > 0 ? pkgs : fetchPackages({ locationCode: fallbackLocation })
           )
         : fetchPackages({ locationCode: currentSim.country.countryCode });
       pkgPromise
