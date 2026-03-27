@@ -30,7 +30,7 @@ body {
 
 /* Safe area top padding: minimal in mobile browser */
 .pt-safe {
-  padding-top: 2px;
+  padding-top: 12px;
 }
 
 /* Bottom safe padding: minimal in browser */
