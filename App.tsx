@@ -72,7 +72,9 @@ function CustomerApp() {
   }, []);
 
 
-  const [activeTab, setActiveTab] = useState<Tab>(Tab.SIM_CARD);
+  const [activeTab, setActiveTab] = useState<Tab>(
+    () => (sessionStorage.getItem('evair-activeTab') as Tab) || Tab.SIM_CARD
+  );
   const previousTab = useRef<Tab>(Tab.SIM_CARD);
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
   const [loginModalMode, setLoginModalMode] = useState<'LOGIN' | 'REGISTER'>('LOGIN');
@@ -530,7 +532,17 @@ function CustomerApp() {
     </div>
   );
 
-  const [currentSimType, setCurrentSimType] = useState<SimType>('PHYSICAL');
+  const [currentSimType, setCurrentSimType] = useState<SimType>(
+    () => (sessionStorage.getItem('evair-simType') as SimType) || 'PHYSICAL'
+  );
+
+  useEffect(() => {
+    sessionStorage.setItem('evair-activeTab', activeTab);
+  }, [activeTab]);
+
+  useEffect(() => {
+    sessionStorage.setItem('evair-simType', currentSimType);
+  }, [currentSimType]);
 
   const handleSwitchSimType = (type: SimType) => {
     setCurrentSimType(type);

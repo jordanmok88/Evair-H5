@@ -34,10 +34,18 @@ const ProductTab: React.FC<ProductTabProps> = ({
 }) => {
   const mySims = activeSims.filter(s => s.type === type);
   
-  const [viewMode, setViewMode] = useState<'SHOP' | 'MINE' | 'SETUP'>(mySims.length > 0 ? 'MINE' : 'SHOP');
+  const [viewMode, setViewMode] = useState<'SHOP' | 'MINE' | 'SETUP'>(() => {
+    const saved = sessionStorage.getItem('evair-viewMode');
+    if (saved === 'MINE' || saved === 'SHOP') return saved;
+    return mySims.length > 0 ? 'MINE' : 'SHOP';
+  });
   const [setupTab, setSetupTab] = useState<'TRACKING' | 'ACTIVATE' | undefined>();
   const [setupTrackingNumber, setSetupTrackingNumber] = useState<string | undefined>();
   const [setupEntryPoint, setSetupEntryPoint] = useState<'SHOP' | 'MINE'>('SHOP');
+
+  useEffect(() => {
+    sessionStorage.setItem('evair-viewMode', viewMode);
+  }, [viewMode]);
 
   const handleSwitchToSetup = (tab?: 'TRACKING' | 'ACTIVATE', trackingNumber?: string) => {
     setSetupTab(tab);
