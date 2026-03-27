@@ -145,6 +145,8 @@ const zh = {
     insert_sim: '插入您的SIM卡',
     insert_sim_desc: '启用数据漫游以开始使用您的套餐',
     install_qr_hint: '扫描二维码或在手机设置中手动输入详情',
+    install_once_title: '仅可安装一次',
+    install_once_desc: '此eSIM只能安装一次。安装后请勿从设备中删除，否则无法恢复。',
   },
   sim_setup: {
     add_sim_card: '添加SIM卡',

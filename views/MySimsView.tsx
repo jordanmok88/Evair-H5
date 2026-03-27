@@ -226,6 +226,15 @@ const MySimsView: React.FC<MySimsViewProps> = ({ activeSims, onNavigate, filterT
           </div>
           <div className="flex-1 min-h-0 flex flex-col px-5 pb-2 gap-4 overflow-y-auto no-scrollbar">
 
+              {/* One-time install warning */}
+              <div className="bg-amber-500/15 border border-amber-500/30 rounded-xl p-3.5 flex gap-3 items-start">
+                <AlertTriangle size={18} className="text-amber-400 shrink-0 mt-0.5" />
+                <div>
+                  <p className="text-amber-200 text-sm font-bold mb-0.5">{t('my_sims.install_once_title')}</p>
+                  <p className="text-amber-200/70 text-xs leading-relaxed">{t('my_sims.install_once_desc')}</p>
+                </div>
+              </div>
+
               {/* Method 1: QR Code */}
               <div>
                   <p className="text-white/50 text-[11px] uppercase font-bold tracking-wider mb-2 px-1">{t('my_sims.method_qr')}</p>

@@ -145,6 +145,8 @@ const en = {
     insert_sim: 'Insert your SIM card',
     insert_sim_desc: 'Enable data roaming to start using your plan',
     install_qr_hint: 'Scan the QR code or enter details manually in your phone settings',
+    install_once_title: 'One-time installation only',
+    install_once_desc: 'This eSIM can only be installed once. Please do not delete it from your device after installation, or it cannot be recovered.',
   },
   sim_setup: {
     add_sim_card: 'Add SIM Card',

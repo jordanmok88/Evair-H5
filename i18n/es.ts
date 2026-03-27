@@ -145,6 +145,8 @@ const es = {
     insert_sim: 'Inserta tu tarjeta SIM',
     insert_sim_desc: 'Activa el roaming de datos para empezar a usar tu plan',
     install_qr_hint: 'Escanea el código QR o ingresa los detalles manualmente en la configuración de tu teléfono',
+    install_once_title: 'Instalación única',
+    install_once_desc: 'Este eSIM solo se puede instalar una vez. No lo elimines de tu dispositivo después de la instalación o no podrá recuperarse.',
   },
   sim_setup: {
     add_sim_card: 'Añadir Tarjeta SIM',
