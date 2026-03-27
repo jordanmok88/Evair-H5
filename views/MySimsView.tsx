@@ -102,10 +102,11 @@ const MySimsView: React.FC<MySimsViewProps> = ({ activeSims, onNavigate, filterT
       setTopUpLoading(true);
       const iccid = resolveIccid(currentSim);
       const fallbackLocation = currentSim.locationCode || currentSim.country.countryCode;
+      const locationFallback = () => fetchPackages({ locationCode: fallbackLocation });
       const pkgPromise = currentSim.type === 'ESIM'
-        ? fetchTopUpPackages(iccid).then(pkgs =>
-            pkgs.length > 0 ? pkgs : fetchPackages({ locationCode: fallbackLocation })
-          )
+        ? fetchTopUpPackages(iccid)
+            .then(pkgs => pkgs.length > 0 ? pkgs : locationFallback())
+            .catch(locationFallback)
         : fetchPackages({ locationCode: currentSim.country.countryCode });
       pkgPromise
         .then(setTopUpPackages)
