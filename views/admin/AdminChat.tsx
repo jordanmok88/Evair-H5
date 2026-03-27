@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { Send, CheckCircle2, MessageSquare, Loader2, Circle, User, Globe, Zap } from 'lucide-react';
 import {
   DbConversation,
@@ -11,6 +11,7 @@ import {
   subscribeToMessages,
   subscribeToConversations,
 } from '../../services/supabase';
+import { getAgentSuggestions, AgentSuggestion } from '../../ai/evairAssistant';
 
 const STATUS_COLORS: Record<string, { bg: string; text: string; label: string }> = {
   needs_human: { bg: 'bg-red-100', text: 'text-red-700', label: 'Needs Agent' },
@@ -47,14 +48,14 @@ const DEMO_MESSAGES: Record<string, DbChatMessage[]> = {
   ],
 };
 
-const SUGGESTED_REPLIES = [
-  "Hi! I'm looking into your issue now. Please give me a moment.",
-  "I've checked your account and everything looks good. Is there anything else I can help with?",
-  "I've initiated a refund for you — it should appear within 3-5 business days.",
-  "Could you please share your ICCID or order number so I can look into this?",
-  "I've resolved the issue. Please restart your device and try again.",
-  "I'm escalating this to our technical team. We'll follow up within 24 hours.",
-];
+const SUGGESTION_COLORS: Record<AgentSuggestion['category'], { bg: string; border: string; text: string; icon: string }> = {
+  greeting:  { bg: 'bg-blue-50',   border: 'border-blue-100',  text: 'text-blue-700',   icon: '👋' },
+  ask_info:  { bg: 'bg-amber-50',  border: 'border-amber-100', text: 'text-amber-700',  icon: '❓' },
+  resolve:   { bg: 'bg-green-50',  border: 'border-green-100', text: 'text-green-700',  icon: '✅' },
+  escalate:  { bg: 'bg-purple-50', border: 'border-purple-100',text: 'text-purple-700', icon: '⬆️' },
+  refund:    { bg: 'bg-rose-50',   border: 'border-rose-100',  text: 'text-rose-700',   icon: '💰' },
+  technical: { bg: 'bg-slate-50',  border: 'border-slate-200', text: 'text-slate-700',  icon: '🔧' },
+};
 
 const AdminChat: React.FC = () => {
   const [conversations, setConversations] = useState<DbConversation[]>([]);
@@ -169,6 +170,14 @@ const AdminChat: React.FC = () => {
   };
 
   const selectedConv = conversations.find(c => c.id === selectedId);
+
+  const smartSuggestions = useMemo(() => {
+    const customerMsgs = messages
+      .filter(m => m.sender === 'customer')
+      .map(m => m.english_content || m.content);
+    if (customerMsgs.length === 0) return [];
+    return getAgentSuggestions(customerMsgs);
+  }, [messages]);
 
   return (
     <div className="flex h-screen">
@@ -314,18 +323,23 @@ const AdminChat: React.FC = () => {
                 <div className="px-4 pt-3 pb-1">
                   <div className="flex items-center gap-1.5 mb-2">
                     <Zap size={12} className="text-amber-500" />
-                    <span className="text-[11px] font-bold text-slate-400 uppercase">Quick Replies</span>
+                    <span className="text-[11px] font-bold text-slate-400 uppercase">AI Suggested Replies</span>
                   </div>
-                  <div className="flex flex-wrap gap-1.5">
-                    {SUGGESTED_REPLIES.map((reply, i) => (
-                      <button
-                        key={i}
-                        onClick={() => setReplyText(reply)}
-                        className="px-3 py-1.5 rounded-full bg-slate-100 text-[11px] text-slate-600 font-medium hover:bg-orange-50 hover:text-orange-600 transition-colors truncate max-w-[280px]"
-                      >
-                        {reply.length > 50 ? reply.slice(0, 50) + '...' : reply}
-                      </button>
-                    ))}
+                  <div className="flex flex-wrap gap-1.5 max-h-[120px] overflow-y-auto">
+                    {smartSuggestions.map((s, i) => {
+                      const color = SUGGESTION_COLORS[s.category];
+                      return (
+                        <button
+                          key={i}
+                          onClick={() => setReplyText(s.text)}
+                          className={`px-3 py-1.5 rounded-lg border text-[11px] font-medium transition-all hover:scale-[1.02] active:scale-95 ${color.bg} ${color.border} ${color.text}`}
+                          title={s.text}
+                        >
+                          <span className="mr-1">{color.icon}</span>
+                          {s.text.length > 60 ? s.text.slice(0, 60) + '...' : s.text}
+                        </button>
+                      );
+                    })}
                   </div>
                 </div>
                 <div className="p-4 pt-2">

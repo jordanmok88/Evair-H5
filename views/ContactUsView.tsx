@@ -29,6 +29,15 @@ const CATEGORY_KEYS = [
   'other',
 ] as const;
 
+const CATEGORY_TO_AI_QUERY: Record<string, string> = {
+  sim_activation: 'How do I activate my SIM card?',
+  ecard_help: 'What is the Evair eCard and how to set it up?',
+  data_topup: 'How can I top up my data plan?',
+  billing_issue: 'I have a billing question about my payment',
+  network_problem: 'My eSIM is not working, no signal or internet',
+  other: 'I need help',
+};
+
 const HUMAN_KEYWORDS = /\b(human|agent|real person|speak to someone|talk to person|live chat|representative|operator|transfer)\b|人工|客服|真人|转接|找人|humano|agente|persona real/i;
 
 const formatTime = (date: Date) => date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
@@ -201,7 +210,9 @@ const ContactUsView: React.FC<ContactUsViewProps> = ({ onBack, userName = 'Jorda
     const convId = await ensureConversation(cat);
     await addMessage(`${t('contact.need_help_with')} ${cat}`, 'customer', convId);
 
-    const aiResult = getMultilingualResponse(cat);
+    const matchedKey = CATEGORY_KEYS.find(k => t(`contact.${k}`) === cat);
+    const aiQuery = (matchedKey && CATEGORY_TO_AI_QUERY[matchedKey]) || cat;
+    const aiResult = getMultilingualResponse(aiQuery);
     setIsTyping(true);
     setTimeout(async () => {
       setIsTyping(false);

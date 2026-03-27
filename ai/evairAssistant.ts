@@ -271,27 +271,95 @@ const KNOWLEDGE_BASE: KnowledgeEntry[] = [
       "Si el problema persiste, comparte tu modelo de dispositivo y país — ¡te ayudaré!",
   },
   {
-    keywords: ['bill', 'billing', 'payment', 'pay', 'charge', 'charged', 'refund', 'receipt', 'invoice', 'credit card', 'transaction'],
-    keywords_zh: ['账单', '付款', '支付', '扣费', '退款', '收据', '发票', '信用卡', '交易', '账单问题'],
-    keywords_es: ['factura', 'pago', 'cobro', 'reembolso', 'recibo', 'tarjeta de crédito', 'transacción'],
+    keywords: ['bill', 'billing', 'payment', 'pay', 'charge', 'charged', 'receipt', 'invoice', 'credit card', 'transaction', 'stripe', 'apple pay', 'double charge'],
+    keywords_zh: ['账单', '付款', '支付', '扣费', '收据', '发票', '信用卡', '交易', '账单问题', '重复扣费', '多扣了'],
+    keywords_es: ['factura', 'pago', 'cobro', 'recibo', 'tarjeta de crédito', 'transacción', 'cobro doble'],
     response:
       "Regarding billing and payments:\n\n" +
-      "💳 **Payment methods**: We accept all major credit/debit cards and Apple Pay.\n\n" +
-      "🧾 **Receipts**: Sent automatically to your email after purchase. You can also view orders in Profile > Orders.\n\n" +
-      "🔄 **Refunds**: If your eSIM hasn't been activated, you're eligible for a full refund within 30 days. Contact us with your order details.\n\n" +
-      "If you see an unexpected charge, please share the transaction date and amount so I can look into it.",
+      "💳 **Payment methods**: We accept all major credit/debit cards via Stripe, plus Apple Pay and Google Pay.\n\n" +
+      "🧾 **Receipts**: Sent automatically to your email after purchase. You can also view order history in Profile > Orders.\n\n" +
+      "💰 **Double charge?** If you see a duplicate charge:\n" +
+      "1. Check if it's a pending authorization (these auto-release in 3-7 days)\n" +
+      "2. If confirmed duplicate, share the transaction date, amount, and order number\n" +
+      "3. We'll investigate and process a refund within 3-5 business days\n\n" +
+      "For refund requests, just type \"refund\" or ask me about our refund policy!",
     response_zh:
       "关于账单和付款：\n\n" +
-      "💳 **支付方式**：我们接受所有主流信用卡/借记卡和 Apple Pay。\n\n" +
+      "💳 **支付方式**：我们通过 Stripe 接受所有主流信用卡/借记卡，以及 Apple Pay 和 Google Pay。\n\n" +
       "🧾 **收据**：购买后自动发送到您的邮箱。您也可以在 个人中心 > 订单 中查看。\n\n" +
-      "🔄 **退款**：如果您的 eSIM 尚未激活，可以在 30 天内申请全额退款。请提供您的订单详情。\n\n" +
-      "如果您发现异常扣费，请告诉我交易日期和金额，我会为您查询。",
+      "💰 **重复扣费？** 如果您看到重复扣款：\n" +
+      "1. 检查是否是待处理的预授权（通常 3-7 天自动释放）\n" +
+      "2. 如确认重复扣费，请提供交易日期、金额和订单号\n" +
+      "3. 我们将在 3-5 个工作日内调查并处理退款\n\n" +
+      "需要退款？输入'退款'或询问我们的退款政策！",
     response_es:
       "Sobre facturación y pagos:\n\n" +
-      "💳 **Métodos de pago**: Aceptamos todas las tarjetas principales y Apple Pay.\n\n" +
-      "🧾 **Recibos**: Se envían automáticamente a tu email después de la compra.\n\n" +
-      "🔄 **Reembolsos**: Si tu eSIM no ha sido activada, puedes solicitar un reembolso completo dentro de 30 días.\n\n" +
-      "Si ves un cargo inesperado, comparte la fecha y monto de la transacción.",
+      "💳 **Métodos de pago**: Aceptamos tarjetas vía Stripe, Apple Pay y Google Pay.\n\n" +
+      "🧾 **Recibos**: Se envían automáticamente a tu email.\n\n" +
+      "💰 **¿Cobro doble?**\n" +
+      "1. Verifica si es una autorización pendiente (se libera en 3-7 días)\n" +
+      "2. Si es duplicado, comparte fecha, monto y número de pedido\n" +
+      "3. Investigaremos y procesaremos el reembolso en 3-5 días hábiles\n\n" +
+      "¿Necesitas un reembolso? ¡Escribe \"reembolso\" o pregúntame!",
+  },
+  {
+    keywords: ['refund', 'money back', 'get refund', 'want refund', 'refund policy', 'return', 'refund process', 'how to refund', 'request refund'],
+    keywords_zh: ['退款', '退钱', '怎么退款', '退款政策', '想退款', '要退款', '退费', '退回', '申请退款', '退款流程'],
+    keywords_es: ['reembolso', 'devolver dinero', 'política de reembolso', 'quiero reembolso', 'solicitar reembolso', 'proceso de reembolso'],
+    response:
+      "Here's our refund policy:\n\n" +
+      "✅ **Eligible for full refund (within 30 days)**:\n" +
+      "• eSIM purchased but **NOT yet installed/activated**\n" +
+      "• Physical SIM ordered but **NOT yet shipped**\n" +
+      "• Duplicate/accidental purchases\n\n" +
+      "⚠️ **Partial refund or credit (case-by-case)**:\n" +
+      "• eSIM installed but experienced persistent technical issues\n" +
+      "• Physical SIM received but defective\n\n" +
+      "❌ **Not eligible for refund**:\n" +
+      "• eSIM installed and data has been used\n" +
+      "• Plan has expired\n\n" +
+      "**How to request a refund**:\n" +
+      "1. Provide your **order number** or **email address**\n" +
+      "2. Tell us the **reason** for the refund\n" +
+      "3. We'll process it within **3-5 business days** back to your original payment method\n\n" +
+      "Would you like to request a refund? Please share your order details.",
+    response_zh:
+      "以下是我们的退款政策：\n\n" +
+      "✅ **可全额退款（购买后 30 天内）**：\n" +
+      "• eSIM 已购买但**尚未安装/激活**\n" +
+      "• 实体 SIM 卡已下单但**尚未发货**\n" +
+      "• 重复/误操作购买\n\n" +
+      "⚠️ **部分退款或抵扣（视情况而定）**：\n" +
+      "• eSIM 已安装但持续出现技术问题\n" +
+      "• 实体 SIM 卡已收到但存在缺陷\n\n" +
+      "❌ **不可退款**：\n" +
+      "• eSIM 已安装且已使用数据\n" +
+      "• 套餐已过期\n\n" +
+      "**如何申请退款**：\n" +
+      "1. 提供您的**订单号**或**注册邮箱**\n" +
+      "2. 告诉我们**退款原因**\n" +
+      "3. 我们将在 **3-5 个工作日内**退回到您的原支付方式\n\n" +
+      "需要申请退款吗？请提供您的订单信息。",
+    response_es:
+      "Nuestra política de reembolso:\n\n" +
+      "✅ **Reembolso completo (dentro de 30 días)**:\n" +
+      "• eSIM comprada pero **NO instalada/activada**\n" +
+      "• SIM física pedida pero **NO enviada**\n" +
+      "• Compras duplicadas/accidentales\n\n" +
+      "⚠️ **Reembolso parcial o crédito (caso por caso)**:\n" +
+      "• eSIM instalada pero con problemas técnicos persistentes\n" +
+      "• SIM física recibida pero defectuosa\n\n" +
+      "❌ **No elegible**:\n" +
+      "• eSIM instalada y datos usados\n" +
+      "• Plan expirado\n\n" +
+      "**Cómo solicitar reembolso**:\n" +
+      "1. Proporciona tu **número de pedido** o **email**\n" +
+      "2. Dinos el **motivo**\n" +
+      "3. Procesaremos en **3-5 días hábiles**\n\n" +
+      "¿Quieres solicitar un reembolso? Comparte los detalles de tu pedido.",
+    followUp: "Please share your order number and reason for the refund, and I'll get this started for you.",
+    followUp_zh: "请提供您的订单号和退款原因，我会立即为您处理。",
+    followUp_es: "Comparte tu número de pedido y motivo del reembolso, y lo procesaré de inmediato.",
   },
   {
     keywords: ['ship', 'shipping', 'delivery', 'deliver', 'arrive', 'tracking', 'physical', 'mail', 'how long'],
@@ -794,11 +862,16 @@ function scoreMatch(normalized: string, keywords: string[]): number {
   for (const kw of keywords) {
     const kwNorm = kw.toLowerCase();
     if (normalized.includes(kwNorm)) {
-      const escaped = kwNorm.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-      const exactWord = new RegExp(`\\b${escaped}\\b`);
-      score += exactWord.test(normalized) ? 3 : 1;
-      if (kwNorm.split(' ').length > 1) score += 2;
-      if (/[\u4e00-\u9fff]/.test(kwNorm)) score += 2;
+      const isChinese = /[\u4e00-\u9fff]/.test(kwNorm);
+      if (isChinese) {
+        score += 3;
+        if (kwNorm.length >= 3) score += 2;
+      } else {
+        const escaped = kwNorm.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        const exactWord = new RegExp(`\\b${escaped}\\b`);
+        score += exactWord.test(normalized) ? 3 : 1;
+        if (kwNorm.split(' ').length > 1) score += 2;
+      }
     } else {
       for (const w of words) {
         if (w.length >= 4 && kwNorm.length >= 4 && (w.startsWith(kwNorm.slice(0, 4)) || kwNorm.startsWith(w.slice(0, 4)))) {
@@ -819,6 +892,89 @@ export interface AIResponse {
 
 export function getAIResponse(userMessage: string): string {
   return getMultilingualResponse(userMessage).text;
+}
+
+export interface AgentSuggestion {
+  text: string;
+  category: 'greeting' | 'ask_info' | 'resolve' | 'escalate' | 'refund' | 'technical';
+}
+
+export function getAgentSuggestions(customerMessages: string[]): AgentSuggestion[] {
+  const lastMsg = customerMessages[customerMessages.length - 1] || '';
+  const allText = customerMessages.join(' ');
+  const normalized = normalizeText(allText);
+  const suggestions: AgentSuggestion[] = [];
+
+  const hasOrderInfo = /\b(ord|order|ORD)[- ]?\d+/i.test(allText) || /订单号/.test(allText);
+  const hasIccid = /\b\d{19,20}\b/.test(allText);
+
+  if (/refund|退款|退钱|reembolso|money back/i.test(normalized)) {
+    if (hasOrderInfo) {
+      suggestions.push({ text: "I've located your order. Let me check the refund eligibility now — please give me a moment.", category: 'resolve' });
+      suggestions.push({ text: "Your eSIM hasn't been activated yet, so you're eligible for a full refund. I'm processing it now — you'll see it back on your card within 3-5 business days.", category: 'refund' });
+      suggestions.push({ text: "I see that your eSIM has already been activated and data was used, so unfortunately it's not eligible for a full refund. However, I can offer you a credit toward your next purchase. Would that work for you?", category: 'refund' });
+    } else {
+      suggestions.push({ text: "I'd be happy to help with your refund request. Could you please share your order number or the email address you used to purchase?", category: 'ask_info' });
+      suggestions.push({ text: "Sure, I can look into a refund for you. Could you provide your order number and the reason for the refund?", category: 'ask_info' });
+    }
+    suggestions.push({ text: "Your refund has been processed! You should see it reflected on your original payment method within 3-5 business days. Is there anything else I can help with?", category: 'refund' });
+  }
+
+  if (/activ|激活|开卡|开通|bind|绑定|setup|设置/i.test(normalized)) {
+    if (!hasIccid) {
+      suggestions.push({ text: "Could you share the ICCID number printed on your SIM card? It's a 19-20 digit number below the barcode.", category: 'ask_info' });
+    }
+    suggestions.push({ text: "I've checked your SIM and it's activated and ready to use. Please insert the card, make sure Data Roaming is turned on, and restart your device.", category: 'resolve' });
+    suggestions.push({ text: "It looks like there's an issue with the activation. Let me escalate this to our technical team — they'll resolve it within 24 hours.", category: 'escalate' });
+  }
+
+  if (/not working|no signal|no internet|没网|没信号|不能用|no funciona|sin señal/i.test(normalized)) {
+    suggestions.push({ text: "I'm sorry to hear that. Let's try a few things:\n1. Toggle Airplane Mode on/off\n2. Make sure Data Roaming is turned ON\n3. Restart your device\n\nPlease let me know if any of these help!", category: 'technical' });
+    suggestions.push({ text: "Could you tell me your device model and which country you're currently in? This will help me troubleshoot faster.", category: 'ask_info' });
+    suggestions.push({ text: "I've checked the network status on our end and everything looks normal. Try manually selecting a carrier: Settings > Carrier > turn off Automatic, then pick one of the available networks.", category: 'technical' });
+    suggestions.push({ text: "I'm escalating this to our network operations team for a deeper investigation. We'll get back to you within a few hours.", category: 'escalate' });
+  }
+
+  if (/top.?up|recharge|充值|续费|加流量|more data|datos|recargar/i.test(normalized)) {
+    suggestions.push({ text: "You can top up directly in the app — go to My SIMs, tap your active SIM, then tap \"Add Data\" to browse available packages.", category: 'resolve' });
+    suggestions.push({ text: "I can see your current plan. What size data package were you looking for? We have options from 1GB to 10GB+.", category: 'ask_info' });
+    suggestions.push({ text: "Your current plan is non-reloadable, which means top-ups aren't available for this specific plan. You would need to purchase a new plan once your data runs out. Would you like me to suggest some options?", category: 'resolve' });
+  }
+
+  if (/charge|payment|bill|账单|付款|扣费|cobro|pago|double/i.test(normalized)) {
+    suggestions.push({ text: "I can see the charge on your account. Could you confirm the exact date and amount of the transaction you're concerned about?", category: 'ask_info' });
+    suggestions.push({ text: "I've verified the charge — it appears to be a pending authorization that should auto-release within 3-7 days. If it doesn't drop off by then, please let us know and we'll investigate further.", category: 'resolve' });
+    suggestions.push({ text: "I can confirm this was a duplicate charge. I've initiated a refund — you'll see it back on your card within 3-5 business days. Sorry for the inconvenience!", category: 'refund' });
+  }
+
+  if (/ship|deliver|快递|发货|配送|tracking|物流|envío/i.test(normalized)) {
+    suggestions.push({ text: "Could you share your order number? I'll look up the tracking information for you right away.", category: 'ask_info' });
+    suggestions.push({ text: "I've found your order! Here's your tracking number: [TRACKING]. You can track it at [URL]. Estimated delivery is within 3-5 business days.", category: 'resolve' });
+    suggestions.push({ text: "I see your order hasn't shipped yet. I'm contacting our warehouse team to expedite this. You should receive a shipping notification within 24 hours.", category: 'escalate' });
+  }
+
+  if (/install|安装|qr|二维码|scan|扫描|delete|删除|recover|恢复/i.test(normalized)) {
+    suggestions.push({ text: "Important reminder: eSIM profiles can only be installed once. If you've already deleted it from your device, unfortunately it cannot be recovered and you would need to purchase a new one.", category: 'technical' });
+    suggestions.push({ text: "To install your eSIM, open the app, go to My eSIMs, tap your card, then tap \"Install\". You'll see a QR code — scan it from Settings > Cellular > Add eSIM on your phone.", category: 'resolve' });
+    suggestions.push({ text: "I understand you accidentally deleted your eSIM. Since profiles can only be installed once, I'll need to issue you a replacement. Let me process that for you now.", category: 'refund' });
+  }
+
+  if (/human|agent|real person|人工|客服|真人|转接|humano|agente/i.test(normalized)) {
+    suggestions.push({ text: "Hi! I'm a live agent and I'm here to help. Could you describe your issue in detail so I can assist you?", category: 'greeting' });
+  }
+
+  if (suggestions.length === 0) {
+    suggestions.push(
+      { text: "Hi! I'm looking into your issue now. Could you provide a bit more detail so I can help you faster?", category: 'greeting' },
+      { text: "Could you share your order number or ICCID so I can look up your account?", category: 'ask_info' },
+      { text: "I've resolved the issue on our end. Please restart your device and let me know if it's working now.", category: 'resolve' },
+      { text: "I'm escalating this to our specialist team. They'll follow up with you within 24 hours.", category: 'escalate' },
+    );
+  }
+
+  suggestions.push({ text: "Is there anything else I can help you with? Have a great day! 😊", category: 'resolve' });
+
+  return suggestions;
 }
 
 export function getMultilingualResponse(userMessage: string): AIResponse {
