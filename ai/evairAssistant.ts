@@ -92,7 +92,7 @@ const KNOWLEDGE_BASE: KnowledgeEntry[] = [
       "4. 在蜂窝数据选项中打开数据漫游\n\n" +
       "**安卓：**\n" +
       "1. 前往 设置 > 网络和互联网 > SIM 卡\n" +
-      "2. 点击"添加 eSIM"或"下载 SIM"\n" +
+      "2. 点击'添加 eSIM'或'下载 SIM'\n" +
       "3. 扫描二维码\n\n" +
       "💡 安装过程中请确保连接 WiFi。",
     response_es:
@@ -147,8 +147,8 @@ const KNOWLEDGE_BASE: KnowledgeEntry[] = [
       "Data packages are available in various sizes and can be added at any time, even before your current plan expires.",
     response_zh:
       "您可以在 Evair 应用中查看和管理流量：\n\n" +
-      "📊 **查看剩余流量**：前往"我的 SIM 卡"标签页 — 环形图显示您的使用量。\n\n" +
-      "➕ **充值**：点击已激活 SIM 卡上的"添加流量"，购买额外流量包，1GB 起价 $3.00。\n\n" +
+      "📊 **查看剩余流量**：前往'我的 SIM 卡'标签页 — 环形图显示您的使用量。\n\n" +
+      "➕ **充值**：点击已激活 SIM 卡上的'添加流量'，购买额外流量包，1GB 起价 $3.00。\n\n" +
       "流量包有多种规格，可以随时添加，即使当前套餐尚未到期。",
     response_es:
       "Puedes verificar y gestionar tus datos en la app Evair:\n\n" +
@@ -236,7 +236,7 @@ const KNOWLEDGE_BASE: KnowledgeEntry[] = [
       "   • 安卓：设置 > 网络 > 移动数据 > 漫游\n" +
       "3️⃣ **手动选择网络**：设置 > 运营商 > 关闭自动，选择支持的运营商\n" +
       "4️⃣ **重启手机**\n" +
-      "5️⃣ 确认套餐是否已过期（在"我的 SIM 卡"中查看）\n\n" +
+      "5️⃣ 确认套餐是否已过期（在'我的 SIM 卡'中查看）\n\n" +
       "如果问题持续，请告诉我您的手机型号和所在国家，我会进一步帮助您！",
     response_es:
       "Solucionemos tu problema con EvairSIM:\n\n" +
@@ -316,7 +316,7 @@ const KNOWLEDGE_BASE: KnowledgeEntry[] = [
     response_zh:
       "您的流量套餐有效期从到达目的地国家首次连接网络时开始计算，而非购买时。\n\n" +
       "⏱️ **套餐时长**：根据套餐不同，从 7 天到 30 天不等。\n\n" +
-      "📅 **查看到期时间**：打开"我的 SIM 卡"标签页，到期日期会显示在卡片详情中。\n\n" +
+      "📅 **查看到期时间**：打开'我的 SIM 卡'标签页，到期日期会显示在卡片详情中。\n\n" +
       "您可以在当前套餐到期前购买新套餐或充值，以保持网络连接。",
     response_es:
       "La validez de tu plan comienza cuando te conectas por primera vez en tu país de destino, no cuando lo compras.\n\n" +
@@ -363,7 +363,7 @@ const KNOWLEDGE_BASE: KnowledgeEntry[] = [
       "👤 **查看/编辑资料**：个人中心 > 账户信息\n" +
       "🔒 **修改密码**：个人中心 > 账户信息 > 编辑（密码部分）\n" +
       "📧 **修改邮箱**：请联系客服团队 — 更换邮箱需要验证。\n" +
-      "🔑 **忘记密码**：在登录页面点击"忘记密码"，我们会发送重置链接。\n" +
+      "🔑 **忘记密码**：在登录页面点击'忘记密码'，我们会发送重置链接。\n" +
       "🗑️ **注销账户**：个人中心 > 账户信息 > 删除账户（在页面底部）。",
     response_es:
       "Para acciones de cuenta:\n\n" +
@@ -426,7 +426,7 @@ const KNOWLEDGE_BASE: KnowledgeEntry[] = [
       "是的，您可以同时使用多张 EvairSIM！\n\n" +
       "📱 **双卡设备**：保留主卡打电话，用 EvairSIM 上网。\n\n" +
       "✈️ **多个目的地**：为每个国家购买独立套餐，或选择地区/全球套餐。\n\n" +
-      "所有 SIM 卡都在"我的 SIM 卡"标签页中管理，可轻松切换。",
+      "所有 SIM 卡都在'我的 SIM 卡'标签页中管理，可轻松切换。",
     response_es:
       "¡Sí, puedes usar múltiples planes EvairSIM simultáneamente!\n\n" +
       "📱 **Dual SIM**: Mantén tu SIM principal para llamadas y usa EvairSIM para datos.\n\n" +
