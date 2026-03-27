@@ -135,6 +135,13 @@ const MySimsView: React.FC<MySimsViewProps> = ({ activeSims, onNavigate, filterT
   };
 
   const handleCardClick = (simId: string) => {
+    const sim = filteredSims.find(s => s.id === simId);
+    if (sim?.type === 'ESIM' && (sim.status === 'NEW' || sim.status === 'PENDING_ACTIVATION' || sim.status === 'NOT_ACTIVATED')) {
+      setSelectedSimId(simId);
+      setIsExpanded(false);
+      setIsInstallModalOpen(true);
+      return;
+    }
     if (isExpanded) {
       setSelectedSimId(simId);
       setIsExpanded(false);
@@ -435,7 +442,7 @@ const MySimsView: React.FC<MySimsViewProps> = ({ activeSims, onNavigate, filterT
                           : sim.type === 'PHYSICAL' && sim.status === 'EXPIRED'
                           ? 'Expired'
                           : sim.type === 'ESIM' && (sim.status === 'NEW' || sim.status === 'PENDING_ACTIVATION' || sim.status === 'NOT_ACTIVATED')
-                          ? 'Not installed · Tap to set up'
+                          ? 'Tap to install'
                           : isDataLow ? `⚠ ${formatGB(simRemaining)} ${t('my_sims.gb_remaining')}` : `${formatGB(simRemaining)} / ${formatGB(sim.dataTotalGB)} ${t('my_sims.gb_remaining')}`}
                       </div>
                     </div>
@@ -449,20 +456,27 @@ const MySimsView: React.FC<MySimsViewProps> = ({ activeSims, onNavigate, filterT
                       style={{
                       fontSize: 11, fontWeight: 700, padding: '3px 8px', borderRadius: 6,
                       whiteSpace: 'nowrap',
-                      backgroundColor: sim.status === 'ACTIVE' || sim.status === 'IN_USE' ? '#dcfce7'
+                      backgroundColor:
+                        sim.type === 'ESIM' && (sim.status === 'NEW' || sim.status === 'PENDING_ACTIVATION' || sim.status === 'NOT_ACTIVATED') ? '#dbeafe'
+                        : sim.status === 'ACTIVE' || sim.status === 'IN_USE' ? '#dcfce7'
                         : sim.status === 'NEW' ? '#dcfce7'
                         : sim.status === 'PENDING_ACTIVATION' || sim.status === 'NOT_ACTIVATED' ? '#dbeafe'
                         : sim.status === 'ONBOARD' ? '#fef3c7'
                         : '#fee2e2',
-                      color: sim.status === 'ACTIVE' || sim.status === 'IN_USE' ? '#15803d'
+                      color:
+                        sim.type === 'ESIM' && (sim.status === 'NEW' || sim.status === 'PENDING_ACTIVATION' || sim.status === 'NOT_ACTIVATED') ? '#1d4ed8'
+                        : sim.status === 'ACTIVE' || sim.status === 'IN_USE' ? '#15803d'
                         : sim.status === 'NEW' ? '#15803d'
                         : sim.status === 'PENDING_ACTIVATION' || sim.status === 'NOT_ACTIVATED' ? '#1d4ed8'
                         : sim.status === 'ONBOARD' ? '#a16207'
                         : '#b91c1c',
                       flexShrink: 0,
-                      cursor: (sim.status === 'PENDING_ACTIVATION' || sim.status === 'NOT_ACTIVATED') ? 'pointer' : 'default',
+                      cursor: sim.type === 'ESIM' && (sim.status === 'NEW' || sim.status === 'PENDING_ACTIVATION' || sim.status === 'NOT_ACTIVATED') ? 'pointer'
+                        : (sim.status === 'PENDING_ACTIVATION' || sim.status === 'NOT_ACTIVATED') ? 'pointer' : 'default',
                     }}>
-                      {t(`my_sims.status_${sim.status.toLowerCase()}`, t('my_sims.inactive'))}
+                      {sim.type === 'ESIM' && (sim.status === 'NEW' || sim.status === 'PENDING_ACTIVATION' || sim.status === 'NOT_ACTIVATED')
+                        ? 'Install'
+                        : t(`my_sims.status_${sim.status.toLowerCase()}`, t('my_sims.inactive'))}
                     </div>
                     {onDeleteSim && (
                       <button
