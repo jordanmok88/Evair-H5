@@ -745,13 +745,16 @@ const MySimsView: React.FC<MySimsViewProps> = ({ activeSims, onNavigate, filterT
                   </div>
                   <div className="flex items-center gap-2">
                     <span className={`text-sm font-bold px-2 py-1 rounded-md ${
-                      currentSim.status === 'ACTIVE' || currentSim.status === 'IN_USE' ? 'bg-green-100 text-green-700'
+                      currentSim.type === 'ESIM' && (currentSim.status === 'NEW' || currentSim.status === 'PENDING_ACTIVATION' || currentSim.status === 'NOT_ACTIVATED') ? 'bg-blue-100 text-blue-700'
+                      : currentSim.status === 'ACTIVE' || currentSim.status === 'IN_USE' ? 'bg-green-100 text-green-700'
                       : currentSim.status === 'NEW' || currentSim.status === 'PENDING_ACTIVATION' ? 'bg-blue-100 text-blue-700'
                       : currentSim.status === 'ONBOARD' ? 'bg-amber-100 text-amber-700'
                       : currentSim.status === 'EXPIRED' ? 'bg-red-100 text-red-700'
                       : 'bg-slate-100 text-slate-600'
                     }`}>
-                        {t(`my_sims.status_${currentSim.status.toLowerCase()}`, t('my_sims.inactive'))}
+                        {currentSim.type === 'ESIM' && (currentSim.status === 'NEW' || currentSim.status === 'PENDING_ACTIVATION' || currentSim.status === 'NOT_ACTIVATED')
+                          ? 'Not Installed'
+                          : t(`my_sims.status_${currentSim.status.toLowerCase()}`, t('my_sims.inactive'))}
                     </span>
                     {currentSim.iccid && (
                       <button
