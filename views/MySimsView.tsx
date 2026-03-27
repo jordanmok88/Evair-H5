@@ -424,6 +424,7 @@ const MySimsView: React.FC<MySimsViewProps> = ({ activeSims, onNavigate, filterT
                         : sim.type === 'PHYSICAL' && sim.status === 'NOT_ACTIVATED' ? '#f97316'
                         : sim.type === 'PHYSICAL' && sim.status === 'NEW' ? '#22c55e'
                         : sim.type === 'PHYSICAL' && sim.status === 'EXPIRED' ? '#ef4444'
+                        : sim.type === 'ESIM' && (sim.status === 'NEW' || sim.status === 'PENDING_ACTIVATION' || sim.status === 'NOT_ACTIVATED') ? '#3b82f6'
                         : isDataLow ? '#D97706' : '#94a3b8', marginTop: 2, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                         {sim.type === 'PHYSICAL' && sim.status === 'PENDING_ACTIVATION'
                           ? 'Arriving soon · tap to track'
@@ -433,6 +434,8 @@ const MySimsView: React.FC<MySimsViewProps> = ({ activeSims, onNavigate, filterT
                           ? `${formatGB(simRemaining)} / ${formatGB(sim.dataTotalGB)} · Ready`
                           : sim.type === 'PHYSICAL' && sim.status === 'EXPIRED'
                           ? 'Expired'
+                          : sim.type === 'ESIM' && (sim.status === 'NEW' || sim.status === 'PENDING_ACTIVATION' || sim.status === 'NOT_ACTIVATED')
+                          ? 'Not installed · Tap to set up'
                           : isDataLow ? `⚠ ${formatGB(simRemaining)} ${t('my_sims.gb_remaining')}` : `${formatGB(simRemaining)} / ${formatGB(sim.dataTotalGB)} ${t('my_sims.gb_remaining')}`}
                       </div>
                     </div>
@@ -587,32 +590,7 @@ const MySimsView: React.FC<MySimsViewProps> = ({ activeSims, onNavigate, filterT
           </div>
         </div>
       )}
-      {/* eSIM install prompt for uninstalled eSIMs */}
-      {currentSim.type === 'ESIM' && (currentSim.status === 'NEW' || currentSim.status === 'PENDING_ACTIVATION' || currentSim.status === 'NOT_ACTIVATED') && (
-        <div className="px-4 mb-4">
-          <div className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
-            <div className="flex flex-col items-center text-center px-6 pt-8 pb-5">
-              <div className="w-16 h-16 rounded-2xl bg-blue-50 flex items-center justify-center mb-4">
-                <QrCode size={28} className="text-blue-500" />
-              </div>
-              <h3 className="text-lg font-bold text-slate-900 mb-1">{t('my_sims.install_esim_title')}</h3>
-              <p className="text-sm text-slate-400 mb-1">{t('my_sims.install_esim_desc')}</p>
-              <p className="text-xs text-slate-300">{formatGB(currentSim.dataTotalGB)} · {currentSim.plan.days} {t('my_sims.days')}</p>
-            </div>
-            <div className="px-5 pb-5 space-y-2.5">
-              <button
-                onClick={() => setIsInstallModalOpen(true)}
-                className="w-full flex items-center justify-center gap-2 py-3.5 rounded-xl font-bold text-[15px] text-white active:scale-[0.98] transition-all"
-                style={{ background: 'linear-gradient(135deg, #FF6600 0%, #FF8A3D 100%)', boxShadow: '0 4px 14px rgba(255,102,0,0.25)' }}
-              >
-                <QrCode size={18} />
-                {t('my_sims.install_esim')}
-              </button>
-              <p className="text-[11px] text-slate-300 text-center">{t('my_sims.install_qr_hint')}</p>
-            </div>
-          </div>
-        </div>
-      )}
+      {/* Big install block removed — install instructions accessible via compact row below donut */}
       {/* DATA USAGE CARD — Ring gauge for selected SIM */}
       <div className="px-4 mb-5">
           <div className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden flex flex-col">
