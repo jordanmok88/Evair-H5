@@ -30,8 +30,16 @@ alwaysApply: true
 - Backend API at `evair.zhhwxt.cn` exists but only has 15 packages (needs 2,489)
 - When backend is ready, flip one config flag in dataService.ts to switch
 
+## eSIM Installation Rules
+- eSIM profiles can only be **downloaded/installed ONCE** from SM-DP+ server (standard GSMA behavior)
+- SM-DP+ status flow: RELEASED → DOWNLOADED → INSTALLED → ENABLED → DISABLED
+- If customer deletes profile from device, it cannot be re-downloaded — they need a new purchase
+- Install modal displays amber warning: "One-time installation only"
+- Warning translated in EN, ZH, ES
+
 ## Features Removed
 - **Bottom navigation bar**: Removed — blocked too much screen area on mobile
+- **Large "Install Your eSIM" center block**: Removed from My eSIMs page — replaced with compact banner indicator + row below donut
 
 ## i18n Policy
 - Every user-facing string MUST use `t()` translation keys

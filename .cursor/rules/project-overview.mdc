@@ -48,6 +48,10 @@ hooks/useEdgeSwipeBack.ts — iOS-like swipe gesture
 - Back navigation from Contact Us / Inbox uses `previousTab` ref to return to correct origin tab
 - Sample name placeholder: "John Smith" (not real user name)
 - App version shown in Profile: v2.9.0
+- **Page spacing**: `.pt-safe` class in `app.css` provides 12px top padding on mobile, 1.25rem on desktop, `env(safe-area-inset-top)` in standalone PWA. All headers use this class consistently.
+- **Navigation persistence**: `activeTab`, `currentSimType`, and `viewMode` saved to sessionStorage so pull-to-refresh returns to the same screen.
+- **Install eSIM UX**: No large center block. Uninstalled eSIMs show blue "Install" badge + "Tap to install" subtitle on banner card. Tapping opens install modal directly. One-time install warning shown at top of modal.
+- **Delete SIM**: Proceeds with local removal even if backend API unbind fails (expected for demo/test SIMs).
 
 ## Business Rules
 - **Physical SIM cards**: Only US data plans sold currently

@@ -1,6 +1,6 @@
 # Evair H5 — Development Conversation History
 
-> Last updated: March 24, 2026
+> Last updated: March 27, 2026
 
 ---
 
@@ -202,6 +202,45 @@ This document captures the full development history of the Evair H5 project acro
 
 ---
 
+## 9. Session — March 27, 2026
+
+### Delete SIM Fix
+- "Unknown error" appeared when deleting demo/test SIMs because `unbindSim()` calls the backend API which doesn't have these SIMs
+- Fix: Delete now proceeds with local removal even if the API call fails
+- Backend unbind will work when real SIMs are on the backend
+
+### Navigation Persistence on Refresh
+- Problem: Pull-to-refresh on mobile reset the app to the SIM Card shop tab every time
+- Fix: `activeTab`, `currentSimType` (in `App.tsx`) and `viewMode` (in `ProductTab.tsx`) now saved to `sessionStorage`
+- On refresh, the app returns to the exact same tab and view the user was on
+
+### Install eSIM UI Relocation
+- Removed the large center "Install Your eSIM" block that dominated the My eSIMs page
+- Added compact indicators on the SIM banner card row for uninstalled eSIMs:
+  - Blue "Install" badge (replaces green "Ready" to avoid confusion)
+  - "Tap to install" subtitle text in blue
+  - Tapping the card opens the install modal directly
+- Kept existing compact "Install eSIM" row below the data donut
+- Network Status detail badge also updated to show "Not Installed" for uninstalled eSIMs
+
+### Spacing Fix Across All Pages
+- Root cause: `.pt-safe` class in `app.css` only gave 2px top padding on mobile browsers
+- Fix: Updated `.pt-safe` from `2px` to `12px` — fixes ALL page headers at once
+- Added `mt-4` gap between header and SIM card list in MySimsView
+- All views (ShopView, ProfileView, ContactUsView, InboxView, PhysicalSimSetupView, MySimsView) now have consistent comfortable spacing
+
+### One-Time Install Warning
+- eSIM profiles can only be downloaded/installed ONCE from SM-DP+ (standard GSMA behavior)
+- Added amber warning banner at top of install modal: "One-time installation only — This eSIM can only be installed once. Please do not delete it from your device after installation, or it cannot be recovered."
+- Translated in all 3 languages (EN, ZH, ES)
+
+### Context Persistence
+- Updated all Cursor rules in `.cursor/rules/` with latest decisions
+- Updated `docs/CONVERSATION_HISTORY.md` with full session log
+- All changes pushed to git + iCloud after every modification
+
+---
+
 ## Pending / Future Work
 
 1. **Red Tea billing update**: Waiting for "charge on first data use" feature
@@ -210,3 +249,4 @@ This document captures the full development history of the Evair H5 project acro
 4. **Merge to main**: `feature/api-integration` branch ready when confirmed
 5. **Shipping carrier API**: Real tracking integration (currently placeholder)
 6. **App Store release**: Rate App feature will link to real store listing
+7. **Top-up modal layout**: User reported top-up page appearing at top of screen (modal fix was pushed but may need further verification)
