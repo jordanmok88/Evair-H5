@@ -196,8 +196,9 @@ const MySimsView: React.FC<MySimsViewProps> = ({ activeSims, onNavigate, filterT
   const dataUsed = currentSim.dataUsedGB;
   const dataTotal = currentSim.dataTotalGB;
   const dataRemaining = Math.max(0, dataTotal - dataUsed);
-  const percentRemaining = Math.min((dataRemaining / dataTotal) * 100, 100);
-  const percentUsed = 100 - percentRemaining;
+  const safeTotal = dataTotal > 0 ? dataTotal : 1;
+  const percentRemaining = Math.min(Math.max(0, (dataRemaining / safeTotal) * 100), 100);
+  const percentUsed = Math.min(Math.max(0, 100 - percentRemaining), 100);
   const ringRadius = 80;
   const ringStroke = 22;
   const ringCircumference = 2 * Math.PI * ringRadius;
@@ -205,8 +206,14 @@ const MySimsView: React.FC<MySimsViewProps> = ({ activeSims, onNavigate, filterT
   const segArc = ringCircumference / totalSegs;
   const gapArc = segArc * 0.3;
   const fillArc = segArc - gapArc;
-  const remainingSegs = Math.round((percentRemaining / 100) * totalSegs);
-  const usedSegs = totalSegs - remainingSegs;
+  // Round-trip to discrete segments loses tiny usages (e.g. 0.14% → 0 of 46 segs). Reserve at least
+  // one "used" segment when dataUsed > 0 and at least one "remaining" when dataRemaining > 0.
+  let usedSegs = Math.round((percentUsed / 100) * totalSegs);
+  if (dataUsed > 0 && usedSegs < 1) usedSegs = 1;
+  if (dataRemaining > 0 && usedSegs >= totalSegs) usedSegs = totalSegs - 1;
+  if (dataUsed <= 0) usedSegs = 0;
+  if (dataRemaining <= 0) usedSegs = totalSegs;
+  const remainingSegs = totalSegs - usedSegs;
 
   const handleCopy = (text: string, field: 'smdp' | 'activation' | 'qr') => {
     navigator.clipboard.writeText(text).then(() => {
