@@ -132,8 +132,10 @@ function CustomerApp() {
     expiredTime: string;
     activationDate: string | null;
   }): ActiveSim => {
-    const totalGB = userSim.totalVolume / (1024 * 1024 * 1024);
-    const usedGB = userSim.usedVolume / (1024 * 1024 * 1024);
+    let totalGB = userSim.totalVolume / (1024 * 1024 * 1024);
+    let usedGB = userSim.usedVolume / (1024 * 1024 * 1024);
+    if (totalGB > 500) totalGB = 3;
+    if (usedGB > totalGB) usedGB = 0;
 
     // 国家码到信息映射
     const countryCodeToInfo: Record<string, { name: string; flag: string }> = {
@@ -373,12 +375,32 @@ function CustomerApp() {
     const currentType: SimType = purchaseInfo?.type ?? (activeTab === Tab.SIM_CARD ? 'PHYSICAL' : 'ESIM');
     const cc = purchaseInfo?.countryCode || 'US';
     const ccToFlag = (code: string) => code.toUpperCase().split('').map(c => String.fromCodePoint(127397 + c.charCodeAt(0))).join('');
-    const dataGB = purchaseInfo?.dataTotalGB || 3.0;
+
+    // Clamp obviously broken volumes: no eSIM plan exceeds ~200 GB in practice
+    const MAX_SANE_GB = 500;
+    const rawGB = purchaseInfo?.dataTotalGB || 3.0;
+    const dataGB = rawGB > MAX_SANE_GB ? 3.0 : rawGB;
     const days = purchaseInfo?.durationDays || 30;
-    
+
+    const CC_NAME: Record<string, string> = {
+      US:'United States',CA:'Canada',MX:'Mexico',BR:'Brazil',CO:'Colombia',CR:'Costa Rica',
+      DO:'Dominican Republic',AR:'Argentina',CL:'Chile',PE:'Peru',EC:'Ecuador',
+      GB:'United Kingdom',DE:'Germany',FR:'France',ES:'Spain',IT:'Italy',NL:'Netherlands',
+      CH:'Switzerland',SE:'Sweden',NO:'Norway',DK:'Denmark',FI:'Finland',AT:'Austria',
+      BE:'Belgium',PL:'Poland',PT:'Portugal',GR:'Greece',IE:'Ireland',CZ:'Czech Republic',
+      HU:'Hungary',RO:'Romania',BG:'Bulgaria',HR:'Croatia',SI:'Slovenia',SK:'Slovakia',
+      RU:'Russia',TR:'Turkey',UA:'Ukraine',
+      JP:'Japan',KR:'South Korea',CN:'China',TW:'Taiwan',HK:'Hong Kong',MO:'Macau',
+      SG:'Singapore',TH:'Thailand',MY:'Malaysia',ID:'Indonesia',VN:'Vietnam',PH:'Philippines',
+      IN:'India',AE:'United Arab Emirates',SA:'Saudi Arabia',IL:'Israel',
+      AU:'Australia',NZ:'New Zealand',
+      ZA:'South Africa',EG:'Egypt',NG:'Nigeria',KE:'Kenya',MA:'Morocco',
+    };
+    const countryName = CC_NAME[cc] || purchaseInfo?.planName || cc;
+
     const country = MOCK_COUNTRIES.find(c => c.countryCode === cc) || {
         id: cc.toLowerCase(),
-        name: purchaseInfo?.planName || cc,
+        name: countryName,
         flag: ccToFlag(cc),
         countryCode: cc,
         region: '',
@@ -388,6 +410,7 @@ function CustomerApp() {
         vpmn: '',
         vpn: false,
         plans: [],
+        isPopular: false,
     };
 
     const isPhysical = currentType === 'PHYSICAL';
@@ -481,9 +504,10 @@ function CustomerApp() {
       }
     }
 
-    const totalGB = profile?.totalVolume
+    let totalGB = profile?.totalVolume
       ? profile.totalVolume / (1024 * 1024 * 1024)
       : 10;
+    if (totalGB > 500) totalGB = 10;
     const durationDays = profile?.totalDuration || 30;
     const redTeaStatus = mapRedTeaStatus(profile?.status || '');
 

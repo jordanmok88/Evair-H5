@@ -84,8 +84,10 @@ const MySimsView: React.FC<MySimsViewProps> = ({ activeSims, onNavigate, filterT
     try {
       const profile = await queryProfile(sim.iccid);
       const newStatus = mapRedTeaStatus(profile.status);
-      const usedGB = profile.usedVolume ? profile.usedVolume / (1024 * 1024 * 1024) : sim.dataUsedGB;
-      const totalGB = profile.totalVolume ? profile.totalVolume / (1024 * 1024 * 1024) : sim.dataTotalGB;
+      let usedGB = profile.usedVolume ? profile.usedVolume / (1024 * 1024 * 1024) : sim.dataUsedGB;
+      let totalGB = profile.totalVolume ? profile.totalVolume / (1024 * 1024 * 1024) : sim.dataTotalGB;
+      if (totalGB > 500) totalGB = sim.dataTotalGB || 3;
+      if (usedGB > totalGB) usedGB = sim.dataUsedGB;
       onUpdateSim(sim.id, {
         status: newStatus,
         dataUsedGB: Math.round(usedGB * 100) / 100,
