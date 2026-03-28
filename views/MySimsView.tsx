@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useId } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Wifi, Phone, Zap, ChevronDown, CheckCircle2, QrCode, Copy, X, Calendar, Clock, SignalHigh, Smartphone, RefreshCw, Plus, ShoppingBag, Settings, MoreHorizontal, Trash2, Check, AlertTriangle, Loader2, Globe, Database, Truck, ScanLine, Package, MapPin, ArrowLeft } from 'lucide-react';
 import { ActiveSim, Tab, SimType, EsimPackage } from '../types';
@@ -21,15 +21,21 @@ interface MySimsViewProps {
 const CARD_HEIGHT = 72;
 const CARD_PEEK = 50;
 
-function lerpColor(a: string, b: string, t: number): string {
-  const ah = parseInt(a.slice(1), 16);
-  const bh = parseInt(b.slice(1), 16);
-  const ar = (ah >> 16) & 0xff, ag = (ah >> 8) & 0xff, ab = ah & 0xff;
-  const br = (bh >> 16) & 0xff, bg = (bh >> 8) & 0xff, bb = bh & 0xff;
-  const rr = Math.round(ar + (br - ar) * t);
-  const rg = Math.round(ag + (bg - ag) * t);
-  const rb = Math.round(ab + (bb - ab) * t);
-  return `rgb(${rr},${rg},${rb})`;
+/** Binary TB/PB labels for huge plan totals (avoids 7-digit GB in the UI). */
+function gbStorageParts(gb: number): { key: string; n: string } {
+  const PB = 1024 * 1024;
+  const TB = 1024;
+  if (!Number.isFinite(gb) || gb < 0) return { key: 'my_sims.data_amount_na', n: '' };
+  if (gb >= PB) {
+    const v = gb / PB;
+    return { key: 'my_sims.data_amount_pb', n: v >= 100 ? v.toFixed(0) : v.toFixed(2) };
+  }
+  if (gb >= TB) {
+    const v = gb / TB;
+    return { key: 'my_sims.data_amount_tb', n: v >= 100 ? v.toFixed(0) : v.toFixed(2) };
+  }
+  if (gb >= 1000) return { key: 'my_sims.data_amount_gb', n: Math.round(gb).toString() };
+  return { key: 'my_sims.data_amount_gb', n: gb % 1 === 0 ? gb.toFixed(0) : gb.toFixed(1) };
 }
 
 function resolveIccid(sim: ActiveSim): string {
@@ -38,6 +44,7 @@ function resolveIccid(sim: ActiveSim): string {
 
 const MySimsView: React.FC<MySimsViewProps> = ({ activeSims, onNavigate, filterType, onSwitchToShop, onDeleteSim, onSwitchToSetup, onUpdateSim }) => {
   const { t } = useTranslation();
+  const donutGradId = useId().replace(/:/g, '');
   const swipeBack = useCallback(() => { onSwitchToShop?.(); }, [onSwitchToShop]);
   useEdgeSwipeBack(swipeBack);
   const filteredSims = activeSims.filter(s => s.type === filterType);
@@ -201,19 +208,14 @@ const MySimsView: React.FC<MySimsViewProps> = ({ activeSims, onNavigate, filterT
   const percentUsed = Math.min(Math.max(0, 100 - percentRemaining), 100);
   const ringRadius = 80;
   const ringStroke = 22;
-  const ringCircumference = 2 * Math.PI * ringRadius;
-  const totalSegs = 46;
-  const segArc = ringCircumference / totalSegs;
-  const gapArc = segArc * 0.3;
-  const fillArc = segArc - gapArc;
-  // Round-trip to discrete segments loses tiny usages (e.g. 0.14% → 0 of 46 segs). Reserve at least
-  // one "used" segment when dataUsed > 0 and at least one "remaining" when dataRemaining > 0.
-  let usedSegs = Math.round((percentUsed / 100) * totalSegs);
-  if (dataUsed > 0 && usedSegs < 1) usedSegs = 1;
-  if (dataRemaining > 0 && usedSegs >= totalSegs) usedSegs = totalSegs - 1;
-  if (dataUsed <= 0) usedSegs = 0;
-  if (dataRemaining <= 0) usedSegs = totalSegs;
-  const remainingSegs = totalSegs - usedSegs;
+  const donutCirc = 2 * Math.PI * ringRadius;
+  const fracRemaining = safeTotal > 0 ? Math.min(1, Math.max(0, dataRemaining / safeTotal)) : 0;
+  const dashRemaining = fracRemaining * donutCirc;
+  const remLabel = gbStorageParts(dataRemaining);
+  const totLabel = gbStorageParts(dataTotal);
+  const usedLabel = gbStorageParts(dataUsed);
+  const fmtStorage = (p: { key: string; n: string }) =>
+    p.key === 'my_sims.data_amount_na' ? t(p.key) : t(p.key, { n: p.n });
 
   const handleCopy = (text: string, field: 'smdp' | 'activation' | 'qr') => {
     navigator.clipboard.writeText(text).then(() => {
@@ -628,51 +630,37 @@ const MySimsView: React.FC<MySimsViewProps> = ({ activeSims, onNavigate, filterT
               {/* Ring gauge with text in center */}
               <div className="flex justify-center pt-8 pb-2">
                   <div className="relative" style={{ width: 200, height: 200 }}>
-                      <svg width={200} height={200} viewBox="0 0 200 200">
-                          {Array.from({ length: totalSegs }).map((_, i) => {
-                              const startAngle = (i / totalSegs) * 360 - 90;
-                              const endAngle = startAngle + (fillArc / ringCircumference) * 360;
-                              const startRad = (startAngle * Math.PI) / 180;
-                              const endRad = (endAngle * Math.PI) / 180;
-                              const x1 = 100 + ringRadius * Math.cos(startRad);
-                              const y1 = 100 + ringRadius * Math.sin(startRad);
-                              const x2 = 100 + ringRadius * Math.cos(endRad);
-                              const y2 = 100 + ringRadius * Math.sin(endRad);
-
-                              const isRemaining = i < remainingSegs;
-                              let color = '#D1D5DB';
-                              if (isRemaining) {
-                                  const t = remainingSegs > 1 ? i / (remainingSegs - 1) : 0;
-                                  if (t < 0.25) {
-                                      color = lerpColor('#FBBF24', '#F97316', t / 0.25);
-                                  } else if (t < 0.5) {
-                                      color = lerpColor('#F97316', '#EF4444', (t - 0.25) / 0.25);
-                                  } else if (t < 0.75) {
-                                      color = lerpColor('#EF4444', '#EC4899', (t - 0.5) / 0.25);
-                                  } else {
-                                      color = lerpColor('#EC4899', '#A855F7', (t - 0.75) / 0.25);
-                                  }
-                              }
-
-                              return (
-                                  <path
-                                      key={i}
-                                      d={`M ${x1} ${y1} A ${ringRadius} ${ringRadius} 0 0 1 ${x2} ${y2}`}
-                                      fill="none"
-                                      stroke={color}
-                                      strokeWidth={ringStroke}
-                                      strokeLinecap="butt"
-                                  />
-                              );
-                          })}
+                      <svg width={200} height={200} viewBox="0 0 200 200" aria-hidden>
+                          <defs>
+                              <linearGradient id={donutGradId} x1="0%" y1="0%" x2="100%" y2="100%">
+                                  <stop offset="0%" stopColor="#FBBF24" />
+                                  <stop offset="35%" stopColor="#F97316" />
+                                  <stop offset="70%" stopColor="#EC4899" />
+                                  <stop offset="100%" stopColor="#A855F7" />
+                              </linearGradient>
+                          </defs>
+                          <circle cx={100} cy={100} r={ringRadius} fill="none" stroke="#E8EAEF" strokeWidth={ringStroke} />
+                          <circle
+                              cx={100}
+                              cy={100}
+                              r={ringRadius}
+                              fill="none"
+                              stroke={`url(#${donutGradId})`}
+                              strokeWidth={ringStroke}
+                              strokeLinecap="round"
+                              strokeDasharray={`${dashRemaining} ${donutCirc}`}
+                              transform="rotate(-90 100 100)"
+                          />
                       </svg>
-                      <div className="absolute inset-0 flex flex-col items-center justify-center">
-                          <p className="text-slate-400 text-[12px] font-bold uppercase tracking-widest mb-1">{t('my_sims.remaining')}</p>
-                          <span className="text-4xl font-bold text-slate-900 tracking-tight leading-none">
-                              {dataRemaining % 1 === 0 ? dataRemaining.toFixed(0) : dataRemaining.toFixed(1)}
+                      <div className="absolute inset-0 flex flex-col items-center justify-center px-10 pointer-events-none text-center">
+                          <p className="text-slate-400 text-[10px] font-bold uppercase tracking-widest mb-1 leading-tight">
+                              {t('my_sims.remaining')}
+                          </p>
+                          <span className="text-lg sm:text-xl font-bold text-slate-900 tracking-tight leading-snug tabular-nums max-w-[7rem] break-words">
+                              {fmtStorage(remLabel)}
                           </span>
-                          <span className="text-sm font-semibold text-slate-400 mt-0.5">
-                              / {dataTotal % 1 === 0 ? dataTotal.toFixed(0) : dataTotal.toFixed(1)} GB
+                          <span className="text-[11px] font-semibold text-slate-400 mt-1 leading-snug tabular-nums max-w-[7rem] break-words">
+                              / {fmtStorage(totLabel)}
                           </span>
                       </div>
                   </div>
@@ -683,7 +671,7 @@ const MySimsView: React.FC<MySimsViewProps> = ({ activeSims, onNavigate, filterT
                   <div className="flex items-center gap-1.5">
                       <span className="w-2 h-2 rounded-full bg-brand-orange"></span>
                       <span className="text-sm font-semibold text-slate-500">
-                          {dataUsed % 1 === 0 ? dataUsed.toFixed(0) : dataUsed.toFixed(1)} {t('my_sims.gb_used')}
+                          {t('my_sims.used_with_unit', { data: fmtStorage(usedLabel) })}
                       </span>
                   </div>
                   <div className="w-px h-4 bg-slate-200"></div>
