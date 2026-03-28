@@ -418,6 +418,11 @@ const en = {
     filter_orders: 'Orders',
     filter_promos: 'Promos',
   },
+  app: {
+    test_mode_banner: 'Test mode',
+    test_mode_subline: 'No payment — local preview',
+    test_mode_exit: 'Exit',
+  },
   common: {
     all: 'All',
     promotions: 'Promotions',

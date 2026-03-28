@@ -5,6 +5,7 @@ import MySimsView from './MySimsView';
 import PhysicalSimSetupView from './PhysicalSimSetupView';
 interface ProductTabProps {
   type: SimType;
+  testMode?: boolean;
   isLoggedIn: boolean;
   user?: User;
   onLoginRequest: () => void;
@@ -19,7 +20,8 @@ interface ProductTabProps {
 }
 
 const ProductTab: React.FC<ProductTabProps> = ({ 
-  type, 
+  type,
+  testMode = false,
   isLoggedIn, 
   user,
   onLoginRequest, 
@@ -65,6 +67,7 @@ const ProductTab: React.FC<ProductTabProps> = ({
        {viewMode === 'SHOP' && (
           <ShopView 
             simType={type}
+            testMode={testMode}
             isLoggedIn={isLoggedIn}
             user={user}
             onLoginRequest={onLoginRequest}

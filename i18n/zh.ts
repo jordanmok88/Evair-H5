@@ -410,6 +410,11 @@ const zh = {
     filter_orders: '订单',
     filter_promos: '优惠',
   },
+  app: {
+    test_mode_banner: '测试模式',
+    test_mode_subline: '免支付 · 本地预览',
+    test_mode_exit: '关闭',
+  },
   common: {
     all: '全部',
     promotions: '促销',

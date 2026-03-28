@@ -410,6 +410,11 @@ const es = {
     filter_orders: 'Pedidos',
     filter_promos: 'Ofertas',
   },
+  app: {
+    test_mode_banner: 'Modo prueba',
+    test_mode_subline: 'Sin pago — vista previa local',
+    test_mode_exit: 'Salir',
+  },
   common: {
     all: 'Todo',
     promotions: 'Promociones',

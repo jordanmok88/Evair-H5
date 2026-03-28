@@ -11,6 +11,7 @@ import { Bell, UserCircle } from 'lucide-react';
 import { AppNotification } from '../types';
 
 interface ShopViewProps {
+  testMode?: boolean;
   isLoggedIn: boolean;
   user?: User;
   onLoginRequest: () => void;
@@ -156,7 +157,7 @@ function parseLocationsResponse(
   return { multiCountryRegions, singleCountries };
 }
 
-const ShopView: React.FC<ShopViewProps> = ({ isLoggedIn, user, onLoginRequest, onPurchaseComplete, simType, onSwitchToMySims, hasActiveSims, activeSims = [], onSwitchToSetup, onAddCard, onNavigate, onSwitchSimType, notifications = [] }) => {
+const ShopView: React.FC<ShopViewProps> = ({ testMode = false, isLoggedIn, user, onLoginRequest, onPurchaseComplete, simType, onSwitchToMySims, hasActiveSims, activeSims = [], onSwitchToSetup, onAddCard, onNavigate, onSwitchSimType, notifications = [] }) => {
   const { t } = useTranslation();
   const TOP_COUNTRY_COUNT = 10;
   const [selectedCountry, setSelectedCountry] = useState<Country | null>(null);
@@ -183,8 +184,6 @@ const ShopView: React.FC<ShopViewProps> = ({ isLoggedIn, user, onLoginRequest, o
   const [emailSent, setEmailSent] = useState(false);
   const [continentTab, setContinentTab] = useState<ContinentTab>('All');
   const [browseMode, setBrowseMode] = useState<'country' | 'region'>('country');
-  const [testMode, setTestMode] = useState(() => new URLSearchParams(window.location.search).get('testmode') === '1');
-
   // 后端返回的地区数据 (多国区域 + 单国家)
   const [multiCountryRegions, setMultiCountryRegions] = useState<MultiCountryRegion[]>([]);
   const [singleCountries, setSingleCountries] = useState<SingleCountry[]>([]);
@@ -1093,12 +1092,6 @@ const ShopView: React.FC<ShopViewProps> = ({ isLoggedIn, user, onLoginRequest, o
   // --- MAIN VIEW: Shop Home ---
   return (
     <div className="lg:h-full relative bg-[#F2F4F7]">
-      {testMode && (
-        <div className="bg-amber-400 text-amber-900 text-center text-xs font-bold py-1.5 tracking-wider z-50 relative flex items-center justify-center gap-2">
-          <Zap size={12} /> STAFF TEST MODE — No Payment Required
-          <button onClick={() => { setTestMode(false); window.history.replaceState({}, '', window.location.pathname); }} className="ml-2 bg-amber-900/20 hover:bg-amber-900/30 text-amber-900 px-2 py-0.5 rounded text-[10px] font-bold transition-colors">EXIT</button>
-        </div>
-      )}
       <div ref={scrollContainerRef} className="h-full lg:overflow-y-auto no-scrollbar">
         {/* Header - auto-hides on scroll down, reappears on scroll up */}
         <div
