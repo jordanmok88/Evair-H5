@@ -58,6 +58,16 @@ body {
   }
 }
 
+/* Donut ring breathing glow */
+@keyframes donut-breathe {
+  0%, 100% { filter: drop-shadow(0 0 4px rgba(255, 150, 0, 0.15)); }
+  50%      { filter: drop-shadow(0 0 12px rgba(255, 150, 0, 0.5)); }
+}
+.donut-breathe {
+  animation: donut-breathe 3s ease-in-out infinite;
+  will-change: filter;
+}
+
 /* Hide scrollbar for Chrome, Safari and Opera */
 .no-scrollbar::-webkit-scrollbar {
   display: none;

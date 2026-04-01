@@ -14,7 +14,7 @@ import { Tab, ActiveSim, SimType, User, AppNotification, EsimProfileResult } fro
 import { Lock } from 'lucide-react';
 import { MOCK_COUNTRIES, MOCK_PLANS_US, MOCK_ACTIVE_SIMS, MOCK_NOTIFICATIONS, CARRIER_MAP } from './constants';
 import { checkDataUsage, prefetchPackages, DEMO_MODE, mapRedTeaStatus, bindSim } from './services/dataService';
-import { supabaseConfigured, fetchNotifications } from './services/supabase';
+import { supabaseConfigured, fetchNotifications, logSimActivation } from './services/supabase';
 import { authService, userService, type UserDto } from './services/api';
 import { computeTestModeEnabled, dismissTestModeForSession, stripTestModeFromUrl } from './utils/testMode';
 
@@ -557,6 +557,13 @@ function CustomerApp() {
       };
       return [newSim, ...prev];
     });
+
+    // Log activation to Supabase for analytics (fire-and-forget)
+    logSimActivation({
+      iccid,
+      device: /iPhone|iPad/i.test(navigator.userAgent) ? 'iPhone' : /Android/i.test(navigator.userAgent) ? 'Android' : 'other',
+      user_agent: navigator.userAgent.slice(0, 512),
+    }).catch(() => {});
 
     // Re-fetch user SIMs to ensure serverSims is in sync
     fetchUserSims();

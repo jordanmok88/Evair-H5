@@ -118,6 +118,125 @@ export async function adminDeleteNotification(id: string): Promise<void> {
   if (error) throw error;
 }
 
+// ─── SIM Batches ─────────────────────────────────────────────────
+
+export interface DbSimBatch {
+  id: string;
+  batch_name: string;
+  channel: string;
+  iccid_start: string | null;
+  iccid_end: string | null;
+  iccids: string[] | null;
+  total_count: number;
+  ship_date: string | null;
+  notes: string | null;
+  created_at: string;
+}
+
+export interface DbSimActivation {
+  id: string;
+  iccid: string;
+  activated_at: string;
+  batch_id: string | null;
+  channel: string | null;
+  country: string | null;
+  region: string | null;
+  city: string | null;
+  device: string | null;
+  user_agent: string | null;
+}
+
+export interface DbQrScan {
+  id: string;
+  scanned_at: string;
+  source: string;
+  country: string | null;
+  region: string | null;
+  city: string | null;
+  device: string | null;
+  user_agent: string | null;
+  ip_hash: string | null;
+}
+
+export async function adminFetchBatches(): Promise<DbSimBatch[]> {
+  if (!supabase) return [];
+  const { data } = await supabase
+    .from('sim_batches')
+    .select('*')
+    .order('created_at', { ascending: false });
+  return (data ?? []) as DbSimBatch[];
+}
+
+export async function adminCreateBatch(
+  batch: Omit<DbSimBatch, 'id' | 'created_at'>
+): Promise<DbSimBatch | null> {
+  if (!supabase) return null;
+  const { data, error } = await supabase
+    .from('sim_batches')
+    .insert(batch)
+    .select()
+    .single();
+  if (error) throw error;
+  return data as DbSimBatch;
+}
+
+export async function adminDeleteBatch(id: string): Promise<void> {
+  if (!supabase) return;
+  const { error } = await supabase.from('sim_batches').delete().eq('id', id);
+  if (error) throw error;
+}
+
+export async function adminFetchActivations(): Promise<DbSimActivation[]> {
+  if (!supabase) return [];
+  const { data } = await supabase
+    .from('sim_activations')
+    .select('*')
+    .order('activated_at', { ascending: false })
+    .limit(500);
+  return (data ?? []) as DbSimActivation[];
+}
+
+export async function adminFetchActivationCountByBatch(): Promise<Record<string, number>> {
+  if (!supabase) return {};
+  const { data } = await supabase
+    .from('sim_activations')
+    .select('batch_id');
+  if (!data) return {};
+  const counts: Record<string, number> = {};
+  for (const row of data) {
+    if (row.batch_id) counts[row.batch_id] = (counts[row.batch_id] || 0) + 1;
+  }
+  return counts;
+}
+
+export async function logSimActivation(activation: {
+  iccid: string;
+  device: string;
+  user_agent: string;
+}): Promise<void> {
+  if (!supabase) return;
+  const batchLookup = await supabase.rpc('lookup_batch_by_iccid', { p_iccid: activation.iccid });
+  const batch = batchLookup.data?.[0] ?? null;
+
+  await supabase.from('sim_activations').insert({
+    iccid: activation.iccid,
+    batch_id: batch?.batch_id ?? null,
+    channel: batch?.channel ?? null,
+    device: activation.device,
+    user_agent: activation.user_agent,
+  });
+}
+
+export async function adminFetchQrScans(): Promise<DbQrScan[]> {
+  if (!supabase) return [];
+  const { data } = await supabase
+    .from('qr_scans')
+    .select('*')
+    .order('scanned_at', { ascending: false })
+    .limit(1000);
+  return (data ?? []) as DbQrScan[];
+}
+
 // ─── Chat / Conversations ────────────────────────────────────────
 
 export interface DbConversation {

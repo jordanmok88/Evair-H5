@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Bell, MessageSquare, LogOut, LogIn, Shield, AlertTriangle } from 'lucide-react';
+import { Bell, MessageSquare, LogOut, LogIn, Shield, AlertTriangle, Package, BarChart3, GitCompare } from 'lucide-react';
 import {
   supabaseConfigured,
   adminLogin,
@@ -8,8 +8,11 @@ import {
 } from '../../services/supabase';
 import AdminNotifications from './AdminNotifications';
 import AdminChat from './AdminChat';
+import AdminSimBatches from './AdminSimBatches';
+import AdminAnalytics from './AdminAnalytics';
+import AdminChannels from './AdminChannels';
 
-type AdminView = 'notifications' | 'chat';
+type AdminView = 'notifications' | 'chat' | 'sim-batches' | 'analytics' | 'channels';
 
 const AdminApp: React.FC = () => {
   const [isAuthed, setIsAuthed] = useState(false);
@@ -151,6 +154,42 @@ const AdminApp: React.FC = () => {
             <MessageSquare size={18} />
             Live Chat
           </button>
+
+          <div className="my-2 border-t border-slate-100" />
+
+          <button
+            onClick={() => setActiveView('sim-batches')}
+            className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-[14px] font-semibold transition-all ${
+              activeView === 'sim-batches'
+                ? 'bg-orange-50 text-orange-600'
+                : 'text-slate-600 hover:bg-slate-50'
+            }`}
+          >
+            <Package size={18} />
+            SIM Batches
+          </button>
+          <button
+            onClick={() => setActiveView('analytics')}
+            className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-[14px] font-semibold transition-all ${
+              activeView === 'analytics'
+                ? 'bg-orange-50 text-orange-600'
+                : 'text-slate-600 hover:bg-slate-50'
+            }`}
+          >
+            <BarChart3 size={18} />
+            QR Analytics
+          </button>
+          <button
+            onClick={() => setActiveView('channels')}
+            className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-[14px] font-semibold transition-all ${
+              activeView === 'channels'
+                ? 'bg-orange-50 text-orange-600'
+                : 'text-slate-600 hover:bg-slate-50'
+            }`}
+          >
+            <GitCompare size={18} />
+            Channels
+          </button>
         </nav>
 
         <div className="p-4 border-t border-slate-100">
@@ -176,6 +215,9 @@ const AdminApp: React.FC = () => {
       <main className="flex-1 min-h-screen">
         {activeView === 'notifications' && <AdminNotifications />}
         {activeView === 'chat' && <AdminChat />}
+        {activeView === 'sim-batches' && <AdminSimBatches />}
+        {activeView === 'analytics' && <AdminAnalytics />}
+        {activeView === 'channels' && <AdminChannels />}
       </main>
     </div>
   );
