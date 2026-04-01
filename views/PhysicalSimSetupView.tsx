@@ -502,32 +502,12 @@ const PhysicalSimSetupView: React.FC<PhysicalSimSetupViewProps> = ({ onSwitchToS
                   </button>
                 </div>
 
-                {/* SIM card illustration */}
-                <div className="w-full rounded-2xl bg-white border border-slate-200 p-5 mb-4 relative overflow-hidden" style={{ aspectRatio: '1.6/1', boxShadow: '0 2px 12px rgba(0,0,0,0.04)' }}>
-                  <div className="absolute top-4 left-5 right-4 flex items-start justify-between">
-                    <img src="/evairsim-logo.png" alt="EvairSIM" className="h-14 object-contain" />
-                    <div className="flex flex-col items-center gap-1">
-                      <div className="relative flex flex-col items-center">
-                        <div className="absolute -inset-x-4 -inset-y-3 rounded-xl border-2 border-brand-orange" style={{ boxShadow: '0 0 8px rgba(255,102,0,0.15)' }} />
-                        <div className="flex gap-[1px]">
-                          {Array.from({ length: 45 }).map((_, i) => (
-                            <div key={i} className="bg-slate-800 rounded-[0.5px]" style={{ width: i % 3 === 0 ? 2 : i % 2 === 0 ? 1.5 : 1, height: 22, opacity: 0.35 + (i % 3) * 0.2 }} />
-                          ))}
-                        </div>
-                        <div className="h-[5px] w-28 rounded-full bg-slate-200 mt-1.5" />
-                      </div>
-                      <div className="flex items-center gap-1.5 mt-3">
-                        <div className="w-0 h-0 border-l-[5px] border-l-transparent border-r-[5px] border-r-transparent border-b-[7px] border-b-brand-orange" />
-                        <span className="text-[11px] font-extrabold text-brand-orange tracking-widest">{t('sim_setup.this_is_iccid')}</span>
-                      </div>
-                    </div>
-                  </div>
-                  <div className="absolute top-[55%] -translate-y-1/2 left-5 w-12 h-10 rounded-lg bg-gradient-to-br from-amber-100 to-amber-200 border border-amber-300/60 flex items-center justify-center">
-                    <div className="w-8 h-6 rounded-sm border border-amber-300/80 bg-amber-50" />
-                  </div>
-                  <div className="absolute bottom-12 left-5 right-16 space-y-2.5">
-                    <div className="h-[5px] w-[75%] rounded-full" style={{ backgroundColor: '#e8ecf0' }} />
-                    <div className="h-[5px] w-[50%] rounded-full" style={{ backgroundColor: '#e8ecf0' }} />
+                {/* SIM card image */}
+                <div className="w-full mb-4 relative">
+                  <img src="/evairsim-card.png" alt="EvairSIM Card" className="w-full rounded-2xl shadow-sm border border-slate-100" />
+                  <div className="absolute bottom-3 right-4 flex items-center gap-1.5 bg-white/90 backdrop-blur-sm px-2.5 py-1.5 rounded-lg shadow-sm border border-orange-200">
+                    <div className="w-0 h-0 border-l-[5px] border-l-transparent border-r-[5px] border-r-transparent border-b-[7px] border-b-brand-orange" />
+                    <span className="text-[10px] font-extrabold text-brand-orange tracking-widest">{t('sim_setup.this_is_iccid')}</span>
                   </div>
                 </div>
 
