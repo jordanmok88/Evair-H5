@@ -1,7 +1,5 @@
 #!/usr/bin/env python3
-"""Generate a barcode for an ICCID number.
-Uses ITF (Interleaved 2 of 5) — compact for numeric-only data, standard for SIM cards.
-"""
+"""Generate a compact, bordered barcode for an ICCID number."""
 
 import barcode
 from barcode.writer import ImageWriter
@@ -18,54 +16,73 @@ os.makedirs(OUTPUT_DIR, exist_ok=True)
 
 writer = ImageWriter()
 writer.set_options({
-    'module_width': 0.6,
-    'module_height': 10,
+    'module_width': 0.25,
+    'module_height': 1.5,
     'font_size': 0,
     'text_distance': 0,
-    'quiet_zone': 4,
-    'dpi': 300,
+    'quiet_zone': 1,
+    'dpi': 200,
 })
 
-# ITF is much more compact than Code 128 for numeric data
-itf = barcode.get('itf', ICCID, writer=writer)
-out_path = os.path.join(OUTPUT_DIR, f'iccid-{ICCID}')
-filename = itf.save(out_path, {'write_text': False})
-
-bar_img = Image.open(filename)
+code128 = barcode.get('code128', ICCID, writer=writer)
+tmp_path = os.path.join(OUTPUT_DIR, f'_tmp_{ICCID}')
+tmp_file = code128.save(tmp_path, {'write_text': False})
+bar_img = Image.open(tmp_file).convert('RGB')
 bar_img = bar_img.crop(bar_img.getbbox())
 
-# Add ICCID text below
 try:
-    font = ImageFont.truetype('/System/Library/Fonts/Helvetica.ttc', 16)
-    font_small = ImageFont.truetype('/System/Library/Fonts/Helvetica.ttc', 11)
+    label_font = ImageFont.truetype('/System/Library/Fonts/Helvetica.ttc', 9)
+    num_font = ImageFont.truetype('/System/Library/Fonts/Helvetica.ttc', 8)
 except:
-    font = ImageFont.load_default()
-    font_small = font
+    label_font = ImageFont.load_default()
+    num_font = label_font
 
-pad = 12
-text_gap = 6
-label_h = 16
-number_h = 22
-canvas_w = bar_img.width + pad * 2
-canvas_h = bar_img.height + text_gap + label_h + number_h + pad
-
-new_img = Image.new('RGB', (canvas_w, canvas_h), 'white')
-new_img.paste(bar_img, (pad, pad // 2))
-
-draw = ImageDraw.Draw(new_img)
-
-# "ICCID" label
+# Measure text
+tmp_draw = ImageDraw.Draw(bar_img)
 label = 'ICCID'
-lbox = draw.textbbox((0, 0), label, font=font_small)
+lbox = tmp_draw.textbbox((0, 0), label, font=label_font)
+nbox = tmp_draw.textbbox((0, 0), ICCID, font=num_font)
+label_h = lbox[3] - lbox[1]
+num_h = nbox[3] - nbox[1]
+
+pad_x = 6
+pad_top = 4
+gap_label_bar = 2
+gap_bar_num = 2
+pad_bottom = 4
+border = 2
+
+inner_w = max(bar_img.width, nbox[2] - nbox[0]) + pad_x * 2
+inner_h = pad_top + label_h + gap_label_bar + bar_img.height + gap_bar_num + num_h + pad_bottom
+canvas_w = inner_w + border * 2
+canvas_h = inner_h + border * 2
+
+canvas = Image.new('RGB', (canvas_w, canvas_h), 'white')
+draw = ImageDraw.Draw(canvas)
+
+# Outer border
+draw.rounded_rectangle(
+    [(0, 0), (canvas_w - 1, canvas_h - 1)],
+    radius=6, outline='#CCCCCC', width=border
+)
+
+# "ICCID" label centered
 lw = lbox[2] - lbox[0]
-draw.text(((canvas_w - lw) / 2, bar_img.height + text_gap), label, fill='#999999', font=font_small)
+draw.text(((canvas_w - lw) / 2, border + pad_top), label, fill='#444444', font=label_font)
 
-# Number below
-nbox = draw.textbbox((0, 0), ICCID, font=font)
+# Barcode centered
+bar_x = (canvas_w - bar_img.width) // 2
+bar_y = border + pad_top + label_h + gap_label_bar
+canvas.paste(bar_img, (bar_x, bar_y))
+
+# Number centered
 nw = nbox[2] - nbox[0]
-draw.text(((canvas_w - nw) / 2, bar_img.height + text_gap + label_h), ICCID, fill='black', font=font)
+draw.text(((canvas_w - nw) / 2, bar_y + bar_img.height + gap_bar_num), ICCID, fill='#222222', font=num_font)
 
-new_img.save(filename)
-print(f'Barcode saved: {filename}  ({new_img.width}x{new_img.height}px)')
+out_path = os.path.join(OUTPUT_DIR, f'iccid-{ICCID}.png')
+canvas.save(out_path)
+print(f'Barcode saved: {out_path}  ({canvas_w}x{canvas_h}px)')
 print(f'ICCID: {ICCID}')
-print(f'Format: ITF (Interleaved 2 of 5)')
+
+# Clean up temp
+os.remove(tmp_file)

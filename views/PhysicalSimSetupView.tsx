@@ -502,13 +502,9 @@ const PhysicalSimSetupView: React.FC<PhysicalSimSetupViewProps> = ({ onSwitchToS
                   </button>
                 </div>
 
-                {/* SIM card image */}
-                <div className="w-full mb-4 relative">
-                  <img src="/evairsim-card.png" alt="EvairSIM Card" className="w-full rounded-2xl shadow-sm border border-slate-100" />
-                  <div className="absolute bottom-3 right-4 flex items-center gap-1.5 bg-white/90 backdrop-blur-sm px-2.5 py-1.5 rounded-lg shadow-sm border border-orange-200">
-                    <div className="w-0 h-0 border-l-[5px] border-l-transparent border-r-[5px] border-r-transparent border-b-[7px] border-b-brand-orange" />
-                    <span className="text-[10px] font-extrabold text-brand-orange tracking-widest">{t('sim_setup.this_is_iccid')}</span>
-                  </div>
+                {/* SIM card illustration — stretch to edges */}
+                <div className="-mx-5 mb-4">
+                  <img src="/evairsim-card-back.png" alt="SIM Card Back" className="w-full" />
                 </div>
 
                 <button

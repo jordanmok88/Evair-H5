@@ -636,6 +636,7 @@ const MySimsView: React.FC<MySimsViewProps> = ({ activeSims, onNavigate, filterT
               <div className="flex justify-center pt-8 pb-2">
                   <div className="relative" style={{ width: 200, height: 200 }}>
                       <svg width={200} height={200} viewBox="0 0 200 200">
+                        <g className="donut-breathe">
                           {Array.from({ length: totalSegs }).map((_, i) => {
                               const startAngle = (i / totalSegs) * 360 - 90;
                               const endAngle = startAngle + (fillArc / ringCircumference) * 360;
@@ -672,6 +673,7 @@ const MySimsView: React.FC<MySimsViewProps> = ({ activeSims, onNavigate, filterT
                                   />
                               );
                           })}
+                        </g>
                       </svg>
                       <div className="absolute inset-0 flex flex-col items-center justify-center">
                           <p className="text-slate-400 text-[12px] font-bold uppercase tracking-widest mb-1">{t('my_sims.remaining')}</p>
