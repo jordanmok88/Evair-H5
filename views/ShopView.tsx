@@ -1,9 +1,9 @@
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Search, ChevronRight, Loader2, Smartphone, Truck, CreditCard, RefreshCw, Globe } from 'lucide-react';
 import { SimType, User, EsimPackage, ActiveSim } from '../types';
 import FlagIcon from '../components/FlagIcon';
-import { fetchRechargePackages, retailPrice } from '../services/dataService';
+import { retailPrice } from '../services/dataService';
 import { Bell, UserCircle } from 'lucide-react';
 import { AppNotification } from '../types';
 
@@ -18,7 +18,12 @@ interface ShopViewProps {
   onSwitchToSetup?: () => void;
   onNavigate?: (tab: string) => void;
   notifications?: AppNotification[];
-  // 充值流程：点击套餐时调用此方法，切到 MySims 并预选套餐
+  // 套餐数据由 ProductTab 传入，避免视图切换时数据丢失
+  homepagePackages: EsimPackage[];
+  packagesLoading: boolean;
+  packagesError: string | null;
+  onLoadPackages: () => void;
+  // 充值流程：点击套餐时调用此方法
   onSelectTopUpPackage?: (pkg: EsimPackage) => void;
 }
 
@@ -26,41 +31,20 @@ const ShopView: React.FC<ShopViewProps> = ({
   isLoggedIn, user, onLoginRequest, simType,
   onSwitchToMySims, hasActiveSims, activeSims = [],
   onSwitchToSetup, onNavigate, notifications = [],
+  homepagePackages, packagesLoading, packagesError, onLoadPackages,
   onSelectTopUpPackage,
 }) => {
   const { t } = useTranslation();
   const [searchQuery, setSearchQuery] = useState('');
-
-  // PCCW recharge packages from API
-  const [homepagePackages, setHomepagePackages] = useState<EsimPackage[]>([]);
-  const [packagesLoading, setPackagesLoading] = useState(true);
-  const [packagesError, setPackagesError] = useState<string | null>(null);
-  const packagesLoadedRef = useRef(false);
-
   const [headerHidden, setHeaderHidden] = useState(false);
   const lastScrollY = useRef(0);
   const scrollThreshold = 10;
   const scrollContainerRef = useRef<HTMLDivElement>(null);
 
-  // Fetch PCCW recharge packages on mount
-  const loadPackages = useCallback(async () => {
-    setPackagesLoading(true);
-    setPackagesError(null);
-    try {
-      const packages = await fetchRechargePackages();
-      setHomepagePackages(packages);
-    } catch (err: any) {
-      setPackagesError(err.message || 'Failed to load packages');
-    } finally {
-      setPackagesLoading(false);
-    }
-  }, []);
-
+  // 挂载时触发加载（由 ProductTab 控制防止重复请求）
   useEffect(() => {
-    if (packagesLoadedRef.current) return;
-    packagesLoadedRef.current = true;
-    loadPackages();
-  }, [loadPackages]);
+    onLoadPackages();
+  }, [onLoadPackages]);
 
   useEffect(() => {
     const onScroll = (y: number) => {
@@ -120,7 +104,6 @@ const ShopView: React.FC<ShopViewProps> = ({
       onLoginRequest();
       return;
     }
-    // onSelectTopUpPackage 已在 ProductTab 中设置 pendingTopUpPackage 并切换到 MINE 视图
     onSelectTopUpPackage?.(pkg);
   };
 
@@ -269,7 +252,7 @@ const ShopView: React.FC<ShopViewProps> = ({
             <div className="flex flex-col items-center justify-center py-16">
               <p className="text-slate-500 text-sm mb-3">{t('shop.load_error')}</p>
               <button
-                onClick={loadPackages}
+                onClick={onLoadPackages}
                 className="flex items-center gap-2 bg-brand-orange text-white px-5 py-2.5 rounded-xl font-bold text-sm active:scale-95 transition-transform"
               >
                 <RefreshCw size={16} />

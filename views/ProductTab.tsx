@@ -1,8 +1,9 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { SimType, ActiveSim, Tab, User, AppNotification, EsimProfileResult, EsimPackage } from '../types';
 import ShopView from './ShopView';
 import MySimsView from './MySimsView';
 import PhysicalSimSetupView from './PhysicalSimSetupView';
+import { fetchRechargePackages } from '../services/dataService';
 
 interface ProductTabProps {
   type: SimType;
@@ -35,6 +36,7 @@ const ProductTab: React.FC<ProductTabProps> = ({
 }) => {
   const mySims = activeSims.filter(s => s.type === type);
 
+  // 视图模式：优先从 sessionStorage 恢复，页面首次加载时按是否有 SIM 卡决定
   const [viewMode, setViewMode] = useState<'SHOP' | 'MINE' | 'SETUP'>(() => {
     const saved = sessionStorage.getItem('evair-viewMode');
     if (saved === 'MINE' || saved === 'SHOP') return saved;
@@ -42,8 +44,26 @@ const ProductTab: React.FC<ProductTabProps> = ({
   });
   const [setupEntryPoint, setSetupEntryPoint] = useState<'SHOP' | 'MINE'>('SHOP');
 
-  // 充值流程：首页点击套餐时预选的套餐
-  const [pendingTopUpPackage, setPendingTopUpPackage] = useState<EsimPackage | null>(null);
+  // 首页套餐数据提升到此层，避免视图切换时数据丢失
+  const [homepagePackages, setHomepagePackages] = useState<EsimPackage[]>([]);
+  const [packagesLoading, setPackagesLoading] = useState(true);
+  const [packagesError, setPackagesError] = useState<string | null>(null);
+  const packagesLoadedRef = React.useRef(false);
+
+  const loadPackages = useCallback(async () => {
+    if (packagesLoadedRef.current) return;
+    packagesLoadedRef.current = true;
+    setPackagesLoading(true);
+    setPackagesError(null);
+    try {
+      const packages = await fetchRechargePackages();
+      setHomepagePackages(packages);
+    } catch (err: any) {
+      setPackagesError(err.message || 'Failed to load packages');
+    } finally {
+      setPackagesLoading(false);
+    }
+  }, []);
 
   useEffect(() => {
     sessionStorage.setItem('evair-viewMode', viewMode);
@@ -53,6 +73,9 @@ const ProductTab: React.FC<ProductTabProps> = ({
   const handleTopUpComplete = () => {
     setPendingTopUpPackage(null);
   };
+
+  // 充值流程：首页点击套餐时预选的套餐
+  const [pendingTopUpPackage, setPendingTopUpPackage] = useState<EsimPackage | null>(null);
 
   const handleSwitchToSetup = () => {
     setSetupEntryPoint(viewMode === 'MINE' ? 'MINE' : 'SHOP');
@@ -79,6 +102,10 @@ const ProductTab: React.FC<ProductTabProps> = ({
           onSwitchToSetup={() => handleSwitchToSetup()}
           onNavigate={(tab) => onNavigate(tab as Tab)}
           notifications={notifications}
+          homepagePackages={homepagePackages}
+          packagesLoading={packagesLoading}
+          packagesError={packagesError}
+          onLoadPackages={loadPackages}
           onSelectTopUpPackage={(pkg) => {
             setPendingTopUpPackage(pkg);
             setViewMode('MINE');
