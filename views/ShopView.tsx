@@ -41,10 +41,11 @@ const ShopView: React.FC<ShopViewProps> = ({
   const scrollThreshold = 10;
   const scrollContainerRef = useRef<HTMLDivElement>(null);
 
-  // 挂载时触发加载（由 ProductTab 控制防止重复请求）
+  // 挂载时触发加载
   useEffect(() => {
     onLoadPackages();
-  }, [onLoadPackages]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // 只在首次挂载时触发
 
   useEffect(() => {
     const onScroll = (y: number) => {
