@@ -82,7 +82,6 @@ const BottomNav: React.FC<BottomNavProps> = ({ activeTab, onTabChange, notificat
   const unreadCount = notifications.filter(n => !n.read).length;
   const tabs = [
     { id: Tab.SIM_CARD, label: t('nav.sim_card'), Icon: SimCardIcon, badge: 0 },
-    { id: Tab.ESIM, label: t('nav.esim'), Icon: EsimIcon, badge: 0 },
     { id: Tab.INBOX, label: t('nav.inbox'), Icon: InboxIcon, badge: unreadCount },
     { id: Tab.PROFILE, label: t('nav.profile'), Icon: ProfileIcon, badge: 0 },
   ];

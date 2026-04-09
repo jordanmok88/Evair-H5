@@ -16,6 +16,9 @@ interface MySimsViewProps {
   onDeleteSim?: (simId: string) => void;
   onSwitchToSetup?: (tab?: 'TRACKING' | 'ACTIVATE', trackingNumber?: string) => void;
   onUpdateSim?: (simId: string, updates: Partial<ActiveSim>) => void;
+  // 充值流程：首页点击套餐时预选的套餐
+  pendingTopUpPackage?: import('../types').EsimPackage | null;
+  onTopUpComplete?: () => void;
 }
 
 const CARD_HEIGHT = 72;
@@ -43,12 +46,16 @@ function resolveIccid(sim: ActiveSim): string {
   return sim.iccid || `898520002633221${sim.id.replace(/\D/g, '').slice(0, 5)}`;
 }
 
-const MySimsView: React.FC<MySimsViewProps> = ({ activeSims, onNavigate, filterType, onSwitchToShop, onDeleteSim, onSwitchToSetup, onUpdateSim }) => {
+const MySimsView: React.FC<MySimsViewProps> = ({
+  activeSims, onNavigate, filterType,
+  onSwitchToShop, onDeleteSim, onSwitchToSetup, onUpdateSim,
+  pendingTopUpPackage, onTopUpComplete,
+}) => {
   const { t } = useTranslation();
   const swipeBack = useCallback(() => { onSwitchToShop?.(); }, [onSwitchToShop]);
   useEdgeSwipeBack(swipeBack);
   const filteredSims = activeSims.filter(s => s.type === filterType);
-  
+
   const [selectedSimId, setSelectedSimId] = useState<string>('');
   const [isExpanded, setIsExpanded] = useState(false);
   const [isRechargeModalOpen, setIsRechargeModalOpen] = useState(false);
@@ -74,6 +81,7 @@ const MySimsView: React.FC<MySimsViewProps> = ({ activeSims, onNavigate, filterT
     iccid: string;
     packageCode: string;
     amount: number;
+    supplierType: 'pccw';
   } | null>(null);
 
   const currentSim = filteredSims.find(s => s.id === selectedSimId) || filteredSims[0];
@@ -106,13 +114,22 @@ const MySimsView: React.FC<MySimsViewProps> = ({ activeSims, onNavigate, filterT
     }
   }, [filteredSims, selectedSimId]);
 
+  // 首页点击充值套餐时，自动打开充值弹窗并预选套餐
+  useEffect(() => {
+    if (pendingTopUpPackage) {
+      setSelectedTopUp(pendingTopUpPackage);
+      setIsRechargeModalOpen(true);
+    }
+  }, [pendingTopUpPackage]);
+
   useEffect(() => {
     if (isRechargeModalOpen && topUpPackages.length === 0 && !topUpLoading && currentSim) {
       setTopUpLoading(true);
       const iccid = resolveIccid(currentSim);
+      const supplierType = currentSim.supplierType || 'pccw';
       const fallbackLocation = currentSim.locationCode || currentSim.country.countryCode;
       const locationFallback = () => fetchPackages({ locationCode: fallbackLocation });
-      const pkgPromise = currentSim.type === 'ESIM'
+      const pkgPromise = supplierType === 'pccw'
         ? fetchTopUpPackages(iccid)
             .then(pkgs => pkgs.length > 0 ? pkgs : locationFallback())
             .catch(locationFallback)
@@ -865,6 +882,7 @@ const MySimsView: React.FC<MySimsViewProps> = ({ activeSims, onNavigate, filterT
       {isRechargeModalOpen && (() => {
           const carrierInfo = CARRIER_MAP[currentSim.country.countryCode] || { carrier: 'Carrier', network: '4G' };
           const iccid = resolveIccid(currentSim);
+          const supplierType = currentSim.supplierType || 'pccw';
 
           // 非后端模式：直接调用供应商 API（旧流程）
           const handleTopUpPurchaseLegacy = async () => {
@@ -892,6 +910,7 @@ const MySimsView: React.FC<MySimsViewProps> = ({ activeSims, onNavigate, filterT
                 setIsRechargeModalOpen(false);
                 setSelectedTopUp(null);
                 setTopUpPackages([]);
+                onTopUpComplete?.();
               }, 2000);
             } catch (err: any) {
               alert(err.message || 'Top-up failed');
@@ -908,6 +927,7 @@ const MySimsView: React.FC<MySimsViewProps> = ({ activeSims, onNavigate, filterT
               iccid,
               packageCode: selectedTopUp.packageCode,
               amount: retailPrice(selectedTopUp.price),
+              supplierType,
             });
             setPaymentModalOpen(true);
           };
@@ -1081,6 +1101,7 @@ const MySimsView: React.FC<MySimsViewProps> = ({ activeSims, onNavigate, filterT
           setIsRechargeModalOpen(false);
           setSelectedTopUp(null);
           setTopUpPackages([]);
+          onTopUpComplete?.();
         }}
         onBack={() => {
           // 返回充值选择页面

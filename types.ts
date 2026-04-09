@@ -52,6 +52,8 @@ export interface ActiveSim {
   locationCode?: string;
   plan: Plan;
   type: SimType;
+  /** 供应商类型，固定为 PCCW */
+  supplierType?: 'pccw';
   activationDate: string;
   expiryDate: string;
   dataTotalGB: number;
@@ -218,7 +220,7 @@ export interface TopUpRequest {
   packageCode: string;
   transactionId: string;
   amount: number;
-  supplierType?: 'esimaccess' | 'pccw';
+  supplierType?: 'pccw';
 }
 
 export interface TopUpResult {

@@ -1,11 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { SimType, ActiveSim, Tab, User, AppNotification, EsimProfileResult } from '../types';
+import { SimType, ActiveSim, Tab, User, AppNotification, EsimProfileResult, EsimPackage } from '../types';
 import ShopView from './ShopView';
 import MySimsView from './MySimsView';
 import PhysicalSimSetupView from './PhysicalSimSetupView';
+
 interface ProductTabProps {
   type: SimType;
-  testMode?: boolean;
   isLoggedIn: boolean;
   user?: User;
   onLoginRequest: () => void;
@@ -19,39 +19,42 @@ interface ProductTabProps {
   notifications?: AppNotification[];
 }
 
-const ProductTab: React.FC<ProductTabProps> = ({ 
+const ProductTab: React.FC<ProductTabProps> = ({
   type,
-  testMode = false,
-  isLoggedIn, 
+  isLoggedIn,
   user,
-  onLoginRequest, 
-  onPurchaseComplete, 
+  onLoginRequest,
+  onPurchaseComplete,
   onAddCard,
   onDeleteSim,
   onUpdateSim,
   activeSims,
   onNavigate,
   onSwitchSimType,
-  notifications 
+  notifications
 }) => {
   const mySims = activeSims.filter(s => s.type === type);
-  
+
   const [viewMode, setViewMode] = useState<'SHOP' | 'MINE' | 'SETUP'>(() => {
     const saved = sessionStorage.getItem('evair-viewMode');
     if (saved === 'MINE' || saved === 'SHOP') return saved;
     return mySims.length > 0 ? 'MINE' : 'SHOP';
   });
-  const [setupTab, setSetupTab] = useState<'TRACKING' | 'ACTIVATE' | undefined>();
-  const [setupTrackingNumber, setSetupTrackingNumber] = useState<string | undefined>();
   const [setupEntryPoint, setSetupEntryPoint] = useState<'SHOP' | 'MINE'>('SHOP');
+
+  // 充值流程：首页点击套餐时预选的套餐
+  const [pendingTopUpPackage, setPendingTopUpPackage] = useState<EsimPackage | null>(null);
 
   useEffect(() => {
     sessionStorage.setItem('evair-viewMode', viewMode);
   }, [viewMode]);
 
-  const handleSwitchToSetup = (tab?: 'TRACKING' | 'ACTIVATE', trackingNumber?: string) => {
-    setSetupTab(tab);
-    setSetupTrackingNumber(trackingNumber);
+  // 充值完成后清除预选套餐
+  const handleTopUpComplete = () => {
+    setPendingTopUpPackage(null);
+  };
+
+  const handleSwitchToSetup = () => {
     setSetupEntryPoint(viewMode === 'MINE' ? 'MINE' : 'SHOP');
     setViewMode('SETUP');
   };
@@ -64,58 +67,51 @@ const ProductTab: React.FC<ProductTabProps> = ({
 
   return (
     <div className="lg:h-full relative">
-       {viewMode === 'SHOP' && (
-          <ShopView 
-            simType={type}
-            testMode={testMode}
-            isLoggedIn={isLoggedIn}
-            user={user}
-            onLoginRequest={onLoginRequest}
-            onPurchaseComplete={(info) => {
-                onPurchaseComplete(info);
-                setViewMode('MINE');
-            }}
-            hasActiveSims={mySims.length > 0}
-            activeSims={activeSims}
-            onSwitchToMySims={() => setViewMode('MINE')}
-            onSwitchToSetup={() => handleSwitchToSetup()}
-            onAddCard={async (iccid) => {
-                await onAddCard?.(iccid);
-                setViewMode('MINE');
-            }}
-            onNavigate={(tab) => onNavigate(tab as Tab)}
-            onSwitchSimType={onSwitchSimType}
-            notifications={notifications}
-          />
-       )}
-       
-       {viewMode === 'MINE' && (
-          <MySimsView 
-            activeSims={activeSims}
-            filterType={type}
-            onNavigate={onNavigate}
-            onSwitchToShop={() => setViewMode('SHOP')}
-            onDeleteSim={onDeleteSim}
-            onSwitchToSetup={handleSwitchToSetup}
-            onUpdateSim={onUpdateSim}
-          />
-       )}
+      {viewMode === 'SHOP' && (
+        <ShopView
+          simType={type}
+          isLoggedIn={isLoggedIn}
+          user={user}
+          onLoginRequest={onLoginRequest}
+          onSwitchToMySims={() => setViewMode('MINE')}
+          hasActiveSims={mySims.length > 0}
+          activeSims={activeSims}
+          onSwitchToSetup={() => handleSwitchToSetup()}
+          onNavigate={(tab) => onNavigate(tab as Tab)}
+          notifications={notifications}
+          onSelectTopUpPackage={(pkg) => {
+            setPendingTopUpPackage(pkg);
+            setViewMode('MINE');
+          }}
+        />
+      )}
 
-       {viewMode === 'SETUP' && (
-          <PhysicalSimSetupView 
-             onSwitchToShop={() => setViewMode(setupEntryPoint)}
-             onSwitchToList={() => setViewMode('MINE')}
-             onAddCard={async (iccid, profile) => {
-                await onAddCard?.(iccid, profile);
-                setViewMode('MINE');
-             }}
-             initialTab={setupTab}
-             trackingNumber={setupTrackingNumber}
-             isLoggedIn={isLoggedIn}
-             onLoginRequest={onLoginRequest}
-          />
-       )}
+      {viewMode === 'MINE' && (
+        <MySimsView
+          activeSims={activeSims}
+          filterType={type}
+          onNavigate={onNavigate}
+          onSwitchToShop={() => setViewMode('SHOP')}
+          onDeleteSim={onDeleteSim}
+          onSwitchToSetup={handleSwitchToSetup}
+          onUpdateSim={onUpdateSim}
+          pendingTopUpPackage={pendingTopUpPackage}
+          onTopUpComplete={handleTopUpComplete}
+        />
+      )}
 
+      {viewMode === 'SETUP' && (
+        <PhysicalSimSetupView
+          onSwitchToShop={() => setViewMode(setupEntryPoint)}
+          onSwitchToList={() => setViewMode('MINE')}
+          onAddCard={async (iccid, profile) => {
+            await onAddCard?.(iccid, profile);
+            setViewMode('MINE');
+          }}
+          isLoggedIn={isLoggedIn}
+          onLoginRequest={onLoginRequest}
+        />
+      )}
     </div>
   );
 };

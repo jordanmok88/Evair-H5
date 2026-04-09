@@ -5,58 +5,22 @@ import BottomNav from './components/BottomNav';
 import ProductTab from './views/ProductTab';
 import ProfileView from './views/ProfileView';
 import LoginModal from './views/LoginModal';
-import DialerView from './views/DialerView';
 import ContactUsView from './views/ContactUsView';
 import InboxView from './views/InboxView';
-import AdminApp from './views/admin/AdminApp';
-import ApiTestPage from './views/ApiTestPage';
 import { Tab, ActiveSim, SimType, User, AppNotification, EsimProfileResult } from './types';
 import { Lock } from 'lucide-react';
-import { MOCK_COUNTRIES, MOCK_PLANS_US, MOCK_ACTIVE_SIMS, MOCK_NOTIFICATIONS, CARRIER_MAP } from './constants';
-import { checkDataUsage, prefetchPackages, DEMO_MODE, mapRedTeaStatus, bindSim } from './services/dataService';
+import { MOCK_ACTIVE_SIMS, MOCK_NOTIFICATIONS, CARRIER_MAP } from './constants';
+import { checkDataUsage, DEMO_MODE, mapRedTeaStatus, bindSim } from './services/dataService';
 import { supabaseConfigured, fetchNotifications, logSimActivation } from './services/supabase';
 import { authService, userService, type UserDto } from './services/api';
-import { computeTestModeEnabled, dismissTestModeForSession, stripTestModeFromUrl } from './utils/testMode';
 
 function App() {
-
-  // Admin mode: detected via URL hash
-  const [isAdmin, setIsAdmin] = useState(() => window.location.hash.includes('admin'));
-
-  // API Test mode: detected via URL hash
-  const [isApiTest, setIsApiTest] = useState(() => window.location.hash.includes('api-test'));
-
-  useEffect(() => {
-    const onHash = () => {
-      setIsAdmin(window.location.hash.includes('admin'));
-      setIsApiTest(window.location.hash.includes('api-test'));
-    };
-    window.addEventListener('hashchange', onHash);
-    return () => window.removeEventListener('hashchange', onHash);
-  }, []);
-
-  if (isAdmin) return <AdminApp />;
-  if (isApiTest) return <ApiTestPage />;
-
   return <CustomerApp />;
 }
 
 function CustomerApp() {
   const { t } = useTranslation();
   const phoneRef = useRef<HTMLDivElement>(null);
-  const [testMode, setTestMode] = useState(computeTestModeEnabled);
-
-  useEffect(() => {
-    const sync = () => setTestMode(computeTestModeEnabled());
-    window.addEventListener('popstate', sync);
-    return () => window.removeEventListener('popstate', sync);
-  }, []);
-
-  const exitTestMode = useCallback(() => {
-    setTestMode(false);
-    dismissTestModeForSession();
-    stripTestModeFromUrl();
-  }, []);
 
   // 初始化认证状态
   const [isLoggedIn, setIsLoggedIn] = useState(() => authService.isLoggedIn());
@@ -258,8 +222,6 @@ function CustomerApp() {
     }
   }, [isLoggedIn, fetchUserSims]);
 
-  useEffect(() => { prefetchPackages(); }, []);
-
   // Fetch real notifications from Supabase (if configured) and merge with mocks
   const notifFetched = useRef(false);
   useEffect(() => {
@@ -398,7 +360,7 @@ function CustomerApp() {
     };
     const countryName = CC_NAME[cc] || purchaseInfo?.planName || cc;
 
-    const country = MOCK_COUNTRIES.find(c => c.countryCode === cc) || {
+    const country = {
         id: cc.toLowerCase(),
         name: countryName,
         flag: ccToFlag(cc),
@@ -414,6 +376,8 @@ function CustomerApp() {
     };
 
     const isPhysical = currentType === 'PHYSICAL';
+    // 统一使用 PCCW 供应商
+    const supplierType: 'pccw' = 'pccw';
     const newSim: ActiveSim = {
         id: `${currentType}-${Math.floor(Math.random() * 10000)}`,
         iccid: purchaseInfo?.iccid,
@@ -421,6 +385,7 @@ function CustomerApp() {
         locationCode: purchaseInfo?.locationCode,
         plan: { id: `plan-${Date.now()}`, name: purchaseInfo?.planName || 'eSIM Plan', data: `${dataGB} GB`, days, price: 0, features: [] },
         type: currentType,
+        supplierType,
         activationDate: new Date().toISOString(),
         expiryDate: new Date(Date.now() + days * 24 * 60 * 60 * 1000).toISOString(),
         dataTotalGB: dataGB,
@@ -541,7 +506,7 @@ function CustomerApp() {
         isPopular: false,
       };
 
-      const plan = MOCK_PLANS_US[0];
+      const plan = { id: `plan-${Date.now()}`, name: pkgName || 'PCCW Plan', data: `${totalGB.toFixed(1)} GB`, days: durationDays, price: 0, features: [] };
 
       const newSim: ActiveSim = {
         id: `SIM-PHYS-${Math.floor(Math.random() * 10000)}`,
@@ -549,6 +514,7 @@ function CustomerApp() {
         country,
         plan,
         type: 'PHYSICAL',
+        supplierType: 'pccw',
         activationDate: new Date().toISOString(),
         expiryDate: new Date(Date.now() + durationDays * 24 * 60 * 60 * 1000).toISOString(),
         dataTotalGB: Math.round(totalGB * 10) / 10,
@@ -623,7 +589,6 @@ function CustomerApp() {
                 onNavigate={handleTabChange}
                 onSwitchSimType={handleSwitchSimType}
                 notifications={notifications}
-                testMode={testMode}
             />
         );
       case Tab.INBOX:
@@ -670,24 +635,6 @@ function CustomerApp() {
 
         {/* Main Content Area */}
         <main className="w-full relative lg:overflow-hidden flex flex-col" style={{ height: 'calc(100% - 54px)' }}>
-          {testMode && (
-            <div className="shrink-0 bg-amber-400 text-amber-950 px-3 py-2 z-50 border-b border-amber-500/30 flex flex-wrap items-center justify-center gap-x-2 gap-y-1 text-center">
-              <span className="inline-flex items-center gap-1.5 text-xs font-bold tracking-wide">
-                <Zap size={14} className="shrink-0" aria-hidden />
-                {t('app.test_mode_banner')}
-              </span>
-              <span className="text-[11px] font-medium text-amber-900/90 w-full sm:w-auto sm:inline">
-                {t('app.test_mode_subline')}
-              </span>
-              <button
-                type="button"
-                onClick={exitTestMode}
-                className="text-[10px] font-bold uppercase tracking-wide bg-amber-950/15 hover:bg-amber-950/25 px-2 py-1 rounded-md transition-colors"
-              >
-                {t('app.test_mode_exit')}
-              </button>
-            </div>
-          )}
           <div className="flex-1 min-h-0 overflow-hidden">{renderContent()}</div>
         </main>
 

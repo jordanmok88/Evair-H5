@@ -60,11 +60,17 @@ export const packageService = {
   },
 
   /**
-   * 获取充值套餐（针对特定 eSIM）
-   * @param iccid eSIM ICCID
+   * 获取充值套餐（针对特定 SIM 卡，PCCW 供应商）
+   * @param params 查询参数
    */
-  async getRechargePackages(iccid: string): Promise<{ packages: PackageDto[] }> {
-    return get<{ packages: PackageDto[] }>(ENDPOINTS.RECHARGE_PACKAGES, { iccid });
+  async getRechargePackages(params: {
+    iccid?: string;
+    supplierType?: 'pccw';
+  }): Promise<{ packages: PackageDto[] }> {
+    return get<{ packages: PackageDto[] }>(ENDPOINTS.RECHARGE_PACKAGES, {
+      iccid: params.iccid,
+      supplier_type: params.supplierType,
+    });
   },
 
   /**
@@ -109,9 +115,9 @@ export const packageService = {
 
 export const esimService = {
   /**
-   * 获取 eSIM 预览（绑定前查看）
-   * GET /h5/esim/preview/{iccid}
-   * @param iccid eSIM ICCID
+   * 获取 SIM 卡预览（绑定前查看，PCCW 供应商）
+   * GET /h5/esim/preview/{iccid}?supplier_type=pccw
+   * @param iccid SIM 卡 ICCID
    */
   async getPreview(iccid: string): Promise<{
     iccid: string;
@@ -125,7 +131,8 @@ export const esimService = {
     };
     expiredTime: string;
   }> {
-    return get(ENDPOINTS.ESIM_PREVIEW(iccid));
+    // PCCW 供应商固定传 supplier_type=pccw
+    return get(ENDPOINTS.ESIM_PREVIEW(iccid), { supplier_type: 'pccw' });
   },
 
   /**

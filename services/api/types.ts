@@ -63,7 +63,11 @@ export enum ApiErrorCode {
   ORDER_AMOUNT_TOO_LOW = 5014,
 
   // eSIM 模块 (6000-6999)
-  // 预留
+  ESIM_NOT_FOUND = 6001,
+  ESIM_FORBIDDEN = 6002,
+  PCCW_PACKAGE_NOT_FOUND = 6004,
+  PCCW_PACKAGE_DISABLED = 6005,
+  PCCW_PACKAGE_NO_PRICE = 6006,
 
   // 第三方服务 (7000-7999)
   // 预留
@@ -503,8 +507,8 @@ export interface EsimUsageDto {
 export interface TopupRequest {
   iccid: string;
   packageCode: string;
-  amount: number;
-  supplierType?: 'esimaccess' | 'pccw';
+  supplierType: 'pccw';
+  amount?: number;
 }
 
 export interface TopupResponse {
