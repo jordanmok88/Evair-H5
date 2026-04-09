@@ -35,6 +35,7 @@ const ShopView: React.FC<ShopViewProps> = ({
   const [homepagePackages, setHomepagePackages] = useState<EsimPackage[]>([]);
   const [packagesLoading, setPackagesLoading] = useState(true);
   const [packagesError, setPackagesError] = useState<string | null>(null);
+  const packagesLoadedRef = useRef(false);
 
   const [headerHidden, setHeaderHidden] = useState(false);
   const lastScrollY = useRef(0);
@@ -56,6 +57,8 @@ const ShopView: React.FC<ShopViewProps> = ({
   }, []);
 
   useEffect(() => {
+    if (packagesLoadedRef.current) return;
+    packagesLoadedRef.current = true;
     loadPackages();
   }, [loadPackages]);
 
@@ -117,9 +120,8 @@ const ShopView: React.FC<ShopViewProps> = ({
       onLoginRequest();
       return;
     }
-    // 充值：切到 MySims 视图并预选套餐
+    // onSelectTopUpPackage 已在 ProductTab 中设置 pendingTopUpPackage 并切换到 MINE 视图
     onSelectTopUpPackage?.(pkg);
-    onSwitchToMySims?.();
   };
 
   // --- MAIN VIEW: Shop Home ---
