@@ -57,13 +57,6 @@ const ProductTab: React.FC<ProductTabProps> = ({
     setViewMode('SETUP');
   };
 
-  useEffect(() => {
-    // 有待充值套餐时不要自动跳回 SHOP
-    if (viewMode === 'MINE' && mySims.length === 0 && !pendingTopUpPackage) {
-      setViewMode('SHOP');
-    }
-  }, [mySims.length, viewMode, pendingTopUpPackage]);
-
   return (
     <div className="lg:h-full relative">
       {viewMode === 'SHOP' && (

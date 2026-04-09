@@ -123,13 +123,16 @@ const MySimsView: React.FC<MySimsViewProps> = ({
       if (filteredSims.length === 0) {
         // 没有 SIM 卡，提示用户先添加
         setShowNoSimHint(true);
-        onTopUpComplete?.(); // 清除 pendingTopUpPackage
+        // 不清除 pendingTopUpPackage，用户可以看到提示
       } else {
+        setShowNoSimHint(false);
         setSelectedTopUp(pendingTopUpPackage);
         setIsRechargeModalOpen(true);
       }
+    } else {
+      setShowNoSimHint(false);
     }
-  }, [pendingTopUpPackage, filteredSims.length, onTopUpComplete]);
+  }, [pendingTopUpPackage, filteredSims.length]);
 
   useEffect(() => {
     if (isRechargeModalOpen && topUpPackages.length === 0 && !topUpLoading && currentSim) {
