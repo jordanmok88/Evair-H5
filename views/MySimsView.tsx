@@ -115,12 +115,21 @@ const MySimsView: React.FC<MySimsViewProps> = ({
   }, [filteredSims, selectedSimId]);
 
   // 首页点击充值套餐时，自动打开充值弹窗并预选套餐
+  // 必须有至少一个 SIM 卡才能充值，否则引导用户先添加 SIM
+  const [showNoSimHint, setShowNoSimHint] = useState(false);
+
   useEffect(() => {
     if (pendingTopUpPackage) {
-      setSelectedTopUp(pendingTopUpPackage);
-      setIsRechargeModalOpen(true);
+      if (filteredSims.length === 0) {
+        // 没有 SIM 卡，提示用户先添加
+        setShowNoSimHint(true);
+        onTopUpComplete?.(); // 清除 pendingTopUpPackage
+      } else {
+        setSelectedTopUp(pendingTopUpPackage);
+        setIsRechargeModalOpen(true);
+      }
     }
-  }, [pendingTopUpPackage]);
+  }, [pendingTopUpPackage, filteredSims.length, onTopUpComplete]);
 
   useEffect(() => {
     if (isRechargeModalOpen && topUpPackages.length === 0 && !topUpLoading && currentSim) {
@@ -202,9 +211,14 @@ const MySimsView: React.FC<MySimsViewProps> = ({
                       </button>
                   </div>
               </div>
-              <p className="text-slate-500 mb-8 font-medium text-base tracking-tight">
+              <p className="text-slate-500 mb-4 font-medium text-base tracking-tight">
                   {filterType === 'ESIM' ? t('my_sims.no_esims') : t('my_sims.no_sims')}
               </p>
+              {showNoSimHint && (
+                <div className="bg-amber-50 border border-amber-200 rounded-xl px-4 py-3 mb-4 max-w-xs">
+                  <p className="text-sm text-amber-800 font-medium">Please add a SIM card first before recharging.</p>
+                </div>
+              )}
               {onSwitchToShop && (
                 <button 
                     onClick={onSwitchToShop}
