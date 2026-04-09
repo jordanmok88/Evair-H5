@@ -121,9 +121,7 @@ const MySimsView: React.FC<MySimsViewProps> = ({
   useEffect(() => {
     if (pendingTopUpPackage) {
       if (filteredSims.length === 0) {
-        // 没有 SIM 卡，提示用户先添加
         setShowNoSimHint(true);
-        // 不清除 pendingTopUpPackage，用户可以看到提示
       } else {
         setShowNoSimHint(false);
         setSelectedTopUp(pendingTopUpPackage);
@@ -188,6 +186,40 @@ const MySimsView: React.FC<MySimsViewProps> = ({
     }
   };
 
+  // 无 SIM 卡时的充值引导弹窗
+  if (showNoSimHint && pendingTopUpPackage) {
+    return (
+      <div className="lg:h-full min-h-[60vh] flex flex-col items-center justify-center px-8 text-center bg-[#F2F4F7]">
+        <div className="bg-white rounded-2xl shadow-lg border border-slate-100 p-6 max-w-sm w-full">
+          <div className="w-12 h-12 rounded-full bg-amber-100 flex items-center justify-center mx-auto mb-4">
+            <Smartphone size={24} className="text-amber-600" />
+          </div>
+          <h3 className="text-lg font-bold text-slate-900 mb-2">No SIM Card Found</h3>
+          <p className="text-sm text-slate-500 mb-6">
+            You need to add a SIM card first before you can top up. Go to Add SIM to activate your card.
+          </p>
+          <div className="flex gap-3">
+            <button
+              onClick={() => setShowNoSimHint(false)}
+              className="flex-1 py-3 rounded-xl font-semibold text-sm text-slate-600 bg-slate-100 hover:bg-slate-200 active:scale-[0.98] transition-all"
+            >
+              Cancel
+            </button>
+            <button
+              onClick={() => {
+                setShowNoSimHint(false);
+                onSwitchToSetup?.('ACTIVATE');
+              }}
+              className="flex-1 py-3 rounded-xl font-bold text-sm text-white bg-brand-orange hover:bg-orange-600 active:scale-[0.98] transition-all shadow-md"
+            >
+              Add SIM
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   // EMPTY STATE
   if (!currentSim) {
       return (
@@ -214,16 +246,11 @@ const MySimsView: React.FC<MySimsViewProps> = ({
                       </button>
                   </div>
               </div>
-              <p className="text-slate-500 mb-4 font-medium text-base tracking-tight">
+              <p className="text-slate-500 mb-8 font-medium text-base tracking-tight">
                   {filterType === 'ESIM' ? t('my_sims.no_esims') : t('my_sims.no_sims')}
               </p>
-              {showNoSimHint && (
-                <div className="bg-amber-50 border border-amber-200 rounded-xl px-4 py-3 mb-4 max-w-xs">
-                  <p className="text-sm text-amber-800 font-medium">Please add a SIM card first before recharging.</p>
-                </div>
-              )}
               {onSwitchToShop && (
-                <button 
+                <button
                     onClick={onSwitchToShop}
                     className="bg-brand-orange hover:bg-orange-600 text-white w-40 py-3 rounded-xl font-bold text-base shadow-lg shadow-orange-500/15 active:scale-95 transition-all flex items-center justify-center gap-2"
                 >

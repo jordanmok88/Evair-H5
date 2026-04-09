@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { Search, ChevronRight, Loader2, Smartphone, Truck, CreditCard, RefreshCw, Globe } from 'lucide-react';
 import { SimType, User, EsimPackage, ActiveSim } from '../types';
 import FlagIcon from '../components/FlagIcon';
-import { retailPrice } from '../services/dataService';
+import { fetchRechargePackages, retailPrice } from '../services/dataService';
 import { Bell, UserCircle } from 'lucide-react';
 import { AppNotification } from '../types';
 
@@ -18,12 +18,6 @@ interface ShopViewProps {
   onSwitchToSetup?: () => void;
   onNavigate?: (tab: string) => void;
   notifications?: AppNotification[];
-  // 套餐数据由 ProductTab 传入，避免视图切换时数据丢失
-  homepagePackages: EsimPackage[];
-  packagesLoading: boolean;
-  packagesError: string | null;
-  onLoadPackages: () => void;
-  // 充值流程：点击套餐时调用此方法
   onSelectTopUpPackage?: (pkg: EsimPackage) => void;
 }
 
@@ -31,21 +25,30 @@ const ShopView: React.FC<ShopViewProps> = ({
   isLoggedIn, user, onLoginRequest, simType,
   onSwitchToMySims, hasActiveSims, activeSims = [],
   onSwitchToSetup, onNavigate, notifications = [],
-  homepagePackages, packagesLoading, packagesError, onLoadPackages,
   onSelectTopUpPackage,
 }) => {
   const { t } = useTranslation();
   const [searchQuery, setSearchQuery] = useState('');
+  const [packages, setPackages] = useState<EsimPackage[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [headerHidden, setHeaderHidden] = useState(false);
   const lastScrollY = useRef(0);
   const scrollThreshold = 10;
   const scrollContainerRef = useRef<HTMLDivElement>(null);
+  const loaded = useRef(false);
 
-  // 挂载时触发加载
+  // 加载套餐数据（组件生命周期内只请求一次）
   useEffect(() => {
-    onLoadPackages();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []); // 只在首次挂载时触发
+    if (loaded.current) return;
+    loaded.current = true;
+    setLoading(true);
+    setError(null);
+    fetchRechargePackages()
+      .then(setPackages)
+      .catch((err: any) => setError(err.message || 'Failed to load packages'))
+      .finally(() => setLoading(false));
+  }, []);
 
   useEffect(() => {
     const onScroll = (y: number) => {
@@ -73,7 +76,7 @@ const ShopView: React.FC<ShopViewProps> = ({
   }, []);
 
   // Filter packages by search query
-  const filteredPackages = homepagePackages.filter(pkg =>
+  const filteredPackages = packages.filter(pkg =>
     !searchQuery || pkg.name.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
@@ -106,6 +109,17 @@ const ShopView: React.FC<ShopViewProps> = ({
       return;
     }
     onSelectTopUpPackage?.(pkg);
+  };
+
+  // Reload function for error state
+  const handleRetry = () => {
+    loaded.current = false;
+    setLoading(true);
+    setError(null);
+    fetchRechargePackages()
+      .then(setPackages)
+      .catch((err: any) => setError(err.message || 'Failed to load packages'))
+      .finally(() => setLoading(false));
   };
 
   // --- MAIN VIEW: Shop Home ---
@@ -241,7 +255,7 @@ const ShopView: React.FC<ShopViewProps> = ({
           </div>
 
           {/* Loading state */}
-          {packagesLoading && (
+          {loading && (
             <div className="flex flex-col items-center justify-center py-16">
               <Loader2 size={32} className="animate-spin text-brand-orange mb-3" />
               <p className="text-slate-400 text-sm font-medium">{t('shop.loading_plans')}</p>
@@ -249,11 +263,11 @@ const ShopView: React.FC<ShopViewProps> = ({
           )}
 
           {/* Error state */}
-          {packagesError && !packagesLoading && (
+          {error && !loading && (
             <div className="flex flex-col items-center justify-center py-16">
-              <p className="text-slate-500 text-sm mb-3">{t('shop.load_error')}</p>
+              <p className="text-slate-500 text-sm mb-3">{error}</p>
               <button
-                onClick={onLoadPackages}
+                onClick={handleRetry}
                 className="flex items-center gap-2 bg-brand-orange text-white px-5 py-2.5 rounded-xl font-bold text-sm active:scale-95 transition-transform"
               >
                 <RefreshCw size={16} />
@@ -262,12 +276,12 @@ const ShopView: React.FC<ShopViewProps> = ({
             </div>
           )}
 
-          {/* Package cards from API */}
-          {!packagesLoading && !packagesError && filteredPackages.length > 0 && (
+          {/* Package cards */}
+          {!loading && !error && filteredPackages.length > 0 && (
             <>
               <h3 className="text-lg font-bold text-slate-900 mb-3 tracking-tight">{t('shop.purchase_sim_cards')}</h3>
 
-              {/* Region header — dynamically derived from package locations */}
+              {/* Region header */}
               {(() => {
                 const regionLabel = isSingleCountry
                   ? countryName(primaryCountryCode)
@@ -291,12 +305,10 @@ const ShopView: React.FC<ShopViewProps> = ({
                           <span className="text-[11px] font-semibold text-brand-orange bg-orange-50 px-1.5 py-0.5 rounded-full border border-orange-100 shrink-0">{filteredPackages.length} {filteredPackages.length === 1 ? 'Plan' : 'Plans'}</span>
                         </div>
                         <p className="text-xs text-slate-400 mt-0.5">
-                          {isSingleCountry
-                            ? '3G/4G/5G'
-                            : uniqueLocations.map(loc => {
-                                const codes = loc.split(',').map(c => c.trim());
-                                return codes.length === 1 ? countryName(codes[0]) : `${codes.length} Countries`;
-                              }).join(' · ')}
+                          {isSingleCountry ? '3G/4G/5G' : uniqueLocations.map(loc => {
+                            const codes = loc.split(',').map(c => c.trim());
+                            return codes.length === 1 ? countryName(codes[0]) : `${codes.length} Countries`;
+                          }).join(' · ')}
                         </p>
                       </div>
                     </div>
@@ -348,7 +360,7 @@ const ShopView: React.FC<ShopViewProps> = ({
             </>
           )}
 
-          {!packagesLoading && !packagesError && filteredPackages.length === 0 && !searchQuery && (
+          {!loading && !error && filteredPackages.length === 0 && !searchQuery && (
             <div className="text-center py-10 text-slate-400 text-sm">No plans available</div>
           )}
 
