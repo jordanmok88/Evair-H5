@@ -197,6 +197,25 @@ export interface CreateAddressRequest {
 
 export interface UpdateAddressRequest extends Partial<CreateAddressRequest> {}
 
+/** POST …/addresses 成功时 data 形态（BACKEND_API_SPEC 2.2.8；后端也可能返回更多字段） */
+export interface AddressCreatedResponse {
+  id: string;
+  recipientName: string;
+  isDefault: boolean;
+  createdAt: string;
+}
+
+/** PUT …/addresses/:id 成功时 data 形态（2.2.9）；设置默认地址复用同一 PUT */
+export interface AddressUpdatedResponse {
+  id: string;
+  updatedAt?: string;
+}
+
+/** DELETE …/addresses/:id 成功时 data 形态（2.2.10） */
+export interface AddressDeletedResponse {
+  success: boolean;
+}
+
 // ─── 套餐模块类型 ────────────────────────────────────────────────────────
 
 export interface PackageDto {
