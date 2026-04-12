@@ -59,155 +59,7 @@ export async function fetchNotifications(lang: string): Promise<AppNotification[
   return (data as DbNotification[]).map(n => dbNotifToApp(n, lang));
 }
 
-// Admin: CRUD for notifications (requires auth)
-
-export async function adminLogin(email: string, password: string) {
-  if (!supabase) throw new Error('Supabase not configured');
-  const { data, error } = await supabase.auth.signInWithPassword({ email, password });
-  if (error) throw error;
-  return data;
-}
-
-export async function adminLogout() {
-  if (!supabase) return;
-  await supabase.auth.signOut();
-}
-
-export async function getAdminSession() {
-  if (!supabase) return null;
-  const { data } = await supabase.auth.getSession();
-  return data.session;
-}
-
-export async function adminFetchAllNotifications(): Promise<DbNotification[]> {
-  if (!supabase) return [];
-  const { data, error } = await supabase
-    .from('notifications')
-    .select('*')
-    .order('created_at', { ascending: false });
-  if (error || !data) return [];
-  return data as DbNotification[];
-}
-
-export async function adminCreateNotification(notif: Omit<DbNotification, 'id' | 'created_at'>): Promise<DbNotification | null> {
-  if (!supabase) return null;
-  const { data, error } = await supabase
-    .from('notifications')
-    .insert(notif)
-    .select()
-    .single();
-  if (error) throw error;
-  return data as DbNotification;
-}
-
-export async function adminUpdateNotification(id: string, updates: Partial<DbNotification>): Promise<void> {
-  if (!supabase) return;
-  const { error } = await supabase
-    .from('notifications')
-    .update(updates)
-    .eq('id', id);
-  if (error) throw error;
-}
-
-export async function adminDeleteNotification(id: string): Promise<void> {
-  if (!supabase) return;
-  const { error } = await supabase
-    .from('notifications')
-    .delete()
-    .eq('id', id);
-  if (error) throw error;
-}
-
-// ─── SIM Batches ─────────────────────────────────────────────────
-
-export interface DbSimBatch {
-  id: string;
-  batch_name: string;
-  channel: string;
-  iccid_start: string | null;
-  iccid_end: string | null;
-  iccids: string[] | null;
-  total_count: number;
-  ship_date: string | null;
-  notes: string | null;
-  created_at: string;
-}
-
-export interface DbSimActivation {
-  id: string;
-  iccid: string;
-  activated_at: string;
-  batch_id: string | null;
-  channel: string | null;
-  country: string | null;
-  region: string | null;
-  city: string | null;
-  device: string | null;
-  user_agent: string | null;
-}
-
-export interface DbQrScan {
-  id: string;
-  scanned_at: string;
-  source: string;
-  country: string | null;
-  region: string | null;
-  city: string | null;
-  device: string | null;
-  user_agent: string | null;
-  ip_hash: string | null;
-}
-
-export async function adminFetchBatches(): Promise<DbSimBatch[]> {
-  if (!supabase) return [];
-  const { data } = await supabase
-    .from('sim_batches')
-    .select('*')
-    .order('created_at', { ascending: false });
-  return (data ?? []) as DbSimBatch[];
-}
-
-export async function adminCreateBatch(
-  batch: Omit<DbSimBatch, 'id' | 'created_at'>
-): Promise<DbSimBatch | null> {
-  if (!supabase) return null;
-  const { data, error } = await supabase
-    .from('sim_batches')
-    .insert(batch)
-    .select()
-    .single();
-  if (error) throw error;
-  return data as DbSimBatch;
-}
-
-export async function adminDeleteBatch(id: string): Promise<void> {
-  if (!supabase) return;
-  const { error } = await supabase.from('sim_batches').delete().eq('id', id);
-  if (error) throw error;
-}
-
-export async function adminFetchActivations(): Promise<DbSimActivation[]> {
-  if (!supabase) return [];
-  const { data } = await supabase
-    .from('sim_activations')
-    .select('*')
-    .order('activated_at', { ascending: false })
-    .limit(500);
-  return (data ?? []) as DbSimActivation[];
-}
-
-export async function adminFetchActivationCountByBatch(): Promise<Record<string, number>> {
-  if (!supabase) return {};
-  const { data } = await supabase
-    .from('sim_activations')
-    .select('batch_id');
-  if (!data) return {};
-  const counts: Record<string, number> = {};
-  for (const row of data) {
-    if (row.batch_id) counts[row.batch_id] = (counts[row.batch_id] || 0) + 1;
-  }
-  return counts;
-}
+// ─── SIM Activation Logging ─────────────────────────────────────
 
 export async function logSimActivation(activation: {
   iccid: string;
@@ -227,17 +79,7 @@ export async function logSimActivation(activation: {
   });
 }
 
-export async function adminFetchQrScans(): Promise<DbQrScan[]> {
-  if (!supabase) return [];
-  const { data } = await supabase
-    .from('qr_scans')
-    .select('*')
-    .order('scanned_at', { ascending: false })
-    .limit(1000);
-  return (data ?? []) as DbQrScan[];
-}
-
-// ─── Chat / Conversations ────────────────────────────────────────
+// ─── Chat / Conversations (Customer-facing) ─────────────────────
 
 export interface DbConversation {
   id: string;
@@ -311,7 +153,6 @@ export async function sendMessage(
     .single();
   if (error) return null;
 
-  // Update conversation timestamp
   await supabase
     .from('conversations')
     .update({ updated_at: new Date().toISOString() })
@@ -354,40 +195,6 @@ export function subscribeToMessages(
         filter: `conversation_id=eq.${conversationId}`,
       },
       (payload) => onMessage(payload.new as DbChatMessage),
-    )
-    .subscribe();
-}
-
-// ─── Admin: Chat Dashboard ───────────────────────────────────────
-
-export async function adminFetchConversations(): Promise<DbConversation[]> {
-  if (!supabase) return [];
-  const { data } = await supabase
-    .from('conversations')
-    .select('*')
-    .order('updated_at', { ascending: false })
-    .limit(100);
-  return (data ?? []) as DbConversation[];
-}
-
-export async function adminResolveConversation(id: string): Promise<void> {
-  if (!supabase) return;
-  await supabase
-    .from('conversations')
-    .update({ status: 'resolved', updated_at: new Date().toISOString() })
-    .eq('id', id);
-}
-
-export function subscribeToConversations(
-  onUpdate: (conv: DbConversation) => void,
-): RealtimeChannel | null {
-  if (!supabase) return null;
-  return supabase
-    .channel('admin:conversations')
-    .on(
-      'postgres_changes',
-      { event: '*', schema: 'public', table: 'conversations' },
-      (payload) => onUpdate(payload.new as DbConversation),
     )
     .subscribe();
 }
