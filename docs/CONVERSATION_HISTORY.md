@@ -1,6 +1,11 @@
 # Evair H5 — Development Conversation History
 
-> Last updated: March 27, 2026
+> Last updated: April 18, 2026
+>
+> **Flutter successor app**: A native mobile app (EvairSIM, Flutter 3.38) has been started to replace this H5.
+> Full Flutter history lives at `~/Development/EvairSIM-App/docs/CONVERSATION_HISTORY.md`.
+> Flutter repo: https://github.com/jordanmok88/EvairSIM-App (`main`)
+> See "Flutter Transition" section at the bottom of this file.
 
 ---
 
@@ -250,3 +255,31 @@ This document captures the full development history of the Evair H5 project acro
 5. **Shipping carrier API**: Real tracking integration (currently placeholder)
 6. **App Store release**: Rate App feature will link to real store listing
 7. **Top-up modal layout**: User reported top-up page appearing at top of screen (modal fix was pushed but may need further verification)
+
+---
+
+## Flutter Transition (starting April 17, 2026)
+
+Jordan decided to build a **native Flutter mobile app** to replace this H5. The Flutter app is a separate repo/codebase; this H5 remains the production web app until the Flutter app ships to TestFlight.
+
+### Key facts
+- **Local path**: `~/Development/EvairSIM-App` (not in iCloud — iCloud path caused `flutter create` to hang)
+- **GitHub**: https://github.com/jordanmok88/EvairSIM-App (`main`)
+- **Aliyun mirror**: `codeup.aliyun.com/sz0755/ZenoSIM/flutter.git` → branch `feature/evairsim-jordan`
+- **iCloud backup**: `~/Library/Mobile Documents/com~apple~CloudDocs/EvairSIM-App-Backup`
+- **App name**: EvairSIM · **Platform priority**: iOS first (Option A)
+- **Apple ID**: `jordan_mok@icloud.com`
+
+### Status (April 18, 2026 — end of session 1)
+Milestones M0–M7 complete in one autonomous pass:
+- M0 Flutter env setup · M1 Auth · M2 Shop browse · M3 Purchase + checkout
+- M4 My SIMs + top-up + physical SIM activation · M5 Profile
+- M6 i18n (en/zh/es) with persisted language switcher
+- M7 App icons + native splash + iOS Info.plist + `docs/TESTFLIGHT_GUIDE.md`
+
+### Open work for next session (April 19)
+Jordan compared the running Flutter Shop page to `views/ShopView.tsx` and flagged the Flutter UI is **structurally different** from the H5 (dark gradient header vs. white sticky header, missing SIM/eSIM toggle, missing hero card, missing My-SIMs quick-jump bar, wrong popular plans treatment).
+
+**Session 2 priority**: redo Flutter UI to be **1:1 faithful to the H5 design**, not just inspired by it. Start with Shop, then My SIMs, Profile, Checkout/QR, Physical SIM activation.
+
+Full details, architecture decisions, API endpoint mappings, deferred work, and session-by-session log live in `~/Development/EvairSIM-App/docs/CONVERSATION_HISTORY.md`.
