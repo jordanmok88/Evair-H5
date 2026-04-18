@@ -277,9 +277,24 @@ Milestones M0–M7 complete in one autonomous pass:
 - M6 i18n (en/zh/es) with persisted language switcher
 - M7 App icons + native splash + iOS Info.plist + `docs/TESTFLIGHT_GUIDE.md`
 
-### Open work for next session (April 19)
-Jordan compared the running Flutter Shop page to `views/ShopView.tsx` and flagged the Flutter UI is **structurally different** from the H5 (dark gradient header vs. white sticky header, missing SIM/eSIM toggle, missing hero card, missing My-SIMs quick-jump bar, wrong popular plans treatment).
+### Session 2 (April 19, 2026) — Shop redesign + portal wiring + strategic pivot
 
-**Session 2 priority**: redo Flutter UI to be **1:1 faithful to the H5 design**, not just inspired by it. Start with Shop, then My SIMs, Profile, Checkout/QR, Physical SIM activation.
+1. **Shop redesign (done)**: Flutter Shop page now mirrors H5 structurally — white sticky header, SIM/eSIM toggle, mode-specific hero cards, unified country list with popular-first sorting + amber star highlight. Committed + pushed (`21976eb`).
 
-Full details, architecture decisions, API endpoint mappings, deferred work, and session-by-session log live in `~/Development/EvairSIM-App/docs/CONVERSATION_HISTORY.md`.
+2. **Portal integration (done)**: Wired Flutter app to admin portal endpoints for notifications and live chat. Built `NotificationApi` / `ChatApi` + repositories + Riverpod providers. Still need to rewrite the UI on top.
+
+3. **Strategic pivot (IMPORTANT — affects H5 thinking too)**: Jordan clarified the app's product scope:
+
+   > "the major feature of the APP will be bind and top up the sim card from PCCW, and then to be able to connect, top up red tea eSIM. No more eCard at the moment"
+
+   Translates to:
+   - PCCW physical SIM is PRIMARY (bind + top-up)
+   - Red Tea eSIM is SECONDARY ("connect" by pasting LPA code / scanning QR, then top-up)
+   - **NO more eSIM marketplace** — country browse / buy-new-eSIM flow is parked
+   - **No shipping or in-app purchase flow** — customers buy PCCW SIMs on Amazon / Temu / Jordan's site; the app only handles activation + top-up
+   - Top-up packages come from the admin portal (`/v1/app/recharge-packages`), not the Red Tea supplier API
+   - Layout still follows H5, but "eCard (Red Tea)" content positions become "SIM card (PCCW)" content
+
+   **Implication for this H5 codebase**: the `ShopView` marketplace pattern (country browse, purchase flow) is now a LEGACY concept for the new product direction. If we ever touch `ShopView.tsx` going forward, we should consider whether it still belongs. For now the H5 continues to serve existing customers while Flutter becomes the PCCW-first app.
+
+Full Flutter-side history, architecture decisions, API endpoint mappings, pivot TODO list, and session-by-session log live in `~/Development/EvairSIM-App/docs/CONVERSATION_HISTORY.md`.
