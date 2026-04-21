@@ -55,6 +55,22 @@ H5 pushes to `aliyun` → `codeup.aliyun.com/sz0755/ZenoSIM/H5/EvairH5.git` auto
 
 The China team can pull from the same repo. Main branch is `main`; active work is on `feature/api-integration`.
 
+## Local Aliyun backups (`~/Aliyun-Backups/`)
+
+Jordan is **Developer** (not Admin) in ZenoSIM — if Ben revokes access or deletes a repo, Aliyun is lost. Local bare mirrors protect against that.
+
+- Location: `~/Aliyun-Backups/` (~84 MB total)
+- Contains: `EvairH5.git/`, `flutter.git/`, `admin.git/`, `laravel.git/` — all bare mirrors, all branches, full history
+- Refreshed automatically as step [3/3] of `save-all.sh`
+- Manual refresh: `bash ~/Aliyun-Backups/refresh.sh`
+- Restore: `git clone ~/Aliyun-Backups/<name>.git ~/restored-folder`
+
+These are LOCAL-ONLY copies — the China team is completely unaffected.
+
+## Credentials
+
+Aliyun HTTPS password lives in **macOS Keychain** (credential.helper = osxkeychain). Never hardcode a password in a git remote URL. If you see `https://user:password@...` in any `.git/config`, strip the password and re-approve via `git credential approve`.
+
 ## Context persistence
 Update `docs/CONVERSATION_HISTORY.md` and the relevant `.cursor/rules/*.mdc` when:
 - A new feature lands
