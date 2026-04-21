@@ -16,6 +16,36 @@ import type {
 const PROXY_URL = '/api/esim';
 
 /**
+ * China-team Laravel backstage. Owns catalogue, pricing, hidden plans,
+ * country-name overrides — everything the sales team can edit in their
+ * admin panel. The H5 client reads from here so what customers see matches
+ * what the team curates.
+ *
+ * Order/payment/provisioning still flow through Stripe + Red Tea direct;
+ * see Option B in `docs/CONVERSATION_HISTORY.md` for the full migration.
+ */
+/**
+ * Override via `.env.local` → `VITE_BACKSTAGE_BASE_URL=...` when you want
+ * the H5 dev build to hit a local `php artisan serve` (e.g. for testing
+ * the catalogue filter fix before deploying). Use the Vite proxy alias
+ * `/laravel-api/v1/h5` if you want to dodge CORS during local dev.
+ */
+const BACKSTAGE_BASE: string = (
+  (import.meta as unknown as { env?: Record<string, string | undefined> }).env
+    ?.VITE_BACKSTAGE_BASE_URL ?? 'https://evair.zhhwxt.cn/api/v1/h5'
+);
+
+/**
+ * Feature flag — read packages from the backstage catalogue. Defaults true
+ * because the team wants to drive sales from their admin panel. Set
+ * `VITE_USE_BACKSTAGE_CATALOG=false` in `.env.local` to fall back to
+ * direct Red Tea fetches (handy if the backstage is offline).
+ */
+export const USE_BACKSTAGE_CATALOG: boolean =
+  ((import.meta as unknown as { env?: Record<string, string | undefined> }).env
+    ?.VITE_USE_BACKSTAGE_CATALOG ?? 'true').toLowerCase() !== 'false';
+
+/**
  * Pre-launch demo mode: when true, order and top-up calls return
  * simulated success without hitting the supplier API.
  * Browsing packages / checking usage still works against the real API.
@@ -40,21 +70,39 @@ async function call<T>(endpoint: string, payload: Record<string, unknown> = {}):
 
 // ─── Package List (with localStorage cache) ─────────────────────────
 
-const CACHE_KEY = 'evair_esim_packages';
-const CACHE_TTL_MS = 30 * 60 * 1000; // 30 minutes — supplier may update prices daily
+const CACHE_KEY_LEGACY = 'evair_esim_packages';
+// Bumped the cache key suffix ("v2") when the mapper started reading
+// `locations[]` / `is_multi_country`. Without the bump, returning users
+// would keep seeing the old single-ISO payload from cache and the
+// Multi-Country tab would stay empty.
+const CACHE_KEY_BACKSTAGE = 'evair_esim_packages_backstage_v2';
+const CACHE_KEY_BACKSTAGE_LEGACY = 'evair_esim_packages_backstage';
+const CACHE_TTL_MS = 30 * 60 * 1000; // 30 minutes — team may update prices daily
 
 interface PackageCache {
   ts: number;
   data: EsimPackage[];
 }
 
+function activeCacheKey(): string {
+  return USE_BACKSTAGE_CATALOG ? CACHE_KEY_BACKSTAGE : CACHE_KEY_LEGACY;
+}
+
+// One-time cleanup of the old Red Tea cache when the backstage flag is on.
+// Without this, returning users would see stale (and now incorrectly priced)
+// data from the legacy cache for up to 30 minutes after the flip.
+if (typeof window !== 'undefined' && USE_BACKSTAGE_CATALOG) {
+  try { localStorage.removeItem(CACHE_KEY_LEGACY); } catch { /* ignore */ }
+  try { localStorage.removeItem(CACHE_KEY_BACKSTAGE_LEGACY); } catch { /* ignore */ }
+}
+
 function getCachedPackages(): EsimPackage[] | null {
   try {
-    const raw = localStorage.getItem(CACHE_KEY);
+    const raw = localStorage.getItem(activeCacheKey());
     if (!raw) return null;
     const cache: PackageCache = JSON.parse(raw);
     if (Date.now() - cache.ts > CACHE_TTL_MS) {
-      localStorage.removeItem(CACHE_KEY);
+      localStorage.removeItem(activeCacheKey());
       return null;
     }
     return cache.data;
@@ -66,7 +114,7 @@ function getCachedPackages(): EsimPackage[] | null {
 function setCachedPackages(data: EsimPackage[]) {
   try {
     const cache: PackageCache = { ts: Date.now(), data };
-    localStorage.setItem(CACHE_KEY, JSON.stringify(cache));
+    localStorage.setItem(activeCacheKey(), JSON.stringify(cache));
   } catch { /* storage full — ignore */ }
 }
 
@@ -97,6 +145,21 @@ export async function fetchPackages(params: FetchPackagesParams = {}): Promise<E
     if (cached) return cached;
   }
 
+  const packages = USE_BACKSTAGE_CATALOG
+    ? await fetchPackagesFromBackstage(params)
+    : await fetchPackagesFromRedTea(params);
+
+  if (isFullList) {
+    setCachedPackages(packages);
+  }
+
+  return packages;
+}
+
+/** Legacy path — direct Red Tea via Netlify proxy. Kept for fallback. */
+async function fetchPackagesFromRedTea(
+  params: FetchPackagesParams,
+): Promise<EsimPackage[]> {
   const resp = await call<PackageListPayload>('/package/list', {
     locationCode: params.locationCode ?? '',
     type: params.type ?? '',
@@ -108,17 +171,175 @@ export async function fetchPackages(params: FetchPackagesParams = {}): Promise<E
     throw new Error(resp.errorMsg ?? 'Failed to fetch packages');
   }
 
-  const packages = resp.obj?.packageList ?? [];
+  return resp.obj?.packageList ?? [];
+}
 
-  if (isFullList) {
-    setCachedPackages(packages);
+/**
+ * China-team backstage catalogue. Maps the Laravel `{code,msg,data}` envelope
+ * + snake_case fields to our `EsimPackage` shape. Prices arrive as USD floats
+ * (already retail), so we multiply by 10 000 to fit the micro-cents convention
+ * the rest of the app speaks, and stamp `priceIsRetail: true` so the markup
+ * helper knows to skip the legacy 2× wholesale-→-retail math.
+ */
+interface BackstagePackagesEnvelope {
+  code: number;
+  msg: string;
+  data?: {
+    packages?: BackstagePackageRow[];
+    total?: number;
+  };
+}
+interface BackstagePackageRow {
+  package_code: string;
+  name: string;
+  price: number;            // USD float, already retail
+  currency?: string;
+  volume: number;           // bytes
+  duration: number;
+  duration_unit: string;    // 'DAY' | 'MONTH'
+  location?: string | null; // primary ISO code (back-compat)
+  location_name?: string | null;
+  /**
+   * Full ISO-2 coverage list. Single-country plans have length 1; regional
+   * plans have 2+ (e.g. ["US","CA","MX"] for NA-3); global carry 100+.
+   * Added when the Laravel catalogue was taught to distinguish strict single
+   * vs. multi-country. When absent (older backend), we fall back to `location`.
+   */
+  locations?: string[] | null;
+  is_multi_country?: boolean;
+  type?: string;            // 'BASE' | 'TOPUP'
+  speed?: string;
+  features?: string[];
+  description?: string | null;
+}
+
+async function fetchPackagesFromBackstage(
+  params: FetchPackagesParams,
+): Promise<EsimPackage[]> {
+  const url = new URL(`${BACKSTAGE_BASE}/packages`);
+  // Pull the full catalogue in one shot (currently ~765 rows). Bump again
+  // if the team ever exceeds this; worst case is a truncated grid, not a
+  // broken page, so the margin is intentionally generous.
+  url.searchParams.set('size', '1000');
+  url.searchParams.set('page', '1');
+  if (params.locationCode) url.searchParams.set('location_code', params.locationCode);
+  if (params.type) url.searchParams.set('type', params.type);
+  if (params.iccid) url.searchParams.set('iccid', params.iccid);
+
+  const res = await fetch(url.toString(), {
+    headers: { 'Accept': 'application/json' },
+  });
+
+  if (!res.ok) {
+    throw new Error(`Backstage catalogue HTTP ${res.status}`);
   }
 
-  return packages;
+  const json = (await res.json()) as BackstagePackagesEnvelope;
+
+  if (json.code !== 0) {
+    throw new Error(json.msg || 'Backstage catalogue returned an error');
+  }
+
+  const rows = json.data?.packages ?? [];
+  return rows.map((r) => mapBackstageRow(r));
+}
+
+function mapBackstageRow(r: BackstagePackageRow): EsimPackage {
+  const usd = Number(r.price) || 0;
+
+  // `groupPackagesByLocation` downstream uses a "contains comma" heuristic
+  // to split the shop into Single-Country vs. Multi-Country/Regional buckets.
+  // The backend sends the full coverage in `locations` + an `is_multi_country`
+  // flag; we re-hydrate a CSV here when the plan spans multiple countries so
+  // that heuristic keeps working. If the backend is still on the old schema
+  // (only `location` populated), we fall back to the single ISO.
+  const coverage: string[] = Array.isArray(r.locations)
+    ? r.locations.filter((c): c is string => typeof c === 'string' && c.length > 0)
+    : [];
+  const primary = typeof r.location === 'string' && r.location.length > 0 ? r.location : '';
+  const all = coverage.length > 0 ? coverage : (primary ? [primary] : []);
+  const isMulti = r.is_multi_country === true || all.length > 1;
+  const location = isMulti ? all.join(',') : (all[0] ?? '');
+
+  return {
+    packageCode: r.package_code,
+    name: r.name ?? r.package_code,
+    price: Math.round(usd * 10000), // store as micro-cents to match shape
+    priceIsRetail: true,
+    currencyCode: r.currency ?? 'USD',
+    volume: Number(r.volume) || 0,
+    unusedValidTime: 0,
+    duration: Number(r.duration) || 0,
+    durationUnit: (r.duration_unit ?? 'DAY').toUpperCase() === 'MONTH' ? 'MONTH' : 'DAY',
+    location,
+    description: r.description ?? '',
+    activeType: 0,
+  };
 }
 
 export async function fetchTopUpPackages(iccid: string): Promise<EsimPackage[]> {
+  if (USE_BACKSTAGE_CATALOG) {
+    return fetchTopUpPackagesFromBackstage(iccid);
+  }
   return fetchPackages({ type: 'TOPUP', iccid });
+}
+
+/**
+ * Backstage top-up catalogue for a specific ICCID. Hits the dedicated
+ * `/packages/recharge` endpoint which (a) upserts the supplier's latest
+ * recharge options into the team's DB and (b) filters out any plan the
+ * team hasn't priced yet. Missing prices → plan hidden; this is intended.
+ */
+interface BackstageRechargeEnvelope {
+  code: number;
+  msg: string;
+  data?: {
+    supplier_type?: string;
+    packages?: BackstageRechargeRow[];
+  };
+}
+interface BackstageRechargeRow {
+  package_code: string;
+  name: string;
+  price: number;          // USD float, already retail
+  currency?: string;
+  volume: number;
+  duration: number;
+  duration_unit: string;
+  location_code?: string | null;
+}
+
+async function fetchTopUpPackagesFromBackstage(iccid: string): Promise<EsimPackage[]> {
+  const url = new URL(`${BACKSTAGE_BASE}/packages/recharge`);
+  url.searchParams.set('iccid', iccid);
+  url.searchParams.set('supplier_type', 'esimaccess');
+
+  const res = await fetch(url.toString(), {
+    headers: { 'Accept': 'application/json' },
+  });
+  if (!res.ok) throw new Error(`Backstage top-up catalogue HTTP ${res.status}`);
+
+  const json = (await res.json()) as BackstageRechargeEnvelope;
+  if (json.code !== 0) throw new Error(json.msg || 'Backstage top-up catalogue error');
+
+  const rows = json.data?.packages ?? [];
+  return rows.map((r) => {
+    const usd = Number(r.price) || 0;
+    return {
+      packageCode: r.package_code,
+      name: r.name ?? r.package_code,
+      price: Math.round(usd * 10000),
+      priceIsRetail: true,
+      currencyCode: r.currency ?? 'USD',
+      volume: Number(r.volume) || 0,
+      unusedValidTime: 0,
+      duration: Number(r.duration) || 0,
+      durationUnit: (r.duration_unit ?? 'DAY').toUpperCase() === 'MONTH' ? 'MONTH' : 'DAY',
+      location: r.location_code ?? '',
+      description: '',
+      activeType: 0,
+    } satisfies EsimPackage;
+  });
 }
 
 // ─── Order eSIM ──────────────────────────────────────────────────────
@@ -385,6 +606,22 @@ export function retailPrice(microCents: number): number {
   const cost = microCents / 10000;
   const marked = cost * 2;
   return Math.ceil(marked) - 0.01;
+}
+
+/**
+ * Resolve the display / charge price for a package in USD.
+ *
+ * - Backstage-sourced packages (`priceIsRetail === true`) already carry the
+ *   team's chosen retail price — return it as-is.
+ * - Legacy Red Tea packages carry a wholesale price — apply the 2× markup
+ *   via `retailPrice()`.
+ *
+ * Use this everywhere the UI or a charge amount needs a USD number for a
+ * package, instead of calling `retailPrice(pkg.price)` directly.
+ */
+export function packagePriceUsd(pkg: EsimPackage): number {
+  if (pkg.priceIsRetail) return pkg.price / 10000;
+  return retailPrice(pkg.price);
 }
 
 /**

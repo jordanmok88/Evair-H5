@@ -4,7 +4,7 @@ import { Search, ChevronRight, ArrowLeft, Globe, Star, X, MapPin, Loader2, Smart
 import { Country, Plan, SimType, User, SimCardProduct, EsimPackage, EsimCountryGroup, EsimOrderResult, ActiveSim } from '../types';
 import { MOCK_COUNTRIES, SIM_CARD_PRODUCTS } from '../constants';
 import FlagIcon from '../components/FlagIcon';
-import { fetchPackages, prefetchPackages, groupPackagesByLocation, formatVolume, formatPrice, retailPrice, orderEsim, CONTINENT_TABS, type ContinentTab, formatGB, POPULAR_COUNTRY_CODES } from '../services/dataService';
+import { fetchPackages, prefetchPackages, groupPackagesByLocation, formatVolume, formatPrice, retailPrice, packagePriceUsd, orderEsim, CONTINENT_TABS, type ContinentTab, formatGB, POPULAR_COUNTRY_CODES } from '../services/dataService';
 import { useSwipeBack } from '../hooks/useSwipeBack';
 
 import { Bell, UserCircle } from 'lucide-react';
@@ -384,7 +384,7 @@ const ShopView: React.FC<ShopViewProps> = ({ testMode = false, isLoggedIn, user,
       return;
     }
 
-    const price = retailPrice(selectedEsimPkg.price);
+    const price = packagePriceUsd(selectedEsimPkg);
 
     try {
       const res = await fetch('/api/stripe-checkout', {
@@ -654,7 +654,7 @@ const ShopView: React.FC<ShopViewProps> = ({ testMode = false, isLoggedIn, user,
                   <p className="text-xs text-slate-500">{formatVolume(selectedEsimPkg.volume)} / {selectedEsimPkg.duration} {selectedEsimPkg.durationUnit === 'DAY' ? t('shop.days') : 'Months'}</p>
                   <div className="flex justify-between items-center mt-2.5 pt-2.5 border-t border-slate-200">
                     <span className="text-xs text-slate-500">eSIM (Digital)</span>
-                    <span className="text-lg font-bold text-brand-orange">${retailPrice(selectedEsimPkg.price).toFixed(2)}</span>
+                    <span className="text-lg font-bold text-brand-orange">${packagePriceUsd(selectedEsimPkg).toFixed(2)}</span>
                   </div>
                 </div>
 
@@ -685,8 +685,8 @@ const ShopView: React.FC<ShopViewProps> = ({ testMode = false, isLoggedIn, user,
                   className="w-full bg-brand-orange text-white py-3 rounded-xl font-bold text-sm shadow-lg shadow-orange-500/20 active:scale-[0.98] transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-orange-600"
                 >
                   {isProcessing ? <><Loader2 size={18} className="animate-spin" /> Processing...</> : testMode
-                    ? <><Zap size={16} /> Test Order — ${retailPrice(selectedEsimPkg.price).toFixed(2)}</>
-                    : <><CreditCard size={16} /> {t('shop.pay')} ${retailPrice(selectedEsimPkg.price).toFixed(2)}</>}
+                    ? <><Zap size={16} /> Test Order — ${packagePriceUsd(selectedEsimPkg).toFixed(2)}</>
+                    : <><CreditCard size={16} /> {t('shop.pay')} ${packagePriceUsd(selectedEsimPkg).toFixed(2)}</>}
                 </button>
               </div>
             </div>
@@ -724,7 +724,7 @@ const ShopView: React.FC<ShopViewProps> = ({ testMode = false, isLoggedIn, user,
 
           <div className="space-y-3 md:grid md:grid-cols-2 md:gap-3 md:space-y-0 lg:block lg:space-y-3">
             {selectedEsimGroup.packages.map((pkg) => {
-              const priceUsd = retailPrice(pkg.price);
+              const priceUsd = packagePriceUsd(pkg);
               const volumeStr = formatVolume(pkg.volume);
               const gb = pkg.volume / (1024 * 1024 * 1024);
               const pricePerGb = gb > 0 ? priceUsd / gb : priceUsd;
@@ -1424,7 +1424,7 @@ const ShopView: React.FC<ShopViewProps> = ({ testMode = false, isLoggedIn, user,
                   <div className="bg-white rounded-xl border border-slate-100 divide-y divide-slate-100 overflow-hidden shadow-sm mb-5 md:grid md:grid-cols-2 md:divide-y-0 md:gap-[1px] md:bg-slate-100 md:border-0 md:[&>*]:bg-white lg:block lg:divide-y lg:divide-slate-100 lg:bg-white lg:border lg:border-slate-100 lg:[&>*]:bg-transparent">
                     {visibleEsimGroups.map((group, idx) => {
                       const cheapestPkg = group.packages.reduce((min, p) => p.price < min.price ? p : min, group.packages[0]);
-                      const cheapestPrice = cheapestPkg ? retailPrice(cheapestPkg.price) : 0;
+                      const cheapestPrice = cheapestPkg ? packagePriceUsd(cheapestPkg) : 0;
                       const countryCodes = group.locationCode.split(',').map(c => c.trim());
                       const countryCount = countryCodes.length;
                       const isPopular = !group.isMultiRegion && popularSet.has(group.locationCode.toUpperCase());

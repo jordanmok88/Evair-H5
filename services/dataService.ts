@@ -38,6 +38,7 @@ import {
   formatVolume,
   formatPrice,
   retailPrice,
+  packagePriceUsd,
   formatGB,
   mapRedTeaStatus,
   DEMO_MODE,
@@ -59,6 +60,21 @@ export const USE_BACKEND_API = import.meta.env.VITE_USE_BACKEND_API === 'true';
 // ─── Data normalization: backend PackageDto → supplier EsimPackage ───
 
 function backendPkgToEsimPackage(dto: PackageDto): EsimPackage {
+  // groupPackagesByLocation (esimApi.ts) treats `location` as a CSV and uses
+  // a "contains comma" check to flag multi-country / regional plans.
+  // The backend emits a single primary ISO in `location` plus the full list
+  // in `locations` / `is_multi_country`, so we re-hydrate a CSV here when
+  // the plan spans multiple countries — otherwise the client groups every
+  // backend-sourced plan as single-country and the "Multi-Country" view is
+  // silently empty.
+  const coverage = Array.isArray(dto.locations) && dto.locations.length > 0
+    ? dto.locations
+    : dto.location
+    ? [dto.location]
+    : [];
+  const isMulti = dto.is_multi_country === true || coverage.length > 1;
+  const csvLocation = isMulti ? coverage.join(',') : (coverage[0] ?? dto.location ?? '');
+
   return {
     packageCode: dto.packageCode,
     name: dto.name,
@@ -69,7 +85,7 @@ function backendPkgToEsimPackage(dto: PackageDto): EsimPackage {
     volume: dto.volume,
     duration: dto.duration,
     durationUnit: dto.durationUnit || 'DAY',
-    location: dto.location,
+    location: csvLocation,
     description: dto.description || dto.name,
     unusedValidTime: dto.duration,
     activeType: 1,
@@ -253,6 +269,7 @@ export {
   formatVolume,
   formatPrice,
   retailPrice,
+  packagePriceUsd,
   formatGB,
   mapRedTeaStatus,
   DEMO_MODE,

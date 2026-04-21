@@ -15,20 +15,36 @@ Component → dataService.ts → esimApi.ts (supplier, current)
                             → api/esim.ts (backend, future)
 ```
 
-## Supplier API (ESIMAccess / Red Tea)
-Proxied through `/.netlify/functions/esim-proxy` to keep credentials server-side.
+## Catalogue — China-team Backstage (Option A, default ON)
+`fetchPackages()` and `fetchTopUpPackages()` read from the Laravel admin at
+`https://evair.zhhwxt.cn/api/v1/h5/packages` (+ `/packages/recharge`). This is
+what the sales team curates in their admin panel — hidden plans, pricing,
+country scoping all flow from there.
+
+Toggle via env: `VITE_USE_BACKSTAGE_CATALOG=false` → fall back to direct Red Tea.
+
+Backstage response envelope: `{ code, msg, data: { packages, total } }`.
+Prices arrive as USD floats (already retail). The mapper in `esimApi.ts` stores
+them as micro-cents (× 10 000) and stamps `priceIsRetail: true` so the display
+helper `packagePriceUsd(pkg)` skips the legacy 2× wholesale markup.
+
+**Use `packagePriceUsd(pkg)`**, not `retailPrice(pkg.price)`, anywhere the UI
+or a charge amount needs a USD value for a package.
+
+## Order / Payment / Provisioning — still Red Tea + Stripe direct
+Order creation, Stripe checkout, LPA delivery, usage, top-up charging all flow
+through `/.netlify/functions/esim-proxy` → ESIMAccess (Red Tea). Only the
+catalogue has moved to the backstage. Full migration (Option B) is a future
+task and will require the China team to add Stripe + guest-checkout support
+server-side.
 
 Key functions in `services/esimApi.ts`:
-- `fetchPackages()` — all available eSIM plans
-- `orderEsim(packageCode)` — create order, returns QR + LPA
-- `queryProfile(iccid)` — lookup by ICCID (returns `smdpStatus`)
-- `topUp(iccid, packageCode)` — add data to existing eSIM
-- `queryUsage(iccid)` — check data consumption
-
-## Backend API (future, `evair.zhhwxt.cn`)
-Client in `services/api/esim.ts`. Currently only 15 packages (needs sync to 2,489).
-Backend team requirements documented in `docs/API_INTEGRATION_PLAN.md`:
-- Price unit: cents (分), volume: bytes, need `duration` + `duration_unit` fields
+- `fetchPackages()` — catalogue (backstage default, Red Tea fallback)
+- `fetchTopUpPackages(iccid)` — top-up catalogue for an ICCID
+- `orderEsim(packageCode)` — order + LPA (Red Tea)
+- `queryProfile(iccid)` — ICCID lookup (Red Tea)
+- `topUp(iccid, packageCode)` — add data (Red Tea)
+- `queryUsage(iccid)` — data consumption (Red Tea)
 
 ## Physical SIM Card Binding Flow (3 steps)
 1. **SCAN**: Customer enters ICCID (18-22 digits) or scans barcode

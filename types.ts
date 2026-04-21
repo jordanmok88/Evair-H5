@@ -128,6 +128,13 @@ export interface EsimPackage {
   location: string;        // comma-separated ISO country codes, e.g. "US,CA"
   description: string;
   activeType: number;      // 1 = auto-activate on first data use
+
+  /**
+   * When true, `price` is already the retail USD value the team set in the
+   * backstage admin (× 10 000). Skip the legacy 2× wholesale-→-retail markup.
+   * Set by the backstage fetcher; absent / false for legacy Red Tea packages.
+   */
+  priceIsRetail?: boolean;
 }
 
 export interface EsimApiResponse<T> {

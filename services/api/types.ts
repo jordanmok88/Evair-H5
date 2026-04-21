@@ -220,14 +220,30 @@ export interface AddressDeletedResponse {
 
 export interface PackageDto {
   packageCode: string;
+  /** Red Tea packageCode for provisioning; never shown to users. */
+  supplier_package_code?: string;
   name: string;
   price: number;
   currency: string;
   volume: number;
   duration: number;
   durationUnit: 'DAY' | 'MONTH';
+  /**
+   * Primary ISO-2 country code (kept for back-compat with single-country
+   * renderers). For a multi-country plan this is just the first entry of
+   * {@link locations}; prefer `locations` / `is_multi_country` when you need
+   * to decide the "single vs multi-country" UX.
+   */
   location: string;
   locationName: string;
+  /**
+   * Full ISO-2 list this plan covers. Single-country plans have length 1,
+   * regional plans may have 2+ (e.g. ["US","CA","MX"] for North America),
+   * global plans carry 100+ codes. Added to backend payload together with
+   * `is_multi_country` so clients can correctly group/filter.
+   */
+  locations?: string[];
+  is_multi_country?: boolean;
   type: 'BASE' | 'TOPUP';
   speed?: string;
   features?: string[];
@@ -242,6 +258,14 @@ export interface PackageListParams {
   iccid?: string;
   page?: number;
   size?: number;
+  /**
+   * Optional server-side scope override:
+   *   - undefined -> smart (region code -> multi, ISO -> strict single)
+   *   - 'single'  -> force single-country match
+   *   - 'multi'   -> force multi-country region match
+   *   - 'any'     -> legacy loose "coverage contains this code" match
+   */
+  scope?: 'single' | 'multi' | 'any';
 }
 
 // ─── 订单模块类型 ────────────────────────────────────────────────────────

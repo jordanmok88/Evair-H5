@@ -55,17 +55,21 @@ H5 pushes to `aliyun` → `codeup.aliyun.com/sz0755/ZenoSIM/H5/EvairH5.git` auto
 
 The China team can pull from the same repo. Main branch is `main`; active work is on `feature/api-integration`.
 
-## Local Aliyun backups (`~/Aliyun-Backups/`)
+## Local + iCloud Aliyun backups
 
-Jordan is **Developer** (not Admin) in ZenoSIM — if Ben revokes access or deletes a repo, Aliyun is lost. Local bare mirrors protect against that.
+Jordan is **Developer** (not Admin) in ZenoSIM — if Ben revokes access or deletes a repo, Aliyun is lost. Bare mirrors protect against that.
 
-- Location: `~/Aliyun-Backups/` (~84 MB total)
+- **Local**: `~/Aliyun-Backups/` (~84 MB)
+- **iCloud Drive copy** (off-site, auto-synced): `~/Library/Mobile Documents/com~apple~CloudDocs/Aliyun-Backups/`
 - Contains: `EvairH5.git/`, `flutter.git/`, `admin.git/`, `laravel.git/` — all bare mirrors, all branches, full history
-- Refreshed automatically as step [3/3] of `save-all.sh`
+- Refreshed automatically in 2 ways:
+  - Every `save-all.sh` (includes iCloud rsync — works because Terminal has FDA, and `/usr/bin/rsync` is in FDA list)
+  - **Daily auto-backup via launchd** at every login, throttled to once per calendar day, plus 9 AM daily fallback. Script: `~/Aliyun-Backups/daily-backup.sh`. Agent: `com.jordan.aliyun-backup-daily`. Log: `~/Aliyun-Backups/logs/daily.log`. State: `~/Aliyun-Backups/.last-day-run`. Catches missed days on next boot. iCloud rsync under launchd requires FDA on `/bin/bash` too (currently only `rsync` is granted) — local git mirrors still refresh, and iCloud catches up on next interactive `save-all.sh`.
 - Manual refresh: `bash ~/Aliyun-Backups/refresh.sh`
+- Force daily now: `FORCE=1 bash ~/Aliyun-Backups/daily-backup.sh`
 - Restore: `git clone ~/Aliyun-Backups/<name>.git ~/restored-folder`
 
-These are LOCAL-ONLY copies — the China team is completely unaffected.
+These copies live on Jordan's devices only — the China team is completely unaffected.
 
 ## Credentials
 

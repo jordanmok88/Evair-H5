@@ -5,7 +5,7 @@ import { ActiveSim, Tab, SimType, EsimPackage } from '../types';
 import FlagIcon from '../components/FlagIcon';
 import StripePaymentModal from '../components/StripePaymentModal';
 import { CARRIER_MAP } from '../constants';
-import { topUp, fetchTopUpPackages, fetchPackages, checkDataUsage, formatVolume, formatPrice, retailPrice, formatGB, queryProfile, mapRedTeaStatus, USE_BACKEND_API, unbindSim } from '../services/dataService';
+import { topUp, fetchTopUpPackages, fetchPackages, checkDataUsage, formatVolume, formatPrice, retailPrice, packagePriceUsd, formatGB, queryProfile, mapRedTeaStatus, USE_BACKEND_API, unbindSim } from '../services/dataService';
 import { useEdgeSwipeBack } from '../hooks/useEdgeSwipeBack';
 
 interface MySimsViewProps {
@@ -907,7 +907,7 @@ const MySimsView: React.FC<MySimsViewProps> = ({ activeSims, onNavigate, filterT
             setRechargeConfig({
               iccid,
               packageCode: selectedTopUp.packageCode,
-              amount: retailPrice(selectedTopUp.price),
+              amount: packagePriceUsd(selectedTopUp),
             });
             setPaymentModalOpen(true);
           };
@@ -1003,7 +1003,7 @@ const MySimsView: React.FC<MySimsViewProps> = ({ activeSims, onNavigate, filterT
                         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-2 gap-2.5">
                           {pkgs.map(pkg => {
                             const isSelected = selectedTopUp?.packageCode === pkg.packageCode;
-                            const priceRetail = retailPrice(pkg.price);
+                            const priceRetail = packagePriceUsd(pkg);
                             const isBestValue = pkg.packageCode === bestCode;
                             return (
                               <button
@@ -1035,7 +1035,7 @@ const MySimsView: React.FC<MySimsViewProps> = ({ activeSims, onNavigate, filterT
                       {topUpProcessing ? (
                         <Loader2 className="animate-spin" size={20} />
                       ) : selectedTopUp ? (
-                        <>{t('my_sims.purchase_top_up')} — ${retailPrice(selectedTopUp.price).toFixed(2)}</>
+                        <>{t('my_sims.purchase_top_up')} — ${packagePriceUsd(selectedTopUp).toFixed(2)}</>
                       ) : (
                         t('my_sims.purchase_top_up')
                       )}
@@ -1059,7 +1059,7 @@ const MySimsView: React.FC<MySimsViewProps> = ({ activeSims, onNavigate, filterT
         amount={rechargeConfig?.amount || 0}
         items={selectedTopUp ? [{
           label: formatVolume(selectedTopUp.volume),
-          amount: retailPrice(selectedTopUp.price),
+          amount: packagePriceUsd(selectedTopUp),
         }] : []}
         rechargeConfig={rechargeConfig || undefined}
         onSuccess={() => {

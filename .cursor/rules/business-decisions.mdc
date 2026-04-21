@@ -50,3 +50,29 @@ alwaysApply: true
 - SIM cards also sold on Amazon.com and Temu.com
 - Marketplace customers download H5 app to activate/bind their cards
 - Same binding flow works for both in-app and marketplace purchases
+
+## Supplier API Centralization (in progress, 2026-04)
+- **Decision**: All supplier API calls (Red Tea / PCCW) MUST go through Laravel backend at `evair.zhhwxt.cn`.
+- **Reason**: prevents supplier credential/SKU leak to browser; lets admin team control pricing/visibility centrally.
+- **H5 catalogue migrated to backend**: `/v1/h5/packages*` endpoints serve packages, hot list, locations, recharge.
+- **Direct ESIMAccess calls being removed** from `services/esimApi.ts`. New code MUST use `services/dataService.ts` only.
+- Order placement + Stripe payment + provisioning still flow through Netlify functions for now (separate migration).
+
+## Native Flutter App (sibling project)
+- Repo: `/Users/jordanmok/Development/EvairSIM-App` (also mirrored to Aliyun/iCloud).
+- Mirrors H5 features: eSIM marketplace with country picker, install flow, top-up, account.
+- Uses **same Laravel backend** as H5 — `/v1/h5/packages*` is shared. Do not fork the API.
+- Country picker uses `country_flags` package for proper rectangular flags (matches H5 visual).
+- **iOS Universal Link install** + Android `LPA:` URI for 1-Tap eSIM install.
+- Considering Apple IAP / Google Play Billing for in-app purchase parity with native UX expectations.
+
+## Admin & Backend Sibling Projects
+- Admin portal: `/Users/jordanmok/Desktop/iCloud Drive/Cursor Codes/admin` (Vue 3 + Element Plus).
+- Backend: `/Users/jordanmok/Desktop/iCloud Drive/Cursor Codes/Evair-Laravel`.
+- Sidebar IA finalized 2026-04: 8 functional groups, supplier-grouped products (`PCCW`/`RED TEA`).
+- See each project's own `.cursor/rules/` for details.
+
+## Backup & Storage
+- Primary remote: Aliyun Codeup (`codeup.aliyun.com/sz0755/ZenoSIM/...`) — China team.
+- Secondary mirror: GitHub.
+- Local backup: weekly auto-rsync to iCloud Drive at `~/Library/Mobile Documents/com~apple~CloudDocs/Aliyun-Backups/` via `launchd` agent.
