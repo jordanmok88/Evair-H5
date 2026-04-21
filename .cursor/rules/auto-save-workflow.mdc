@@ -12,7 +12,7 @@ Do NOT ask permission — just run the commands.
 
 | # | Project | Path | Remotes | Backup |
 |---|---------|------|---------|--------|
-| 1 | **Evair H5** (this repo) | `/Users/jordanmok/Desktop/iCloud Drive/Cursor Codes/Evair-H5` | `origin` → GitHub (`jordanmok88/Evair-H5`) | iCloud Drive hosts the project dir itself |
+| 1 | **Evair H5** (this repo) | `/Users/jordanmok/Desktop/iCloud Drive/Cursor Codes/Evair-H5` | `origin` → GitHub (`jordanmok88/Evair-H5`); `aliyun` → `codeup.aliyun.com/sz0755/ZenoSIM/H5/EvairH5.git` (same branch name on push) | iCloud Drive hosts the project dir itself |
 | 2 | **Evair APP** (Flutter)  | `/Users/jordanmok/Development/EvairSIM-App` | `origin` → GitHub (`jordanmok88/EvairSIM-App`); `aliyun` → `codeup.aliyun.com/sz0755/ZenoSIM/flutter.git` on `feature/evairsim-jordan` | rsync to `~/Library/Mobile Documents/com~apple~CloudDocs/EvairSIM-App-Backup` |
 
 ## One command saves everything (both projects)
@@ -49,15 +49,11 @@ Save after any of these, without asking:
 
 Netlify auto-deploys from a push to `main`. If you're on a feature branch, deployment only happens when that branch is merged to `main`.
 
-## Aliyun for H5 (NOT configured yet)
+## Aliyun for H5 (CONFIGURED)
 
-H5 currently has NO Aliyun remote. If Jordan provides an Aliyun URL for H5, add it with:
+H5 pushes to `aliyun` → `codeup.aliyun.com/sz0755/ZenoSIM/H5/EvairH5.git` automatically on every save. The repo lives under the ZenoSIM group, inside an `H5` subgroup. Initial push (`main` + `feature/api-integration`) completed on April 21, 2026.
 
-```bash
-git -C "/Users/jordanmok/Desktop/iCloud Drive/Cursor Codes/Evair-H5" remote add aliyun <url>
-```
-
-After that, `save.sh` will push to it automatically on every save (it loops through ALL remotes).
+The China team can pull from the same repo. Main branch is `main`; active work is on `feature/api-integration`.
 
 ## Context persistence
 Update `docs/CONVERSATION_HISTORY.md` and the relevant `.cursor/rules/*.mdc` when:
