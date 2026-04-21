@@ -9,7 +9,9 @@
     "preview": "vite preview",
     "test": "vitest run",
     "test:watch": "vitest",
-    "autopush": "bash scripts/autopush.sh"
+    "autopush": "bash scripts/autopush.sh",
+    "save": "bash scripts/save.sh",
+    "save:all": "bash '/Users/jordanmok/Desktop/iCloud Drive/Cursor Codes/save-all.sh'"
   },
   "dependencies": {
     "@fontsource/inter": "^5.2.8",

@@ -1,46 +1,74 @@
 ---
-description: Auto-save workflow - push changes, sync context, and update history after every modification
+description: Auto-save workflow — commit, push to all remotes, and sync backups after every change
 alwaysApply: true
 ---
 
-# Auto-Save Workflow
+# Auto-Save Workflow — H5
 
-## CRITICAL: After EVERY Code Change
-After making any code change (no matter how small), ALWAYS do all three steps:
-1. **Build**: `npx vite build` — verify no errors
-2. **Git**: `git add -A && git commit -m "..." && git push origin feature/api-integration`
-3. **iCloud**: `rsync -av --exclude='node_modules' --exclude='.git' --exclude='dist' "Evair-H5/" "~/Library/Mobile Documents/com~apple~CloudDocs/Evair-H5-Backup/"`
+Jordan has two projects. When he says "save" or "save my work", save BOTH.
+Do NOT ask permission — just run the commands.
 
-Do NOT ask the user for permission to push. Just do it automatically.
+## The two projects
 
-## CRITICAL: Context Persistence
-This project has been developed over a month across many sessions. To preserve institutional knowledge:
+| # | Project | Path | Remotes | Backup |
+|---|---------|------|---------|--------|
+| 1 | **Evair H5** (this repo) | `/Users/jordanmok/Desktop/iCloud Drive/Cursor Codes/Evair-H5` | `origin` → GitHub (`jordanmok88/Evair-H5`) | iCloud Drive hosts the project dir itself |
+| 2 | **Evair APP** (Flutter)  | `/Users/jordanmok/Development/EvairSIM-App` | `origin` → GitHub (`jordanmok88/EvairSIM-App`); `aliyun` → `codeup.aliyun.com/sz0755/ZenoSIM/flutter.git` on `feature/evairsim-jordan` | rsync to `~/Library/Mobile Documents/com~apple~CloudDocs/EvairSIM-App-Backup` |
 
-### Where Context Lives
-- **Cursor rules** (`.cursor/rules/*.mdc`): Auto-loaded in every chat. Contains architecture, decisions, API docs, deployment workflow.
-- **Conversation history** (`docs/CONVERSATION_HISTORY.md`): Detailed log of all sessions, decisions, and changes.
-- **Git log**: Every commit has descriptive messages. Use `git log` to see recent history.
-- **Agent transcripts**: Cursor auto-saves full chat transcripts.
+## One command saves everything (both projects)
 
-### When to Update Context Files
-Update the cursor rules AND `docs/CONVERSATION_HISTORY.md` when:
-- A new feature is implemented
+```bash
+bash "/Users/jordanmok/Desktop/iCloud Drive/Cursor Codes/save-all.sh"
+# or with a custom commit message:
+bash "/Users/jordanmok/Desktop/iCloud Drive/Cursor Codes/save-all.sh" "feat: xyz"
+```
+
+## Save just this project (H5)
+
+```bash
+bash "/Users/jordanmok/Desktop/iCloud Drive/Cursor Codes/Evair-H5/scripts/save.sh"
+# or with a custom commit message:
+bash "/Users/jordanmok/Desktop/iCloud Drive/Cursor Codes/Evair-H5/scripts/save.sh" "fix: xyz"
+```
+
+`scripts/save.sh` will:
+1. `git add -A && git commit -m "<msg>"` (skipped if no changes)
+2. `git push <remote> <current-branch>` for EVERY remote (GitHub, plus Aliyun once configured)
+3. Exit non-zero if any push fails
+
+## When to auto-save
+
+Save after any of these, without asking:
+- Any code change lands (no matter how small)
+- The user says "save", "save my work", "commit", "push"
+- A feature is done
+- A bug fix is verified
+- Before ending a session
+
+## Deployment
+
+Netlify auto-deploys from a push to `main`. If you're on a feature branch, deployment only happens when that branch is merged to `main`.
+
+## Aliyun for H5 (NOT configured yet)
+
+H5 currently has NO Aliyun remote. If Jordan provides an Aliyun URL for H5, add it with:
+
+```bash
+git -C "/Users/jordanmok/Desktop/iCloud Drive/Cursor Codes/Evair-H5" remote add aliyun <url>
+```
+
+After that, `save.sh` will push to it automatically on every save (it loops through ALL remotes).
+
+## Context persistence
+Update `docs/CONVERSATION_HISTORY.md` and the relevant `.cursor/rules/*.mdc` when:
+- A new feature lands
 - A business decision is made
-- A bug fix reveals important context
-- Architecture or UX patterns change
-- The user explicitly asks to save
+- Architecture/UX patterns change
+- Jordan asks to save
 
-### What to Update
-- `project-overview.mdc`: File structure, UI/UX decisions, business rules
-- `business-decisions.mdc`: Strategy decisions, feature removals, billing/supplier info
-- `esim-api-services.mdc`: API changes, new endpoints, data flow changes
-- `deployment.mdc`: Git workflow, environment changes
-- `docs/CONVERSATION_HISTORY.md`: Add a new dated section with all changes
-
-## Lessons Learned (Apply These Always)
-- When changing a status badge/label in one place, check ALL places that display the same status (banner card, detail card, network status row)
-- When fixing spacing/padding, use shared CSS classes (`.pt-safe`) instead of one-off inline styles
-- Always test build before committing
-- The user's phone browser (Netlify) and Cursor browser (localhost) have separate localStorage — test purchases don't sync across devices
-- Chinese IT staff instructions should be written in Chinese
-- Explain technical decisions clearly so the user can relay to their team
+## Lessons
+- When changing a status badge in one place, check ALL places showing that status.
+- Use shared CSS classes (`.pt-safe`) instead of one-off styles.
+- Always test build before committing.
+- Phone browser (Netlify) and Cursor browser (localhost) have separate localStorage.
+- Chinese IT staff instructions should be written in Chinese.

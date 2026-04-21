@@ -9,7 +9,19 @@ npm run dev          # Start Vite dev server on port 3000
 npm run build        # Production build (outputs to dist/)
 npm run test         # Run Vitest tests once
 npm run test:watch   # Run tests in watch mode
+npm run save         # Commit & push this project to ALL remotes
 ```
+
+## Save Workflow (IMPORTANT)
+
+Jordan has two projects: this one (**H5**) and **Evair APP** (Flutter at `~/Development/EvairSIM-App`).
+When he says "save" or "save my work", save BOTH:
+
+```bash
+bash "/Users/jordanmok/Desktop/iCloud Drive/Cursor Codes/save-all.sh"
+```
+
+To save just H5: `npm run save` (or `bash scripts/save.sh`). Full details in `.cursor/rules/auto-save-workflow.mdc`.
 
 ## Project Overview
 
