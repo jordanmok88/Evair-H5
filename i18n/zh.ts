@@ -92,6 +92,7 @@ const zh = {
     no_esims: '你还没有添加任何eSIM。',
     no_sims: '你还没有添加任何SIM卡。',
     add: '添加',
+    bind_cta: '绑定 SIM 卡',
     remaining: '剩余',
     data_amount_pb: '{{n}} PB',
     data_amount_tb: '{{n}} TB',

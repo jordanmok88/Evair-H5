@@ -92,6 +92,7 @@ const en = {
     no_esims: "You haven't added any eSIMs.",
     no_sims: "You haven't added any sim cards.",
     add: 'Add',
+    bind_cta: 'Bind your SIM',
     remaining: 'Remaining',
     data_amount_pb: '{{n}} PB',
     data_amount_tb: '{{n}} TB',

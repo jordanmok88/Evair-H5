@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { SimType, ActiveSim, Tab, User, AppNotification, EsimProfileResult } from '../types';
 import ShopView from './ShopView';
 import MySimsView from './MySimsView';
@@ -58,11 +58,18 @@ const ProductTab: React.FC<ProductTabProps> = ({
     setViewMode('SETUP');
   };
 
+  // Auto-pick the initial view on FIRST mount only:
+  //   - If the user already owns SIMs of this type -> land on MINE.
+  //   - Otherwise land on SHOP (default from useState init above).
+  // We intentionally do NOT reactively bounce the user back to SHOP if
+  // `mySims` becomes empty later (e.g. during a post-bind re-fetch race),
+  // because that was the cause of the "jumps back to main page after
+  // binding" bug. An empty MY SIMs page renders a proper empty state.
+  const didInitModeRef = useRef(false);
   useEffect(() => {
-    if (viewMode === 'MINE' && mySims.length === 0) {
-      setViewMode('SHOP');
-    }
-  }, [mySims.length, viewMode]);
+    if (didInitModeRef.current) return;
+    didInitModeRef.current = true;
+  }, []);
 
   return (
     <div className="lg:h-full relative">
@@ -104,12 +111,17 @@ const ProductTab: React.FC<ProductTabProps> = ({
        )}
 
        {viewMode === 'SETUP' && (
-          <PhysicalSimSetupView 
+          <PhysicalSimSetupView
              onSwitchToShop={() => setViewMode(setupEntryPoint)}
              onSwitchToList={() => setViewMode('MINE')}
              onAddCard={async (iccid, profile) => {
+                // Do NOT switch viewMode here — we want PhysicalSimSetupView
+                // to render its own DONE success screen with the
+                // "Go to My SIMs" CTA. Switching to MINE prematurely
+                // unmounts the setup view before the success state can
+                // show, which was one cause of the post-bind "jumps back
+                // to main page" bug.
                 await onAddCard?.(iccid, profile);
-                setViewMode('MINE');
              }}
              isLoggedIn={isLoggedIn}
              onLoginRequest={onLoginRequest}

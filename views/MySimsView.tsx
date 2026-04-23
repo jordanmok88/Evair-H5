@@ -178,6 +178,17 @@ const MySimsView: React.FC<MySimsViewProps> = ({ activeSims, onNavigate, filterT
 
   // EMPTY STATE
   if (!currentSim) {
+      // For plastic PCCW SIMs we don't sell them from Shop any more —
+      // customers receive them from Amazon/Temu, so the primary CTA
+      // should jump straight into the bind/setup flow. eSIMs still
+      // go through Shop (plan picker -> checkout -> auto-bind).
+      const primaryAction = filterType === 'PHYSICAL' && onSwitchToSetup
+        ? onSwitchToSetup
+        : onSwitchToShop;
+      const primaryLabel = filterType === 'PHYSICAL'
+        ? t('my_sims.bind_cta', 'Bind your SIM')
+        : t('my_sims.add');
+
       return (
           <div className="lg:h-full min-h-[60vh] flex flex-col items-center justify-center px-8 text-center bg-[#F2F4F7]">
               <div className="relative mb-10">
@@ -194,8 +205,8 @@ const MySimsView: React.FC<MySimsViewProps> = ({ activeSims, onNavigate, filterT
                       </div>
                   </div>
                   <div className="absolute -bottom-6 -right-4 z-10">
-                      <button 
-                         onClick={onSwitchToShop}
+                      <button
+                         onClick={primaryAction}
                          className="w-16 h-16 rounded-full bg-[#E8EAEF] flex items-center justify-center border-4 border-[#F2F4F7] shadow-md active:scale-95 transition-transform text-slate-400"
                       >
                           <Plus size={32} strokeWidth={3} />
@@ -205,13 +216,13 @@ const MySimsView: React.FC<MySimsViewProps> = ({ activeSims, onNavigate, filterT
               <p className="text-slate-500 mb-8 font-medium text-base tracking-tight">
                   {filterType === 'ESIM' ? t('my_sims.no_esims') : t('my_sims.no_sims')}
               </p>
-              {onSwitchToShop && (
-                <button 
-                    onClick={onSwitchToShop}
+              {primaryAction && (
+                <button
+                    onClick={primaryAction}
                     className="bg-brand-orange hover:bg-orange-600 text-white w-40 py-3 rounded-xl font-bold text-base shadow-lg shadow-orange-500/15 active:scale-95 transition-all flex items-center justify-center gap-2"
                 >
                     <Plus size={20} strokeWidth={3} />
-                    {t('my_sims.add')}
+                    {primaryLabel}
                 </button>
               )}
           </div>

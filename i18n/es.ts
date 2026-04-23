@@ -92,6 +92,7 @@ const es = {
     no_esims: 'No has añadido ninguna eSIM.',
     no_sims: 'No has añadido ninguna tarjeta SIM.',
     add: 'Añadir',
+    bind_cta: 'Vincular SIM',
     remaining: 'Restante',
     data_amount_pb: '{{n}} PB',
     data_amount_tb: '{{n}} TB',
