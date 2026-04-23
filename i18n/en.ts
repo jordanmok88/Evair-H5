@@ -168,14 +168,20 @@ const en = {
     add_another: 'Add Another SIM',
     activate_sim_card: 'Activate SIM Card',
     activating: 'Activating...',
-    step_insert_title: 'Insert SIM Card',
-    step_insert_desc: 'Remove the SIM card from its packaging and insert it into your unlocked phone.',
-    step_settings_title: 'Enable Mobile Data',
-    step_settings_desc: 'Go to Settings → Mobile Data → turn on Mobile Data and Data Roaming.',
-    step_apn_title: 'Set Up APN',
-    step_apn_desc: 'Go to Settings → Mobile Data → APN Settings. Enter the APN name provided with your SIM card.',
-    step_connect_title: 'Connect & Go',
-    step_connect_desc: 'Restart your phone. Your data connection should activate automatically within 1–3 minutes.',
+    // "No activation needed" banner + post-bind benefits. EvairSIM
+    // physical SIMs ship preloaded through PCCW, so we don't walk
+    // users through APN setup — we reassure them the card already
+    // works and highlight what the account binding unlocks.
+    no_activation_note: 'Your SIM is already active and connected to data. Register it here to view usage and top up later.',
+    what_you_unlocked: "What you've unlocked",
+    benefit_usage_title: 'Track Data Usage',
+    benefit_usage_desc: 'See live remaining data and daily usage straight from PCCW — no more guessing.',
+    benefit_topup_title: 'Top Up Anytime',
+    benefit_topup_desc: 'Out of data? Buy a top-up in seconds right from the app and it applies instantly.',
+    benefit_coverage_title: '190+ Countries',
+    benefit_coverage_desc: 'Your SIM works worldwide on partner networks — no extra roaming charges.',
+    benefit_share_title: 'Manage & Share',
+    benefit_share_desc: 'Use the same SIM across phone, tablet or IoT device, and share access with family.',
     // Wizard steps
     wizard_scan: 'Scan',
     wizard_confirm: 'Confirm',
@@ -195,7 +201,7 @@ const en = {
     validity_label: 'Validity',
     profile_status: 'Status',
     status_ready: 'Ready to Use',
-    bind_info: 'Your SIM card is pre-activated and ready to use. Tap below to add it to your account so you can manage data usage and top-ups.',
+    bind_info: 'Your SIM card is already active and delivering data. Tap below to link it to your account so you can monitor usage and purchase top-ups on PCCW when you run low.',
     bind_to_account: 'Add to My Account',
     binding: 'Adding...',
     sign_in_to_bind: 'Sign In to Add SIM',
@@ -204,7 +210,7 @@ const en = {
     // Done step
     bind_success: 'SIM Card Added Successfully!',
     days_label: 'Days',
-    next_steps: 'Setup Tips',
+    next_steps: 'Setup Tips', // retained for backwards-compat with older components
   },
   ecard: {
     title: 'Evair eCards',

@@ -3,10 +3,7 @@ import { useTranslation } from 'react-i18next';
 import {
   ArrowLeft,
   CheckCircle2,
-  Wifi,
   Globe,
-  CreditCard,
-  ShieldCheck,
   Check,
   Search,
   Loader2,
@@ -14,6 +11,10 @@ import {
   ScanLine,
   Smartphone,
   UserPlus,
+  Zap,
+  BarChart3,
+  Share2,
+  Info,
 } from 'lucide-react';
 import BarcodeScanner from '../components/BarcodeScanner';
 import { queryProfile } from '../services/dataService';
@@ -21,20 +22,33 @@ import { useEdgeSwipeBack } from '../hooks/useEdgeSwipeBack';
 import { EsimProfileResult } from '../types';
 
 /**
- * Physical SIM set-up wizard.
+ * Physical SIM registration wizard (PCCW IoT-M).
  *
- * As of 2026-04 we stopped selling / shipping physical SIMs directly
- * — customers purchase from our Amazon storefront and Amazon FBA
- * handles the logistics end-to-end (storage, shipping, tracking,
- * returns). This screen therefore no longer carries the old TRACKING
- * tab and its carrier-status timeline; the only remaining flow is
- * ACTIVATE, which lets a customer scan the ICCID off the SIM they
- * just received and bind it to their EvairSIM account.
+ * Business model after the 2026-04 pivot
+ * --------------------------------------
+ *  - SIMs are provisioned end-to-end by PCCW (our physical-SIM
+ *    supplier). Jordan receives the ICCID/IMSI batch from PCCW,
+ *    attaches a data plan via the Admin panel (which calls
+ *    `PccwAdapter::createPackage`), and ships the inventory to
+ *    Amazon FBA / Temu.
+ *  - Amazon / Temu handle logistics end-to-end. The customer receives
+ *    a SIM that is *already loaded with data* and works the moment
+ *    they insert it into a phone or IoT device — no in-app
+ *    activation step is required.
+ *  - This screen therefore is not an "activation" flow: it's a
+ *    registration / binding flow. The user scans the ICCID off the
+ *    back of the card, we validate it against PCCW's registry via
+ *    `GET /h5/esim/preview/{iccid}?supplier_type=pccw` and tie the
+ *    SIM to their EvairSIM account. That binding unlocks:
+ *      · real-time data-usage readouts (via PCCW CDRs),
+ *      · top-up purchases (PCCW recharge templates, managed via
+ *        Admin → Package Management),
+ *      · multi-device sharing / management.
  *
- * The `initialTab` and `trackingNumber` props on this component were
- * only relevant to the removed tab and have been dropped from the
- * public interface. If a caller links here with a tracking number
- * in state, it's safely ignored.
+ * The internal state names (`activateStep`, `activating`,
+ * `activationError`) pre-date this rename; they are left as-is so
+ * existing hook/file diffs stay readable — all user-facing copy
+ * lives in the `sim_setup.*` i18n namespace.
  */
 
 type ActivateStep = 'SCAN' | 'CONFIRM' | 'DONE';
@@ -65,11 +79,15 @@ const PhysicalSimSetupView: React.FC<PhysicalSimSetupViewProps> = ({
   const [bindError, setBindError] = useState('');
   const { t } = useTranslation();
 
-  const activationSteps = [
-    { step: 1, title: t('sim_setup.step_insert_title'), desc: t('sim_setup.step_insert_desc'), icon: CreditCard },
-    { step: 2, title: t('sim_setup.step_settings_title'), desc: t('sim_setup.step_settings_desc'), icon: Wifi },
-    { step: 3, title: t('sim_setup.step_apn_title'), desc: t('sim_setup.step_apn_desc'), icon: ShieldCheck },
-    { step: 4, title: t('sim_setup.step_connect_title'), desc: t('sim_setup.step_connect_desc'), icon: Globe },
+  // "What's next" tips shown on the DONE screen. The SIM is already
+  // active on PCCW's network (cards are sold preloaded), so instead of
+  // APN / activation instructions we surface what the account binding
+  // *unlocks*: usage tracking, top-ups, and global coverage.
+  const postBindBenefits = [
+    { step: 1, title: t('sim_setup.benefit_usage_title'), desc: t('sim_setup.benefit_usage_desc'), icon: BarChart3 },
+    { step: 2, title: t('sim_setup.benefit_topup_title'), desc: t('sim_setup.benefit_topup_desc'), icon: Zap },
+    { step: 3, title: t('sim_setup.benefit_coverage_title'), desc: t('sim_setup.benefit_coverage_desc'), icon: Globe },
+    { step: 4, title: t('sim_setup.benefit_share_title'), desc: t('sim_setup.benefit_share_desc'), icon: Share2 },
   ];
 
   return (
@@ -126,6 +144,21 @@ const PhysicalSimSetupView: React.FC<PhysicalSimSetupViewProps> = ({
           {/* ── Step 1: SCAN ── */}
           {activateStep === 'SCAN' && (
             <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-5 mb-4">
+              {/* "Your SIM already works" reassurance — critical because
+                  the user already inserted the card into their phone and
+                  may be confused by the word "activate". Frames the
+                  screen as a registration / management step, not a
+                  gating action. */}
+              <div className="bg-green-50 border border-green-100 rounded-xl px-3 py-2.5 mb-4 flex items-start gap-2.5">
+                <Info size={16} className="text-green-600 shrink-0 mt-0.5" />
+                <p className="text-[12px] text-green-800 leading-relaxed">
+                  {t(
+                    'sim_setup.no_activation_note',
+                    'Your SIM is already active and connected to data. Register it here to view usage and top up later.',
+                  )}
+                </p>
+              </div>
+
               <div className="flex justify-between items-start mb-4">
                 <div>
                   <h3 className="text-[15px] font-bold text-slate-900 mb-0.5">{t('sim_setup.bind_title')}</h3>
@@ -166,7 +199,12 @@ const PhysicalSimSetupView: React.FC<PhysicalSimSetupViewProps> = ({
                   setActivating(true);
                   setActivationError('');
                   try {
-                    const profile = await queryProfile(trimmed);
+                    // Physical SIMs are always PCCW-provisioned on this
+                    // screen — force the backend to hit PccwPreviewService
+                    // instead of the default EsimAccess (Red Tea) lookup,
+                    // otherwise we get a "SIM not found" on valid PCCW
+                    // ICCIDs that were never synced into the eSIM table.
+                    const profile = await queryProfile(trimmed, 'pccw');
                     setProfileResult(profile);
                     setActivateStep('CONFIRM');
                   } catch (err: any) {
@@ -348,11 +386,11 @@ const PhysicalSimSetupView: React.FC<PhysicalSimSetupViewProps> = ({
                 </button>
               </div>
 
-              {/* Setup tips */}
+              {/* What the account binding unlocks (post-bind benefits). */}
               <div className="mt-5 pt-4 border-t border-slate-100">
-                <p className="text-[13px] font-bold text-slate-900 mb-3">{t('sim_setup.next_steps')}</p>
+                <p className="text-[13px] font-bold text-slate-900 mb-3">{t('sim_setup.what_you_unlocked', "What you've unlocked")}</p>
                 <div className="space-y-3">
-                  {activationSteps.map((step) => {
+                  {postBindBenefits.map((step) => {
                     const Icon = step.icon;
                     return (
                       <div key={step.step} className="flex gap-3">

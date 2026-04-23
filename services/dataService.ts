@@ -120,13 +120,23 @@ export function prefetchPackages(): Promise<EsimPackage[]> {
   return fetchPackages();
 }
 
-export async function fetchTopUpPackages(iccid: string): Promise<EsimPackage[]> {
+/**
+ * Fetch the top-up catalogue for a given SIM. Pass `supplierType='pccw'`
+ * for physical SIMs (PCCW IoT-M) — those SIMs use a different recharge
+ * template pool than our eSIM catalogue and omitting the hint returns
+ * an empty list. For eSIMs (Red Tea / EsimAccess) the parameter can be
+ * omitted and defaults to `'esimaccess'` backend-side.
+ */
+export async function fetchTopUpPackages(
+  iccid: string,
+  supplierType?: 'pccw' | 'esimaccess',
+): Promise<EsimPackage[]> {
   if (!USE_BACKEND_API) {
     return supplierFetchTopUp(iccid);
   }
 
   try {
-    const resp = await packageService.getRechargePackages(iccid);
+    const resp = await packageService.getRechargePackages(iccid, supplierType);
     return (resp.packages || []).map(backendPkgToEsimPackage);
   } catch {
     return supplierFetchTopUp(iccid);
@@ -190,13 +200,29 @@ export async function checkDataUsage(iccid: string): Promise<DataUsageResult> {
 
 // ─── Query Profile ───────────────────────────────────────────────────
 
-export async function queryProfile(iccid: string): Promise<EsimProfileResult> {
+/**
+ * Look up an ICCID's preloaded plan before the user binds it to their
+ * EvairSIM account. Pass `supplierType` to choose the provider:
+ *   - `'pccw'`  — physical SIM (PCCW IoT-M). Use this from the "Bind your
+ *                 SIM Card" flow — cards arrive preloaded and must be
+ *                 verified against PCCW's registry.
+ *   - `'esimaccess'` — digital eSIM (EsimAccess / Red Tea). Used from
+ *                 the install / post-purchase flow.
+ *   - omitted — backend default (esimaccess) for backwards compat.
+ *
+ * On backend failure we fall back to the legacy direct-supplier call
+ * so the dev catalogue / offline simulator keeps working.
+ */
+export async function queryProfile(
+  iccid: string,
+  supplierType?: 'pccw' | 'esimaccess',
+): Promise<EsimProfileResult> {
   if (!USE_BACKEND_API) {
     return supplierQueryProfile(iccid);
   }
 
   try {
-    const preview = await esimService.getPreview(iccid);
+    const preview = await esimService.getPreview(iccid, supplierType);
     return {
       iccid: preview.iccid,
       packageCode: preview.package?.packageCode || '',

@@ -60,11 +60,22 @@ export const packageService = {
   },
 
   /**
-   * 获取充值套餐（针对特定 eSIM）
-   * @param iccid eSIM ICCID
+   * Fetch the top-up / recharge catalogue for an existing SIM.
+   *
+   * Backend accepts `supplier_type`:
+   *   - `'esimaccess'` (default) — digital eSIMs (Red Tea templates)
+   *   - `'pccw'` — physical SIMs (PCCW recharge templates, respects
+   *               per-ICCID whitelists)
+   * Pass the matching supplier when the SIM was provisioned by PCCW,
+   * otherwise the backend will return an empty / mismatched list.
    */
-  async getRechargePackages(iccid: string): Promise<{ packages: PackageDto[] }> {
-    return get<{ packages: PackageDto[] }>(ENDPOINTS.RECHARGE_PACKAGES, { iccid });
+  async getRechargePackages(
+    iccid: string,
+    supplierType?: 'esimaccess' | 'pccw',
+  ): Promise<{ packages: PackageDto[] }> {
+    const params: Record<string, unknown> = { iccid };
+    if (supplierType) params.supplier_type = supplierType;
+    return get<{ packages: PackageDto[] }>(ENDPOINTS.RECHARGE_PACKAGES, params);
   },
 
   /**
@@ -109,11 +120,23 @@ export const packageService = {
 
 export const esimService = {
   /**
-   * 获取 eSIM 预览（绑定前查看）
-   * GET /h5/esim/preview/{iccid}
-   * @param iccid eSIM ICCID
+   * Fetch the public SIM preview (used during bind / registration).
+   *
+   * `supplierType` controls which provider backs the lookup:
+   *   - `'esimaccess'` (default) — Red Tea / EsimAccess, i.e. our digital
+   *     eSIM catalogue; used on the eSIM install flow.
+   *   - `'pccw'` — PCCW IoT-M, our physical SIM supplier. Physical SIMs
+   *     ship preloaded with data, so the H5 "Bind your SIM" screen should
+   *     always pass `'pccw'` to hit the correct backend service
+   *     (`PccwPreviewService`) and surface the preloaded plan + carrier
+   *     balance for top-up purposes.
+   *
+   * GET /h5/esim/preview/{iccid}?supplier_type={esimaccess|pccw}
    */
-  async getPreview(iccid: string): Promise<{
+  async getPreview(
+    iccid: string,
+    supplierType?: 'esimaccess' | 'pccw',
+  ): Promise<{
     iccid: string;
     status: string;
     package: {
@@ -125,7 +148,8 @@ export const esimService = {
     };
     expiredTime: string;
   }> {
-    return get(ENDPOINTS.ESIM_PREVIEW(iccid));
+    const params = supplierType ? { supplier_type: supplierType } : undefined;
+    return get(ENDPOINTS.ESIM_PREVIEW(iccid), params as Record<string, unknown> | undefined);
   },
 
   /**

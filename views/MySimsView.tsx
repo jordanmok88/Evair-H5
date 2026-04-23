@@ -115,11 +115,25 @@ const MySimsView: React.FC<MySimsViewProps> = ({ activeSims, onNavigate, filterT
       const iccid = resolveIccid(currentSim);
       const fallbackLocation = currentSim.locationCode || currentSim.country.countryCode;
       const locationFallback = () => fetchPackages({ locationCode: fallbackLocation });
+      // Recharge catalogue resolution by SIM type:
+      //
+      //   • ESIM        → EsimAccess / Red Tea top-up templates keyed to
+      //                   the ICCID; fall back to the general location
+      //                   catalogue if none returned.
+      //   • PHYSICAL    → PCCW recharge templates for this ICCID. Pass
+      //                   `'pccw'` explicitly — the backend defaults to
+      //                   `esimaccess` and would otherwise return zero
+      //                   matches. If PCCW has no offers for this SIM
+      //                   (e.g. an ICCID not yet on any whitelist) we
+      //                   fall through to the general catalogue so the
+      //                   user still sees something actionable.
       const pkgPromise = currentSim.type === 'ESIM'
         ? fetchTopUpPackages(iccid)
             .then(pkgs => pkgs.length > 0 ? pkgs : locationFallback())
             .catch(locationFallback)
-        : fetchPackages({ locationCode: currentSim.country.countryCode });
+        : fetchTopUpPackages(iccid, 'pccw')
+            .then(pkgs => pkgs.length > 0 ? pkgs : locationFallback())
+            .catch(locationFallback);
       pkgPromise
         .then(setTopUpPackages)
         .catch(() => {})
@@ -832,6 +846,11 @@ const MySimsView: React.FC<MySimsViewProps> = ({ activeSims, onNavigate, filterT
                 packageCode: selectedTopUp.packageCode,
                 transactionId: txnId,
                 amount: selectedTopUp.price,
+                // Physical SIMs ride on PCCW's recharge pipeline; eSIMs
+                // stay on EsimAccess. Tagging the call-site keeps the
+                // backend `RechargeTemplateService` from falling back to
+                // the default supplier and rejecting valid PCCW tops-ups.
+                supplierType: currentSim.type === 'PHYSICAL' ? 'pccw' : 'esimaccess',
               });
 
               const addedGB = selectedTopUp.volume / (1024 * 1024 * 1024);
