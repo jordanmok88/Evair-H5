@@ -1236,10 +1236,10 @@ const ShopView: React.FC<ShopViewProps> = ({ testMode = false, isLoggedIn, user,
                                 </div>
                                 <div className="flex-1 min-w-0">
                                     <h2 className="text-lg font-bold text-white tracking-tight">{t('shop.bind_sim')}</h2>
-                                    <p className="text-sm text-slate-400 mt-1 leading-snug">Track delivery & activate your physical SIM card</p>
+                                    <p className="text-sm text-slate-400 mt-1 leading-snug">{t('shop.bind_sim_sub', 'Activate your EvairSIM and bind it to your account')}</p>
                                     <div className="flex items-center gap-3 mt-3">
-                                        <span className="flex items-center gap-1.5 text-xs font-medium text-slate-300"><Truck size={14} className="text-brand-orange" /> Delivery Tracking</span>
-                                        <span className="flex items-center gap-1.5 text-xs font-medium text-slate-300"><Smartphone size={14} className="text-brand-orange" /> SIM Activation</span>
+                                        <span className="flex items-center gap-1.5 text-xs font-medium text-slate-300"><QrCode size={14} className="text-brand-orange" /> {t('shop.bind_sim_feature_scan', 'Scan ICCID')}</span>
+                                        <span className="flex items-center gap-1.5 text-xs font-medium text-slate-300"><Smartphone size={14} className="text-brand-orange" /> {t('shop.bind_sim_feature_activate', 'SIM Activation')}</span>
                                     </div>
                                 </div>
                             </div>

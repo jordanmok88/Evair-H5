@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Wifi, Phone, Zap, ChevronDown, CheckCircle2, QrCode, Copy, X, Calendar, Clock, SignalHigh, Smartphone, RefreshCw, Plus, ShoppingBag, Settings, MoreHorizontal, Trash2, Check, AlertTriangle, Loader2, Globe, Database, Truck, ScanLine, Package, MapPin, ArrowLeft } from 'lucide-react';
+import { Wifi, Phone, Zap, ChevronDown, CheckCircle2, QrCode, Copy, X, Calendar, Clock, SignalHigh, Smartphone, RefreshCw, Plus, ShoppingBag, Settings, MoreHorizontal, Trash2, Check, AlertTriangle, Loader2, Globe, Database, ScanLine, ArrowLeft } from 'lucide-react';
 import { ActiveSim, Tab, SimType, EsimPackage } from '../types';
 import FlagIcon from '../components/FlagIcon';
 import StripePaymentModal from '../components/StripePaymentModal';
@@ -14,7 +14,10 @@ interface MySimsViewProps {
   filterType: SimType;
   onSwitchToShop?: () => void;
   onDeleteSim?: (simId: string) => void;
-  onSwitchToSetup?: (tab?: 'TRACKING' | 'ACTIVATE', trackingNumber?: string) => void;
+  // Legacy signature accepted `(tab, trackingNumber)` — the TRACKING
+  // tab was removed in the 2026-04 FBA pivot. Args are ignored but kept
+  // for source compatibility with existing call-sites.
+  onSwitchToSetup?: (tab?: 'ACTIVATE' | 'TRACKING', trackingNumber?: string) => void;
   onUpdateSim?: (simId: string, updates: Partial<ActiveSim>) => void;
 }
 
@@ -457,9 +460,9 @@ const MySimsView: React.FC<MySimsViewProps> = ({ activeSims, onNavigate, filterT
                         : sim.type === 'ESIM' && (sim.status === 'NEW' || sim.status === 'PENDING_ACTIVATION' || sim.status === 'NOT_ACTIVATED') ? '#3b82f6'
                         : isDataLow ? '#D97706' : '#94a3b8', marginTop: 2, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                         {sim.type === 'PHYSICAL' && sim.status === 'PENDING_ACTIVATION'
-                          ? 'Arriving soon · tap to track'
+                          ? 'Ready to activate'
                           : sim.type === 'PHYSICAL' && sim.status === 'NOT_ACTIVATED'
-                          ? 'Delivered · tap to activate'
+                          ? 'Tap to activate'
                           : sim.type === 'PHYSICAL' && sim.status === 'NEW'
                           ? `${formatGB(simRemaining)} / ${formatGB(sim.dataTotalGB)} · Ready`
                           : sim.type === 'PHYSICAL' && sim.status === 'EXPIRED'
@@ -473,7 +476,8 @@ const MySimsView: React.FC<MySimsViewProps> = ({ activeSims, onNavigate, filterT
                       onClick={(e) => {
                         if ((sim.status === 'PENDING_ACTIVATION' || sim.status === 'NOT_ACTIVATED') && onSwitchToSetup) {
                           e.stopPropagation();
-                          onSwitchToSetup(sim.status === 'PENDING_ACTIVATION' ? 'TRACKING' : 'ACTIVATE', sim.trackingNumber);
+                          // FBA pivot: always route to ACTIVATE, no more shipment tracking tab.
+                          onSwitchToSetup('ACTIVATE');
                         }
                       }}
                       style={{
@@ -521,84 +525,35 @@ const MySimsView: React.FC<MySimsViewProps> = ({ activeSims, onNavigate, filterT
         </div>
       </div>
 
-      {/* ── Pending Physical SIM: Journey Stepper (only PENDING_ACTIVATION / NOT_ACTIVATED) ── */}
-      {currentSim.type === 'PHYSICAL' && (currentSim.status === 'PENDING_ACTIVATION' || currentSim.status === 'NOT_ACTIVATED') ? (() => {
-        const stepIndex = currentSim.status === 'PENDING_ACTIVATION' && !currentSim.trackingNumber ? 0
-          : currentSim.status === 'PENDING_ACTIVATION' && currentSim.trackingNumber ? 1
-          : 2;
-        const steps = [
-          { label: 'Ordered', icon: Package },
-          { label: 'Shipped', icon: Truck },
-          { label: 'Delivered', icon: MapPin },
-          { label: 'Activated', icon: CheckCircle2 },
-        ];
-        return (
+      {/* ── Pending Physical SIM: Activate CTA (only PENDING_ACTIVATION / NOT_ACTIVATED) ──
+          Post-FBA pivot (2026-04): we no longer ship / track customer
+          orders ourselves — Amazon handles fulfilment end-to-end.
+          The old Ordered → Shipped → Delivered → Activated journey
+          stepper and the "Track my order" CTA have been removed; any
+          physical SIM that's pending in our DB is treated as "in the
+          customer's hand, tap to activate". */}
+      {currentSim.type === 'PHYSICAL' && (currentSim.status === 'PENDING_ACTIVATION' || currentSim.status === 'NOT_ACTIVATED') ? (
         <div className="px-4 mb-5">
           <div className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
-            {/* Journey Stepper */}
-            <div className="px-5 pt-6 pb-4">
-              <div className="flex items-center justify-between mb-1">
-                {steps.map((step, i) => {
-                  const StepIcon = step.icon;
-                  const isComplete = i < stepIndex;
-                  const isCurrent = i === stepIndex;
-                  return (
-                    <React.Fragment key={step.label}>
-                      <div className="flex flex-col items-center" style={{ minWidth: 52 }}>
-                        <div className={`w-8 h-8 rounded-full flex items-center justify-center mb-1.5 transition-all ${
-                          isComplete ? 'bg-green-500 text-white' : isCurrent ? 'bg-brand-orange text-white shadow-md shadow-orange-200' : 'bg-slate-100 text-slate-300'
-                        }`}>
-                          {isComplete ? <Check size={14} strokeWidth={3} /> : <StepIcon size={14} />}
-                        </div>
-                        <span className={`text-[10px] font-semibold leading-tight ${
-                          isComplete ? 'text-green-600' : isCurrent ? 'text-brand-orange' : 'text-slate-300'
-                        }`}>{step.label}</span>
-                      </div>
-                      {i < steps.length - 1 && (
-                        <div className={`flex-1 h-0.5 mx-1 rounded-full -mt-4 ${i < stepIndex ? 'bg-green-400' : 'bg-slate-100'}`} />
-                      )}
-                    </React.Fragment>
-                  );
-                })}
+            <div className="px-5 pt-5 pb-4">
+              <div className="flex items-center gap-3 mb-3">
+                <div className="w-10 h-10 rounded-xl bg-orange-50 flex items-center justify-center shrink-0">
+                  <Smartphone size={18} className="text-brand-orange" />
+                </div>
+                <div>
+                  <h3 className="text-[15px] font-bold text-slate-900">{t('my_sims.ready_to_activate', 'Ready to activate')}</h3>
+                  <p className="text-[13px] text-slate-400">{t('my_sims.ready_to_activate_hint', 'Scan the ICCID on the back of your SIM to bind it to your account.')}</p>
+                </div>
               </div>
-            </div>
-
-            {/* Order info */}
-            <div className="px-5 pb-4">
               {currentSim.orderNo && (
                 <div className="flex items-center gap-2 text-xs text-slate-400 mb-1">
                   <span className="font-mono">Order {currentSim.orderNo}</span>
                 </div>
               )}
-              {currentSim.trackingNumber && (
-                <div className="flex items-center gap-2 text-xs text-slate-400">
-                  <Truck size={11} className="shrink-0" />
-                  <span className="font-mono">{currentSim.trackingNumber}</span>
-                </div>
-              )}
               <p className="text-xs text-slate-300 mt-1">{formatGB(currentSim.dataTotalGB)} · {currentSim.plan.days} {t('my_sims.days')}</p>
             </div>
 
-            {/* Actions: Track + Activate */}
             <div className="px-5 pb-5 space-y-2.5 border-t border-slate-50 pt-4">
-              {currentSim.trackingNumber && (
-                <button
-                  onClick={() => onSwitchToSetup?.('TRACKING', currentSim.trackingNumber)}
-                  className="w-full flex items-center justify-center gap-2 py-3 rounded-xl bg-slate-100 text-slate-700 font-semibold text-sm hover:bg-slate-200 active:scale-[0.98] transition-all"
-                >
-                  <Truck size={16} />
-                  {t('my_sims.track_my_order')}
-                </button>
-              )}
-
-              <div className="flex items-center gap-3 py-1">
-                <div className="flex-1 h-px bg-slate-100" />
-                <span className="text-[11px] font-semibold text-slate-300 uppercase tracking-wider">
-                  {stepIndex >= 2 ? 'Ready to activate' : 'Already received?'}
-                </span>
-                <div className="flex-1 h-px bg-slate-100" />
-              </div>
-
               <button
                 onClick={() => onSwitchToSetup?.('ACTIVATE')}
                 className="w-full flex items-center justify-center gap-2 py-3.5 rounded-xl font-bold text-[15px] text-white active:scale-[0.98] transition-all"
@@ -610,8 +565,7 @@ const MySimsView: React.FC<MySimsViewProps> = ({ activeSims, onNavigate, filterT
             </div>
           </div>
         </div>
-        );
-      })() : (
+      ) : (
         <>
       {/* Activation nudge for NEW physical SIMs */}
       {currentSim.type === 'PHYSICAL' && currentSim.status === 'NEW' && (

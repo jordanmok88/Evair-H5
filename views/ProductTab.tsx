@@ -41,17 +41,19 @@ const ProductTab: React.FC<ProductTabProps> = ({
     if (saved === 'MINE' || saved === 'SHOP') return saved;
     return mySims.length > 0 ? 'MINE' : 'SHOP';
   });
-  const [setupTab, setSetupTab] = useState<'TRACKING' | 'ACTIVATE' | undefined>();
-  const [setupTrackingNumber, setSetupTrackingNumber] = useState<string | undefined>();
   const [setupEntryPoint, setSetupEntryPoint] = useState<'SHOP' | 'MINE'>('SHOP');
 
   useEffect(() => {
     sessionStorage.setItem('evair-viewMode', viewMode);
   }, [viewMode]);
 
-  const handleSwitchToSetup = (tab?: 'TRACKING' | 'ACTIVATE', trackingNumber?: string) => {
-    setSetupTab(tab);
-    setSetupTrackingNumber(trackingNumber);
+  // Callers used to pass `(tab, trackingNumber)` to open the setup
+  // flow on the TRACKING tab. After the 2026-04 FBA pivot the tracking
+  // tab is gone — we accept and ignore those args so existing callers
+  // still compile. Can be simplified to a zero-arg function once all
+  // callers are cleaned up.
+  const handleSwitchToSetup = (..._args: unknown[]) => {
+    void _args;
     setSetupEntryPoint(viewMode === 'MINE' ? 'MINE' : 'SHOP');
     setViewMode('SETUP');
   };
@@ -109,8 +111,6 @@ const ProductTab: React.FC<ProductTabProps> = ({
                 await onAddCard?.(iccid, profile);
                 setViewMode('MINE');
              }}
-             initialTab={setupTab}
-             trackingNumber={setupTrackingNumber}
              isLoggedIn={isLoggedIn}
              onLoginRequest={onLoginRequest}
           />
