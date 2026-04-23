@@ -1,5 +1,14 @@
 @import "tailwindcss";
 
+/*
+  Enable Tailwind v4's `dark:` variant to follow the OS / system-level
+  light-dark preference. Any utility written as `dark:bg-slate-900` will
+  automatically apply when the user's phone is in dark mode — no manual
+  toggle required. Pairs with <meta name="color-scheme" content="light dark">
+  in index.html so native form controls (e.g. dropdowns) also flip colours.
+*/
+@custom-variant dark (@media (prefers-color-scheme: dark));
+
 @theme {
   --font-sans: 'Inter', sans-serif;
   --color-brand-orange: #FF6600;
@@ -18,6 +27,22 @@ body {
   -webkit-tap-highlight-color: transparent;
   background-color: #F2F4F7;
   overscroll-behavior: none;
+}
+
+/*
+  Dark-mode base: when the user's phone (or browser) is in dark mode we
+  swap the neutral page chrome here so the WebView shell doesn't flash
+  a white background between navigations. Individual components still
+  need their own `dark:` variants to recolor cards / text / borders.
+*/
+@media (prefers-color-scheme: dark) {
+  html, body, #root {
+    background: #0B1120;
+  }
+  body {
+    background-color: #0B1120;
+    color: #E5E7EB;
+  }
 }
 
 /* Phone frame: contained layout for tablet/desktop */

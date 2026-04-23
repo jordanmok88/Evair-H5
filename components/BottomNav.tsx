@@ -99,7 +99,7 @@ const BottomNav: React.FC<BottomNavProps> = ({ activeTab, onTabChange, notificat
   }, [tooltipTab]);
 
   return (
-    <div className="fixed md:absolute bottom-0 left-0 right-0 md:left-auto md:right-auto w-full bg-white/90 backdrop-blur-2xl backdrop-saturate-150 border-t border-orange-100/60 px-4 z-50 pb-safe-bottom">
+    <div className="fixed md:absolute bottom-0 left-0 right-0 md:left-auto md:right-auto w-full bg-white/90 dark:bg-slate-900/90 backdrop-blur-2xl backdrop-saturate-150 border-t border-orange-100/60 dark:border-slate-800/60 px-4 z-50 pb-safe-bottom">
       <div className="flex justify-around items-center">
         {tabs.map(({ id, label, Icon, badge }) => {
           const active = activeTab === id;
