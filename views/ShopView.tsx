@@ -1,8 +1,8 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Search, ChevronRight, ArrowLeft, Globe, Star, X, MapPin, Loader2, Smartphone, Truck, CheckCircle, Calendar, Wifi, Signal, Info, CreditCard, ArrowDown, ShoppingBag, QrCode, Copy, Check, RefreshCw, Zap, Clock, Shield, Mail } from 'lucide-react';
+import { Search, ChevronRight, ArrowLeft, Globe, Star, X, MapPin, Loader2, Smartphone, Truck, CheckCircle, Calendar, Wifi, Signal, Info, CreditCard, ArrowDown, ShoppingBag, QrCode, Copy, Check, RefreshCw, Zap, Clock, Shield, Mail, ExternalLink } from 'lucide-react';
 import { Country, Plan, SimType, User, SimCardProduct, EsimPackage, EsimCountryGroup, EsimOrderResult, ActiveSim } from '../types';
-import { MOCK_COUNTRIES, SIM_CARD_PRODUCTS } from '../constants';
+import { MOCK_COUNTRIES, AMAZON_SIM_STOREFRONT_URL } from '../constants';
 import FlagIcon from '../components/FlagIcon';
 import { fetchPackages, prefetchPackages, groupPackagesByLocation, formatVolume, formatPrice, retailPrice, packagePriceUsd, orderEsim, CONTINENT_TABS, type ContinentTab, formatGB, POPULAR_COUNTRY_CODES, fetchMultiCountryRegionNames } from '../services/dataService';
 import { useSwipeBack } from '../hooks/useSwipeBack';
@@ -1263,60 +1263,82 @@ const ShopView: React.FC<ShopViewProps> = ({ testMode = false, isLoggedIn, user,
             </div>
         )}
 
-        {/* SIM Card products — country header + plan grid */}
+        {/* SIM Card products — country info + Amazon storefront CTA.
+            2026-04 pivot: physical SIMs are no longer sold via H5
+            checkout; customers purchase on Amazon instead. The plan
+            grid was removed but the checkout flow (selectedSimCardProduct)
+            remains in-file so we can restore direct sales quickly if
+            needed. */}
         {simType === 'PHYSICAL' && !searchQuery && (
             <>
               <h3 className="text-lg font-bold text-slate-900 mb-3 tracking-tight">{t('shop.purchase_sim_cards')}</h3>
 
-              {/* Country header */}
+              {/* Country / carrier info header */}
               <div className="bg-white rounded-xl p-4 mb-4 shadow-sm border border-slate-100">
                 <div className="flex items-center gap-3">
                   <FlagIcon countryCode="US" size="sm" />
                   <div className="flex-1 min-w-0">
-                    <div className="flex items-center justify-between gap-2">
-                      <p className="text-base font-semibold text-slate-900 leading-tight">United States</p>
-                      <span className="text-[11px] font-semibold text-brand-orange bg-orange-50 px-1.5 py-0.5 rounded-full border border-orange-100 shrink-0">{SIM_CARD_PRODUCTS.length} Plans</span>
-                    </div>
-                    <p className="text-xs text-slate-400 mt-0.5">AT&T · Verizon · T-Mobile · <span className="text-[11px] font-semibold text-slate-600">3G/4G/5G</span></p>
+                    <p className="text-base font-semibold text-slate-900 leading-tight">United States</p>
+                    <p className="text-xs text-slate-400 mt-0.5">AT&amp;T · Verizon · T-Mobile · <span className="text-[11px] font-semibold text-slate-600">3G/4G/5G</span></p>
                   </div>
                 </div>
               </div>
 
-              {/* Plan cards grid */}
-              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-2 gap-3 mb-5">
-                {SIM_CARD_PRODUCTS.map((product) => {
-                  const pricePerGb = product.sellingPrice / product.gbs;
-                  const isBestValue = product.id === 'US_10_30';
-                  const isReloadable = !product.topUpType.toLowerCase().includes('non-reloadable');
-                  return (
-                    <button
-                      key={product.id}
-                      onClick={() => {
-                        if (!isLoggedIn) onLoginRequest();
-                        else setSelectedSimCardProduct(product);
-                      }}
-                      className={`relative bg-white rounded-xl p-4 text-left transition-all active:scale-[0.97] shadow-sm border ${isBestValue ? 'border-brand-orange ring-1 ring-brand-orange/30' : 'border-slate-100 hover:border-slate-200'}`}
+              {/* Amazon storefront CTA — replaces the in-app plan grid. */}
+              <a
+                href={AMAZON_SIM_STOREFRONT_URL}
+                target="_blank"
+                rel="noopener noreferrer"
+                onClick={(e) => {
+                  // In the native WebView shell, route through the
+                  // bridge so Amazon opens in Safari / system browser
+                  // instead of trying to load inside the WebView
+                  // (Amazon blocks embedded frames and it looks awful).
+                  const evair = (window as unknown as { evair?: { isNative?: boolean; openExternal?: (url: string) => Promise<void> } }).evair;
+                  if (evair?.isNative && typeof evair.openExternal === 'function') {
+                    e.preventDefault();
+                    void evair.openExternal(AMAZON_SIM_STOREFRONT_URL);
+                  }
+                }}
+                className="relative block rounded-2xl overflow-hidden shadow-sm mb-5 border border-slate-200 bg-white active:scale-[0.99] transition-transform"
+              >
+                <div className="p-5">
+                  <div className="flex items-start gap-4">
+                    <div
+                      className="w-12 h-12 rounded-xl flex items-center justify-center shrink-0 mt-0.5"
+                      style={{ background: 'linear-gradient(135deg, #FF9900 0%, #FFB84D 100%)' }}
                     >
-                      {isBestValue && (
-                        <div className="absolute -top-2.5 left-1/2 -translate-x-1/2 bg-brand-orange text-white text-[11px] font-semibold uppercase tracking-wider px-2.5 py-0.5 rounded-full whitespace-nowrap">
-                          Best Value
-                        </div>
-                      )}
-                      <p className="text-lg font-extrabold text-slate-900 tracking-tight">{product.gbs} <span className="text-sm font-bold text-slate-400">GB</span></p>
-                      <p className="text-xs text-slate-500 font-medium mt-0.5">{product.validityDays} Days</p>
-                      <div className="mt-2 flex items-baseline gap-1">
-                        <span className="text-xl font-bold text-brand-orange">${product.sellingPrice.toFixed(2)}</span>
+                      <ShoppingBag size={22} className="text-white" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <h2 className="text-lg font-bold text-slate-900 tracking-tight">{t('shop.buy_on_amazon', 'Buy on Amazon')}</h2>
+                      <p className="text-sm text-slate-500 mt-1 leading-snug">
+                        {t(
+                          'shop.buy_on_amazon_sub',
+                          'Order your EvairSIM physical SIM card directly from our Amazon storefront — fast shipping, Prime-eligible, same product range.',
+                        )}
+                      </p>
+                      <div className="flex items-center gap-3 mt-3 flex-wrap">
+                        <span className="flex items-center gap-1.5 text-xs font-medium text-slate-600"><Truck size={14} className="text-amber-500" /> {t('shop.amazon_prime', 'Prime Shipping')}</span>
+                        <span className="flex items-center gap-1.5 text-xs font-medium text-slate-600"><Shield size={14} className="text-amber-500" /> {t('shop.amazon_secure', 'Secure Checkout')}</span>
                       </div>
-                      <p className="text-[11px] text-slate-400 mt-0.5">${pricePerGb.toFixed(2)}/GB</p>
-                      <div className="mt-2">
-                        <span className={`text-[11px] font-semibold px-2 py-0.5 rounded-full ${isReloadable ? 'text-emerald-700 bg-emerald-50 border border-emerald-100' : 'text-slate-500 bg-slate-50 border border-slate-200'}`}>
-                          {isReloadable ? 'Reloadable' : 'Non-reloadable'}
-                        </span>
-                      </div>
-                    </button>
-                  );
-                })}
-              </div>
+                    </div>
+                  </div>
+                  <div
+                    className="w-full mt-4 py-3 rounded-xl font-bold text-sm flex items-center justify-center gap-1.5 text-white"
+                    style={{
+                      background: 'linear-gradient(135deg, #FF9900 0%, #FFB84D 100%)',
+                      boxShadow: '0 4px 12px rgba(255,153,0,0.3)',
+                    }}
+                  >
+                    {t('shop.open_amazon_storefront', 'Open Amazon Storefront')}
+                    <ExternalLink size={14} />
+                  </div>
+                  <p className="text-[11px] text-slate-400 text-center mt-2">
+                    {t('shop.amazon_leave_notice', 'You will leave EvairSIM and continue on amazon.com')}
+                  </p>
+                </div>
+              </a>
             </>
         )}
 
