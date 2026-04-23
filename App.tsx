@@ -565,11 +565,11 @@ function CustomerApp() {
 
   const ProtectedView = ({ title }: { title: string }) => (
     <div className="h-full flex flex-col items-center justify-center px-8 text-center pt-10">
-      <div className="w-24 h-24 bg-white/40 dark:bg-slate-800/40 backdrop-blur-xl border border-white/50 dark:border-slate-700/50 rounded-full flex items-center justify-center mb-6 shadow-xl shadow-black/5">
-        <Lock size={32} className="text-slate-400 dark:text-slate-500" />
+      <div className="w-24 h-24 bg-white/40 backdrop-blur-xl border border-white/50 rounded-full flex items-center justify-center mb-6 shadow-xl shadow-black/5">
+        <Lock size={32} className="text-slate-400" />
       </div>
-      <h2 className="text-2xl font-semibold tracking-tight text-slate-900 dark:text-slate-100 mb-2">{title}</h2>
-      <p className="text-slate-500 dark:text-slate-400 mb-8 leading-relaxed">Please sign in to access your {title.toLowerCase()}.</p>
+      <h2 className="text-2xl font-semibold tracking-tight text-slate-900 mb-2">{title}</h2>
+      <p className="text-slate-500 mb-8 leading-relaxed">Please sign in to access your {title.toLowerCase()}.</p>
       <button 
         onClick={() => setIsLoginModalOpen(true)}
         className="w-full max-w-xs bg-brand-orange hover:bg-orange-600 text-white py-3.5 rounded-2xl font-semibold shadow-lg shadow-orange-500/20 active:scale-[0.98] transition-all"
@@ -645,12 +645,12 @@ function CustomerApp() {
   };
 
   return (
-    <div className="lg:bg-[#E5E5E5] dark:lg:bg-slate-950 lg:h-full lg:min-h-screen lg:flex lg:items-center lg:justify-center lg:p-8 font-sans antialiased selection:bg-orange-100 dark:selection:bg-orange-900/40">
+    <div className="lg:bg-[#E5E5E5] lg:h-full lg:min-h-screen lg:flex lg:items-center lg:justify-center lg:p-8 font-sans antialiased selection:bg-orange-100">
       
-      <div ref={phoneRef} className="w-full lg:max-w-[430px] lg:h-[880px] bg-[#F2F4F7] dark:bg-slate-900 lg:rounded-[3.5rem] lg:overflow-hidden lg:shadow-[0_50px_100px_-20px_rgba(0,0,0,0.25)] relative lg:border-[8px] lg:border-slate-900 lg:ring-1 lg:ring-black/50">
+      <div ref={phoneRef} className="w-full lg:max-w-[430px] lg:h-[880px] bg-[#F2F4F7] lg:rounded-[3.5rem] lg:overflow-hidden lg:shadow-[0_50px_100px_-20px_rgba(0,0,0,0.25)] relative lg:border-[8px] lg:border-slate-900 lg:ring-1 lg:ring-black/50">
         
         {/* Generic status bar — only visible in desktop phone frame */}
-        <div className="hidden lg:block relative z-50 shrink-0 bg-[#F2F4F7] dark:bg-slate-900">
+        <div className="hidden lg:block relative z-50 shrink-0 bg-[#F2F4F7]">
           <div className="relative h-[54px]">
             <div className="absolute top-[10px] left-1/2 -translate-x-1/2 w-[126px] h-[37px] bg-black rounded-[24px] z-10" />
             <span className="absolute left-5 top-4 text-[15px] font-semibold text-[#1a1a1a]" style={{ fontFamily: 'system-ui, sans-serif' }}>12:18</span>
@@ -688,7 +688,7 @@ function CustomerApp() {
             // Desktop (lg) is inside a mock phone frame so it doesn't
             // need the inset; `lg:hidden` keeps the mock pixel-perfect.
             <div
-              className="shrink-0 lg:hidden bg-white dark:bg-slate-900"
+              className="shrink-0 lg:hidden bg-white"
               style={{ height: 'env(safe-area-inset-top, 0px)' }}
               aria-hidden
             />
