@@ -75,7 +75,18 @@ const CACHE_KEY_LEGACY = 'evair_esim_packages';
 // `locations[]` / `is_multi_country`. Without the bump, returning users
 // would keep seeing the old single-ISO payload from cache and the
 // Multi-Country tab would stay empty.
-const CACHE_KEY_BACKSTAGE = 'evair_esim_packages_backstage_v2';
+// v3 — bump invalidates stale 1000-row caches now that we fetch size=5000
+// to match Flutter APP and see the full 2.6k catalogue. Without this bump
+// returning users would stay stuck on the truncated set for 30 min.
+// v5 — bumped when mapBackstageRow started emitting `supplierRegionCode` /
+// `coverageCodes`. Any v4 cache written between the TOPUP-filter bump and
+// this change stores region-less packages, so the Multi-Country tab would
+// render empty ("0") until the 30-minute TTL rolled over. Bumping the key
+// here forces a clean refetch so multi-country grouping can find its keys.
+const CACHE_KEY_BACKSTAGE = 'evair_esim_packages_backstage_v5';
+const CACHE_KEY_BACKSTAGE_LEGACY_V4 = 'evair_esim_packages_backstage_v4';
+const CACHE_KEY_BACKSTAGE_LEGACY_V3 = 'evair_esim_packages_backstage_v3';
+const CACHE_KEY_BACKSTAGE_LEGACY_V2 = 'evair_esim_packages_backstage_v2';
 const CACHE_KEY_BACKSTAGE_LEGACY = 'evair_esim_packages_backstage';
 const CACHE_TTL_MS = 30 * 60 * 1000; // 30 minutes — team may update prices daily
 
@@ -94,6 +105,9 @@ function activeCacheKey(): string {
 if (typeof window !== 'undefined' && USE_BACKSTAGE_CATALOG) {
   try { localStorage.removeItem(CACHE_KEY_LEGACY); } catch { /* ignore */ }
   try { localStorage.removeItem(CACHE_KEY_BACKSTAGE_LEGACY); } catch { /* ignore */ }
+  try { localStorage.removeItem(CACHE_KEY_BACKSTAGE_LEGACY_V2); } catch { /* ignore */ }
+  try { localStorage.removeItem(CACHE_KEY_BACKSTAGE_LEGACY_V3); } catch { /* ignore */ }
+  try { localStorage.removeItem(CACHE_KEY_BACKSTAGE_LEGACY_V4); } catch { /* ignore */ }
 }
 
 function getCachedPackages(): EsimPackage[] | null {
@@ -216,11 +230,18 @@ interface BackstagePackageRow {
 async function fetchPackagesFromBackstage(
   params: FetchPackagesParams,
 ): Promise<EsimPackage[]> {
-  const url = new URL(`${BACKSTAGE_BASE}/packages`);
-  // Pull the full catalogue in one shot (currently ~765 rows). Bump again
-  // if the team ever exceeds this; worst case is a truncated grid, not a
-  // broken page, so the margin is intentionally generous.
-  url.searchParams.set('size', '1000');
+  // BACKSTAGE_BASE can be absolute ("https://evair.zhhwxt.cn/api/v1/h5") or
+  // a Vite-proxy relative path ("/laravel-api/v1/h5"). `new URL()` throws
+  // TypeError on a relative single-arg — pass window.origin as the base so
+  // both shapes resolve correctly.
+  const base = typeof window !== 'undefined' ? window.location.origin : 'http://localhost';
+  const url = new URL(`${BACKSTAGE_BASE}/packages`, base);
+  // Pull the full catalogue in one shot. Laravel's packages table currently
+  // holds ~2.6k plans and the `size` param is uncapped, so 5000 covers today
+  // with ~2× headroom. Keep this in sync with Flutter's
+  // `shop_providers.dart` (`perPage: 5000`) — H5 and APP must see the same
+  // rows or per-country plan counts will diverge in the UI.
+  url.searchParams.set('size', '5000');
   url.searchParams.set('page', '1');
   if (params.locationCode) url.searchParams.set('location_code', params.locationCode);
   if (params.type) url.searchParams.set('type', params.type);
@@ -241,25 +262,49 @@ async function fetchPackagesFromBackstage(
   }
 
   const rows = json.data?.packages ?? [];
-  return rows.map((r) => mapBackstageRow(r));
+  // Top-up SKUs carry `location="GLOBAL"` and are not country-scoped; they
+  // must never surface in the shop country list (otherwise H5 shows 180
+  // "countries" while the APP — which intersects with the real ISO list
+  // from /packages/locations — shows 179). When a caller explicitly asks
+  // for `type=TOPUP`, we keep them. Otherwise strip them out here.
+  const filteredRows = params.type
+    ? rows
+    : rows.filter((r) => (r.type ?? 'BASE').toUpperCase() !== 'TOPUP');
+  return filteredRows.map((r) => mapBackstageRow(r));
 }
+
+/**
+ * Supplier region code pattern, e.g. "NA-3", "EU-30", "AS-12", "SGMYTH-3".
+ * These codes come embedded in the `locations` array alongside real ISO-2
+ * country codes. They're the canonical grouping key the APP uses (via
+ * /v1/h5/packages/locations.multi_countries), so H5 must strip them out of
+ * the coverage list AND use them as its multi-country group key for the
+ * two clients to render the same regions.
+ */
+const SUPPLIER_REGION_RE = /^[A-Z]{2,}-\d+$/;
 
 function mapBackstageRow(r: BackstagePackageRow): EsimPackage {
   const usd = Number(r.price) || 0;
 
-  // `groupPackagesByLocation` downstream uses a "contains comma" heuristic
-  // to split the shop into Single-Country vs. Multi-Country/Regional buckets.
-  // The backend sends the full coverage in `locations` + an `is_multi_country`
-  // flag; we re-hydrate a CSV here when the plan spans multiple countries so
-  // that heuristic keeps working. If the backend is still on the old schema
-  // (only `location` populated), we fall back to the single ISO.
-  const coverage: string[] = Array.isArray(r.locations)
+  // Full list returned by backend. May mix ISO-2 codes with a supplier
+  // region code (e.g. ["MX","US","CA","NA-3"]). We split it into the pure
+  // ISO coverage list + the (optional) region code.
+  const rawCoverage: string[] = Array.isArray(r.locations)
     ? r.locations.filter((c): c is string => typeof c === 'string' && c.length > 0)
     : [];
   const primary = typeof r.location === 'string' && r.location.length > 0 ? r.location : '';
-  const all = coverage.length > 0 ? coverage : (primary ? [primary] : []);
-  const isMulti = r.is_multi_country === true || all.length > 1;
-  const location = isMulti ? all.join(',') : (all[0] ?? '');
+  const all = rawCoverage.length > 0 ? rawCoverage : (primary ? [primary] : []);
+  const supplierRegionCode = all.find((c) => SUPPLIER_REGION_RE.test(c));
+  const isoCodes = all.filter((c) => !SUPPLIER_REGION_RE.test(c));
+
+  // Multi when supplier flagged it OR the real ISO coverage spans 2+ countries.
+  // We deliberately no longer let the region code alone decide "multi" — the
+  // flag plus real ISO list are the honest signals.
+  const isMulti = r.is_multi_country === true || isoCodes.length > 1;
+  // Back-compat: `location` remains the CSV for multi-country plans so any
+  // existing call sites that split by comma keep working. Downstream
+  // grouping should now prefer `supplierRegionCode` when present.
+  const location = isMulti ? isoCodes.join(',') : (isoCodes[0] ?? '');
 
   return {
     packageCode: r.package_code,
@@ -274,7 +319,60 @@ function mapBackstageRow(r: BackstagePackageRow): EsimPackage {
     location,
     description: r.description ?? '',
     activeType: 0,
+    coverageCodes: isoCodes,
+    supplierRegionCode,
   };
+}
+
+// ─── Multi-country region name cache ─────────────────────────────────
+// The APP renders multi-country groups keyed by supplier region code
+// ("NA-3", "EU-30") with friendly names like "Europe (30+ countries)".
+// Those names come from /v1/h5/packages/locations.multi_countries. We
+// cache them process-wide (they change rarely) so `groupPackagesByLocation`
+// can label groups the same way the APP does. The cache is pre-warmed at
+// module load; in the rare race where a group is built before the fetch
+// resolves we fall back to the raw region code — never broken UI.
+
+interface BackstageLocationsEnvelope {
+  code: number;
+  msg: string;
+  data?: {
+    single_countries?: Array<{ code?: string; name?: string }>;
+    multi_countries?: Array<{ code?: string; name?: string }>;
+  };
+}
+
+let _regionNameCache: Map<string, string> = new Map();
+let _regionNamePromise: Promise<Map<string, string>> | null = null;
+
+export function fetchMultiCountryRegionNames(): Promise<Map<string, string>> {
+  if (_regionNamePromise) return _regionNamePromise;
+  _regionNamePromise = (async () => {
+    try {
+      const base = typeof window !== 'undefined' ? window.location.origin : 'http://localhost';
+      const url = new URL(`${BACKSTAGE_BASE}/packages/locations`, base);
+      const res = await fetch(url.toString(), { headers: { Accept: 'application/json' } });
+      if (!res.ok) return _regionNameCache;
+      const json = (await res.json()) as BackstageLocationsEnvelope;
+      if (json.code !== 0) return _regionNameCache;
+      const rows = json.data?.multi_countries ?? [];
+      const map = new Map<string, string>();
+      for (const row of rows) {
+        if (row.code && row.name) map.set(row.code, row.name);
+      }
+      _regionNameCache = map;
+      return map;
+    } catch {
+      return _regionNameCache;
+    }
+  })();
+  return _regionNamePromise;
+}
+
+// Kick off the fetch eagerly so the cache is usually primed by the time
+// `groupPackagesByLocation` runs. Failure is silent — see fallback above.
+if (typeof window !== 'undefined') {
+  fetchMultiCountryRegionNames().catch(() => undefined);
 }
 
 export async function fetchTopUpPackages(iccid: string): Promise<EsimPackage[]> {
@@ -310,7 +408,8 @@ interface BackstageRechargeRow {
 }
 
 async function fetchTopUpPackagesFromBackstage(iccid: string): Promise<EsimPackage[]> {
-  const url = new URL(`${BACKSTAGE_BASE}/packages/recharge`);
+  const base = typeof window !== 'undefined' ? window.location.origin : 'http://localhost';
+  const url = new URL(`${BACKSTAGE_BASE}/packages/recharge`, base);
   url.searchParams.set('iccid', iccid);
   url.searchParams.set('supplier_type', 'esimaccess');
 
@@ -546,25 +645,69 @@ function getContinent(code: string): string {
 export const POPULAR_COUNTRY_CODES = ['MX', 'CA', 'JP', 'GB', 'FR', 'IT', 'KR', 'TH', 'DO', 'DE', 'ES', 'CO'];
 
 export function groupPackagesByLocation(packages: EsimPackage[]): EsimCountryGroup[] {
+  // Grouping key precedence:
+  //   1. Multi-country plan with supplier region code → key = region code
+  //      (e.g. "NA-3"). This aligns with the APP's 33 curated regions from
+  //      /packages/locations.multi_countries so both clients render the
+  //      same group list.
+  //   2. Multi-country plan without a region code → key = raw ISO CSV as
+  //      a last-resort bucket (~0 after upstream cleanup; APP hides these
+  //      entirely since they don't match any curated region).
+  //   3. Single-country plan → key = ISO code (e.g. "MX").
   const map = new Map<string, EsimPackage[]>();
 
+  // When the curated multi-country region list has been fetched we use it to
+  // intersect — a multi-country plan is only surfaced if its supplier region
+  // code is in the backend's official list. This keeps H5's region count in
+  // lockstep with the APP (both read from /packages/locations). When the
+  // cache is empty (first paint, offline fallback) we accept any region code
+  // so users never see an empty shop.
+  const curatedRegions = _regionNameCache.size > 0 ? _regionNameCache : null;
+
   for (const pkg of packages) {
-    const key = pkg.location;
-    if (!map.has(key)) map.set(key, []);
-    map.get(key)!.push(pkg);
+    const codes = pkg.coverageCodes ?? (pkg.location ? pkg.location.split(',').map((c) => c.trim()).filter(Boolean) : []);
+    const isMulti = (pkg.supplierRegionCode !== undefined) || codes.length > 1;
+    if (isMulti) {
+      // Drop plans without a region code — APP has no equivalent bucket
+      // for them (its Multi-Country list is region-indexed), so surfacing
+      // them in H5 would create ghost rows the APP can never render.
+      if (!pkg.supplierRegionCode) continue;
+      if (curatedRegions && !curatedRegions.has(pkg.supplierRegionCode)) continue;
+      const key = pkg.supplierRegionCode;
+      if (!map.has(key)) map.set(key, []);
+      map.get(key)!.push(pkg);
+    } else {
+      const key = codes[0] ?? pkg.location;
+      if (!key) continue;
+      if (!map.has(key)) map.set(key, []);
+      map.get(key)!.push(pkg);
+    }
   }
 
   const groups: EsimCountryGroup[] = [];
-  for (const [loc, pkgs] of map.entries()) {
-    const primaryCode = loc.split(',')[0].trim();
-    const isMultiRegion = loc.includes(',');
+  for (const [key, pkgs] of map.entries()) {
+    // All packages in a group share the same coverage footprint, so picking
+    // the first is fine. We keep the widest ISO list we see (most suppliers
+    // emit identical `locations` for every SKU in a region, but be defensive).
+    const allCodes = new Set<string>();
+    for (const p of pkgs) {
+      for (const c of p.coverageCodes ?? []) allCodes.add(c);
+    }
+    const countries = Array.from(allCodes);
+    const regionCode = pkgs.find((p) => p.supplierRegionCode)?.supplierRegionCode;
+    const isMultiRegion = regionCode !== undefined || countries.length > 1;
+    const primaryCode = countries[0] ?? key;
+    const locationName = isMultiRegion
+      ? (regionCode ? (_regionNameCache.get(regionCode) ?? `${regionCode} (${countries.length} countries)`) : resolveLocationName(countries.join(',')))
+      : countryName(primaryCode);
     groups.push({
-      locationCode: loc,
-      locationName: resolveLocationName(loc),
+      locationCode: key,
+      locationName,
       flag: primaryCode,
       packages: pkgs.sort((a, b) => a.volume - b.volume),
       continent: isMultiRegion ? 'Multi-Region' : getContinent(primaryCode),
       isMultiRegion,
+      countries,
     });
   }
 

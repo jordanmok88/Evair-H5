@@ -4,7 +4,7 @@ import { Search, ChevronRight, ArrowLeft, Globe, Star, X, MapPin, Loader2, Smart
 import { Country, Plan, SimType, User, SimCardProduct, EsimPackage, EsimCountryGroup, EsimOrderResult, ActiveSim } from '../types';
 import { MOCK_COUNTRIES, SIM_CARD_PRODUCTS } from '../constants';
 import FlagIcon from '../components/FlagIcon';
-import { fetchPackages, prefetchPackages, groupPackagesByLocation, formatVolume, formatPrice, retailPrice, packagePriceUsd, orderEsim, CONTINENT_TABS, type ContinentTab, formatGB, POPULAR_COUNTRY_CODES } from '../services/dataService';
+import { fetchPackages, prefetchPackages, groupPackagesByLocation, formatVolume, formatPrice, retailPrice, packagePriceUsd, orderEsim, CONTINENT_TABS, type ContinentTab, formatGB, POPULAR_COUNTRY_CODES, fetchMultiCountryRegionNames } from '../services/dataService';
 import { useSwipeBack } from '../hooks/useSwipeBack';
 
 import { Bell, UserCircle } from 'lucide-react';
@@ -223,7 +223,13 @@ const ShopView: React.FC<ShopViewProps> = ({ testMode = false, isLoggedIn, user,
     setEsimError(null);
     try {
       // Use eSIMAccess API directly via Netlify proxy (backend not yet syncing real package data)
-      const packages = force ? await fetchPackages() : await prefetchPackages();
+      // Fetch packages + multi-country region names in parallel so the group
+      // labels ("Europe (30+ countries)") land on first render rather than
+      // falling back to raw region codes ("EU-30 (30 countries)").
+      const [packages] = await Promise.all([
+        force ? fetchPackages() : prefetchPackages(),
+        fetchMultiCountryRegionNames().catch(() => undefined),
+      ]);
       const groups = groupPackagesByLocation(packages);
       setEsimGroups(groups);
     } catch (err: any) {
@@ -1425,8 +1431,13 @@ const ShopView: React.FC<ShopViewProps> = ({ testMode = false, isLoggedIn, user,
                     {visibleEsimGroups.map((group, idx) => {
                       const cheapestPkg = group.packages.reduce((min, p) => p.price < min.price ? p : min, group.packages[0]);
                       const cheapestPrice = cheapestPkg ? packagePriceUsd(cheapestPkg) : 0;
-                      const countryCodes = group.locationCode.split(',').map(c => c.trim());
-                      const countryCount = countryCodes.length;
+                      // For multi-country groups keyed by supplier region code
+                      // (e.g. "NA-3") splitting locationCode by comma is wrong —
+                      // rely on the dedicated `countries` list populated by
+                      // groupPackagesByLocation. Single-country groups carry a
+                      // one-element `countries` array (["MX"]) so this works
+                      // across both branches.
+                      const countryCount = group.countries.length;
                       const isPopular = !group.isMultiRegion && popularSet.has(group.locationCode.toUpperCase());
                       const prevGroup = idx > 0 ? visibleEsimGroups[idx - 1] : null;
                       const prevIsPopular = prevGroup ? !prevGroup.isMultiRegion && popularSet.has(prevGroup.locationCode.toUpperCase()) : false;

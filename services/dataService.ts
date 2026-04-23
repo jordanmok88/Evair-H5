@@ -42,6 +42,7 @@ import {
   formatGB,
   mapRedTeaStatus,
   DEMO_MODE,
+  fetchMultiCountryRegionNames,
   type FetchPackagesParams,
   type ContinentTab,
   type ActiveSimStatus,
@@ -273,6 +274,7 @@ export {
   formatGB,
   mapRedTeaStatus,
   DEMO_MODE,
+  fetchMultiCountryRegionNames,
 };
 
 export type { FetchPackagesParams, ContinentTab, ActiveSimStatus };

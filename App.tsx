@@ -664,7 +664,7 @@ function CustomerApp() {
 
         {/* Main Content Area */}
         <main className="w-full relative lg:overflow-hidden flex flex-col" style={{ height: 'calc(100% - 54px)' }}>
-          {testMode && (
+          {testMode ? (
             <div className="shrink-0 bg-amber-400 text-amber-950 px-3 py-2 z-50 border-b border-amber-500/30 flex flex-wrap items-center justify-center gap-x-2 gap-y-1 text-center">
               <span className="inline-flex items-center gap-1.5 text-xs font-bold tracking-wide">
                 <Zap size={14} className="shrink-0" aria-hidden />
@@ -681,6 +681,17 @@ function CustomerApp() {
                 {t('app.test_mode_exit')}
               </button>
             </div>
+          ) : (
+            // When the test banner is hidden, inject a safe-area spacer so
+            // the iPhone notch / Android status bar doesn't overlap the
+            // first row of UI (e.g. the "Hello New Friend" greeting).
+            // Desktop (lg) is inside a mock phone frame so it doesn't
+            // need the inset; `lg:hidden` keeps the mock pixel-perfect.
+            <div
+              className="shrink-0 lg:hidden bg-white"
+              style={{ height: 'env(safe-area-inset-top, 0px)' }}
+              aria-hidden
+            />
           )}
           <div className="flex-1 min-h-0 overflow-hidden">{renderContent()}</div>
         </main>

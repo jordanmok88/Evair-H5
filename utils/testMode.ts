@@ -6,8 +6,30 @@ export function urlHasTestMode(): boolean {
   return new URLSearchParams(window.location.search).get('testmode') === '1';
 }
 
+/**
+ * Detect whether the page is currently loaded inside the EvairSIM native
+ * app shell (iOS/Android WebView). The native bridge injects
+ * `window.evair.isNative = true` at document-start — see
+ * Evair-H5 /../EvairSIM-App/docs/native-bridge-api.md and
+ * EvairSIM-App/lib/core/bridge/native_bridge.dart.
+ */
+function runningInsideNativeApp(): boolean {
+  if (typeof window === 'undefined') return false;
+  try {
+    const evair = (window as unknown as { evair?: { isNative?: boolean } }).evair;
+    return evair?.isNative === true;
+  } catch {
+    return false;
+  }
+}
+
 export function computeTestModeEnabled(): boolean {
   if (typeof window === 'undefined') return false;
+  // Never show the dev test-mode banner inside the native app shell: the
+  // real end-users on iOS / Android should never see "Local preview" even
+  // if we're pointing the app at a dev H5 URL. The banner exists purely
+  // for desktop browser dev work.
+  if (runningInsideNativeApp()) return false;
   if (urlHasTestMode()) {
     try {
       sessionStorage.removeItem(DEV_TEST_MODE_OFF_KEY);

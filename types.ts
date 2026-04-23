@@ -135,6 +135,22 @@ export interface EsimPackage {
    * Set by the backstage fetcher; absent / false for legacy Red Tea packages.
    */
   priceIsRetail?: boolean;
+
+  /**
+   * Raw ISO-2 coverage list (multi-country plans). For single-country plans
+   * this is `[location]`. The supplier region suffix (e.g. "NA-3") is
+   * stripped so this list is purely ISO codes — use it for accurate country
+   * counts and flag rendering. Downstream grouping uses `supplierRegionCode`.
+   */
+  coverageCodes?: string[];
+
+  /**
+   * Supplier-issued multi-country region code, e.g. "NA-3", "EU-30", "AS-12".
+   * Present only for multi-country plans. When set, this is the canonical
+   * grouping key so H5 lines up with the 33 curated regions surfaced by
+   * /v1/h5/packages/locations (which the APP consumes directly).
+   */
+  supplierRegionCode?: string;
 }
 
 export interface EsimApiResponse<T> {
@@ -239,12 +255,25 @@ export interface TopUpResult {
 
 // Grouped packages for UI display
 export interface EsimCountryGroup {
-  locationCode: string;    // e.g. "US" or "US,CA"
+  /**
+   * Group identity. For single-country groups this is the ISO code ("US").
+   * For multi-country groups with a supplier region code this is the region
+   * code ("NA-3", "EU-30") so grouping matches the APP's curated regions.
+   * For the remaining multi-country plans that don't carry a region code,
+   * this is the raw CSV of ISO codes as a last-resort fallback.
+   */
+  locationCode: string;
   locationName: string;    // resolved display name
   flag: string;            // ISO country code for primary country (for FlagIcon)
   packages: EsimPackage[];
   continent: string;       // e.g. "Asia", "Europe", "Americas", "Africa", "Oceania", "Multi-Region"
   isMultiRegion: boolean;
+  /**
+   * Pure ISO-2 coverage list for multi-country groups (region suffix removed).
+   * Use `countries.length` for the "+N countries" badge — splitting
+   * `locationCode` by comma no longer works once we key on region code.
+   */
+  countries: string[];
 }
 
 // ─── End eSIM Access API Types ──────────────────────────────────────
