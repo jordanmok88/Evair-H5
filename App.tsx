@@ -15,6 +15,7 @@ import { MOCK_COUNTRIES, MOCK_PLANS_US, MOCK_ACTIVE_SIMS, MOCK_NOTIFICATIONS, CA
 import { checkDataUsage, prefetchPackages, DEMO_MODE, mapRedTeaStatus, bindSim } from './services/dataService';
 import { supabaseConfigured, fetchNotifications, logSimActivation } from './services/supabase';
 import { authService, userService, type UserDto } from './services/api';
+import { initPush, unregisterPush } from './services/pushService';
 import { computeTestModeEnabled, dismissTestModeForSession, stripTestModeFromUrl } from './utils/testMode';
 
 function App() {
@@ -339,6 +340,9 @@ function CustomerApp() {
     window.scrollTo(0, 0);
   };
 
+  // Push token cached so we can detach it on explicit logout.
+  const pushTokenRef = useRef<string | null>(null);
+
   // 登录成功回调 - 接收后端返回的用户信息
   const handleLoginSuccess = (userData: UserDto) => {
     setIsLoggedIn(true);
@@ -350,12 +354,27 @@ function CustomerApp() {
     });
     setIsLoginModalOpen(false);
 
-    // TODO: 登录成功后可以从 userService.getSims() 获取用户的 SIM 卡列表
+    // Fire-and-forget: inside the native shell, ask for notification
+    // permission and ship the APNs/FCM token to Laravel. No-op in a
+    // regular browser. See services/pushService.ts.
+    initPush()
+      .then((token) => {
+        if (token) pushTokenRef.current = token;
+      })
+      .catch((err) => {
+        console.warn('[push] initPush failed', err);
+      });
   };
 
   // 登出处理
   const handleLogout = async () => {
     try {
+      const token = pushTokenRef.current;
+      if (token) {
+        // Fire-and-forget; don't block logout on a slow backend.
+        void unregisterPush(token);
+        pushTokenRef.current = null;
+      }
       await authService.logout();
     } finally {
       setIsLoggedIn(false);
