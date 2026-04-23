@@ -23,13 +23,24 @@ function runningInsideNativeApp(): boolean {
   }
 }
 
+/**
+ * Desktop-only helper: the "APP preview" opened by start-all-previews.sh
+ * points at `http://localhost:3000#app-preview`. That hash is our signal
+ * that this browser tab is simulating the native shell for screenshot /
+ * QA purposes, so we should render without the dev-only banners / test
+ * scaffolding — exactly like the real APP does on a phone.
+ */
+function isAppPreviewHash(): boolean {
+  if (typeof window === 'undefined') return false;
+  return window.location.hash.includes('app-preview');
+}
+
 export function computeTestModeEnabled(): boolean {
   if (typeof window === 'undefined') return false;
-  // Never show the dev test-mode banner inside the native app shell: the
-  // real end-users on iOS / Android should never see "Local preview" even
-  // if we're pointing the app at a dev H5 URL. The banner exists purely
-  // for desktop browser dev work.
-  if (runningInsideNativeApp()) return false;
+  // Never show the dev test-mode banner inside the native app shell
+  // (real users) or inside the desktop APP preview tab (ops / QA
+  // screenshots). The banner exists purely for desktop H5 dev work.
+  if (runningInsideNativeApp() || isAppPreviewHash()) return false;
   if (urlHasTestMode()) {
     try {
       sessionStorage.removeItem(DEV_TEST_MODE_OFF_KEY);
