@@ -35,6 +35,40 @@ export function isAppPreviewHash(): boolean {
   return window.location.hash.includes('app-preview');
 }
 
+/**
+ * Path-based signal that we should render the FUNCTIONAL customer shell
+ * (shop, my-sims, profile, activation, top-up) rather than the MARKETING
+ * surface (home, country pages, blog). Introduced in Phase 0 of the
+ * 2026-04-24 marketing/app split — see `.cursor/rules/product-decisions.mdc`
+ * §Architecture.
+ *
+ * The Flutter WebView loads `${h5Url}/app` directly, so the native shell
+ * never sees the marketing layer. Browser visitors hit `/` first and click
+ * through to `/app` (or deeper) when they want to transact.
+ *
+ * Today every path renders the customer app (Phase 3 ships the real
+ * marketing home). This helper exists so future branching lives in one
+ * place instead of being sprinkled across components.
+ */
+export function isAppPath(): boolean {
+  if (typeof window === 'undefined') return false;
+  return window.location.pathname === '/app' || window.location.pathname.startsWith('/app/');
+}
+
+/**
+ * Returns true when the current location should render the MARKETING
+ * surface. Inverse of `isAppPath()` but written as a separate helper so
+ * callers read cleanly. During Phase 0 we let marketing fall through to
+ * the customer app (zero user-visible change); Phase 3 flips that when the
+ * real marketing home ships behind the `VITE_MARKETING_HOME` env flag.
+ */
+export function shouldRenderMarketing(): boolean {
+  if (typeof window === 'undefined') return false;
+  if (isAppPath()) return false;
+  const flag = (import.meta.env.VITE_MARKETING_HOME as string | undefined) ?? '';
+  return flag === '1' || flag === 'true';
+}
+
 export function computeTestModeEnabled(): boolean {
   if (typeof window === 'undefined') return false;
   // Never show the dev test-mode banner inside the native app shell

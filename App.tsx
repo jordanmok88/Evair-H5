@@ -16,7 +16,7 @@ import { checkDataUsage, prefetchPackages, DEMO_MODE, mapRedTeaStatus, bindSim }
 import { supabaseConfigured, fetchNotifications, logSimActivation } from './services/supabase';
 import { authService, userService, type UserDto } from './services/api';
 import { initPush, unregisterPush } from './services/pushService';
-import { computeTestModeEnabled, dismissTestModeForSession, isAppPreviewHash, stripTestModeFromUrl } from './utils/testMode';
+import { computeTestModeEnabled, dismissTestModeForSession, isAppPath, isAppPreviewHash, stripTestModeFromUrl } from './utils/testMode';
 
 function App() {
 
@@ -31,15 +31,18 @@ function App() {
     return () => window.removeEventListener('hashchange', onHash);
   }, []);
 
-  // Dev-only tab title override: the APP preview tab
-  // (http://localhost:3000/#app-preview opened by start-all-previews.sh)
-  // shares index.html with the H5 tab, so the static <title> says
-  // "Evair H5" on both. Relabel it to "Evair APP" at runtime so the two
-  // Chrome tabs are distinguishable at a glance.
+  // Tab title override. Two modes flip the document title to "Evair APP":
+  //   1. Desktop dev: the `#app-preview` hash opened by
+  //      start-all-previews.sh simulates the native shell for QA.
+  //   2. Production path-based: any URL under `/app` (Phase 0 of the
+  //      marketing/app split on 2026-04-24). This is what Flutter's
+  //      WebView actually loads, and what browser visitors see after
+  //      clicking through from marketing.
+  // Both branches run in production because they're cheap and the title
+  // is legitimately different for the two surfaces — marketing vs. app.
   useEffect(() => {
-    if (!import.meta.env.DEV) return;
     const applyTitle = () => {
-      if (isAppPreviewHash()) {
+      if (isAppPreviewHash() || isAppPath()) {
         document.title = 'Evair APP';
       } else if (document.title === 'Evair APP') {
         document.title = 'Evair H5';
@@ -47,7 +50,11 @@ function App() {
     };
     applyTitle();
     window.addEventListener('hashchange', applyTitle);
-    return () => window.removeEventListener('hashchange', applyTitle);
+    window.addEventListener('popstate', applyTitle);
+    return () => {
+      window.removeEventListener('hashchange', applyTitle);
+      window.removeEventListener('popstate', applyTitle);
+    };
   }, []);
 
   if (isApiTest) return <ApiTestPage />;

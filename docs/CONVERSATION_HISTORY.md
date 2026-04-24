@@ -347,3 +347,48 @@ Plus CLAUDE.md pointer block at the top. Stubs mirrored into the three sister re
 
 ### Open thread at end of session
 Front-page redesign is blocked on 4 questions in PART 6 of `competitor-analysis.mdc` (primary audience, physical SIM checkout, home top-level cut, public Netlify H5 role). Do not start design work until answered.
+
+---
+
+## Session 3b (April 24, 2026 — evening) — strategy lock-in + Phase 0 route split
+
+### 1. Strategy lock-in (from the 2026-04-24 pricing spreadsheet + Jordan's direction)
+
+Jordan shared `流量策略-2026.4.24.xlsx` with the full first-batch Amazon SIM lineup (2,980 units across 7 SKUs + 240 seed-link SIMs) and the cost/margin model. Key takeaways locked into `product-decisions.mdc`:
+
+- **Market**: USA only. Two audiences: IoT/mobile customers (physical SIM, PCCW) and US travelers (eSIM, Red Tea).
+- **Unit economics**: SIM cards are loss-leaders on Amazon (e.g. 1 GB/30d @ $6.99 = −$6.21 margin per card). Revenue comes from 5 months of top-up recharges with 70% MoM retention decay. Amazon is customer acquisition; our app is the business model.
+- **Three brand pillars** (testable claims, not fluff):
+  1. "5G up to 650 Mbps" — Phone/tablet plans. First 9 GB full speed, then 10 Mbps. Most competitors don't publish speeds because theirs are lower.
+  2. "US IP abroad" — Red Tea API lets us pick the breakout IP (US vs HK etc.) per plan. For US travelers this means YouTube/Netflix/Venmo/banking apps keep working abroad. Airalo doesn't do this.
+  3. "Auto APN" — PCCW auto-provisions. Amazon reviews on competitor SIMs routinely complain about manual APN setup; we eliminate that.
+- **Internal capability** (not user-facing yet): we can remotely control speed tiers per SIM. Future "boost to 5G" monetization on camera plans.
+- **Speed tiers** (must match marketing copy): Phone 650 Mbps → 10 Mbps after 9 GB · Camera 1.5 Mbps flat (bundled) / 1 Mbps (top-ups) · Low IoT 500 Kbps flat. **Disclose openly on product pages** — honest pricing = fewer refunds.
+- **Design language**: Airalo-inspired (clean, spacious, human). Not EIOTCLUB (dense, countdown-heavy).
+- **Premium pricing posture** confirmed — ~2× Temu, on par with Kiwisim, cheaper than individual carrier retail.
+- **Domain**: `evairdigital.com` (Jordan to point at Netlify).
+- **Phase order**: 0) route split (invisible) → 1) activation + top-up funnel (where the money is) → 2) device/country SEO pages → 3) home page brand → 4) help + blog → 5) in-app physical SIM checkout retiring Amazon. Do not skip ahead.
+- **Auto-renew is load-bearing** — must be ROSCA + CA SB-313 compliant from day 1.
+
+### 2. Phase 0 route split (shipped 2026-04-24 evening)
+
+Invisible-to-users foundation for the marketing + functional split:
+
+- `utils/testMode.ts` — added `isAppPath()` (checks `pathname === '/app'` or `startsWith('/app/')`) and `shouldRenderMarketing()` (inverse, gated by `VITE_MARKETING_HOME` env flag, defaults off).
+- `App.tsx` — tab title flips to "Evair APP" on `/app` paths in addition to the existing `#app-preview` dev hash. Now runs in production too (was dev-only before) and listens to `popstate` in addition to `hashchange`.
+- `EvairSIM-App/lib/core/constants/app_constants.dart` — `h5Url` default changed from `https://feature-api-integration--evair-h5.netlify.app/` to `.../app`. Flutter WebView now loads straight into the functional shell, skipping the future marketing layer.
+- `netlify.toml` already had `/* → /index.html` catch-all, so SPA deep links under `/app` (like `/app/my-sims`) work without a config change.
+- `shouldRenderMarketing()` is wired but gated — until `VITE_MARKETING_HOME=1` is set, the marketing placeholder won't render and visitors continue to see the customer app at both `/` and `/app`. Phase 3 ships the real marketing home and flips the flag.
+- No React Router introduced yet — minimal path check is enough for Phase 0. Router migration is a Phase 2 task when real marketing routes arrive.
+
+### 3. Memory system extended
+
+- `.cursor/rules/product-decisions.mdc` now holds the full strategy: brand/market, three brand pillars, speed tiers, unit economics, architecture, phase order, auto-renew disclosure plan.
+- `.cursor/rules/ongoing-work.mdc` updated — Phase 0 resolved, Phase 1 (activation + top-up funnel) now the active thread.
+- `.cursor/rules/competitor-analysis.mdc` remains the on-demand dossier.
+
+### 4. Open at end of session
+
+- **DNS**: Jordan has domain portal ready. Will point `evairdigital.com` at Netlify. Needs a call on whether to point at `main` (old) or merge `feature/api-integration → main` first (so evairdigital.com serves the current work).
+- **Phase 1**: next piece to build. Activation landing (`/activate?iccid=`), top-up (`/top-up?iccid=`), auto-renew toggle on my-sims, transactional emails, ROSCA-compliant disclosure copy.
+- **Red Tea breakout-IP field**: not yet surfaced in `esimApi.ts`. Needed for Phase 2 when we build country pages that highlight the US-IP variants. Research task.
