@@ -1,6 +1,6 @@
 import React, { useState, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
-import { ChevronRight, Share, ChevronLeft, Search, Lock, Bell, Download, Trash2, Check, Plus, Package, HelpCircle, FileText, Globe, Info, Coins, ShieldCheck, CreditCard, ShoppingBag, Briefcase, Phone, Settings, AlertCircle, Play, Smartphone, Loader2, X } from 'lucide-react';
+import { ChevronRight, Share, ChevronLeft, Search, Lock, Bell, Download, Trash2, Check, Plus, Package, HelpCircle, FileText, Globe, Info, Coins, ShieldCheck, CreditCard, ShoppingBag, Briefcase, Phone, Settings, AlertCircle, Play, Smartphone, Loader2, X, Star } from 'lucide-react';
 import { AppNotification } from '../types';
 import { useSwipeBack } from '../hooks/useSwipeBack';
 import { useEdgeSwipeBack } from '../hooks/useEdgeSwipeBack';
@@ -1179,7 +1179,13 @@ const HelpCenterView = ({ onBack }: { onBack: () => void }) => {
 
 const ProfileView: React.FC<ProfileViewProps> = ({ isLoggedIn, user, onLogin, onSignup, onLogout, onOpenDialer, onOpenInbox, notifications = [], onBack, onUserUpdate }) => {
   const [currentView, setCurrentView] = useState<ProfileScreen>('MAIN');
-  const [rateToast, setRateToast] = useState(false);
+  const [shareToast, setShareToast] = useState(false);
+  const [rateModalOpen, setRateModalOpen] = useState(false);
+  const [rateStars, setRateStars] = useState(() => {
+    const saved = localStorage.getItem('evair-app-rating');
+    return saved ? parseInt(saved, 10) : 0;
+  });
+  const [rateSubmitted, setRateSubmitted] = useState(false);
   const { t } = useTranslation();
 
   const handleShare = async () => {
@@ -1187,13 +1193,24 @@ const ProfileView: React.FC<ProfileViewProps> = ({ isLoggedIn, user, onLogin, on
     if (navigator.share) {
       try { await navigator.share(shareData); } catch {}
     } else {
-      await navigator.clipboard.writeText(shareData.url);
+      try {
+        await navigator.clipboard.writeText(shareData.url);
+        setShareToast(true);
+        setTimeout(() => setShareToast(false), 2000);
+      } catch {}
     }
   };
 
   const handleRateApp = () => {
-    setRateToast(true);
-    setTimeout(() => setRateToast(false), 2500);
+    setRateSubmitted(false);
+    setRateModalOpen(true);
+  };
+
+  const handleRateSubmit = () => {
+    if (rateStars > 0) {
+      localStorage.setItem('evair-app-rating', String(rateStars));
+      setRateSubmitted(true);
+    }
   };
 
   const infoScreens = ['ABOUT', 'TERMS', 'REFUND', 'PRIVACY', 'ACCEPTABLE', 'COOKIE'];
@@ -1331,9 +1348,70 @@ const ProfileView: React.FC<ProfileViewProps> = ({ isLoggedIn, user, onLogin, on
 
         </div>
 
-        {rateToast && (
-          <div className="fixed bottom-24 left-1/2 -translate-x-1/2 bg-slate-800 text-white px-5 py-3 rounded-xl shadow-xl z-50 text-sm font-semibold animate-in fade-in slide-in-from-bottom-4 duration-200">
-            Thank you! Rating will be available on the App Store soon.
+        {shareToast && (
+          <div className="fixed bottom-24 left-1/2 -translate-x-1/2 bg-slate-800 text-white px-5 py-3 rounded-xl shadow-xl z-50 text-sm font-semibold animate-in fade-in slide-in-from-bottom-4 duration-200 flex items-center gap-2">
+            <Check size={16} /> {t('profile.link_copied')}
+          </div>
+        )}
+
+        {rateModalOpen && (
+          <div className="fixed inset-0 z-[70] flex items-center justify-center bg-slate-900/40 backdrop-blur-sm px-4">
+            <div className="bg-white w-full max-w-sm rounded-2xl p-6 shadow-2xl">
+              {rateSubmitted ? (
+                <div className="flex flex-col items-center text-center py-3">
+                  <div className="w-16 h-16 rounded-full bg-green-50 flex items-center justify-center mb-4">
+                    <Check size={32} className="text-green-500" />
+                  </div>
+                  <h3 className="text-[17px] font-bold text-slate-900 mb-1">{t('profile.rate_thanks')}</h3>
+                  <p className="text-[14px] text-slate-500 mb-5">{t('profile.rate_app_store')}</p>
+                  <button
+                    onClick={() => setRateModalOpen(false)}
+                    className="w-full py-3 rounded-xl font-bold text-sm text-white active:scale-[0.98] transition-all"
+                    style={{ background: 'linear-gradient(135deg, #FF6600 0%, #FF8A3D 100%)' }}
+                  >
+                    {t('profile.close') || 'Close'}
+                  </button>
+                </div>
+              ) : (
+                <>
+                  <div className="flex justify-between items-center mb-4">
+                    <h2 className="text-lg font-bold text-slate-900">{t('profile.rate_title')}</h2>
+                    <button onClick={() => setRateModalOpen(false)} className="p-2 bg-slate-100 rounded-full text-slate-500 hover:bg-slate-200">
+                      <X size={18} />
+                    </button>
+                  </div>
+                  <p className="text-[14px] text-slate-500 mb-5">{t('profile.rate_desc')}</p>
+                  <div className="flex justify-center gap-2 mb-6">
+                    {[1, 2, 3, 4, 5].map((star) => (
+                      <button
+                        key={star}
+                        onClick={() => setRateStars(star)}
+                        className="p-1 active:scale-110 transition-transform"
+                      >
+                        <Star
+                          size={36}
+                          className={star <= rateStars ? 'text-amber-400' : 'text-slate-200'}
+                          fill={star <= rateStars ? '#fbbf24' : 'none'}
+                          strokeWidth={1.5}
+                        />
+                      </button>
+                    ))}
+                  </div>
+                  <button
+                    onClick={handleRateSubmit}
+                    disabled={rateStars === 0}
+                    className="w-full py-3.5 rounded-xl font-bold text-[15px] text-white active:scale-[0.98] transition-all"
+                    style={{
+                      background: rateStars > 0 ? 'linear-gradient(135deg, #FF6600 0%, #FF8A3D 100%)' : '#e2e8f0',
+                      color: rateStars > 0 ? '#fff' : '#94a3b8',
+                      cursor: rateStars > 0 ? 'pointer' : 'not-allowed',
+                    }}
+                  >
+                    {localStorage.getItem('evair-app-rating') ? t('profile.rate_update') : t('profile.rate_submit')}
+                  </button>
+                </>
+              )}
+            </div>
           </div>
         )}
 

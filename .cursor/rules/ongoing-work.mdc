@@ -1,0 +1,96 @@
+---
+description: "Current work-in-progress and open threads. Read this first at the start of every session so you know what Jordan is in the middle of."
+alwaysApply: true
+---
+
+# Ongoing work — read this first
+
+Last updated: 2026-04-24. Update this file at the END of every meaningful work session.
+
+## Active thread: Phase 1 — activation + top-up funnel (highest-ROI)
+
+Phase 0 done (2026-04-24 evening). Next: build the funnel the unit economics
+actually depend on.
+
+**Phase 1 scope**:
+1. `/activate?iccid=...` landing page. Reads ICCID (from Amazon box QR code),
+   looks up the bundled plan, prompts account creation + auto-renew opt-in.
+2. `/top-up?iccid=...` — top-up by ICCID, login required only at checkout.
+3. In-app `/app/my-sims` — prominent auto-renew toggle + accurate usage bar.
+4. Transactional emails (Resend via Netlify function): 80% used, plan ending
+   in 3 days, auto-renew success/failure.
+5. Auto-renew disclosure copy (ROSCA + CA SB-313 compliant). Draft into
+   `docs/AUTO_RENEW_DISCLOSURE.md`.
+
+Do not touch home page, country pages, or device pages yet — that's Phase 2/3.
+
+## Recently resolved (don't re-open without cause)
+
+- **Phase 0 route split** (2026-04-24 evening):
+  - `utils/testMode.ts` gained `isAppPath()` + `shouldRenderMarketing()` helpers.
+  - `App.tsx` tab-title logic now also flips to "Evair APP" on `/app` paths
+    (was dev-only + `#app-preview` before).
+  - `EvairSIM-App/lib/core/constants/app_constants.dart` default `h5Url` now
+    ends in `/app`. When DNS is live, switch to `https://evairdigital.com/app`.
+  - `netlify.toml` already had `/* → /index.html` catch-all, so SPA deep
+    links under `/app` work without a config change.
+  - No visual change for browser visitors — `shouldRenderMarketing()` returns
+    false until `VITE_MARKETING_HOME=1` is set, which we'll flip in Phase 3.
+- Strategy locked: USA-only, two audiences (IoT/mobile for SIM, travelers for
+  eSIM), Airalo design, three brand pillars, top-up-first phasing.
+- APP preview title, catalogue routing, live SIM usage, AI assistant polish,
+  iOS/Firebase fixes, USA banner removal (see `docs/CONVERSATION_HISTORY.md`).
+
+## Known external blockers
+
+- **PCCW supplier API**: `401 Distributor is De-activated` — Jordan's account
+  with PCCW. UI falls back to local DB snapshots gracefully.
+- **`evairdigital.com` DNS**: being set up by Jordan 2026-04-24 evening. Once
+  live, switch `AppConstants.h5Url` to `https://evairdigital.com/app` and
+  test. Cert provisioning usually takes 5–30 min post-propagation.
+- **`main` branch is stale**: production branch on Netlify; serves the old
+  H5. All current work is on `feature/api-integration`. Decision pending on
+  whether to merge → `main` or switch Netlify's production branch.
+
+## Pre-existing issues (not fixed, documented for when Jordan asks)
+
+- `npm test` reports "No test files found" — no Vitest tests are configured.
+- TypeScript errors in `BarcodeScanner.tsx`, `esimApi.ts`, `pushService.ts` —
+  pre-existing, not from recent work. Ask Jordan before touching.
+
+## Current strategy snapshot (as of 2026-04-24 evening)
+
+- **Market**: USA only.
+- **Audiences**: US IoT/mobile buyers (physical SIM) + US travelers (eSIM).
+- **Domain**: `evairdigital.com` (to be pointed at Netlify).
+- **Design language**: Airalo-clean.
+- **Unit economics**: top-up recharges drive margin, not the initial SIM sale.
+- **First Amazon batch**: 2,980 SIMs across 7 SKUs + 240 seed-link SIMs
+  (see `product-decisions.mdc` speed-tier table for lineup).
+
+## Resolved recently (don't re-open without cause)
+- APP preview title = "Evair APP" (2026-04-24)
+- `#app-preview` testing banner removed from APP mode (2026-04-24)
+- eSIM catalogue routing via `supplierFetchPackages` only (2026-04-22)
+- Live SIM usage via `checkDataUsage()` for both ESIM and physical SIMs (2026-04-23)
+- `gb_used` i18n fixed to avoid "GB GB used" (2026-04-23)
+- AI assistant professionalized, emojis removed (2026-04-24)
+- Flutter app `H5_URL` repointed to `feature/api-integration` Netlify branch (2026-04-24)
+- `user_push_preferences` + `push_tokens` migrations run (2026-04-23)
+- US carrier/country banner removed from ShopView physical SIM section (2026-04-24)
+
+## Known external blockers
+- **PCCW supplier API** returns `401 Distributor is De-activated`. External
+  (Jordan's PCCW account). UI handles it gracefully; don't silently hide it.
+
+## Pre-existing issues (not fixed, documented for when Jordan asks)
+- `npm test` reports "No test files found" — no Vitest tests are configured.
+- TypeScript errors in `BarcodeScanner.tsx`, `esimApi.ts`, `pushService.ts` —
+  pre-existing, not from recent work. Ask Jordan before touching.
+
+## House rules for updating this file
+- When a thread is resolved, move it from "Active" to "Resolved recently".
+- When a new task starts, write a one-paragraph "Active thread" entry with the
+  concrete next step.
+- Prune "Resolved recently" to the last ~10 items; older stuff lives in
+  `docs/CONVERSATION_HISTORY.md`.

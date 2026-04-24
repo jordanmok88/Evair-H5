@@ -1,0 +1,139 @@
+---
+description: "Product decisions Jordan has already made. Do not re-litigate these without asking."
+alwaysApply: true
+---
+
+# Product decisions (locked in — don't re-debate)
+
+Last updated: 2026-04-24. When something changes, edit this file.
+
+## Brand & market (from 2026-04-24 strategy session)
+
+- **Market**: USA-only.
+- **Two customer lines, one brand**:
+  - **Physical SIM line** — local US IoT + mobile customers (PCCW supplier).
+  - **Travel eSIM line** — US travelers going abroad (Red Tea / ESIMAccess supplier).
+- **Pricing posture**: slight premium over EIOTCLUB / Talksim / Smartsim / Temu. Premium must be justified by the three brand pillars below.
+- **Visual design language**: Airalo-inspired (clean, spacious, human, calm palette). NOT EIOTCLUB-style (dense, countdown-heavy, discount-coded). Reason: Airalo's simplicity fits US taste per Jordan.
+
+## Three brand pillars (concrete, testable claims)
+
+1. **Speed — "5G up to 650 Mbps"**
+   Phone/tablet SIM plans: first 9 GB at up to 650 Mbps, then throttle to 10 Mbps.
+   Most competitors don't publish speed numbers because theirs are lower. This
+   is a real differentiator; use it on product pages.
+2. **US IP abroad — "Your US apps just work"**
+   Red Tea API lets us pick the breakout IP per plan (US vs HK etc.). For the
+   US traveler funnel we sell US-IP variants wherever Red Tea offers them, so
+   Netflix / Venmo / banking apps continue to see a US source. Airalo does NOT
+   do this; it's our travel moat.
+3. **Auto APN — "Plug and play, no APN setup"**
+   PCCW SIMs auto-provision APN. Amazon reviews on competitor SIMs routinely
+   complain about manual APN steps; we eliminate that friction.
+
+Internal (not yet user-facing): **we can remotely control the speed tier per
+SIM/plan**. Kept in back pocket for future "boost to 5G" monetization on
+camera plans.
+
+## Speed tiers (must match marketing copy exactly)
+
+| Product line | Speed cap | Over-quota behavior |
+|---|---|---|
+| Phone / tablet / laptop / pocket WiFi (3-net AT&T/Verizon/T-Mobile) | **650 Mbps** for first 9 GB | 10 Mbps after |
+| Security + hunting / trail camera (2-net AT&T/Verizon) | **1.5 Mbps** flat (bundled) / **1 Mbps** (top-ups) | stays capped |
+| Low-tier IoT — GPS, walkie, POS, smartwatch, e-reader, mower (2-net) | **500 Kbps** flat | stays capped |
+
+**Disclose these caps openly on product pages.** Per Jordan (2026-04-24): honest
+pricing = fewer refunds = higher margin. Never hide the cap.
+
+## Unit economics (from 2026-04-24 pricing spreadsheet)
+
+- **SIM cards are sold at or near break-even on Amazon.** Small plans are
+  actually NEGATIVE-margin standalone (e.g. 1 GB/30d @ $6.99 = −$6.21/card).
+- **Revenue comes from 5 months of top-up recharges.** 70% month-over-month
+  retention decay. That is why the activation → top-up → auto-renew funnel
+  is the most important thing in the whole product.
+- **Amazon is customer acquisition. Our app is the business model.**
+
+## Architecture — marketing site + in-app shell
+
+- Single H5 codebase, two entry modes:
+  - `/` and all non-`/app` paths → marketing site (home, country pages,
+    device pages, activation, top-up, blog, help, about, contact).
+  - `/app/*` → functional customer shell (shop, my-sims, profile, checkout).
+- Flutter app's `InAppWebView` loads `/app` directly; marketing is invisible to it.
+- Primary domain: **`evairdigital.com`** (not `evair-h5.netlify.app`).
+- Netlify stays the host; the `feature/api-integration` branch is the production
+  deploy until told otherwise.
+
+## Phase order (agreed 2026-04-24)
+
+1. **Phase 0** — invisible foundation: split routing into `/` vs `/app`,
+   repoint Flutter, no UX change yet.
+2. **Phase 1** — activation + top-up funnel (highest ROI, because margins
+   come from recharges): `/activate?iccid=`, `/top-up?iccid=`, auto-renew
+   toggle, transactional emails.
+3. **Phase 2** — device-family landing pages for SEO: `/sim/phone`,
+   `/sim/camera`, `/sim/iot`, `/travel-esim/[country]`.
+4. **Phase 3** — home page (two-door hero, Airalo aesthetic, brand pillars).
+5. **Phase 4** — help center + blog.
+6. **Phase 5** — in-app physical SIM checkout (retire Amazon dependency).
+
+Do NOT skip ahead. Phase 1 pays for Phases 2–5.
+
+## Auto-renew disclosure (ROSCA + CA SB-313)
+
+Auto-renew is load-bearing for unit economics, so legal compliance must be
+bulletproof from day 1:
+
+- Clear pre-purchase disclosure of price, renewal frequency, cancel method
+- Explicit, separate opt-in checkbox (not bundled with T&Cs)
+- Confirmation email within 24h with cancel link
+- One-click cancel (both in-app AND via email link) per CA SB-313
+- Renewal reminder email 3–7 days before each renewal
+
+Draft copy lives in `docs/AUTO_RENEW_DISCLOSURE.md` (to be written in Phase 1).
+
+## Catalogue & inventory
+- Physical SIMs are **USA-only** right now. Do NOT show a country picker or
+  "United States · AT&T · Verizon · T-Mobile" banner in the SIM card section —
+  it was removed on 2026-04-24 as redundant (one country = no filtering value).
+  Reintroduce a picker only when we add a second country.
+- Physical SIM checkout goes through **Amazon Storefront** (external link from
+  ShopView). Not in-app Stripe, not Laravel orders. Don't "fix" this without asking.
+- eSIM catalogue fetches **only** via the supplier path (`supplierFetchPackages`
+  in `services/dataService.ts`). Do NOT reroute through `packageService` — it
+  crashed the shop on 2026-04-22 and the regression guard is in
+  `.cursor/rules/esim-api-services.mdc`.
+
+## Suppliers
+- **eSIM supplier**: Red Tea / ESIMAccess. Live, works.
+- **Physical SIM supplier**: PCCW. Credentials currently show
+  `401 Distributor is De-activated` — external blocker. UI falls back to local
+  DB snapshots gracefully. Don't hide this from Jordan if it regresses.
+
+## App shell
+- The Flutter app (`EvairSIM-App`) is a **thin InAppWebView wrapper** around
+  the H5 site. Don't propose native screens; every feature ships to H5 first.
+- `H5_URL` in `lib/core/constants/app_constants.dart` must point at the
+  **`feature/api-integration` Netlify branch**
+  (`https://feature-api-integration--evair-h5.netlify.app/`), NOT the `main`
+  branch. `main` is the old version; pointing there regresses the app to the
+  outdated UI. This has happened twice — do not repeat.
+
+## AI support assistant (`ai/evairAssistant.ts`)
+- **No emojis.** Ever. Tone must be professional, welcoming, polite.
+- Supplier-aware vocabulary is required (eSIM vs. physical SIM, Red Tea vs.
+  PCCW, USA-only for physical).
+- Updated 2026-04-24; see file header for knowledge-base conventions.
+
+## Tab title / preview mode
+- `#app-preview` hash in the URL → set `document.title = "Evair APP"`.
+- Everything else → `"Evair H5"`.
+- Logic lives in `App.tsx` + `utils/testMode.ts::isAppPreviewHash()`.
+
+## Save workflow
+- Default for every meaningful change: run
+  `bash "/Users/jordanmok/Desktop/iCloud Drive/Cursor Codes/save-all.sh"` so
+  GitHub + Aliyun + iCloud mirrors all capture the change. See
+  `.cursor/rules/auto-save-workflow.mdc`.

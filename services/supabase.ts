@@ -59,70 +59,32 @@ export async function fetchNotifications(lang: string): Promise<AppNotification[
   return (data as DbNotification[]).map(n => dbNotifToApp(n, lang));
 }
 
-// Admin: CRUD for notifications (requires auth)
+// ─── SIM Activation Logging ─────────────────────────────────────
 
-export async function adminLogin(email: string, password: string) {
-  if (!supabase) throw new Error('Supabase not configured');
-  const { data, error } = await supabase.auth.signInWithPassword({ email, password });
-  if (error) throw error;
-  return data;
-}
-
-export async function adminLogout() {
+export async function logSimActivation(activation: {
+  iccid: string;
+  device: string;
+  user_agent: string;
+}): Promise<void> {
   if (!supabase) return;
-  await supabase.auth.signOut();
+  const batchLookup = await supabase.rpc('lookup_batch_by_iccid', { p_iccid: activation.iccid });
+  const batch = batchLookup.data?.[0] ?? null;
+
+  await supabase.from('sim_activations').insert({
+    iccid: activation.iccid,
+    batch_id: batch?.batch_id ?? null,
+    channel: batch?.channel ?? null,
+    device: activation.device,
+    user_agent: activation.user_agent,
+  });
 }
 
-export async function getAdminSession() {
-  if (!supabase) return null;
-  const { data } = await supabase.auth.getSession();
-  return data.session;
-}
-
-export async function adminFetchAllNotifications(): Promise<DbNotification[]> {
-  if (!supabase) return [];
-  const { data, error } = await supabase
-    .from('notifications')
-    .select('*')
-    .order('created_at', { ascending: false });
-  if (error || !data) return [];
-  return data as DbNotification[];
-}
-
-export async function adminCreateNotification(notif: Omit<DbNotification, 'id' | 'created_at'>): Promise<DbNotification | null> {
-  if (!supabase) return null;
-  const { data, error } = await supabase
-    .from('notifications')
-    .insert(notif)
-    .select()
-    .single();
-  if (error) throw error;
-  return data as DbNotification;
-}
-
-export async function adminUpdateNotification(id: string, updates: Partial<DbNotification>): Promise<void> {
-  if (!supabase) return;
-  const { error } = await supabase
-    .from('notifications')
-    .update(updates)
-    .eq('id', id);
-  if (error) throw error;
-}
-
-export async function adminDeleteNotification(id: string): Promise<void> {
-  if (!supabase) return;
-  const { error } = await supabase
-    .from('notifications')
-    .delete()
-    .eq('id', id);
-  if (error) throw error;
-}
-
-// ─── Chat / Conversations ────────────────────────────────────────
+// ─── Chat / Conversations (Customer-facing) ─────────────────────
 
 export interface DbConversation {
   id: string;
   customer_id: string;
+  customer_name: string | null;
   status: 'open' | 'needs_human' | 'resolved';
   topic: string | null;
   created_at: string;
@@ -135,6 +97,7 @@ export interface DbChatMessage {
   sender: 'customer' | 'ai' | 'agent';
   agent_name: string | null;
   content: string;
+  english_content: string | null;
   created_at: string;
 }
 
@@ -151,11 +114,11 @@ export function getOrCreateCustomerId(): string {
   return getCustomerId();
 }
 
-export async function createConversation(topic?: string): Promise<DbConversation | null> {
+export async function createConversation(topic?: string, customerName?: string): Promise<DbConversation | null> {
   if (!supabase) return null;
   const { data, error } = await supabase
     .from('conversations')
-    .insert({ customer_id: getCustomerId(), topic, status: 'open' })
+    .insert({ customer_id: getCustomerId(), customer_name: customerName || 'Guest', topic, status: 'open' })
     .select()
     .single();
   if (error) return null;
@@ -180,16 +143,16 @@ export async function sendMessage(
   sender: 'customer' | 'ai' | 'agent',
   content: string,
   agentName?: string,
+  englishContent?: string,
 ): Promise<DbChatMessage | null> {
   if (!supabase) return null;
   const { data, error } = await supabase
     .from('chat_messages')
-    .insert({ conversation_id: conversationId, sender, content, agent_name: agentName ?? null })
+    .insert({ conversation_id: conversationId, sender, content, agent_name: agentName ?? null, english_content: englishContent ?? null })
     .select()
     .single();
   if (error) return null;
 
-  // Update conversation timestamp
   await supabase
     .from('conversations')
     .update({ updated_at: new Date().toISOString() })
@@ -232,40 +195,6 @@ export function subscribeToMessages(
         filter: `conversation_id=eq.${conversationId}`,
       },
       (payload) => onMessage(payload.new as DbChatMessage),
-    )
-    .subscribe();
-}
-
-// ─── Admin: Chat Dashboard ───────────────────────────────────────
-
-export async function adminFetchConversations(): Promise<DbConversation[]> {
-  if (!supabase) return [];
-  const { data } = await supabase
-    .from('conversations')
-    .select('*')
-    .order('updated_at', { ascending: false })
-    .limit(100);
-  return (data ?? []) as DbConversation[];
-}
-
-export async function adminResolveConversation(id: string): Promise<void> {
-  if (!supabase) return;
-  await supabase
-    .from('conversations')
-    .update({ status: 'resolved', updated_at: new Date().toISOString() })
-    .eq('id', id);
-}
-
-export function subscribeToConversations(
-  onUpdate: (conv: DbConversation) => void,
-): RealtimeChannel | null {
-  if (!supabase) return null;
-  return supabase
-    .channel('admin:conversations')
-    .on(
-      'postgres_changes',
-      { event: '*', schema: 'public', table: 'conversations' },
-      (payload) => onUpdate(payload.new as DbConversation),
     )
     .subscribe();
 }

@@ -1,0 +1,78 @@
+---
+description: Key business and technical decisions made during development
+alwaysApply: true
+---
+
+# Business & Technical Decisions Log
+
+## Physical SIM Strategy
+- **Only US data plans** sold as physical SIM cards (for now)
+- Uses **eUICC** technology — Red Tea eSIM profiles stored in physical SIM cards
+- Factory (CSM) pre-writes and pre-enables profiles
+- Activation in H5 = **binding only** (associates card with customer account)
+- Login required before binding
+
+## Billing Problem (Red Tea)
+- Red Tea charges when profile is **enabled**, not when data is first used
+- This means factory-enabled cards lose validity days during shipping
+- **Decision**: Push Red Tea to implement "charge on first data use"
+- **Status**: Waiting for Red Tea to update their system
+
+## Future Native App
+- Plan to upgrade H5 to native Android app
+- Will integrate LPA via OMAPI for direct eUICC profile management
+- CSM needs to pre-write app signing certificate hash into ARA-M access rules on chips
+- Reference implementations: OpenEUICC / EasyEUICC
+
+## Data Service Layer (留口子)
+- All API calls go through `services/dataService.ts`
+- Currently uses supplier API (Red Tea) directly
+- Backend API at `evair.zhhwxt.cn` exists but only has 15 packages (needs 2,489)
+- When backend is ready, flip one config flag in dataService.ts to switch
+
+## eSIM Installation Rules
+- eSIM profiles can only be **downloaded/installed ONCE** from SM-DP+ server (standard GSMA behavior)
+- SM-DP+ status flow: RELEASED → DOWNLOADED → INSTALLED → ENABLED → DISABLED
+- If customer deletes profile from device, it cannot be re-downloaded — they need a new purchase
+- Install modal displays amber warning: "One-time installation only"
+- Warning translated in EN, ZH, ES
+
+## Features Removed
+- **Bottom navigation bar**: Removed — blocked too much screen area on mobile
+- **Large "Install Your eSIM" center block**: Removed from My eSIMs page — replaced with compact banner indicator + row below donut
+
+## i18n Policy
+- Every user-facing string MUST use `t()` translation keys
+- Three languages: English (en), Chinese (zh), Spanish (es)
+- Chinese translations are for both customers and internal staff communications
+
+## Marketplace Sales
+- SIM cards also sold on Amazon.com and Temu.com
+- Marketplace customers download H5 app to activate/bind their cards
+- Same binding flow works for both in-app and marketplace purchases
+
+## Supplier API Centralization (in progress, 2026-04)
+- **Decision**: All supplier API calls (Red Tea / PCCW) MUST go through Laravel backend at `evair.zhhwxt.cn`.
+- **Reason**: prevents supplier credential/SKU leak to browser; lets admin team control pricing/visibility centrally.
+- **H5 catalogue migrated to backend**: `/v1/h5/packages*` endpoints serve packages, hot list, locations, recharge.
+- **Direct ESIMAccess calls being removed** from `services/esimApi.ts`. New code MUST use `services/dataService.ts` only.
+- Order placement + Stripe payment + provisioning still flow through Netlify functions for now (separate migration).
+
+## Native Flutter App (sibling project)
+- Repo: `/Users/jordanmok/Development/EvairSIM-App` (also mirrored to Aliyun/iCloud).
+- Mirrors H5 features: eSIM marketplace with country picker, install flow, top-up, account.
+- Uses **same Laravel backend** as H5 — `/v1/h5/packages*` is shared. Do not fork the API.
+- Country picker uses `country_flags` package for proper rectangular flags (matches H5 visual).
+- **iOS Universal Link install** + Android `LPA:` URI for 1-Tap eSIM install.
+- Considering Apple IAP / Google Play Billing for in-app purchase parity with native UX expectations.
+
+## Admin & Backend Sibling Projects
+- Admin portal: `/Users/jordanmok/Desktop/iCloud Drive/Cursor Codes/admin` (Vue 3 + Element Plus).
+- Backend: `/Users/jordanmok/Desktop/iCloud Drive/Cursor Codes/Evair-Laravel`.
+- Sidebar IA finalized 2026-04: 8 functional groups, supplier-grouped products (`PCCW`/`RED TEA`).
+- See each project's own `.cursor/rules/` for details.
+
+## Backup & Storage
+- Primary remote: Aliyun Codeup (`codeup.aliyun.com/sz0755/ZenoSIM/...`) — China team.
+- Secondary mirror: GitHub.
+- Local backup: weekly auto-rsync to iCloud Drive at `~/Library/Mobile Documents/com~apple~CloudDocs/Aliyun-Backups/` via `launchd` agent.

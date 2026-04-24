@@ -12,6 +12,9 @@ import type {
   EsimUsageParams,
   TopupRequest,
   TopupResponse,
+  CreatePaymentSessionRequest,
+  CreatePaymentSessionResponse,
+  RechargeRecordDetailResponse,
 } from './types';
 
 // ─── API 端点 ────────────────────────────────────────────────────────────
@@ -25,8 +28,16 @@ const ENDPOINTS = {
 
   // eSIM
   ESIM_BY_ICCID: (iccid: string) => `/h5/esim/${iccid}`,
+  ESIM_PREVIEW: (iccid: string) => `/h5/esim/preview/${iccid}`,
   ESIM_USAGE: (iccid: string) => `/h5/esim/${iccid}/usage`,
-  ESIM_TOPUP: (iccid: string) => `/h5/esim/${iccid}/topup`,
+  ESIM_ENABLE: (iccid: string) => `/h5/esim/${iccid}/enable`,
+
+  // 充值订单
+  TOPUP_ORDERS: '/h5/orders/topup',
+
+  // 充值支付
+  RECHARGE_PAY: (rechargeId: number) => `/h5/recharge/${rechargeId}/pay`,
+  RECHARGE_DETAIL: (rechargeId: number) => `/h5/recharge/${rechargeId}`,
 } as const;
 
 // ─── 套餐服务 ────────────────────────────────────────────────────────────
@@ -49,11 +60,22 @@ export const packageService = {
   },
 
   /**
-   * 获取充值套餐（针对特定 eSIM）
-   * @param iccid eSIM ICCID
+   * Fetch the top-up / recharge catalogue for an existing SIM.
+   *
+   * Backend accepts `supplier_type`:
+   *   - `'esimaccess'` (default) — digital eSIMs (Red Tea templates)
+   *   - `'pccw'` — physical SIMs (PCCW recharge templates, respects
+   *               per-ICCID whitelists)
+   * Pass the matching supplier when the SIM was provisioned by PCCW,
+   * otherwise the backend will return an empty / mismatched list.
    */
-  async getRechargePackages(iccid: string): Promise<{ packages: PackageDto[] }> {
-    return get<{ packages: PackageDto[] }>(ENDPOINTS.RECHARGE_PACKAGES, { iccid });
+  async getRechargePackages(
+    iccid: string,
+    supplierType?: 'esimaccess' | 'pccw',
+  ): Promise<{ packages: PackageDto[] }> {
+    const params: Record<string, unknown> = { iccid };
+    if (supplierType) params.supplier_type = supplierType;
+    return get<{ packages: PackageDto[] }>(ENDPOINTS.RECHARGE_PACKAGES, params);
   },
 
   /**
@@ -98,6 +120,39 @@ export const packageService = {
 
 export const esimService = {
   /**
+   * Fetch the public SIM preview (used during bind / registration).
+   *
+   * `supplierType` controls which provider backs the lookup:
+   *   - `'esimaccess'` (default) — Red Tea / EsimAccess, i.e. our digital
+   *     eSIM catalogue; used on the eSIM install flow.
+   *   - `'pccw'` — PCCW IoT-M, our physical SIM supplier. Physical SIMs
+   *     ship preloaded with data, so the H5 "Bind your SIM" screen should
+   *     always pass `'pccw'` to hit the correct backend service
+   *     (`PccwPreviewService`) and surface the preloaded plan + carrier
+   *     balance for top-up purposes.
+   *
+   * GET /h5/esim/preview/{iccid}?supplier_type={esimaccess|pccw}
+   */
+  async getPreview(
+    iccid: string,
+    supplierType?: 'esimaccess' | 'pccw',
+  ): Promise<{
+    iccid: string;
+    status: string;
+    package: {
+      packageCode: string;
+      name: string;
+      volume: number;
+      duration: number;
+      location: string;
+    };
+    expiredTime: string;
+  }> {
+    const params = supplierType ? { supplier_type: supplierType } : undefined;
+    return get(ENDPOINTS.ESIM_PREVIEW(iccid), params as Record<string, unknown> | undefined);
+  },
+
+  /**
    * 获取 eSIM 详情
    * @param iccid eSIM ICCID
    */
@@ -115,12 +170,40 @@ export const esimService = {
   },
 
   /**
-   * eSIM 充值
-   * @param iccid eSIM ICCID
-   * @param data 充值套餐信息
+   * 创建充值订单
+   * POST /h5/orders/topup
+   * @param data 充值参数
    */
-  async topup(iccid: string, data: TopupRequest): Promise<TopupResponse> {
-    return post<TopupResponse>(ENDPOINTS.ESIM_TOPUP(iccid), data);
+  async topup(data: TopupRequest): Promise<TopupResponse> {
+    return post<TopupResponse>(ENDPOINTS.TOPUP_ORDERS, data);
+  },
+
+  /**
+   * 创建充值支付会话
+   * POST /h5/recharge/{recharge_id}/pay
+   * @param rechargeId 充值记录 ID
+   * @param data 支付参数
+   */
+  async createRechargePayment(rechargeId: number, data?: CreatePaymentSessionRequest): Promise<CreatePaymentSessionResponse> {
+    return post<CreatePaymentSessionResponse>(ENDPOINTS.RECHARGE_PAY(rechargeId), data || {});
+  },
+
+  /**
+   * 查询充值记录详情
+   * GET /h5/recharge/{recharge_id}
+   * @param rechargeId 充值记录 ID
+   */
+  async getRechargeDetail(rechargeId: number): Promise<RechargeRecordDetailResponse> {
+    return get<RechargeRecordDetailResponse>(ENDPOINTS.RECHARGE_DETAIL(rechargeId));
+  },
+
+  /**
+   * 启用 eSIM Profile (LPA enable)
+   * 后端调用 CSM SM-DP+ 平台远程启用 profile
+   * @param iccid eSIM ICCID
+   */
+  async enableProfile(iccid: string): Promise<{ status: string }> {
+    return post<{ status: string }>(ENDPOINTS.ESIM_ENABLE(iccid), {});
   },
 
   // ============ 辅助方法 ============

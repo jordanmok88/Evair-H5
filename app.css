@@ -17,7 +17,7 @@ html, body, #root {
 body {
   -webkit-tap-highlight-color: transparent;
   background-color: #F2F4F7;
-  overscroll-behavior-x: none;
+  overscroll-behavior: none;
 }
 
 /* Phone frame: contained layout for tablet/desktop */
@@ -30,7 +30,7 @@ body {
 
 /* Safe area top padding: minimal in mobile browser */
 .pt-safe {
-  padding-top: 2px;
+  padding-top: 12px;
 }
 
 /* Bottom safe padding: minimal in browser */
@@ -56,6 +56,16 @@ body {
   .pb-safe-bottom {
     padding-bottom: env(safe-area-inset-bottom, 20px);
   }
+}
+
+/* Donut ring breathing glow */
+@keyframes donut-breathe {
+  0%, 100% { filter: drop-shadow(0 0 4px rgba(255, 150, 0, 0.15)); }
+  50%      { filter: drop-shadow(0 0 12px rgba(255, 150, 0, 0.5)); }
+}
+.donut-breathe {
+  animation: donut-breathe 3s ease-in-out infinite;
+  will-change: filter;
 }
 
 /* Hide scrollbar for Chrome, Safari and Opera */

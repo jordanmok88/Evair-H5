@@ -1,0 +1,58 @@
+---
+description: ZenoSIM / EvairSIM company, supplier, and product context — applies across H5, APP, Admin, Backend
+alwaysApply: true
+---
+
+# ZenoSIM / EvairSIM — Business Context
+
+## Company
+
+- Sells **eSIMs and physical SIMs** to retail (B2C) and enterprise (B2B) customers worldwide.
+- Operates two consumer-facing storefronts:
+  - **H5 web app** (`Evair-H5`, React/Vite, hosted on Netlify) — primary today
+  - **Native Flutter app** (`EvairSIM-App`, lives at `/Users/jordanmok/Development/EvairSIM-App`) — in development, mirrors H5 features
+- Operates one internal portal:
+  - **Admin** (`admin`, Vue 3 + Element Plus) — staff portal for catalogue, pricing, orders, customer ops
+- One backend:
+  - **Laravel API** (`Evair-Laravel`) — single source of truth; both H5 and APP fetch from it; admin writes to it.
+- Brand color `#FF6600` (orange). Domain `evairdigital.com`. Support `service@evairdigital.com`.
+- China dev team uses Aliyun Codeup; founder mirrors to GitHub + iCloud Drive weekly auto-backup.
+
+## Suppliers (the two that matter)
+
+| Aspect | **PCCW** (`supplier_id = 1`) | **RED TEA** / eSIMAccess (`supplier_id = 2`) |
+|---|---|---|
+| Plan model | Flexible — traffic policies, post-activation policy swap | **Fixed** — data + days + region locked at activation |
+| Cost model | Variable, per-MB / per-policy | **Fixed cost locked at activation time** |
+| Editable in admin | Markup, traffic policy, bundle composition | **Markup only** (cost is supplier-locked) |
+| Refund of activated SIM | Possible (re-credit) | **Not possible** — supplier cost non-recoverable |
+| Used for | Variable enterprise plans, regional bundles | Standard retail eSIM catalogue (most SKUs) |
+
+## Products
+
+- **eSIM** — every country (~207, 2,489+ packages from RED TEA). Sold in H5 + APP.
+  - GSMA standard: profile installs **once** from SM-DP+. If user deletes, must re-purchase.
+- **Physical SIM** — **US data plans only** (today). Uses eUICC + ARA-M; profiles can be re-flashed by carrier.
+  - Activation in H5 = binding only (associate card + login). Factory pre-writes the profile.
+- **Recharge / Top-up** — both PCCW and RED TEA recharge plans available; managed in admin under each supplier group.
+- **Marketplaces** — physical SIMs also sold on Amazon.com and Temu.com; same H5 binding flow.
+
+## Data flow rule (security)
+
+**All supplier APIs MUST be called by the Laravel backend. H5 and APP must never call Red Tea / PCCW directly.**
+
+- Reason: prevents supplier credentials/SKU leaks, lets admin team control plans/prices/visibility centrally.
+- H5 and APP fetch product catalogue from `/v1/h5/packages*` (Laravel).
+- Admin writes via `/v1/admin/supplier-packages*` (Laravel).
+- Migration in progress: H5 catalogue migrated; APP catalogue migrated; legacy direct supplier calls being removed.
+
+## Customer segments
+
+- **个人客户 (B2C)** — retail consumers. Default segment.
+- **企业客户 (B2B)** — enterprise tenants. Restricted admin access (see `admin/src/api/modules/login.ts` `B2B_ALLOWED_PATHS`).
+- B2B customers see only: `首页`, `销售运营 › 销售额报表`, `客户管理 › 企业客户` and its subpages.
+
+## Languages
+
+- H5 + APP: en (primary), zh, es. Every user-facing string must use `t()` keys.
+- Admin: zh primary; en for ops/dev fallback.

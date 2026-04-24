@@ -2,6 +2,28 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+## Active context (read these first, every session)
+
+Three `alwaysApply` rule files hold Jordan's persistent memory — the agent
+should treat them as preloaded context:
+
+- `.cursor/rules/ongoing-work.mdc` — what's in-flight right now, what was just
+  resolved, what the next step is. **Always read first.**
+- `.cursor/rules/product-decisions.mdc` — locked-in product decisions.
+  Do not re-debate.
+- `.cursor/rules/auto-save-workflow.mdc` — how to save work across all mirrors.
+
+On-demand reference (load when the topic comes up):
+
+- `.cursor/rules/competitor-analysis.mdc` — Airalo + EIOTCLUB dossier
+  (home page, shop UX, pricing, trust signals, loyalty, blog, SEO).
+- `.cursor/rules/esim-api-services.mdc` — supplier integration + shop
+  catalogue regression guards.
+- `.cursor/rules/business-context.mdc` / `business-decisions.mdc` — product
+  and business context.
+- `docs/CONVERSATION_HISTORY.md` — chronological log of past work sessions
+  and major decisions.
+
 ## Build & Development Commands
 
 ```bash
@@ -9,7 +31,19 @@ npm run dev          # Start Vite dev server on port 3000
 npm run build        # Production build (outputs to dist/)
 npm run test         # Run Vitest tests once
 npm run test:watch   # Run tests in watch mode
+npm run save         # Commit & push this project to ALL remotes
 ```
+
+## Save Workflow (IMPORTANT)
+
+Jordan has two projects: this one (**H5**) and **Evair APP** (Flutter at `~/Development/EvairSIM-App`).
+When he says "save" or "save my work", save BOTH:
+
+```bash
+bash "/Users/jordanmok/Desktop/iCloud Drive/Cursor Codes/save-all.sh"
+```
+
+To save just H5: `npm run save` (or `bash scripts/save.sh`). Full details in `.cursor/rules/auto-save-workflow.mdc`.
 
 ## Project Overview
 

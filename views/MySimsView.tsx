@@ -1,31 +1,12 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Wifi, Phone, Zap, ChevronDown, CheckCircle2, QrCode, Copy, X, Calendar, Clock, SignalHigh, Smartphone, RefreshCw, Plus, ShoppingBag, Settings, MoreHorizontal, Trash2, Check, AlertTriangle, Loader2, Globe, Database, Truck, ScanLine, Package, MapPin, ArrowLeft } from 'lucide-react';
+import { Wifi, Phone, Zap, ChevronDown, CheckCircle2, QrCode, Copy, X, Calendar, Clock, SignalHigh, Smartphone, RefreshCw, Plus, ShoppingBag, Settings, MoreHorizontal, Trash2, Check, AlertTriangle, Loader2, Globe, Database, ScanLine, ArrowLeft } from 'lucide-react';
 import { ActiveSim, Tab, SimType, EsimPackage } from '../types';
 import FlagIcon from '../components/FlagIcon';
+import StripePaymentModal from '../components/StripePaymentModal';
 import { CARRIER_MAP } from '../constants';
-import { topUp, formatVolume, formatPrice, retailPrice, formatGB, queryProfile, mapRedTeaStatus } from '../services/esimApi';
+import { topUp, fetchTopUpPackages, fetchPackages, checkDataUsage, formatVolume, formatPrice, retailPrice, packagePriceUsd, formatGB, queryProfile, mapRedTeaStatus, USE_BACKEND_API, unbindSim } from '../services/dataService';
 import { useEdgeSwipeBack } from '../hooks/useEdgeSwipeBack';
-import { packageService, esimService } from '../services/api';
-import type { PackageDto, TopupRequest } from '../services/api/types';
-
-// ─── 后端套餐数据转换为前端格式 ────────────────────────────────────────
-
-function convertPackageDtoToEsimPackage(dto: PackageDto & { validDays?: number }): EsimPackage {
-  return {
-    packageCode: dto.packageCode,
-    name: dto.name,
-    price: dto.price * 100,       // backend returns cents → micro-cents (10000 = $1)
-    currencyCode: dto.currency || 'USD',
-    volume: dto.volume,            // backend returns bytes, same as supplier
-    unusedValidTime: 0,
-    duration: dto.validDays || dto.duration || 30,
-    durationUnit: dto.durationUnit || 'DAY',
-    location: dto.location || '',
-    description: dto.description || '',
-    activeType: 1,
-  };
-}
 
 interface MySimsViewProps {
   activeSims: ActiveSim[];
@@ -33,7 +14,10 @@ interface MySimsViewProps {
   filterType: SimType;
   onSwitchToShop?: () => void;
   onDeleteSim?: (simId: string) => void;
-  onSwitchToSetup?: (tab?: 'TRACKING' | 'ACTIVATE', trackingNumber?: string) => void;
+  // Legacy signature accepted `(tab, trackingNumber)` — the TRACKING
+  // tab was removed in the 2026-04 FBA pivot. Args are ignored but kept
+  // for source compatibility with existing call-sites.
+  onSwitchToSetup?: (tab?: 'ACTIVATE' | 'TRACKING', trackingNumber?: string) => void;
   onUpdateSim?: (simId: string, updates: Partial<ActiveSim>) => void;
 }
 
@@ -49,6 +33,13 @@ function lerpColor(a: string, b: string, t: number): string {
   const rg = Math.round(ag + (bg - ag) * t);
   const rb = Math.round(ab + (bb - ab) * t);
   return `rgb(${rr},${rg},${rb})`;
+}
+
+function fmtCompact(gb: number): string {
+  if (!Number.isFinite(gb) || gb < 0) return '—';
+  if (gb >= 1024 * 1024) return `${(gb / (1024 * 1024)).toFixed(1)} PB`;
+  if (gb >= 1024) return `${(gb / 1024).toFixed(1)} TB`;
+  return gb % 1 === 0 ? `${gb.toFixed(0)} GB` : `${gb.toFixed(1)} GB`;
 }
 
 function resolveIccid(sim: ActiveSim): string {
@@ -68,7 +59,9 @@ const MySimsView: React.FC<MySimsViewProps> = ({ activeSims, onNavigate, filterT
   const [isSyncing, setIsSyncing] = useState(false);
   const [copied, setCopied] = useState(false);
   const [copiedField, setCopiedField] = useState<'smdp' | 'activation' | 'qr' | null>(null);
-  const [deleteConfirmSimId, setDeleteConfirmSimId] = useState<string | null>(null);
+  const [deleteConfirmSim, setDeleteConfirmSim] = useState<ActiveSim | null>(null);
+  const [deleteLoading, setDeleteLoading] = useState(false);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
 
   // eSIM API states for top-up
   const [topUpPackages, setTopUpPackages] = useState<EsimPackage[]>([]);
@@ -78,23 +71,58 @@ const MySimsView: React.FC<MySimsViewProps> = ({ activeSims, onNavigate, filterT
   const [topUpSuccess, setTopUpSuccess] = useState(false);
   const [refreshingSimId, setRefreshingSimId] = useState<string | null>(null);
 
+  // Stripe payment states (simplified)
+  const [paymentModalOpen, setPaymentModalOpen] = useState(false);
+  const [rechargeConfig, setRechargeConfig] = useState<{
+    iccid: string;
+    packageCode: string;
+    amount: number;
+  } | null>(null);
+
   const currentSim = filteredSims.find(s => s.id === selectedSimId) || filteredSims[0];
 
+  // Per-SIM refresh button. Hits `/h5/esim/{iccid}/usage` via
+  // `checkDataUsage` — that endpoint dispatches to EsimAccess for digital
+  // eSIMs and to PCCW for physical SIMs, so the same call works for both
+  // SIM types. The legacy path used `queryProfile` (Red Tea only), which
+  // silently returned stale/default data for PCCW cards.
   const handleRefreshStatus = useCallback(async (sim: ActiveSim) => {
-    if (!sim.iccid || !onUpdateSim) return;
+    if (!onUpdateSim) return;
+    const iccid = resolveIccid(sim);
+    if (!iccid) return;
     setRefreshingSimId(sim.id);
     try {
-      const profile = await queryProfile(sim.iccid);
-      const newStatus = mapRedTeaStatus(profile.status);
-      const usedGB = profile.usedVolume ? profile.usedVolume / (1024 * 1024 * 1024) : sim.dataUsedGB;
-      const totalGB = profile.totalVolume ? profile.totalVolume / (1024 * 1024 * 1024) : sim.dataTotalGB;
-      onUpdateSim(sim.id, {
-        status: newStatus,
-        dataUsedGB: Math.round(usedGB * 100) / 100,
-        dataTotalGB: Math.round(totalGB * 10) / 10,
-      });
+      const usage = await checkDataUsage(iccid);
+      const totalGB = usage.totalVolume / (1024 * 1024 * 1024);
+      const usedGB = usage.usedVolume / (1024 * 1024 * 1024);
+      const updates: Partial<ActiveSim> = {};
+      if (Number.isFinite(totalGB) && totalGB > 0 && totalGB <= 500) {
+        updates.dataTotalGB = Math.round(totalGB * 10) / 10;
+      }
+      if (Number.isFinite(usedGB) && usedGB >= 0 && usedGB <= (updates.dataTotalGB ?? sim.dataTotalGB ?? Infinity)) {
+        updates.dataUsedGB = Math.round(usedGB * 100) / 100;
+      }
+      if (usage.expiredTime) {
+        updates.expiryDate = usage.expiredTime;
+      }
+      // eSIM status still comes from the Red Tea profile query since the
+      // usage endpoint doesn't carry lifecycle state. For physical SIMs
+      // the PCCW status is already surfaced on the bound-list endpoint,
+      // so skip the profile call there to avoid a useless Red Tea hit
+      // that always returns "not found" for PCCW ICCIDs.
+      if (sim.type === 'ESIM') {
+        try {
+          const profile = await queryProfile(iccid);
+          updates.status = mapRedTeaStatus(profile.status);
+        } catch {
+          /* keep previous status */
+        }
+      }
+      if (Object.keys(updates).length > 0) {
+        onUpdateSim(sim.id, updates);
+      }
     } catch {
-      // silently fail -- profile may not be queryable yet
+      // silently fail -- SIM may be unreachable upstream
     } finally {
       setRefreshingSimId(null);
     }
@@ -110,42 +138,45 @@ const MySimsView: React.FC<MySimsViewProps> = ({ activeSims, onNavigate, filterT
     if (isRechargeModalOpen && topUpPackages.length === 0 && !topUpLoading && currentSim) {
       setTopUpLoading(true);
       const iccid = resolveIccid(currentSim);
-      if (currentSim.type === 'ESIM') {
-        // 优先使用后端 API 获取充值套餐
-        packageService.getRechargePackages(iccid)
-          .then(res => {
-            const converted = res.packages.map(convertPackageDtoToEsimPackage);
-            setTopUpPackages(converted);
-          })
-          .catch(() => {
-            // 失败时使用 legacy API
-            import('../services/esimApi').then(({ fetchTopUpPackages }) => {
-              fetchTopUpPackages(iccid).then(setTopUpPackages).catch(() => {});
-            });
-          })
-          .finally(() => setTopUpLoading(false));
-      } else {
-        import('../services/esimApi').then(({ fetchPackages }) => {
-          fetchPackages({ locationCode: currentSim.country.countryCode })
-            .then(setTopUpPackages)
-            .catch(() => {})
-            .finally(() => setTopUpLoading(false));
-        });
-      }
+      const fallbackLocation = currentSim.locationCode || currentSim.country.countryCode;
+      const locationFallback = () => fetchPackages({ locationCode: fallbackLocation });
+      // Recharge catalogue resolution by SIM type:
+      //
+      //   • ESIM        → EsimAccess / Red Tea top-up templates keyed to
+      //                   the ICCID; fall back to the general location
+      //                   catalogue if none returned.
+      //   • PHYSICAL    → PCCW recharge templates for this ICCID. Pass
+      //                   `'pccw'` explicitly — the backend defaults to
+      //                   `esimaccess` and would otherwise return zero
+      //                   matches. If PCCW has no offers for this SIM
+      //                   (e.g. an ICCID not yet on any whitelist) we
+      //                   fall through to the general catalogue so the
+      //                   user still sees something actionable.
+      const pkgPromise = currentSim.type === 'ESIM'
+        ? fetchTopUpPackages(iccid)
+            .then(pkgs => pkgs.length > 0 ? pkgs : locationFallback())
+            .catch(locationFallback)
+        : fetchTopUpPackages(iccid, 'pccw')
+            .then(pkgs => pkgs.length > 0 ? pkgs : locationFallback())
+            .catch(locationFallback);
+      pkgPromise
+        .then(setTopUpPackages)
+        .catch(() => {})
+        .finally(() => setTopUpLoading(false));
     }
   }, [isRechargeModalOpen, currentSim]);
 
+  // Top-bar sync button on the ring-gauge card. `checkDataUsage` routes
+  // to the right supplier (EsimAccess / PCCW) backend-side, so the same
+  // call works for both ESIM and PHYSICAL SIMs. We also piggy-back
+  // `handleRefreshStatus` so the store reflects the freshly fetched
+  // volume — otherwise the sync spinner finishes but the UI keeps the
+  // stale numbers.
   const handleSync = async () => {
+    if (!currentSim) return;
     setIsSyncing(true);
     try {
-      if (currentSim?.type === 'ESIM') {
-        const iccid = resolveIccid(currentSim);
-        // 优先使用后端 API 获取用量
-        await esimService.getUsage(iccid).catch(() => {
-          // 失败时使用 legacy API
-          return import('../services/esimApi').then(({ checkDataUsage }) => checkDataUsage(iccid));
-        });
-      }
+      await handleRefreshStatus(currentSim);
     } finally {
       setTimeout(() => setIsSyncing(false), 1500);
     }
@@ -159,6 +190,13 @@ const MySimsView: React.FC<MySimsViewProps> = ({ activeSims, onNavigate, filterT
   };
 
   const handleCardClick = (simId: string) => {
+    const sim = filteredSims.find(s => s.id === simId);
+    if (sim?.type === 'ESIM' && (sim.status === 'NEW' || sim.status === 'PENDING_ACTIVATION' || sim.status === 'NOT_ACTIVATED')) {
+      setSelectedSimId(simId);
+      setIsExpanded(false);
+      setIsInstallModalOpen(true);
+      return;
+    }
     if (isExpanded) {
       setSelectedSimId(simId);
       setIsExpanded(false);
@@ -169,6 +207,17 @@ const MySimsView: React.FC<MySimsViewProps> = ({ activeSims, onNavigate, filterT
 
   // EMPTY STATE
   if (!currentSim) {
+      // For plastic PCCW SIMs we don't sell them from Shop any more —
+      // customers receive them from Amazon/Temu, so the primary CTA
+      // should jump straight into the bind/setup flow. eSIMs still
+      // go through Shop (plan picker -> checkout -> auto-bind).
+      const primaryAction = filterType === 'PHYSICAL' && onSwitchToSetup
+        ? onSwitchToSetup
+        : onSwitchToShop;
+      const primaryLabel = filterType === 'PHYSICAL'
+        ? t('my_sims.bind_cta', 'Bind your SIM')
+        : t('my_sims.add');
+
       return (
           <div className="lg:h-full min-h-[60vh] flex flex-col items-center justify-center px-8 text-center bg-[#F2F4F7]">
               <div className="relative mb-10">
@@ -185,8 +234,8 @@ const MySimsView: React.FC<MySimsViewProps> = ({ activeSims, onNavigate, filterT
                       </div>
                   </div>
                   <div className="absolute -bottom-6 -right-4 z-10">
-                      <button 
-                         onClick={onSwitchToShop}
+                      <button
+                         onClick={primaryAction}
                          className="w-16 h-16 rounded-full bg-[#E8EAEF] flex items-center justify-center border-4 border-[#F2F4F7] shadow-md active:scale-95 transition-transform text-slate-400"
                       >
                           <Plus size={32} strokeWidth={3} />
@@ -196,13 +245,13 @@ const MySimsView: React.FC<MySimsViewProps> = ({ activeSims, onNavigate, filterT
               <p className="text-slate-500 mb-8 font-medium text-base tracking-tight">
                   {filterType === 'ESIM' ? t('my_sims.no_esims') : t('my_sims.no_sims')}
               </p>
-              {onSwitchToShop && (
-                <button 
-                    onClick={onSwitchToShop}
+              {primaryAction && (
+                <button
+                    onClick={primaryAction}
                     className="bg-brand-orange hover:bg-orange-600 text-white w-40 py-3 rounded-xl font-bold text-base shadow-lg shadow-orange-500/15 active:scale-95 transition-all flex items-center justify-center gap-2"
                 >
                     <Plus size={20} strokeWidth={3} />
-                    {t('my_sims.add')}
+                    {primaryLabel}
                 </button>
               )}
           </div>
@@ -213,8 +262,9 @@ const MySimsView: React.FC<MySimsViewProps> = ({ activeSims, onNavigate, filterT
   const dataUsed = currentSim.dataUsedGB;
   const dataTotal = currentSim.dataTotalGB;
   const dataRemaining = Math.max(0, dataTotal - dataUsed);
-  const percentRemaining = Math.min((dataRemaining / dataTotal) * 100, 100);
-  const percentUsed = 100 - percentRemaining;
+  const safeTotal = dataTotal > 0 ? dataTotal : 1;
+  const percentRemaining = Math.min(Math.max(0, (dataRemaining / safeTotal) * 100), 100);
+  const percentUsed = Math.min(Math.max(0, 100 - percentRemaining), 100);
   const ringRadius = 80;
   const ringStroke = 22;
   const ringCircumference = 2 * Math.PI * ringRadius;
@@ -222,8 +272,12 @@ const MySimsView: React.FC<MySimsViewProps> = ({ activeSims, onNavigate, filterT
   const segArc = ringCircumference / totalSegs;
   const gapArc = segArc * 0.3;
   const fillArc = segArc - gapArc;
-  const remainingSegs = Math.round((percentRemaining / 100) * totalSegs);
-  const usedSegs = totalSegs - remainingSegs;
+  let usedSegs = Math.round((percentUsed / 100) * totalSegs);
+  if (dataUsed > 0 && usedSegs < 1) usedSegs = 1;
+  if (dataRemaining > 0 && usedSegs >= totalSegs) usedSegs = totalSegs - 1;
+  if (dataUsed <= 0) usedSegs = 0;
+  if (dataRemaining <= 0) usedSegs = totalSegs;
+  const remainingSegs = totalSegs - usedSegs;
 
   const handleCopy = (text: string, field: 'smdp' | 'activation' | 'qr') => {
     navigator.clipboard.writeText(text).then(() => {
@@ -242,6 +296,15 @@ const MySimsView: React.FC<MySimsViewProps> = ({ activeSims, onNavigate, filterT
               </button>
           </div>
           <div className="flex-1 min-h-0 flex flex-col px-5 pb-2 gap-4 overflow-y-auto no-scrollbar">
+
+              {/* One-time install warning */}
+              <div className="bg-amber-500/15 border border-amber-500/30 rounded-xl p-3.5 flex gap-3 items-start">
+                <AlertTriangle size={18} className="text-amber-400 shrink-0 mt-0.5" />
+                <div>
+                  <p className="text-amber-200 text-sm font-bold mb-0.5">{t('my_sims.install_once_title')}</p>
+                  <p className="text-amber-200/70 text-xs leading-relaxed">{t('my_sims.install_once_desc')}</p>
+                </div>
+              </div>
 
               {/* Method 1: QR Code */}
               <div>
@@ -380,7 +443,7 @@ const MySimsView: React.FC<MySimsViewProps> = ({ activeSims, onNavigate, filterT
       </div>
 
       {/* SIM cards — stacked or expanded flat list */}
-      <div className="px-4 mb-6">
+      <div className="px-4 mt-4 mb-6">
         <div style={{
           position: 'relative',
           height: isExpanded
@@ -388,7 +451,7 @@ const MySimsView: React.FC<MySimsViewProps> = ({ activeSims, onNavigate, filterT
             : (filteredSims.length - 1) * CARD_PEEK + CARD_HEIGHT,
           transition: 'height 0.35s cubic-bezier(0.4, 0, 0.2, 1)',
         }}>
-          {(isExpanded ? filteredSims : [currentSim, ...filteredSims.filter(s => s.id !== selectedSimId)]).map((sim, index) => {
+          {(isExpanded ? filteredSims : [currentSim, ...filteredSims.filter(s => s.id !== selectedSimId && s.id !== currentSim.id)]).map((sim, index) => {
               const isSelected = sim.id === selectedSimId;
               const simRemaining = Math.max(0, sim.dataTotalGB - sim.dataUsedGB);
               const simUsagePercent = sim.dataTotalGB > 0 ? (sim.dataUsedGB / sim.dataTotalGB) * 100 : 0;
@@ -448,15 +511,18 @@ const MySimsView: React.FC<MySimsViewProps> = ({ activeSims, onNavigate, filterT
                         : sim.type === 'PHYSICAL' && sim.status === 'NOT_ACTIVATED' ? '#f97316'
                         : sim.type === 'PHYSICAL' && sim.status === 'NEW' ? '#22c55e'
                         : sim.type === 'PHYSICAL' && sim.status === 'EXPIRED' ? '#ef4444'
+                        : sim.type === 'ESIM' && (sim.status === 'NEW' || sim.status === 'PENDING_ACTIVATION' || sim.status === 'NOT_ACTIVATED') ? '#3b82f6'
                         : isDataLow ? '#D97706' : '#94a3b8', marginTop: 2, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                         {sim.type === 'PHYSICAL' && sim.status === 'PENDING_ACTIVATION'
-                          ? 'Arriving soon · tap to track'
+                          ? 'Ready to activate'
                           : sim.type === 'PHYSICAL' && sim.status === 'NOT_ACTIVATED'
-                          ? 'Delivered · tap to activate'
+                          ? 'Tap to activate'
                           : sim.type === 'PHYSICAL' && sim.status === 'NEW'
                           ? `${formatGB(simRemaining)} / ${formatGB(sim.dataTotalGB)} · Ready`
                           : sim.type === 'PHYSICAL' && sim.status === 'EXPIRED'
                           ? 'Expired'
+                          : sim.type === 'ESIM' && (sim.status === 'NEW' || sim.status === 'PENDING_ACTIVATION' || sim.status === 'NOT_ACTIVATED')
+                          ? 'Tap to install'
                           : isDataLow ? `⚠ ${formatGB(simRemaining)} ${t('my_sims.gb_remaining')}` : `${formatGB(simRemaining)} / ${formatGB(sim.dataTotalGB)} ${t('my_sims.gb_remaining')}`}
                       </div>
                     </div>
@@ -464,30 +530,38 @@ const MySimsView: React.FC<MySimsViewProps> = ({ activeSims, onNavigate, filterT
                       onClick={(e) => {
                         if ((sim.status === 'PENDING_ACTIVATION' || sim.status === 'NOT_ACTIVATED') && onSwitchToSetup) {
                           e.stopPropagation();
-                          onSwitchToSetup(sim.status === 'PENDING_ACTIVATION' ? 'TRACKING' : 'ACTIVATE', sim.trackingNumber);
+                          // FBA pivot: always route to ACTIVATE, no more shipment tracking tab.
+                          onSwitchToSetup('ACTIVATE');
                         }
                       }}
                       style={{
                       fontSize: 11, fontWeight: 700, padding: '3px 8px', borderRadius: 6,
                       whiteSpace: 'nowrap',
-                      backgroundColor: sim.status === 'ACTIVE' || sim.status === 'IN_USE' ? '#dcfce7'
+                      backgroundColor:
+                        sim.type === 'ESIM' && (sim.status === 'NEW' || sim.status === 'PENDING_ACTIVATION' || sim.status === 'NOT_ACTIVATED') ? '#dbeafe'
+                        : sim.status === 'ACTIVE' || sim.status === 'IN_USE' ? '#dcfce7'
                         : sim.status === 'NEW' ? '#dcfce7'
                         : sim.status === 'PENDING_ACTIVATION' || sim.status === 'NOT_ACTIVATED' ? '#dbeafe'
                         : sim.status === 'ONBOARD' ? '#fef3c7'
                         : '#fee2e2',
-                      color: sim.status === 'ACTIVE' || sim.status === 'IN_USE' ? '#15803d'
+                      color:
+                        sim.type === 'ESIM' && (sim.status === 'NEW' || sim.status === 'PENDING_ACTIVATION' || sim.status === 'NOT_ACTIVATED') ? '#1d4ed8'
+                        : sim.status === 'ACTIVE' || sim.status === 'IN_USE' ? '#15803d'
                         : sim.status === 'NEW' ? '#15803d'
                         : sim.status === 'PENDING_ACTIVATION' || sim.status === 'NOT_ACTIVATED' ? '#1d4ed8'
                         : sim.status === 'ONBOARD' ? '#a16207'
                         : '#b91c1c',
                       flexShrink: 0,
-                      cursor: (sim.status === 'PENDING_ACTIVATION' || sim.status === 'NOT_ACTIVATED') ? 'pointer' : 'default',
+                      cursor: sim.type === 'ESIM' && (sim.status === 'NEW' || sim.status === 'PENDING_ACTIVATION' || sim.status === 'NOT_ACTIVATED') ? 'pointer'
+                        : (sim.status === 'PENDING_ACTIVATION' || sim.status === 'NOT_ACTIVATED') ? 'pointer' : 'default',
                     }}>
-                      {t(`my_sims.status_${sim.status.toLowerCase()}`, t('my_sims.inactive'))}
+                      {sim.type === 'ESIM' && (sim.status === 'NEW' || sim.status === 'PENDING_ACTIVATION' || sim.status === 'NOT_ACTIVATED')
+                        ? 'Install'
+                        : t(`my_sims.status_${sim.status.toLowerCase()}`, t('my_sims.inactive'))}
                     </div>
                     {onDeleteSim && (
                       <button
-                        onClick={(e) => { e.stopPropagation(); setDeleteConfirmSimId(sim.id); }}
+                        onClick={(e) => { e.stopPropagation(); setDeleteConfirmSim(sim); setDeleteError(null); }}
                         style={{
                           width: 26, height: 26, borderRadius: 8,
                           backgroundColor: '#f1f5f9',
@@ -505,84 +579,35 @@ const MySimsView: React.FC<MySimsViewProps> = ({ activeSims, onNavigate, filterT
         </div>
       </div>
 
-      {/* ── Pending Physical SIM: Journey Stepper (only PENDING_ACTIVATION / NOT_ACTIVATED) ── */}
-      {currentSim.type === 'PHYSICAL' && (currentSim.status === 'PENDING_ACTIVATION' || currentSim.status === 'NOT_ACTIVATED') ? (() => {
-        const stepIndex = currentSim.status === 'PENDING_ACTIVATION' && !currentSim.trackingNumber ? 0
-          : currentSim.status === 'PENDING_ACTIVATION' && currentSim.trackingNumber ? 1
-          : 2;
-        const steps = [
-          { label: 'Ordered', icon: Package },
-          { label: 'Shipped', icon: Truck },
-          { label: 'Delivered', icon: MapPin },
-          { label: 'Activated', icon: CheckCircle2 },
-        ];
-        return (
+      {/* ── Pending Physical SIM: Activate CTA (only PENDING_ACTIVATION / NOT_ACTIVATED) ──
+          Post-FBA pivot (2026-04): we no longer ship / track customer
+          orders ourselves — Amazon handles fulfilment end-to-end.
+          The old Ordered → Shipped → Delivered → Activated journey
+          stepper and the "Track my order" CTA have been removed; any
+          physical SIM that's pending in our DB is treated as "in the
+          customer's hand, tap to activate". */}
+      {currentSim.type === 'PHYSICAL' && (currentSim.status === 'PENDING_ACTIVATION' || currentSim.status === 'NOT_ACTIVATED') ? (
         <div className="px-4 mb-5">
           <div className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
-            {/* Journey Stepper */}
-            <div className="px-5 pt-6 pb-4">
-              <div className="flex items-center justify-between mb-1">
-                {steps.map((step, i) => {
-                  const StepIcon = step.icon;
-                  const isComplete = i < stepIndex;
-                  const isCurrent = i === stepIndex;
-                  return (
-                    <React.Fragment key={step.label}>
-                      <div className="flex flex-col items-center" style={{ minWidth: 52 }}>
-                        <div className={`w-8 h-8 rounded-full flex items-center justify-center mb-1.5 transition-all ${
-                          isComplete ? 'bg-green-500 text-white' : isCurrent ? 'bg-brand-orange text-white shadow-md shadow-orange-200' : 'bg-slate-100 text-slate-300'
-                        }`}>
-                          {isComplete ? <Check size={14} strokeWidth={3} /> : <StepIcon size={14} />}
-                        </div>
-                        <span className={`text-[10px] font-semibold leading-tight ${
-                          isComplete ? 'text-green-600' : isCurrent ? 'text-brand-orange' : 'text-slate-300'
-                        }`}>{step.label}</span>
-                      </div>
-                      {i < steps.length - 1 && (
-                        <div className={`flex-1 h-0.5 mx-1 rounded-full -mt-4 ${i < stepIndex ? 'bg-green-400' : 'bg-slate-100'}`} />
-                      )}
-                    </React.Fragment>
-                  );
-                })}
+            <div className="px-5 pt-5 pb-4">
+              <div className="flex items-center gap-3 mb-3">
+                <div className="w-10 h-10 rounded-xl bg-orange-50 flex items-center justify-center shrink-0">
+                  <Smartphone size={18} className="text-brand-orange" />
+                </div>
+                <div>
+                  <h3 className="text-[15px] font-bold text-slate-900">{t('my_sims.ready_to_activate', 'Ready to activate')}</h3>
+                  <p className="text-[13px] text-slate-400">{t('my_sims.ready_to_activate_hint', 'Scan the ICCID on the back of your SIM to bind it to your account.')}</p>
+                </div>
               </div>
-            </div>
-
-            {/* Order info */}
-            <div className="px-5 pb-4">
               {currentSim.orderNo && (
                 <div className="flex items-center gap-2 text-xs text-slate-400 mb-1">
                   <span className="font-mono">Order {currentSim.orderNo}</span>
                 </div>
               )}
-              {currentSim.trackingNumber && (
-                <div className="flex items-center gap-2 text-xs text-slate-400">
-                  <Truck size={11} className="shrink-0" />
-                  <span className="font-mono">{currentSim.trackingNumber}</span>
-                </div>
-              )}
               <p className="text-xs text-slate-300 mt-1">{formatGB(currentSim.dataTotalGB)} · {currentSim.plan.days} {t('my_sims.days')}</p>
             </div>
 
-            {/* Actions: Track + Activate */}
             <div className="px-5 pb-5 space-y-2.5 border-t border-slate-50 pt-4">
-              {currentSim.trackingNumber && (
-                <button
-                  onClick={() => onSwitchToSetup?.('TRACKING', currentSim.trackingNumber)}
-                  className="w-full flex items-center justify-center gap-2 py-3 rounded-xl bg-slate-100 text-slate-700 font-semibold text-sm hover:bg-slate-200 active:scale-[0.98] transition-all"
-                >
-                  <Truck size={16} />
-                  {t('my_sims.track_my_order')}
-                </button>
-              )}
-
-              <div className="flex items-center gap-3 py-1">
-                <div className="flex-1 h-px bg-slate-100" />
-                <span className="text-[11px] font-semibold text-slate-300 uppercase tracking-wider">
-                  {stepIndex >= 2 ? 'Ready to activate' : 'Already received?'}
-                </span>
-                <div className="flex-1 h-px bg-slate-100" />
-              </div>
-
               <button
                 onClick={() => onSwitchToSetup?.('ACTIVATE')}
                 className="w-full flex items-center justify-center gap-2 py-3.5 rounded-xl font-bold text-[15px] text-white active:scale-[0.98] transition-all"
@@ -594,8 +619,7 @@ const MySimsView: React.FC<MySimsViewProps> = ({ activeSims, onNavigate, filterT
             </div>
           </div>
         </div>
-        );
-      })() : (
+      ) : (
         <>
       {/* Activation nudge for NEW physical SIMs */}
       {currentSim.type === 'PHYSICAL' && currentSim.status === 'NEW' && (
@@ -611,32 +635,7 @@ const MySimsView: React.FC<MySimsViewProps> = ({ activeSims, onNavigate, filterT
           </div>
         </div>
       )}
-      {/* eSIM install prompt for uninstalled eSIMs */}
-      {currentSim.type === 'ESIM' && (currentSim.status === 'NEW' || currentSim.status === 'PENDING_ACTIVATION' || currentSim.status === 'NOT_ACTIVATED') && (
-        <div className="px-4 mb-4">
-          <div className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
-            <div className="flex flex-col items-center text-center px-6 pt-8 pb-5">
-              <div className="w-16 h-16 rounded-2xl bg-blue-50 flex items-center justify-center mb-4">
-                <QrCode size={28} className="text-blue-500" />
-              </div>
-              <h3 className="text-lg font-bold text-slate-900 mb-1">{t('my_sims.install_esim_title')}</h3>
-              <p className="text-sm text-slate-400 mb-1">{t('my_sims.install_esim_desc')}</p>
-              <p className="text-xs text-slate-300">{formatGB(currentSim.dataTotalGB)} · {currentSim.plan.days} {t('my_sims.days')}</p>
-            </div>
-            <div className="px-5 pb-5 space-y-2.5">
-              <button
-                onClick={() => setIsInstallModalOpen(true)}
-                className="w-full flex items-center justify-center gap-2 py-3.5 rounded-xl font-bold text-[15px] text-white active:scale-[0.98] transition-all"
-                style={{ background: 'linear-gradient(135deg, #FF6600 0%, #FF8A3D 100%)', boxShadow: '0 4px 14px rgba(255,102,0,0.25)' }}
-              >
-                <QrCode size={18} />
-                {t('my_sims.install_esim')}
-              </button>
-              <p className="text-[11px] text-slate-300 text-center">{t('my_sims.install_qr_hint')}</p>
-            </div>
-          </div>
-        </div>
-      )}
+      {/* Big install block removed — install instructions accessible via compact row below donut */}
       {/* DATA USAGE CARD — Ring gauge for selected SIM */}
       <div className="px-4 mb-5">
           <div className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden flex flex-col">
@@ -645,6 +644,7 @@ const MySimsView: React.FC<MySimsViewProps> = ({ activeSims, onNavigate, filterT
               <div className="flex justify-center pt-8 pb-2">
                   <div className="relative" style={{ width: 200, height: 200 }}>
                       <svg width={200} height={200} viewBox="0 0 200 200">
+                        <g className="donut-breathe">
                           {Array.from({ length: totalSegs }).map((_, i) => {
                               const startAngle = (i / totalSegs) * 360 - 90;
                               const endAngle = startAngle + (fillArc / ringCircumference) * 360;
@@ -681,14 +681,15 @@ const MySimsView: React.FC<MySimsViewProps> = ({ activeSims, onNavigate, filterT
                                   />
                               );
                           })}
+                        </g>
                       </svg>
                       <div className="absolute inset-0 flex flex-col items-center justify-center">
                           <p className="text-slate-400 text-[12px] font-bold uppercase tracking-widest mb-1">{t('my_sims.remaining')}</p>
                           <span className="text-4xl font-bold text-slate-900 tracking-tight leading-none">
-                              {dataRemaining % 1 === 0 ? dataRemaining.toFixed(0) : dataRemaining.toFixed(1)}
+                              {fmtCompact(dataRemaining)}
                           </span>
                           <span className="text-sm font-semibold text-slate-400 mt-0.5">
-                              / {dataTotal % 1 === 0 ? dataTotal.toFixed(0) : dataTotal.toFixed(1)} GB
+                              / {fmtCompact(dataTotal)}
                           </span>
                       </div>
                   </div>
@@ -699,7 +700,7 @@ const MySimsView: React.FC<MySimsViewProps> = ({ activeSims, onNavigate, filterT
                   <div className="flex items-center gap-1.5">
                       <span className="w-2 h-2 rounded-full bg-brand-orange"></span>
                       <span className="text-sm font-semibold text-slate-500">
-                          {dataUsed % 1 === 0 ? dataUsed.toFixed(0) : dataUsed.toFixed(1)} {t('my_sims.gb_used')}
+                          {fmtCompact(dataUsed)} {t('my_sims.gb_used')}
                       </span>
                   </div>
                   <div className="w-px h-4 bg-slate-200"></div>
@@ -777,13 +778,16 @@ const MySimsView: React.FC<MySimsViewProps> = ({ activeSims, onNavigate, filterT
                   </div>
                   <div className="flex items-center gap-2">
                     <span className={`text-sm font-bold px-2 py-1 rounded-md ${
-                      currentSim.status === 'ACTIVE' || currentSim.status === 'IN_USE' ? 'bg-green-100 text-green-700'
+                      currentSim.type === 'ESIM' && (currentSim.status === 'NEW' || currentSim.status === 'PENDING_ACTIVATION' || currentSim.status === 'NOT_ACTIVATED') ? 'bg-blue-100 text-blue-700'
+                      : currentSim.status === 'ACTIVE' || currentSim.status === 'IN_USE' ? 'bg-green-100 text-green-700'
                       : currentSim.status === 'NEW' || currentSim.status === 'PENDING_ACTIVATION' ? 'bg-blue-100 text-blue-700'
                       : currentSim.status === 'ONBOARD' ? 'bg-amber-100 text-amber-700'
                       : currentSim.status === 'EXPIRED' ? 'bg-red-100 text-red-700'
                       : 'bg-slate-100 text-slate-600'
                     }`}>
-                        {t(`my_sims.status_${currentSim.status.toLowerCase()}`, t('my_sims.inactive'))}
+                        {currentSim.type === 'ESIM' && (currentSim.status === 'NEW' || currentSim.status === 'PENDING_ACTIVATION' || currentSim.status === 'NOT_ACTIVATED')
+                          ? 'Not Installed'
+                          : t(`my_sims.status_${currentSim.status.toLowerCase()}`, t('my_sims.inactive'))}
                     </span>
                     {currentSim.iccid && (
                       <button
@@ -870,29 +874,24 @@ const MySimsView: React.FC<MySimsViewProps> = ({ activeSims, onNavigate, filterT
           const carrierInfo = CARRIER_MAP[currentSim.country.countryCode] || { carrier: 'Carrier', network: '4G' };
           const iccid = resolveIccid(currentSim);
 
-          const handleTopUpPurchase = async () => {
+          // 非后端模式：直接调用供应商 API（旧流程）
+          const handleTopUpPurchaseLegacy = async () => {
             if (!selectedTopUp) return;
             setTopUpProcessing(true);
             try {
               const iccid = resolveIccid(currentSim);
-
-              // 优先使用后端 API
-              try {
-                const topupData: TopupRequest = {
-                  packageCode: selectedTopUp.packageCode,
-                  amount: selectedTopUp.price / 10000, // 转换回 USD
-                };
-                await esimService.topup(iccid, topupData);
-              } catch (apiErr) {
-                // 失败时使用 legacy API
-                const txnId = `topup_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
-                await topUp({
-                  iccid,
-                  packageCode: selectedTopUp.packageCode,
-                  transactionId: txnId,
-                  amount: selectedTopUp.price,
-                });
-              }
+              const txnId = `topup_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+              await topUp({
+                iccid,
+                packageCode: selectedTopUp.packageCode,
+                transactionId: txnId,
+                amount: selectedTopUp.price,
+                // Physical SIMs ride on PCCW's recharge pipeline; eSIMs
+                // stay on EsimAccess. Tagging the call-site keeps the
+                // backend `RechargeTemplateService` from falling back to
+                // the default supplier and rejecting valid PCCW tops-ups.
+                supplierType: currentSim.type === 'PHYSICAL' ? 'pccw' : 'esimaccess',
+              });
 
               const addedGB = selectedTopUp.volume / (1024 * 1024 * 1024);
               onUpdateSim?.(currentSim.id, {
@@ -914,7 +913,20 @@ const MySimsView: React.FC<MySimsViewProps> = ({ activeSims, onNavigate, filterT
             }
           };
 
-          const filtered = topUpPackages.filter(pkg => !(pkg.durationUnit === 'DAY' && (pkg.duration === 1 || pkg.duration === 7 || pkg.duration === 15 || pkg.duration === 365)));
+          // 后端模式：打开 Stripe 支付弹窗（组件内部处理 topup + pay 请求）
+          const handleTopUpPurchase = () => {
+            if (!selectedTopUp) return;
+            // 设置充值配置，组件会自动创建订单和支付会话
+            setRechargeConfig({
+              iccid,
+              packageCode: selectedTopUp.packageCode,
+              amount: packagePriceUsd(selectedTopUp),
+            });
+            setPaymentModalOpen(true);
+          };
+
+          const _filtered = topUpPackages.filter(pkg => !(pkg.durationUnit === 'DAY' && (pkg.duration === 1 || pkg.duration === 7 || pkg.duration === 15 || pkg.duration === 365)));
+          const filtered = _filtered.length > 0 ? _filtered : topUpPackages;
 
           const grouped = new Map<string, EsimPackage[]>();
           filtered.forEach(pkg => {
@@ -948,9 +960,10 @@ const MySimsView: React.FC<MySimsViewProps> = ({ activeSims, onNavigate, filterT
           const closeModal = () => { setIsRechargeModalOpen(false); setSelectedTopUp(null); setTopUpPackages([]); };
 
           return (
-          <div className="fixed lg:absolute inset-0 z-[60] bg-white flex flex-col" style={{ touchAction: 'pan-y' }}>
+          <div className="fixed inset-0 z-[60] bg-black/40 backdrop-blur-sm flex items-end sm:items-center justify-center" onClick={closeModal}>
+          <div className="bg-white w-full sm:max-w-md sm:rounded-2xl rounded-t-2xl flex flex-col" style={{ touchAction: 'pan-y', maxHeight: 'min(90vh, calc(100dvh - 40px))' }} onClick={e => e.stopPropagation()}>
               {/* Header */}
-              <div className="shrink-0 px-4 pt-safe">
+              <div className="shrink-0 px-4 pt-4">
                 <div className="flex justify-between items-center py-3">
                   <h3 className="text-lg font-bold text-slate-900 tracking-tight">{t('my_sims.top_up_data')}</h3>
                   <button onClick={closeModal} className="bg-gray-100 p-2 rounded-full text-slate-500 active:scale-95 transition-transform"><X size={18}/></button>
@@ -983,7 +996,7 @@ const MySimsView: React.FC<MySimsViewProps> = ({ activeSims, onNavigate, filterT
               ) : (
                 <>
                   {/* All plans — scrollable with section headers */}
-                  <div className="flex-1 overflow-y-auto px-4 pt-3 pb-4">
+                  <div className="flex-1 overflow-y-auto px-4 pt-3 pb-4 overscroll-contain">
                     {topUpLoading && (
                       <div className="flex items-center justify-center py-16">
                         <Loader2 size={28} className="animate-spin text-brand-orange" />
@@ -1003,7 +1016,7 @@ const MySimsView: React.FC<MySimsViewProps> = ({ activeSims, onNavigate, filterT
                         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-2 gap-2.5">
                           {pkgs.map(pkg => {
                             const isSelected = selectedTopUp?.packageCode === pkg.packageCode;
-                            const priceRetail = retailPrice(pkg.price);
+                            const priceRetail = packagePriceUsd(pkg);
                             const isBestValue = pkg.packageCode === bestCode;
                             return (
                               <button
@@ -1028,14 +1041,14 @@ const MySimsView: React.FC<MySimsViewProps> = ({ activeSims, onNavigate, filterT
                   {/* Sticky purchase button */}
                   <div className="shrink-0 px-4 pb-6 pt-3 border-t border-slate-100 bg-white">
                     <button
-                      onClick={selectedTopUp ? handleTopUpPurchase : closeModal}
+                      onClick={selectedTopUp ? (USE_BACKEND_API ? handleTopUpPurchase : handleTopUpPurchaseLegacy) : closeModal}
                       disabled={topUpProcessing || !selectedTopUp}
                       className="w-full bg-brand-orange text-white py-4 rounded-2xl font-bold shadow-lg shadow-orange-500/20 active:scale-[0.98] transition-transform flex items-center justify-center gap-2 disabled:opacity-50"
                     >
                       {topUpProcessing ? (
                         <Loader2 className="animate-spin" size={20} />
                       ) : selectedTopUp ? (
-                        <>{t('my_sims.purchase_top_up')} — ${retailPrice(selectedTopUp.price).toFixed(2)}</>
+                        <>{t('my_sims.purchase_top_up')} — ${packagePriceUsd(selectedTopUp).toFixed(2)}</>
                       ) : (
                         t('my_sims.purchase_top_up')
                       )}
@@ -1044,12 +1057,56 @@ const MySimsView: React.FC<MySimsViewProps> = ({ activeSims, onNavigate, filterT
                 </>
               )}
           </div>
+          </div>
           );
       })()}
 
 
+      {/* Stripe Payment Modal */}
+      <StripePaymentModal
+        isOpen={paymentModalOpen}
+        onClose={() => {
+          setPaymentModalOpen(false);
+          setRechargeConfig(null);
+        }}
+        amount={rechargeConfig?.amount || 0}
+        items={selectedTopUp ? [{
+          label: formatVolume(selectedTopUp.volume),
+          amount: packagePriceUsd(selectedTopUp),
+        }] : []}
+        rechargeConfig={rechargeConfig || undefined}
+        onSuccess={() => {
+          // 支付成功后更新 SIM 数据
+          const addedGB = selectedTopUp ? selectedTopUp.volume / (1024 * 1024 * 1024) : 0;
+          onUpdateSim?.(currentSim?.id || '', {
+            dataTotalGB: (currentSim?.dataTotalGB || 0) + addedGB,
+            status: 'ACTIVE',
+          });
+          // 刷新 SIM 状态
+          if (currentSim) {
+            handleRefreshStatus(currentSim);
+          }
+        }}
+        onComplete={(success) => {
+          // 流程完成后关闭充值选择弹窗
+          setPaymentModalOpen(false);
+          setRechargeConfig(null);
+          setIsRechargeModalOpen(false);
+          setSelectedTopUp(null);
+          setTopUpPackages([]);
+        }}
+        onBack={() => {
+          // 返回充值选择页面
+          setPaymentModalOpen(false);
+          setRechargeConfig(null);
+          setIsRechargeModalOpen(true);
+        }}
+        title="Complete Payment"
+        successMessage="Top-up Successful!"
+      />
+
       {/* Delete Confirmation Modal */}
-      {deleteConfirmSimId && (
+      {deleteConfirmSim && (
         <div
           style={{
             position: 'fixed', inset: 0, zIndex: 200,
@@ -1057,7 +1114,7 @@ const MySimsView: React.FC<MySimsViewProps> = ({ activeSims, onNavigate, filterT
             display: 'flex', alignItems: 'center', justifyContent: 'center',
             padding: '0 32px',
           }}
-          onClick={() => setDeleteConfirmSimId(null)}
+          onClick={() => { if (!deleteLoading) { setDeleteConfirmSim(null); setDeleteError(null); } }}
         >
           <div
             onClick={(e) => e.stopPropagation()}
@@ -1080,34 +1137,65 @@ const MySimsView: React.FC<MySimsViewProps> = ({ activeSims, onNavigate, filterT
             <h3 style={{ fontSize: 17, fontWeight: 700, color: '#0f172a', marginBottom: 6 }}>
               {t('my_sims.delete_sim')}
             </h3>
-            <p style={{ fontSize: 15, color: '#64748b', lineHeight: 1.5, marginBottom: 24 }}>
+            <p style={{ fontSize: 15, color: '#64748b', lineHeight: 1.5, marginBottom: deleteError ? 12 : 24 }}>
               {t('my_sims.delete_confirm')}
             </p>
+            {deleteError && (
+              <div style={{
+                fontSize: 13, color: '#ef4444', marginBottom: 16,
+                padding: '10px 12px', backgroundColor: '#fef2f2',
+                borderRadius: 10, textAlign: 'left',
+              }}>
+                {deleteError}
+              </div>
+            )}
             <div style={{ display: 'flex', gap: 10 }}>
               <button
-                onClick={() => setDeleteConfirmSimId(null)}
+                onClick={() => { setDeleteConfirmSim(null); setDeleteError(null); }}
+                disabled={deleteLoading}
                 style={{
                   flex: 1, padding: '12px 0', borderRadius: 14,
                   backgroundColor: '#f1f5f9', border: 'none',
                   fontSize: 15, fontWeight: 600, color: '#475569',
-                  cursor: 'pointer',
+                  cursor: deleteLoading ? 'not-allowed' : 'pointer',
+                  opacity: deleteLoading ? 0.6 : 1,
                 }}
               >
                 {t('my_sims.cancel')}
               </button>
               <button
-                onClick={() => {
-                  onDeleteSim?.(deleteConfirmSimId);
-                  setDeleteConfirmSimId(null);
+                onClick={async () => {
+                  const iccid = deleteConfirmSim.iccid || deleteConfirmSim.id;
+                  console.log('[Delete SIM] iccid:', iccid, 'sim:', deleteConfirmSim);
+                  setDeleteLoading(true);
+                  setDeleteError(null);
+                  try {
+                    await unbindSim(iccid);
+                  } catch (err: any) {
+                    console.warn('[Delete SIM] API unbind failed (expected for demo SIMs):', err?.message);
+                  }
+                  onDeleteSim?.(deleteConfirmSim.id);
+                  setDeleteConfirmSim(null);
+                  setDeleteLoading(false);
                 }}
+                disabled={deleteLoading}
                 style={{
                   flex: 1, padding: '12px 0', borderRadius: 14,
                   backgroundColor: '#ef4444', border: 'none',
                   fontSize: 15, fontWeight: 600, color: '#fff',
-                  cursor: 'pointer',
+                  cursor: deleteLoading ? 'not-allowed' : 'pointer',
+                  opacity: deleteLoading ? 0.7 : 1,
+                  display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
                 }}
               >
-                {t('my_sims.delete')}
+                {deleteLoading ? (
+                  <>
+                    <Loader2 size={16} style={{ animation: 'spin 1s linear infinite' }} />
+                    {t('my_sims.deleting')}
+                  </>
+                ) : (
+                  t('my_sims.delete')
+                )}
               </button>
             </div>
           </div>

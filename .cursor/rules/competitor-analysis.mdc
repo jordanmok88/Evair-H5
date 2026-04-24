@@ -1,0 +1,198 @@
+---
+description: "Competitor analysis — Airalo (travel eSIM leader) and EIOTCLUB (IoT SIM + travel eSIM). Reference when discussing home page, shop UX, pricing, trust signals, SEO, blog/content, loyalty, or product segmentation."
+alwaysApply: false
+---
+
+# Competitor Analysis — Airalo & EIOTCLUB
+
+Compiled: 2026-04-24. Sources: live crawl of 25+ pages on both sites + mobile screenshots.
+Use this when Jordan asks about the front page, shop layout, what Evair is missing, or
+any UX/product decision that competitors already solved.
+
+## Quick positioning map
+
+| Brand | Market | Hero message | Price signal | Primary audience |
+|---|---|---|---|---|
+| **Airalo** | Global travel eSIM | "Feel the freedom of unlimited data" (mobile) / "A better way to stay connected" (desktop) | "From $4.00" in every country tile | International travelers |
+| **EIOTCLUB** | IoT SIM + travel eSIM | "Experience Seamless Connectivity" | "$1.00 Trial plan" on home | IoT/security-camera/trail-cam owners + travelers |
+| **Evair** (today) | eSIM + USA physical SIM | Varies | Cheapest physical ~$8.99 | Unclear — mixed |
+
+## PART 1 — AIRALO (www.airalo.com)
+
+Tech: Nuxt/Vue + PrimeVue SPA. Theme color `#85CCDB`. No public `/login /signup /cart` URLs
+(modal-only, tighter funnel).
+
+### Site tree
+- `/` — home
+- `/{country}-esim` — country pages (e.g. `/united-states-esim`, `/japan-esim`)
+- `/how-airalo-works` — sectioned explainer (4 anchor-tab sections)
+- `/how-airalo-works/what-is-an-esim` — 4 short paragraphs defining eSIM
+- `/how-airalo-works/device-compatibility` — compatibility rules + FAQ
+- `/help` — 3 categories, ~90 articles (Getting Started / My Account & Airmoney / Using & Managing eSIMs)
+- `/blog` — Magazine (long-form travel guides, 10–26 min reads)
+- `/more-info/contact` — minimal, pushes everyone to live chat
+
+### Country-page template (memorize — this is the gold standard)
+Order top to bottom:
+1. H1 `{Country} eSIMs`
+2. Country card with **named carrier chips** ("T-Mobile +1 other") + `Check compatibility` button
+3. Microcopy: "If you're running low, you can always top up"
+4. Microcopy: "The package starts when you connect to a supported network"
+5. Package-type tabs: `Data | Data/Calls/Texts | Standard | Unlimited`
+6. **Package grid** = validity (3d/7d/15d/30d) × data (1/3/5/10/20/50GB). US example: 3d 1GB $4, 30d 50GB $42
+7. Cross-sell: "Need broader coverage?" → Regional + Global
+8. Social proof: "Why do over 20 million people choose Airalo?"
+9. 4-question FAQ (install timing, how to use, reuse, renewals)
+10. 24/7 support card
+11. 3 embedded explainer videos ("Learn with Airalo")
+12. App install banner with App Store 4.7 / Google Play 4.6 star ratings
+
+### Hidden concepts (found in help center)
+- **Airmoney** = prepaid wallet (referral $3/referral, birthday bonus, loyalty)
+- **Loyalty Program** = tier system
+- **Discover+ Global eSIM** = subscription global product
+- **Renewals** = auto-topup when 10% data remaining
+- **eSIM recycling** = reuse old eSIM for new trip
+- **Trusted devices** = device-based security (no 2FA needed)
+- **China VPN guide** = they publish SEO answers to market-specific friction
+
+### Airalo signature moves
+1. Search-first hero: "Where do you need an eSIM?" — sticky on mobile
+2. Mobile hero copy ≠ desktop copy (deliberately different voice)
+3. Illustrated human hero (not product render)
+4. iOS Smart App Banner + inline "Download the app" banner stacked
+5. Color-zoned scrolling sections (teal → green → etc.)
+6. Single-column country list on mobile, full-width pills
+7. "Regional" and "Global" eSIM tiers (cross-country bundles)
+8. Modal-only auth (no standalone URLs)
+9. Embedded explainer videos on every country page
+10. Floating orange chat bubble always visible
+
+## PART 2 — EIOTCLUB (www.eiotclub.com)
+
+Tech: Shopify + Cloudflare. Sister domain `eiotclub.de` (EU/EUR). 20 currencies.
+
+### Site tree
+- `/` — home
+- `/collections/all` — 86 products
+- `/collections/sim-card` (travel SIMs), plus device/router/eSIM collections
+- `/products/{slug}` — ~86 product detail pages
+- `/pages/about-us` — product pitch + 4 named YouTuber testimonials
+- `/pages/shipping-policy` — US + EU warehouse addresses published
+- `/pages/refill` — links to `sim.eiotclub.com/eshop` ICCID refill portal
+- `/pages/eiotclubcredits-rewards` — loyalty (10pts = $1, redeem for coupons OR products)
+- `/policies/refund-policy` — extremely detailed, per-product
+- `/policies/terms-of-service` — 29 sections, includes anti-LLM-training clause
+- `/policies/privacy-policy` — thin, no GDPR even with EU store
+- `/blogs/community` — 176 authored articles
+- `/account/login` — simple, has inline FAQ about email verification
+- Cart = **persistent slide-out on every page** with "Top Picks" cross-sell carousel
+
+### Product-detail page template (memorize — it's deeper than Airalo)
+1. Trust bar above fold: "Fast Shipping · 7-Day Returns · 10-Year Guarantee · 24/7 Service"
+2. Long SEO title + review count linked to reviews section
+3. 5-bullet benefit list
+4. Urgency: "Black Friday ends Days ::" countdown
+5. Network toggle: `Sim card | eSIM` tabs (same product, two delivery types)
+6. **Plan cards in a grid**: plan name, carriers, network type, price, "🔥 Most Popular" badges
+7. Dual CTA: `Add to cart | Shop Now`
+8. Section nav tabs: `Overview | Advantages | Top-Up Options | FAQs | Reviews`
+9. 6 H3 "Advantages" paragraphs (duplicated twice on page, intentional)
+10. Device scenario icons + grid (Security / Tracker / Trail camera / Router)
+11. **Product comparison table** (network bands, APN, country, cellular gen)
+12. FAQs in tabs (About SIM card / About price)
+13. 4 related blog posts
+14. **Customer reviews with histogram** (87% 5-star, etc.) + merchant replies inline
+15. "You may also like" — 6 related products
+16. Persistent floating: `Live Chat | WhatsApp | FB Group | TOP`
+
+### Cart (persistent on every page)
+- "Members Get Priority Shipping" banner
+- **"Top Picks" carousel** with 7 products + inline `+ ADD` (runs on every page)
+- Trust row: Fast Shipping / 10-Yr Guarantee / 7-Day Returns / 24/7
+- Order note + Apply (discount code)
+- "Join Reward Program and Earn 2830 Points on this order" even when empty
+
+### Rewards Program (EiotclubCredits)
+- Sign up = 50 points instantly
+- 10 points = $1 redemption
+- Earn: per $1 spent + birthday +30 + Facebook share +10 + like +10
+- Redeem as 75/150/200/250-point coupons OR whole products (Europe SIM 200 pts, USA 4G 250 pts)
+- Max 1 redemption per 7 days
+
+### Refill portal
+- External app at `sim.eiotclub.com/eshop/`
+- Enter ICCID → check status → top up
+- Auto-renewal toggle
+- **Shared plan**: one plan across multiple SIMs (e.g. 3 "card lines")
+- 14 payment methods listed (Amex, Discover, Diners, MC, Visa, Link, Apple Pay, Google Pay,
+  Bancontact, EPS, iDEAL, Przelewy24, Cartes Bancaires, PayPal)
+
+### EIOTCLUB signature moves
+1. Persistent slide-out cart with upsells on EVERY page
+2. Per-product UGC reviews with histogram + merchant replies
+3. "Hot 10375 Sold" sales-count social proof
+4. Product comparison tables with technical specs (bands, APN)
+5. Loyalty program redeemable for actual products
+6. External ICCID-based refill webapp (no account needed)
+7. Shared-plan multi-SIM pooling
+8. 10-year warranty on hardware
+9. Published warehouse addresses (US + Germany)
+10. 3 support channels: Live Chat + WhatsApp + FB Group
+11. Authored blog with expert-byline bios + photos (Dr. Marcus Chen, Sarah Vance)
+12. Countdown urgency ("Black Friday ends")
+13. Sister country domain (eiotclub.de for EUR)
+
+## PART 3 — WHAT BOTH HAVE THAT EVAIR LACKS
+
+Quick checklist of gaps — use this to prioritize.
+
+| Gap | Airalo | EIOTCLUB | Evair | Effort | Impact |
+|---|:-:|:-:|:-:|---|---|
+| Floating chat bubble | ✓ | ✓ | ✗ | L | M |
+| 24/7 support claim front-and-center | ✓ | ✓ | ✗ | L | M |
+| FAQ on purchase page | ✓ | ✓ | ✗ | L | H |
+| Multi-currency display | ✓ | ✓ (20) | ✗ | M | M |
+| Referral program | ✓ ($3/referral) | ✓ (affiliates) | ✗ | M | M |
+| Loyalty / rewards | ✓ (Airmoney) | ✓ (EiotclubCredits) | ✗ | M | M |
+| Long-form authored blog | ✓ (Magazine) | ✓ (176 posts) | ✗ | H | H (SEO) |
+| Store rating / Trustpilot badge | ✓ (4.7/4.6) | ✓ (Trustpilot 4.8) | ✗ | L | H |
+| Embedded explainer videos | ✓ | — | ✗ | L | M |
+| Customer reviews per product | — | ✓ | ✗ | H | H |
+
+## PART 4 — WHAT AIRALO ONLY HAS
+
+- Search-led hero ("Where do you need an eSIM?")
+- Mobile hero copy deliberately different from desktop
+- Illustrated human hero
+- iOS Smart App Banner + inline app banner (dual)
+- Color-zoned scrolling sections
+- Single-column full-width country list on mobile
+- Modal-only auth (no /login URL)
+- Integrated FAQ on every country page
+- "Regional" and "Global" eSIM tiers
+
+## PART 5 — WHAT EIOTCLUB ONLY HAS
+
+- Persistent slide-out cart with upsells
+- Per-product customer reviews + merchant replies
+- Sales-count social proof ("Hot 10375 Sold")
+- Product comparison tables (network bands, APN, country)
+- Countdown/urgency ("Black Friday ends")
+- Multi-channel support (Chat + WhatsApp + FB Group)
+- Authored blog with expert bios
+- Published warehouse addresses (trust)
+- Loyalty redeemable for products (not just coupons)
+- External ICCID-based refill webapp
+- Shared-plan multi-SIM pooling
+- Sister country domains
+
+## PART 6 — OPEN QUESTIONS FOR JORDAN (blocking design work)
+
+Do not propose front-page changes until these are answered:
+1. **Primary audience on Evair home**: travelers (Airalo-like) or use-case buyers (EIOTCLUB-like)?
+2. **Physical SIM checkout**: stay on Amazon Storefront long-term, or bring in-app?
+3. **Top-level cut on home**: current SIM/eSIM tabs right, or switch to country/use-case?
+4. **Public Netlify H5**: real marketing site for SEO, or just the UI inside the native app?
+
+Once answered, the priority order of the gaps in PART 3 can be locked.

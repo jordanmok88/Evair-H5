@@ -1,46 +1,96 @@
 ---
-description: ESIMAccess API integration details and SIM card activation flow
-globs: services/esimApi.ts,views/ShopView.tsx,views/MySimsView.tsx,views/PhysicalSimSetupView.tsx,netlify/functions/**
+description: API integration, data service layer, and SIM activation flow
+globs: services/**,views/ShopView.tsx,views/MySimsView.tsx,views/PhysicalSimSetupView.tsx,netlify/functions/**
 alwaysApply: false
 ---
 
-# ESIMAccess (Red Tea) API
+# API Architecture
 
-## API Proxy
-All API calls go through Netlify function proxy at `/.netlify/functions/esim-proxy` to keep credentials server-side.
+## Unified Data Service Layer (留口子)
+All components MUST import from `services/dataService.ts`, NOT directly from `esimApi.ts`.
+This abstraction allows switching from supplier API to backend API with a single config flag.
 
-## Environment Variables (on Netlify)
-- `ESIM_ACCESS_CODE` — supplier access code
-- `ESIM_SECRET` — supplier secret key
-- `RESEND_API_KEY` — Resend email API key
-- `RESEND_FROM` — email sender, set to `EvairSIM <service@evairdigital.com>`
+```
+Component → dataService.ts → esimApi.ts (supplier, current)
+                            → api/esim.ts (backend, future)
+```
 
-## Key API Endpoints (in `services/esimApi.ts`)
-- `fetchPackages()` — GET `/package/list` — fetches all available eSIM plans
-- `orderEsim(packageCode)` — POST `/esim/order` — creates new eSIM order, returns QR code + LPA
-- `queryProfile(iccid)` — POST `/esim/query` — looks up eSIM profile by ICCID (requires `pager: { pageNum: 1, pageSize: 20 }`)
-- `topUp(iccid, packageCode)` — POST `/esim/topup` — adds data plan to existing eSIM
-- `queryUsage(iccid)` — POST `/esim/usage` — checks data usage
+## Shop catalogue — DO NOT reroute through `packageService` (regression guard)
 
-## SIM Card Activation Flow
-1. Customer enters ICCID (18-22 digits) or scans barcode
-2. `queryProfile(iccid)` validates ICCID exists in ESIMAccess system
-3. `packageName` from response is checked — must start with "United States" / "USA" / "US "
-4. If valid, SIM is added to user's list with data from the profile (totalVolume, totalDuration)
-5. Top-up uses the same `topUp()` API call as eSIM
+`fetchPackages()` / `prefetchPackages()` in `services/dataService.ts` MUST always
+delegate to `supplierFetchPackages` / `supplierPrefetch` (i.e. the `esimApi.ts`
+`/packages` path), regardless of `VITE_USE_BACKEND_API`. Both paths hit the same
+Laravel endpoint via `/laravel-api/v1/h5/packages` in dev, but only the supplier
+path does what the catalogue needs:
 
-## eSIM Purchase Flow
-1. Customer selects plan in ShopView
-2. `orderEsim(packageCode)` creates the order
-3. QR code + LPA details displayed in-app
-4. `send-esim-email.mjs` Netlify function sends confirmation email via Resend API
-5. Email includes: logo image, QR code, SM-DP+ address, activation code, LPA string, install instructions
+1. Pulls the full catalogue with `size=5000`. `packageService.getPackages()` omits
+   `size`, so Laravel defaults to `size=20` and only 20 packages come back —
+   which in practice are all multi-country SKUs and get filtered out, producing
+   "Single Country eSIMs (0)" / "No plans found for this region."
+2. Extracts the supplier region code (`NA-3`, `AS-7`, `GL-139`, …) embedded in
+   the `locations` array via `SUPPLIER_REGION_RE`. Without it,
+   `groupPackagesByLocation` drops every multi-country plan
+   (`services/esimApi.ts` around the `if (!pkg.supplierRegionCode) continue;`
+   check).
 
-## After Top-Up
-- `onUpdateSim` callback flows from App.tsx → ProductTab → MySimsView
-- After successful `topUp()`, `dataTotalGB` is optimistically updated in state
+`VITE_USE_BACKEND_API` exists for `queryProfile`, `fetchTopUpPackages`, and the
+PCCW physical-SIM bind flow — those paths still legitimately go through
+`services/api/*`. Do not expand its reach to the shop catalogue.
 
-## Important: queryProfile Response Handling
-- API may return `success: true` with empty `esimList` for non-existent ICCIDs
-- Code explicitly checks `if (!list || list.length === 0)` and throws error
-- Returns `packageName` from `esim.packageList?.[0]?.packageName`
+```ts
+// ❌ BAD — breaks the shop list (defaults to size=20, no region code parsing)
+if (USE_BACKEND_API) {
+  const resp = await packageService.getPackages({ ... });
+  return resp.packages.map(backendPkgToEsimPackage);
+}
+
+// ✅ GOOD — always use the supplier path for the shop catalogue
+return supplierFetchPackages(params);
+```
+
+## Catalogue — China-team Backstage (Option A, default ON)
+`fetchPackages()` and `fetchTopUpPackages()` read from the Laravel admin at
+`https://evair.zhhwxt.cn/api/v1/h5/packages` (+ `/packages/recharge`). This is
+what the sales team curates in their admin panel — hidden plans, pricing,
+country scoping all flow from there.
+
+Toggle via env: `VITE_USE_BACKSTAGE_CATALOG=false` → fall back to direct Red Tea.
+
+Backstage response envelope: `{ code, msg, data: { packages, total } }`.
+Prices arrive as USD floats (already retail). The mapper in `esimApi.ts` stores
+them as micro-cents (× 10 000) and stamps `priceIsRetail: true` so the display
+helper `packagePriceUsd(pkg)` skips the legacy 2× wholesale markup.
+
+**Use `packagePriceUsd(pkg)`**, not `retailPrice(pkg.price)`, anywhere the UI
+or a charge amount needs a USD value for a package.
+
+## Order / Payment / Provisioning — still Red Tea + Stripe direct
+Order creation, Stripe checkout, LPA delivery, usage, top-up charging all flow
+through `/.netlify/functions/esim-proxy` → ESIMAccess (Red Tea). Only the
+catalogue has moved to the backstage. Full migration (Option B) is a future
+task and will require the China team to add Stripe + guest-checkout support
+server-side.
+
+Key functions in `services/esimApi.ts`:
+- `fetchPackages()` — catalogue (backstage default, Red Tea fallback)
+- `fetchTopUpPackages(iccid)` — top-up catalogue for an ICCID
+- `orderEsim(packageCode)` — order + LPA (Red Tea)
+- `queryProfile(iccid)` — ICCID lookup (Red Tea)
+- `topUp(iccid, packageCode)` — add data (Red Tea)
+- `queryUsage(iccid)` — data consumption (Red Tea)
+
+## Physical SIM Card Binding Flow (3 steps)
+1. **SCAN**: Customer enters ICCID (18-22 digits) or scans barcode
+2. **CONFIRM**: Profile verified via `queryProfile()`. Must be logged in to bind (login gate). Shows profile details + "Add to My Account" button
+3. **DONE**: Success — navigate to My SIMs or add another
+
+## eUICC Technical Context
+- Physical SIMs use eUICC technology with Red Tea eSIM profiles pre-loaded
+- Profiles are pre-enabled by factory (CSM)
+- H5 web app CANNOT directly call LPA (hardware limitation)
+- Waiting for Red Tea to implement "charge on first data use" billing (currently charges on profile enable)
+- Future: Native Android app with LPA/OMAPI integration, ARA-M certificates from CSM
+
+## Environment Variables (Netlify)
+- `ESIM_ACCESS_CODE`, `ESIM_SECRET` — supplier credentials
+- `RESEND_API_KEY`, `RESEND_FROM` — email service

@@ -25,9 +25,18 @@ const BarcodeScanner: React.FC<BarcodeScannerProps> = ({ open, onClose, onDetect
       .start(
         { facingMode },
         {
-          fps: 10,
-          qrbox: { width: 280, height: 120 },
+          fps: 15,
+          qrbox: { width: 320, height: 160 },
           aspectRatio: 1.0,
+          formatsToSupport: [
+            0,  // QR_CODE
+            2,  // CODE_128
+            10, // ITF
+            4,  // CODE_39
+            1,  // AZTEC
+            11, // EAN_13
+            6,  // EAN_8
+          ],
         },
         (decodedText) => {
           if (cancelled) return;

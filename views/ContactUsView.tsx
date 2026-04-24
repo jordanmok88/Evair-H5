@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ChevronLeft, Send, Paperclip, CheckCheck, Bot, Sparkles } from 'lucide-react';
-import { getAIResponse } from '../ai/evairAssistant';
+import { getMultilingualResponse } from '../ai/evairAssistant';
 import { ChatMessage } from '../types';
 import { useEdgeSwipeBack } from '../hooks/useEdgeSwipeBack';
 import {
@@ -29,7 +29,16 @@ const CATEGORY_KEYS = [
   'other',
 ] as const;
 
-const HUMAN_KEYWORDS = /\b(human|agent|real person|speak to someone|talk to person|live chat|representative|operator|transfer)\b/i;
+const CATEGORY_TO_AI_QUERY: Record<string, string> = {
+  sim_activation: 'How do I activate my SIM card?',
+  ecard_help: 'What is the Evair eCard and how to set it up?',
+  data_topup: 'How can I top up my data plan?',
+  billing_issue: 'I have a billing question about my payment',
+  network_problem: 'My eSIM is not working, no signal or internet',
+  other: 'I need help',
+};
+
+const HUMAN_KEYWORDS = /\b(human|agent|real person|speak to someone|talk to person|live chat|representative|operator|transfer)\b|人工|客服|真人|转接|找人|humano|agente|persona real/i;
 
 const formatTime = (date: Date) => date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 
@@ -136,7 +145,7 @@ const ContactUsView: React.FC<ContactUsViewProps> = ({ onBack, userName = 'Jorda
       setConversationId(fakeId);
       return fakeId;
     }
-    const conv = await createConversation(topic);
+    const conv = await createConversation(topic, userName);
     if (conv) {
       setConversationId(conv.id);
       setupRealtime(conv.id);
@@ -147,7 +156,7 @@ const ContactUsView: React.FC<ContactUsViewProps> = ({ onBack, userName = 'Jorda
     return fakeId;
   }
 
-  const addMessage = async (text: string, sender: 'customer' | 'ai', convId: string) => {
+  const addMessage = async (text: string, sender: 'customer' | 'ai', convId: string, englishText?: string) => {
     const msg: ChatMessage = {
       id: `${sender}-${Date.now()}-${Math.random()}`,
       text,
@@ -158,7 +167,7 @@ const ContactUsView: React.FC<ContactUsViewProps> = ({ onBack, userName = 'Jorda
     setMessages(prev => [...prev, msg]);
 
     if (supabaseConfigured && !convId.startsWith('local-')) {
-      await sbSend(convId, sender, text);
+      await sbSend(convId, sender, text, undefined, englishText);
     }
 
     return msg;
@@ -184,14 +193,14 @@ const ContactUsView: React.FC<ContactUsViewProps> = ({ onBack, userName = 'Jorda
       }
     }
 
-    // AI responds
-    const aiReply = getAIResponse(trimmed);
-    const typingDelay = Math.min(1200 + aiReply.length * 8, 3000);
+    // AI responds in the customer's language
+    const aiResult = getMultilingualResponse(trimmed);
+    const typingDelay = Math.min(1200 + aiResult.text.length * 8, 3000);
 
     setIsTyping(true);
     setTimeout(async () => {
       setIsTyping(false);
-      await addMessage(aiReply, 'ai', convId);
+      await addMessage(aiResult.text, 'ai', convId, aiResult.text !== aiResult.english ? aiResult.english : undefined);
       setMessages(prev => prev.map(m => m.id === userMsg.id ? { ...m, status: 'read' } : m));
     }, typingDelay);
   };
@@ -201,11 +210,13 @@ const ContactUsView: React.FC<ContactUsViewProps> = ({ onBack, userName = 'Jorda
     const convId = await ensureConversation(cat);
     await addMessage(`${t('contact.need_help_with')} ${cat}`, 'customer', convId);
 
-    const aiReply = getAIResponse(cat);
+    const matchedKey = CATEGORY_KEYS.find(k => t(`contact.${k}`) === cat);
+    const aiQuery = (matchedKey && CATEGORY_TO_AI_QUERY[matchedKey]) || cat;
+    const aiResult = getMultilingualResponse(aiQuery);
     setIsTyping(true);
     setTimeout(async () => {
       setIsTyping(false);
-      await addMessage(aiReply, 'ai', convId);
+      await addMessage(aiResult.text, 'ai', convId, aiResult.text !== aiResult.english ? aiResult.english : undefined);
     }, 1800);
   };
 

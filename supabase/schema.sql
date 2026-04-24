@@ -35,13 +35,14 @@ create policy "Admins manage notifications"
 
 -- 2) Conversations table
 create table if not exists conversations (
-  id          uuid primary key default gen_random_uuid(),
-  customer_id text not null,              -- anonymous UUID from localStorage
-  status      text not null default 'open'
-                check (status in ('open','needs_human','resolved')),
-  topic       text,
-  created_at  timestamptz not null default now(),
-  updated_at  timestamptz not null default now()
+  id            uuid primary key default gen_random_uuid(),
+  customer_id   text not null,              -- anonymous UUID from localStorage
+  customer_name text,                       -- display name (from logged-in user, or 'Guest')
+  status        text not null default 'open'
+                  check (status in ('open','needs_human','resolved')),
+  topic         text,
+  created_at    timestamptz not null default now(),
+  updated_at    timestamptz not null default now()
 );
 
 alter table conversations enable row level security;
@@ -72,6 +73,7 @@ create table if not exists chat_messages (
   sender          text not null check (sender in ('customer','ai','agent')),
   agent_name      text,                   -- e.g. "Jordan" for human agents
   content         text not null,
+  english_content text,                   -- English translation for admin reference
   created_at      timestamptz not null default now()
 );
 

@@ -1,22 +1,21 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Search, ChevronRight, ArrowLeft, Globe, Star, X, MapPin, Loader2, Smartphone, Truck, CheckCircle, Calendar, Wifi, Signal, Info, CreditCard, ArrowDown, ShoppingBag, QrCode, Copy, Check, RefreshCw, Zap, Clock, Shield, Mail } from 'lucide-react';
+import { Search, ChevronRight, ArrowLeft, Globe, Star, X, MapPin, Loader2, Smartphone, Truck, CheckCircle, Calendar, Wifi, Signal, Info, CreditCard, ArrowDown, ShoppingBag, QrCode, Copy, Check, RefreshCw, Zap, Clock, Shield, Mail, ExternalLink } from 'lucide-react';
 import { Country, Plan, SimType, User, SimCardProduct, EsimPackage, EsimCountryGroup, EsimOrderResult, ActiveSim } from '../types';
-import { MOCK_COUNTRIES, SIM_CARD_PRODUCTS } from '../constants';
+import { MOCK_COUNTRIES, AMAZON_SIM_STOREFRONT_URL } from '../constants';
 import FlagIcon from '../components/FlagIcon';
-import { fetchPackages, prefetchPackages, groupPackagesByLocation, formatVolume, formatPrice, retailPrice, orderEsim, CONTINENT_TABS, type ContinentTab, formatGB, POPULAR_COUNTRY_CODES } from '../services/esimApi';
+import { fetchPackages, prefetchPackages, groupPackagesByLocation, formatVolume, formatPrice, retailPrice, packagePriceUsd, orderEsim, CONTINENT_TABS, type ContinentTab, formatGB, POPULAR_COUNTRY_CODES, fetchMultiCountryRegionNames } from '../services/dataService';
 import { useSwipeBack } from '../hooks/useSwipeBack';
-import { packageService } from '../services/api';
-import type { PackageDto } from '../services/api/types';
 
 import { Bell, UserCircle } from 'lucide-react';
 import { AppNotification } from '../types';
 
 interface ShopViewProps {
+  testMode?: boolean;
   isLoggedIn: boolean;
   user?: User;
   onLoginRequest: () => void;
-  onPurchaseComplete: (purchaseInfo?: { planName?: string; countryCode?: string; type?: SimType; orderNo?: string; iccid?: string; dataTotalGB?: number; durationDays?: number }) => void;
+  onPurchaseComplete: (purchaseInfo?: { planName?: string; countryCode?: string; locationCode?: string; type?: SimType; orderNo?: string; iccid?: string; dataTotalGB?: number; durationDays?: number }) => void;
   simType: SimType;
   onSwitchToMySims?: () => void;
   hasActiveSims?: boolean;
@@ -76,95 +75,9 @@ const COUNTRY_CODE_MAP: Record<string, { name: string; continent: string }> = {
   'IE': { name: 'Ireland', continent: 'Europe' },
 };
 
-// ─── 后端套餐数据转换为前端格式 ────────────────────────────────────────
-
-function convertPackageDtoToEsimPackage(dto: PackageDto): EsimPackage {
-  // volume: backend returns GB, need to convert to bytes
-  const volumeBytes = dto.volume * 1024 * 1024 * 1024;
-
-  return {
-    packageCode: dto.packageCode,
-    name: dto.name,
-    price: dto.price * 10000, // backend returns USD, convert to micro-cents
-    currencyCode: dto.currency,
-    volume: volumeBytes,
-    unusedValidTime: 0,
-    duration: dto.duration,
-    durationUnit: dto.durationUnit,
-    location: dto.location,
-    description: dto.description || '',
-    activeType: 1,
-  };
-}
-
-type LocationInfo = {
-  code: string;
-  name: string;
-  packageCount: number;
-};
-
-// 多国区域信息 (用于显示区域如 "Asia (12 areas)")
-type MultiCountryRegion = {
-  code: string;
-  name: string;
-};
-
-// 单国家信息
-type SingleCountry = {
-  code: string;
-  name: string;
-  regionCode?: string; // 所属区域代码
-};
-
-// 区域代码到国家代码的映射 (从后端返回的数据构建)
-const REGION_TO_COUNTRIES: Record<string, string[]> = {
-  // 这些映射会在运行时从 multi_countries 数据中推断
-};
-
-function convertPackagesToGroups(
-  packages: PackageDto[],
-  locationMap?: Map<string, LocationInfo>
-): EsimCountryGroup[] {
-  const map = new Map<string, PackageDto[]>();
-
-  for (const pkg of packages) {
-    const key = pkg.location;
-    if (!map.has(key)) map.set(key, []);
-    map.get(key)!.push(pkg);
-  }
-
-  const groups: EsimCountryGroup[] = [];
-  for (const [loc, pkgs] of map.entries()) {
-    const primaryCode = loc.split(',')[0].trim().toUpperCase();
-    const isMultiRegion = loc.includes(',');
-
-    // 优先使用后端返回的地区信息，其次使用本地映射
-    const backendLocation = locationMap?.get(primaryCode);
-    const localCountry = COUNTRY_CODE_MAP[primaryCode];
-    const countryName = backendLocation?.name || localCountry?.name || primaryCode;
-    const continent = backendLocation?.packageCount !== undefined
-      ? (localCountry?.continent || 'Other')
-      : (localCountry?.continent || 'Other');
-
-    const esimPackages = pkgs
-      .sort((a, b) => a.volume - b.volume)
-      .map(convertPackageDtoToEsimPackage);
-
-    groups.push({
-      locationCode: loc.toUpperCase(),
-      locationName: countryName,
-      flag: primaryCode,
-      packages: esimPackages,
-      continent: isMultiRegion ? 'Multi-Region' : continent,
-      isMultiRegion,
-    });
-  }
-
-  groups.sort((a, b) => a.locationName.localeCompare(b.locationName));
-  return groups;
-}
-
 // 将多国区域和单国家分组
+type MultiCountryRegion = { code: string; name: string };
+type SingleCountry = { code: string; name: string; regionCode?: string };
 interface LocationGroups {
   multiCountryRegions: MultiCountryRegion[];
   singleCountries: SingleCountry[];
@@ -244,7 +157,7 @@ function parseLocationsResponse(
   return { multiCountryRegions, singleCountries };
 }
 
-const ShopView: React.FC<ShopViewProps> = ({ isLoggedIn, user, onLoginRequest, onPurchaseComplete, simType, onSwitchToMySims, hasActiveSims, activeSims = [], onSwitchToSetup, onAddCard, onNavigate, onSwitchSimType, notifications = [] }) => {
+const ShopView: React.FC<ShopViewProps> = ({ testMode = false, isLoggedIn, user, onLoginRequest, onPurchaseComplete, simType, onSwitchToMySims, hasActiveSims, activeSims = [], onSwitchToSetup, onAddCard, onNavigate, onSwitchSimType, notifications = [] }) => {
   const { t } = useTranslation();
   const TOP_COUNTRY_COUNT = 10;
   const [selectedCountry, setSelectedCountry] = useState<Country | null>(null);
@@ -271,8 +184,6 @@ const ShopView: React.FC<ShopViewProps> = ({ isLoggedIn, user, onLoginRequest, o
   const [emailSent, setEmailSent] = useState(false);
   const [continentTab, setContinentTab] = useState<ContinentTab>('All');
   const [browseMode, setBrowseMode] = useState<'country' | 'region'>('country');
-  const [testMode, setTestMode] = useState(() => new URLSearchParams(window.location.search).get('testmode') === '1');
-
   // 后端返回的地区数据 (多国区域 + 单国家)
   const [multiCountryRegions, setMultiCountryRegions] = useState<MultiCountryRegion[]>([]);
   const [singleCountries, setSingleCountries] = useState<SingleCountry[]>([]);
@@ -312,7 +223,13 @@ const ShopView: React.FC<ShopViewProps> = ({ isLoggedIn, user, onLoginRequest, o
     setEsimError(null);
     try {
       // Use eSIMAccess API directly via Netlify proxy (backend not yet syncing real package data)
-      const packages = force ? await fetchPackages() : await prefetchPackages();
+      // Fetch packages + multi-country region names in parallel so the group
+      // labels ("Europe (30+ countries)") land on first render rather than
+      // falling back to raw region codes ("EU-30 (30 countries)").
+      const [packages] = await Promise.all([
+        force ? fetchPackages() : prefetchPackages(),
+        fetchMultiCountryRegionNames().catch(() => undefined),
+      ]);
       const groups = groupPackagesByLocation(packages);
       setEsimGroups(groups);
     } catch (err: any) {
@@ -473,7 +390,7 @@ const ShopView: React.FC<ShopViewProps> = ({ isLoggedIn, user, onLoginRequest, o
       return;
     }
 
-    const price = retailPrice(selectedEsimPkg.price);
+    const price = packagePriceUsd(selectedEsimPkg);
 
     try {
       const res = await fetch('/api/stripe-checkout', {
@@ -615,7 +532,8 @@ const ShopView: React.FC<ShopViewProps> = ({ isLoggedIn, user, onLoginRequest, o
         <div className="px-5 pt-safe pb-2 flex items-center justify-between shrink-0">
           <h2 className="text-white text-xl font-bold tracking-tight">{t('shop.order_success_title')}</h2>
           <button onClick={() => {
-            const info = { planName: selectedEsimGroup?.locationName, countryCode: selectedEsimGroup?.locationCode.split(',')[0], type: 'ESIM' as SimType, orderNo: esimOrderResult.orderNo, iccid: esimOrderResult.iccid, dataTotalGB: selectedEsimPkg ? selectedEsimPkg.volume / (1024 * 1024 * 1024) : 3, durationDays: selectedEsimPkg?.duration || 30 };
+            const rawGB = selectedEsimPkg ? selectedEsimPkg.volume / (1024 * 1024 * 1024) : 3;
+            const info = { planName: selectedEsimGroup?.locationName, countryCode: selectedEsimGroup?.locationCode.split(',')[0], locationCode: selectedEsimGroup?.locationCode, type: 'ESIM' as SimType, orderNo: esimOrderResult.orderNo, iccid: esimOrderResult.iccid, dataTotalGB: rawGB > 500 ? 3 : rawGB, durationDays: selectedEsimPkg?.duration || 30 };
             setEsimOrderResult(null); setSelectedEsimPkg(null); setSelectedEsimGroup(null); onPurchaseComplete(info);
           }} className="bg-white/10 p-2 rounded-full text-white hover:bg-white/20 transition-colors backdrop-blur-md">
             <X size={20} />
@@ -707,7 +625,8 @@ const ShopView: React.FC<ShopViewProps> = ({ isLoggedIn, user, onLoginRequest, o
         <div className="shrink-0 px-5 pt-3" style={{ paddingBottom: 'max(env(safe-area-inset-bottom, 0px), 16px)' }}>
           <button
             onClick={() => {
-              const info = { planName: selectedEsimGroup?.locationName, countryCode: selectedEsimGroup?.locationCode.split(',')[0], type: 'ESIM' as SimType, orderNo: esimOrderResult.orderNo, iccid: esimOrderResult.iccid, dataTotalGB: selectedEsimPkg ? selectedEsimPkg.volume / (1024 * 1024 * 1024) : 3, durationDays: selectedEsimPkg?.duration || 30 };
+              const rawGB2 = selectedEsimPkg ? selectedEsimPkg.volume / (1024 * 1024 * 1024) : 3;
+              const info = { planName: selectedEsimGroup?.locationName, countryCode: selectedEsimGroup?.locationCode.split(',')[0], locationCode: selectedEsimGroup?.locationCode, type: 'ESIM' as SimType, orderNo: esimOrderResult.orderNo, iccid: esimOrderResult.iccid, dataTotalGB: rawGB2 > 500 ? 3 : rawGB2, durationDays: selectedEsimPkg?.duration || 30 };
               setEsimOrderResult(null); setSelectedEsimPkg(null); setSelectedEsimGroup(null); onPurchaseComplete(info);
             }}
             className="w-full bg-brand-orange text-white py-3.5 rounded-2xl font-bold shadow-lg shadow-orange-500/20 active:scale-[0.98] transition-all"
@@ -741,7 +660,7 @@ const ShopView: React.FC<ShopViewProps> = ({ isLoggedIn, user, onLoginRequest, o
                   <p className="text-xs text-slate-500">{formatVolume(selectedEsimPkg.volume)} / {selectedEsimPkg.duration} {selectedEsimPkg.durationUnit === 'DAY' ? t('shop.days') : 'Months'}</p>
                   <div className="flex justify-between items-center mt-2.5 pt-2.5 border-t border-slate-200">
                     <span className="text-xs text-slate-500">eSIM (Digital)</span>
-                    <span className="text-lg font-bold text-brand-orange">${retailPrice(selectedEsimPkg.price).toFixed(2)}</span>
+                    <span className="text-lg font-bold text-brand-orange">${packagePriceUsd(selectedEsimPkg).toFixed(2)}</span>
                   </div>
                 </div>
 
@@ -772,8 +691,8 @@ const ShopView: React.FC<ShopViewProps> = ({ isLoggedIn, user, onLoginRequest, o
                   className="w-full bg-brand-orange text-white py-3 rounded-xl font-bold text-sm shadow-lg shadow-orange-500/20 active:scale-[0.98] transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-orange-600"
                 >
                   {isProcessing ? <><Loader2 size={18} className="animate-spin" /> Processing...</> : testMode
-                    ? <><Zap size={16} /> Test Order — ${retailPrice(selectedEsimPkg.price).toFixed(2)}</>
-                    : <><CreditCard size={16} /> {t('shop.pay')} ${retailPrice(selectedEsimPkg.price).toFixed(2)}</>}
+                    ? <><Zap size={16} /> Test Order — ${packagePriceUsd(selectedEsimPkg).toFixed(2)}</>
+                    : <><CreditCard size={16} /> {t('shop.pay')} ${packagePriceUsd(selectedEsimPkg).toFixed(2)}</>}
                 </button>
               </div>
             </div>
@@ -811,7 +730,7 @@ const ShopView: React.FC<ShopViewProps> = ({ isLoggedIn, user, onLoginRequest, o
 
           <div className="space-y-3 md:grid md:grid-cols-2 md:gap-3 md:space-y-0 lg:block lg:space-y-3">
             {selectedEsimGroup.packages.map((pkg) => {
-              const priceUsd = retailPrice(pkg.price);
+              const priceUsd = packagePriceUsd(pkg);
               const volumeStr = formatVolume(pkg.volume);
               const gb = pkg.volume / (1024 * 1024 * 1024);
               const pricePerGb = gb > 0 ? priceUsd / gb : priceUsd;
@@ -1181,12 +1100,6 @@ const ShopView: React.FC<ShopViewProps> = ({ isLoggedIn, user, onLoginRequest, o
   // --- MAIN VIEW: Shop Home ---
   return (
     <div className="lg:h-full relative bg-[#F2F4F7]">
-      {testMode && (
-        <div className="bg-amber-400 text-amber-900 text-center text-xs font-bold py-1.5 tracking-wider z-50 relative flex items-center justify-center gap-2">
-          <Zap size={12} /> STAFF TEST MODE — No Payment Required
-          <button onClick={() => { setTestMode(false); window.history.replaceState({}, '', window.location.pathname); }} className="ml-2 bg-amber-900/20 hover:bg-amber-900/30 text-amber-900 px-2 py-0.5 rounded text-[10px] font-bold transition-colors">EXIT</button>
-        </div>
-      )}
       <div ref={scrollContainerRef} className="h-full lg:overflow-y-auto no-scrollbar">
         {/* Header - auto-hides on scroll down, reappears on scroll up */}
         <div
@@ -1323,10 +1236,10 @@ const ShopView: React.FC<ShopViewProps> = ({ isLoggedIn, user, onLoginRequest, o
                                 </div>
                                 <div className="flex-1 min-w-0">
                                     <h2 className="text-lg font-bold text-white tracking-tight">{t('shop.bind_sim')}</h2>
-                                    <p className="text-sm text-slate-400 mt-1 leading-snug">Track delivery & activate your physical SIM card</p>
+                                    <p className="text-sm text-slate-400 mt-1 leading-snug">{t('shop.bind_sim_sub', 'Activate your EvairSIM and bind it to your account')}</p>
                                     <div className="flex items-center gap-3 mt-3">
-                                        <span className="flex items-center gap-1.5 text-xs font-medium text-slate-300"><Truck size={14} className="text-brand-orange" /> Delivery Tracking</span>
-                                        <span className="flex items-center gap-1.5 text-xs font-medium text-slate-300"><Smartphone size={14} className="text-brand-orange" /> SIM Activation</span>
+                                        <span className="flex items-center gap-1.5 text-xs font-medium text-slate-300"><QrCode size={14} className="text-brand-orange" /> {t('shop.bind_sim_feature_scan', 'Scan ICCID')}</span>
+                                        <span className="flex items-center gap-1.5 text-xs font-medium text-slate-300"><Smartphone size={14} className="text-brand-orange" /> {t('shop.bind_sim_feature_activate', 'SIM Activation')}</span>
                                     </div>
                                 </div>
                             </div>
@@ -1350,60 +1263,78 @@ const ShopView: React.FC<ShopViewProps> = ({ isLoggedIn, user, onLoginRequest, o
             </div>
         )}
 
-        {/* SIM Card products — country header + plan grid */}
+        {/* SIM Card products — country info + Amazon storefront CTA.
+            2026-04 pivot: physical SIMs are no longer sold via H5
+            checkout; customers purchase on Amazon instead. The plan
+            grid was removed but the checkout flow (selectedSimCardProduct)
+            remains in-file so we can restore direct sales quickly if
+            needed. */}
         {simType === 'PHYSICAL' && !searchQuery && (
             <>
               <h3 className="text-lg font-bold text-slate-900 mb-3 tracking-tight">{t('shop.purchase_sim_cards')}</h3>
 
-              {/* Country header */}
-              <div className="bg-white rounded-xl p-4 mb-4 shadow-sm border border-slate-100">
-                <div className="flex items-center gap-3">
-                  <FlagIcon countryCode="US" size="sm" />
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center justify-between gap-2">
-                      <p className="text-base font-semibold text-slate-900 leading-tight">United States</p>
-                      <span className="text-[11px] font-semibold text-brand-orange bg-orange-50 px-1.5 py-0.5 rounded-full border border-orange-100 shrink-0">{SIM_CARD_PRODUCTS.length} Plans</span>
-                    </div>
-                    <p className="text-xs text-slate-400 mt-0.5">AT&T · Verizon · T-Mobile · <span className="text-[11px] font-semibold text-slate-600">3G/4G/5G</span></p>
-                  </div>
-                </div>
-              </div>
-
-              {/* Plan cards grid */}
-              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-2 gap-3 mb-5">
-                {SIM_CARD_PRODUCTS.map((product) => {
-                  const pricePerGb = product.sellingPrice / product.gbs;
-                  const isBestValue = product.id === 'US_10_30';
-                  const isReloadable = !product.topUpType.toLowerCase().includes('non-reloadable');
-                  return (
-                    <button
-                      key={product.id}
-                      onClick={() => {
-                        if (!isLoggedIn) onLoginRequest();
-                        else setSelectedSimCardProduct(product);
-                      }}
-                      className={`relative bg-white rounded-xl p-4 text-left transition-all active:scale-[0.97] shadow-sm border ${isBestValue ? 'border-brand-orange ring-1 ring-brand-orange/30' : 'border-slate-100 hover:border-slate-200'}`}
+              {/* Amazon storefront CTA — replaces the in-app plan grid.
+                  Note: the standalone "United States · AT&T · Verizon ·
+                  T-Mobile · 3G/4G/5G" country card used to live here but
+                  was removed on 2026-04-24 — all physical SIMs are USA-only
+                  right now, so a single-country banner added no filtering
+                  value and just took up prime screen real estate. If we
+                  later add physical SIMs for additional countries, bring
+                  back a list/picker instead of a single hard-coded card. */}
+              <a
+                href={AMAZON_SIM_STOREFRONT_URL}
+                target="_blank"
+                rel="noopener noreferrer"
+                onClick={(e) => {
+                  // In the native WebView shell, route through the
+                  // bridge so Amazon opens in Safari / system browser
+                  // instead of trying to load inside the WebView
+                  // (Amazon blocks embedded frames and it looks awful).
+                  const evair = (window as unknown as { evair?: { isNative?: boolean; openExternal?: (url: string) => Promise<void> } }).evair;
+                  if (evair?.isNative && typeof evair.openExternal === 'function') {
+                    e.preventDefault();
+                    void evair.openExternal(AMAZON_SIM_STOREFRONT_URL);
+                  }
+                }}
+                className="relative block rounded-2xl overflow-hidden shadow-sm mb-5 border border-slate-200 bg-white active:scale-[0.99] transition-transform"
+              >
+                <div className="p-5">
+                  <div className="flex items-start gap-4">
+                    <div
+                      className="w-12 h-12 rounded-xl flex items-center justify-center shrink-0 mt-0.5"
+                      style={{ background: 'linear-gradient(135deg, #FF9900 0%, #FFB84D 100%)' }}
                     >
-                      {isBestValue && (
-                        <div className="absolute -top-2.5 left-1/2 -translate-x-1/2 bg-brand-orange text-white text-[11px] font-semibold uppercase tracking-wider px-2.5 py-0.5 rounded-full whitespace-nowrap">
-                          Best Value
-                        </div>
-                      )}
-                      <p className="text-lg font-extrabold text-slate-900 tracking-tight">{product.gbs} <span className="text-sm font-bold text-slate-400">GB</span></p>
-                      <p className="text-xs text-slate-500 font-medium mt-0.5">{product.validityDays} Days</p>
-                      <div className="mt-2 flex items-baseline gap-1">
-                        <span className="text-xl font-bold text-brand-orange">${product.sellingPrice.toFixed(2)}</span>
+                      <ShoppingBag size={22} className="text-white" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <h2 className="text-lg font-bold text-slate-900 tracking-tight">{t('shop.buy_on_amazon', 'Buy on Amazon')}</h2>
+                      <p className="text-sm text-slate-500 mt-1 leading-snug">
+                        {t(
+                          'shop.buy_on_amazon_sub',
+                          'Order your EvairSIM physical SIM card directly from our Amazon storefront — fast shipping, Prime-eligible, same product range.',
+                        )}
+                      </p>
+                      <div className="flex items-center gap-3 mt-3 flex-wrap">
+                        <span className="flex items-center gap-1.5 text-xs font-medium text-slate-600"><Truck size={14} className="text-amber-500" /> {t('shop.amazon_prime', 'Prime Shipping')}</span>
+                        <span className="flex items-center gap-1.5 text-xs font-medium text-slate-600"><Shield size={14} className="text-amber-500" /> {t('shop.amazon_secure', 'Secure Checkout')}</span>
                       </div>
-                      <p className="text-[11px] text-slate-400 mt-0.5">${pricePerGb.toFixed(2)}/GB</p>
-                      <div className="mt-2">
-                        <span className={`text-[11px] font-semibold px-2 py-0.5 rounded-full ${isReloadable ? 'text-emerald-700 bg-emerald-50 border border-emerald-100' : 'text-slate-500 bg-slate-50 border border-slate-200'}`}>
-                          {isReloadable ? 'Reloadable' : 'Non-reloadable'}
-                        </span>
-                      </div>
-                    </button>
-                  );
-                })}
-              </div>
+                    </div>
+                  </div>
+                  <div
+                    className="w-full mt-4 py-3 rounded-xl font-bold text-sm flex items-center justify-center gap-1.5 text-white"
+                    style={{
+                      background: 'linear-gradient(135deg, #FF9900 0%, #FFB84D 100%)',
+                      boxShadow: '0 4px 12px rgba(255,153,0,0.3)',
+                    }}
+                  >
+                    {t('shop.open_amazon_storefront', 'Open Amazon Storefront')}
+                    <ExternalLink size={14} />
+                  </div>
+                  <p className="text-[11px] text-slate-400 text-center mt-2">
+                    {t('shop.amazon_leave_notice', 'You will leave EvairSIM and continue on amazon.com')}
+                  </p>
+                </div>
+              </a>
             </>
         )}
 
@@ -1517,9 +1448,14 @@ const ShopView: React.FC<ShopViewProps> = ({ isLoggedIn, user, onLoginRequest, o
                   <div className="bg-white rounded-xl border border-slate-100 divide-y divide-slate-100 overflow-hidden shadow-sm mb-5 md:grid md:grid-cols-2 md:divide-y-0 md:gap-[1px] md:bg-slate-100 md:border-0 md:[&>*]:bg-white lg:block lg:divide-y lg:divide-slate-100 lg:bg-white lg:border lg:border-slate-100 lg:[&>*]:bg-transparent">
                     {visibleEsimGroups.map((group, idx) => {
                       const cheapestPkg = group.packages.reduce((min, p) => p.price < min.price ? p : min, group.packages[0]);
-                      const cheapestPrice = cheapestPkg ? retailPrice(cheapestPkg.price) : 0;
-                      const countryCodes = group.locationCode.split(',').map(c => c.trim());
-                      const countryCount = countryCodes.length;
+                      const cheapestPrice = cheapestPkg ? packagePriceUsd(cheapestPkg) : 0;
+                      // For multi-country groups keyed by supplier region code
+                      // (e.g. "NA-3") splitting locationCode by comma is wrong —
+                      // rely on the dedicated `countries` list populated by
+                      // groupPackagesByLocation. Single-country groups carry a
+                      // one-element `countries` array (["MX"]) so this works
+                      // across both branches.
+                      const countryCount = group.countries.length;
                       const isPopular = !group.isMultiRegion && popularSet.has(group.locationCode.toUpperCase());
                       const prevGroup = idx > 0 ? visibleEsimGroups[idx - 1] : null;
                       const prevIsPopular = prevGroup ? !prevGroup.isMultiRegion && popularSet.has(prevGroup.locationCode.toUpperCase()) : false;

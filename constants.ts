@@ -64,6 +64,18 @@ export const SIM_CARD_PRODUCTS: SimCardProduct[] = [
   { id: 'US_50_180',slug: 'US_50_180',region: 'United States', coverage: 'US', sellingPrice: 74.99, gbs: 50, validityDays: 180, speed: '3G/4G/5G', topUpType: 'Data Reloadable for same area within validitity', productId: 'P3ICIKSE8' },
 ];
 
+/**
+ * Where we point customers who want to buy a physical SIM. Per the
+ * 2026-04 pivot, physical SIMs are no longer sold through the H5
+ * checkout — this URL takes the customer to the EvairSIM storefront
+ * on Amazon. Jordan to paste the final URL in once the Amazon listing
+ * is live; the placeholder below renders a reasonable CTA but warns
+ * in the console if clicked before the real link is wired.
+ */
+export const AMAZON_SIM_STOREFRONT_URL =
+  (import.meta.env.VITE_AMAZON_SIM_STOREFRONT_URL as string | undefined) ||
+  'https://www.amazon.com/stores/EvairSIM/page/PLACEHOLDER';
+
 export const MOCK_PLANS_US: Plan[] = MOCK_COUNTRIES.find(c => c.countryCode === 'US')?.plans ?? [];
 
 export const MOCK_ORDERS: Order[] = [

@@ -200,7 +200,7 @@ let isRefreshing = false;
 let refreshPromise: Promise<void> | null = null;
 
 /**
- * 刷新 Token (需要后端就绪后实现)
+ * 刷新 Token（调用 POST /h5/auth/refresh，静默更新本地 Token）
  */
 async function refreshAccessToken(): Promise<void> {
   const refreshToken = getRefreshToken();
@@ -209,10 +209,37 @@ async function refreshAccessToken(): Promise<void> {
     throw new ApiError(-3, 'No refresh token', 401);
   }
 
-  // TODO: 当后端就绪后，调用实际的刷新接口
-  // 目前抛出错误，让用户重新登录
-  clearTokens();
-  throw new ApiError(-3, 'Token refresh not implemented', 401);
+  // 直接 fetch 避免循环依赖（authService 也 import 自 client）
+  const url = `${baseUrl}/h5/auth/refresh`;
+  let res: Response;
+  try {
+    res = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ refresh_token: refreshToken }),
+    });
+  } catch {
+    // 网络错误（后端暂时不可达），不清除 Token，让调用方感知失败
+    throw new ApiError(-3, 'Network error during token refresh', 0);
+  }
+
+  let body: { code: number; data?: { token?: string; refresh_token?: string } };
+  try {
+    body = await res.json();
+  } catch {
+    clearTokens();
+    throw new ApiError(-3, 'Invalid refresh response', res.status);
+  }
+
+  if (body.code !== 0 || !body.data?.token) {
+    clearTokens();
+    throw new ApiError(-3, 'Token refresh failed', res.status);
+  }
+
+  setAccessToken(body.data.token);
+  if (body.data.refresh_token) {
+    setRefreshToken(body.data.refresh_token);
+  }
 }
 
 // ─── 核心请求方法 ────────────────────────────────────────────────────────

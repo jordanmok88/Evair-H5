@@ -1,0 +1,90 @@
+---
+description: Auto-save workflow — commit, push to all remotes, and sync backups after every change
+alwaysApply: true
+---
+
+# Auto-Save Workflow — H5
+
+Jordan has two projects. When he says "save" or "save my work", save BOTH.
+Do NOT ask permission — just run the commands.
+
+## The two projects
+
+| # | Project | Path | Remotes | Backup |
+|---|---------|------|---------|--------|
+| 1 | **Evair H5** (this repo) | `/Users/jordanmok/Desktop/iCloud Drive/Cursor Codes/Evair-H5` | `origin` → GitHub (`jordanmok88/Evair-H5`); `aliyun` → `codeup.aliyun.com/sz0755/ZenoSIM/H5/EvairH5.git` (same branch name on push) | iCloud Drive hosts the project dir itself |
+| 2 | **Evair APP** (Flutter)  | `/Users/jordanmok/Development/EvairSIM-App` | `origin` → GitHub (`jordanmok88/EvairSIM-App`); `aliyun` → `codeup.aliyun.com/sz0755/ZenoSIM/flutter.git` on `feature/evairsim-jordan` | rsync to `~/Library/Mobile Documents/com~apple~CloudDocs/EvairSIM-App-Backup` |
+
+## One command saves everything (both projects)
+
+```bash
+bash "/Users/jordanmok/Desktop/iCloud Drive/Cursor Codes/save-all.sh"
+# or with a custom commit message:
+bash "/Users/jordanmok/Desktop/iCloud Drive/Cursor Codes/save-all.sh" "feat: xyz"
+```
+
+## Save just this project (H5)
+
+```bash
+bash "/Users/jordanmok/Desktop/iCloud Drive/Cursor Codes/Evair-H5/scripts/save.sh"
+# or with a custom commit message:
+bash "/Users/jordanmok/Desktop/iCloud Drive/Cursor Codes/Evair-H5/scripts/save.sh" "fix: xyz"
+```
+
+`scripts/save.sh` will:
+1. `git add -A && git commit -m "<msg>"` (skipped if no changes)
+2. `git push <remote> <current-branch>` for EVERY remote (GitHub, plus Aliyun once configured)
+3. Exit non-zero if any push fails
+
+## When to auto-save
+
+Save after any of these, without asking:
+- Any code change lands (no matter how small)
+- The user says "save", "save my work", "commit", "push"
+- A feature is done
+- A bug fix is verified
+- Before ending a session
+
+## Deployment
+
+Netlify auto-deploys from a push to `main`. If you're on a feature branch, deployment only happens when that branch is merged to `main`.
+
+## Aliyun for H5 (CONFIGURED)
+
+H5 pushes to `aliyun` → `codeup.aliyun.com/sz0755/ZenoSIM/H5/EvairH5.git` automatically on every save. The repo lives under the ZenoSIM group, inside an `H5` subgroup. Initial push (`main` + `feature/api-integration`) completed on April 21, 2026.
+
+The China team can pull from the same repo. Main branch is `main`; active work is on `feature/api-integration`.
+
+## Local + iCloud Aliyun backups
+
+Jordan is **Developer** (not Admin) in ZenoSIM — if Ben revokes access or deletes a repo, Aliyun is lost. Bare mirrors protect against that.
+
+- **Local**: `~/Aliyun-Backups/` (~84 MB)
+- **iCloud Drive copy** (off-site, auto-synced): `~/Library/Mobile Documents/com~apple~CloudDocs/Aliyun-Backups/`
+- Contains: `EvairH5.git/`, `flutter.git/`, `admin.git/`, `laravel.git/` — all bare mirrors, all branches, full history
+- Refreshed automatically in 2 ways:
+  - Every `save-all.sh` (includes iCloud rsync — works because Terminal has FDA, and `/usr/bin/rsync` is in FDA list)
+  - **Daily auto-backup via launchd** at every login, throttled to once per calendar day, plus 9 AM daily fallback. Script: `~/Aliyun-Backups/daily-backup.sh`. Agent: `com.jordan.aliyun-backup-daily`. Log: `~/Aliyun-Backups/logs/daily.log`. State: `~/Aliyun-Backups/.last-day-run`. Catches missed days on next boot. iCloud rsync under launchd requires FDA on `/bin/bash` too (currently only `rsync` is granted) — local git mirrors still refresh, and iCloud catches up on next interactive `save-all.sh`.
+- Manual refresh: `bash ~/Aliyun-Backups/refresh.sh`
+- Force daily now: `FORCE=1 bash ~/Aliyun-Backups/daily-backup.sh`
+- Restore: `git clone ~/Aliyun-Backups/<name>.git ~/restored-folder`
+
+These copies live on Jordan's devices only — the China team is completely unaffected.
+
+## Credentials
+
+Aliyun HTTPS password lives in **macOS Keychain** (credential.helper = osxkeychain). Never hardcode a password in a git remote URL. If you see `https://user:password@...` in any `.git/config`, strip the password and re-approve via `git credential approve`.
+
+## Context persistence
+Update `docs/CONVERSATION_HISTORY.md` and the relevant `.cursor/rules/*.mdc` when:
+- A new feature lands
+- A business decision is made
+- Architecture/UX patterns change
+- Jordan asks to save
+
+## Lessons
+- When changing a status badge in one place, check ALL places showing that status.
+- Use shared CSS classes (`.pt-safe`) instead of one-off styles.
+- Always test build before committing.
+- Phone browser (Netlify) and Cursor browser (localhost) have separate localStorage.
+- Chinese IT staff instructions should be written in Chinese.

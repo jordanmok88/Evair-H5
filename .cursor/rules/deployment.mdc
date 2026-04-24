@@ -1,36 +1,32 @@
 ---
-description: Deployment, Git, and environment setup for EvairSIM H5
+description: Deployment, Git workflow, and environment setup
 alwaysApply: true
 ---
 
 # Deployment & Environment
 
-## Git → GitHub → Netlify Pipeline
-- Repo: `github.com/jordanmok88/Evair-H5` (branch: `main`)
-- Netlify site: `evair-h5.netlify.app`
-- Auto-deploys on push to `main` (GitHub integration)
-- An `autopush.sh` script runs locally to auto-commit and push changes periodically
-- Git remote uses HTTPS (not SSH). Credentials stored via `git credential.helper store`.
+## Git Workflow
+- Repo: `github.com/jordanmok88/Evair-H5`
+- **Production branch**: `main` → deploys to `https://evair-h5.netlify.app`
+- **Feature branch**: `feature/api-integration` → `https://feature-api-integration--evair-h5.netlify.app`
+- Test mode: append `?testmode=1` to any URL
+- Git author: `Jordan Mok <jordanmok@Jordans-MacBook-Air.local>`
+- Git config must be set per-repo (not global): `git config user.name` / `user.email`
 
-## Netlify Environment Variables
-Set via Netlify dashboard (Site configuration > Environment variables):
-- `ESIM_ACCESS_CODE` — ESIMAccess supplier code
-- `ESIM_SECRET` — ESIMAccess secret
-- `RESEND_API_KEY` — Resend email service key
-- `RESEND_FROM` — `EvairSIM <service@evairdigital.com>`
+## Three-Way Sync (ALWAYS do all three after EVERY change — see `auto-save-workflow.mdc`)
+1. **Git**: `git add -A && git commit && git push origin feature/api-integration`
+2. **iCloud**: `rsync -av --exclude='node_modules' --exclude='.git' --exclude='dist' "Evair-H5/" "~/Library/Mobile Documents/com~apple~CloudDocs/Evair-H5-Backup/"`
+3. **Local**: Already on Desktop (source of truth)
 
-## Netlify Functions
-Located in `netlify/functions/`. These are serverless functions:
-- `esim-proxy.mjs` — proxies ESIMAccess API calls (keeps credentials server-side)
-- `send-esim-email.mjs` — sends eSIM activation emails via Resend
+**Do NOT ask for permission to push. Auto-push after every change.**
 
-## Build
-- `npx vite build` — outputs to `dist/`
-- Netlify build command: `npm run build`
-- Always run build locally after major changes to catch errors before push
+## Netlify
+- Auto-deploys on push (GitHub integration)
+- Branch deploys enabled for feature branches
+- Build command: `npm run build` → outputs to `dist/`
+- Serverless functions in `netlify/functions/`
 
 ## Logo & Assets
-- Logo file: `public/evairsim-logo.png` (white background)
-- Email uses `evairsim-logo-v2.png` (same image, different filename to bust CDN cache)
+- Logo: `public/evairsim-logo.png`
+- Email logo: `evairsim-logo-v2.png` (CDN cache bust)
 - Company website: `evairdigital.com`
-- Support email: `service@evairdigital.com`

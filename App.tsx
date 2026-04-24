@@ -1,4 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
+import { Zap } from 'lucide-react';
 import BottomNav from './components/BottomNav';
 import ProductTab from './views/ProductTab';
 import ProfileView from './views/ProfileView';
@@ -6,40 +8,76 @@ import LoginModal from './views/LoginModal';
 import DialerView from './views/DialerView';
 import ContactUsView from './views/ContactUsView';
 import InboxView from './views/InboxView';
-import AdminApp from './views/admin/AdminApp';
 import ApiTestPage from './views/ApiTestPage';
 import { Tab, ActiveSim, SimType, User, AppNotification, EsimProfileResult } from './types';
 import { Lock } from 'lucide-react';
 import { MOCK_COUNTRIES, MOCK_PLANS_US, MOCK_ACTIVE_SIMS, MOCK_NOTIFICATIONS, CARRIER_MAP } from './constants';
-import { checkDataUsage, prefetchPackages, DEMO_MODE, mapRedTeaStatus } from './services/esimApi';
-import { supabaseConfigured, fetchNotifications } from './services/supabase';
+import { checkDataUsage, prefetchPackages, DEMO_MODE, mapRedTeaStatus, bindSim } from './services/dataService';
+import { supabaseConfigured, fetchNotifications, logSimActivation } from './services/supabase';
 import { authService, userService, type UserDto } from './services/api';
+import { initPush, unregisterPush } from './services/pushService';
+import { computeTestModeEnabled, dismissTestModeForSession, isAppPath, isAppPreviewHash, stripTestModeFromUrl } from './utils/testMode';
 
 function App() {
-
-  // Admin mode: detected via URL hash
-  const [isAdmin, setIsAdmin] = useState(() => window.location.hash.includes('admin'));
 
   // API Test mode: detected via URL hash
   const [isApiTest, setIsApiTest] = useState(() => window.location.hash.includes('api-test'));
 
   useEffect(() => {
     const onHash = () => {
-      setIsAdmin(window.location.hash.includes('admin'));
       setIsApiTest(window.location.hash.includes('api-test'));
     };
     window.addEventListener('hashchange', onHash);
     return () => window.removeEventListener('hashchange', onHash);
   }, []);
 
-  if (isAdmin) return <AdminApp />;
+  // Tab title override. Two modes flip the document title to "Evair APP":
+  //   1. Desktop dev: the `#app-preview` hash opened by
+  //      start-all-previews.sh simulates the native shell for QA.
+  //   2. Production path-based: any URL under `/app` (Phase 0 of the
+  //      marketing/app split on 2026-04-24). This is what Flutter's
+  //      WebView actually loads, and what browser visitors see after
+  //      clicking through from marketing.
+  // Both branches run in production because they're cheap and the title
+  // is legitimately different for the two surfaces — marketing vs. app.
+  useEffect(() => {
+    const applyTitle = () => {
+      if (isAppPreviewHash() || isAppPath()) {
+        document.title = 'Evair APP';
+      } else if (document.title === 'Evair APP') {
+        document.title = 'Evair H5';
+      }
+    };
+    applyTitle();
+    window.addEventListener('hashchange', applyTitle);
+    window.addEventListener('popstate', applyTitle);
+    return () => {
+      window.removeEventListener('hashchange', applyTitle);
+      window.removeEventListener('popstate', applyTitle);
+    };
+  }, []);
+
   if (isApiTest) return <ApiTestPage />;
 
   return <CustomerApp />;
 }
 
 function CustomerApp() {
+  const { t } = useTranslation();
   const phoneRef = useRef<HTMLDivElement>(null);
+  const [testMode, setTestMode] = useState(computeTestModeEnabled);
+
+  useEffect(() => {
+    const sync = () => setTestMode(computeTestModeEnabled());
+    window.addEventListener('popstate', sync);
+    return () => window.removeEventListener('popstate', sync);
+  }, []);
+
+  const exitTestMode = useCallback(() => {
+    setTestMode(false);
+    dismissTestModeForSession();
+    stripTestModeFromUrl();
+  }, []);
 
   // 初始化认证状态
   const [isLoggedIn, setIsLoggedIn] = useState(() => authService.isLoggedIn());
@@ -72,7 +110,10 @@ function CustomerApp() {
   }, []);
 
 
-  const [activeTab, setActiveTab] = useState<Tab>(Tab.SIM_CARD);
+  const [activeTab, setActiveTab] = useState<Tab>(
+    () => (sessionStorage.getItem('evair-activeTab') as Tab) || Tab.SIM_CARD
+  );
+  const previousTab = useRef<Tab>(Tab.SIM_CARD);
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
   const [loginModalMode, setLoginModalMode] = useState<'LOGIN' | 'REGISTER'>('LOGIN');
   
@@ -105,17 +146,19 @@ function CustomerApp() {
     iccid: string;
     type: 'ESIM' | 'PHYSICAL';
     packageName: string;
-    countryCode: string;
-    status: 'ACTIVE' | 'EXPIRED' | 'PENDING';
+    countryCode: string | null;
+    status: 'ACTIVE' | 'EXPIRED' | 'PENDING' | 'INACTIVE';
     totalVolume: number;
     usedVolume: number;
     expiredTime: string;
     activationDate: string | null;
   }): ActiveSim => {
-    const totalGB = userSim.totalVolume / (1024 * 1024 * 1024);
-    const usedGB = userSim.usedVolume / (1024 * 1024 * 1024);
+    let totalGB = userSim.totalVolume / (1024 * 1024 * 1024);
+    let usedGB = userSim.usedVolume / (1024 * 1024 * 1024);
+    if (totalGB > 500) totalGB = 3;
+    if (usedGB > totalGB) usedGB = 0;
 
-    // 转换国家码到国家信息
+    // 国家码到信息映射
     const countryCodeToInfo: Record<string, { name: string; flag: string }> = {
       'US': { name: 'United States', flag: '🇺🇸' },
       'CN': { name: 'China', flag: '🇨🇳' },
@@ -149,19 +192,40 @@ function CustomerApp() {
       'NZ': { name: 'New Zealand', flag: '🇳🇿' },
     };
 
-    const countryInfo = countryCodeToInfo[userSim.countryCode] || {
-      name: userSim.countryCode,
-      flag: '🌍',
+    // 从 packageName 提取国家信息（如 "United States 1GB 7Days" -> "US"）
+    const extractCountryFromPackageName = (packageName: string): { code: string; name: string; flag: string } => {
+      // 匹配包名开头可能是国家名的地方
+      for (const [code, info] of Object.entries(countryCodeToInfo)) {
+        if (packageName.toLowerCase().startsWith(info.name.toLowerCase()) ||
+            packageName.toLowerCase().startsWith(code.toLowerCase())) {
+          return { code, ...info };
+        }
+      }
+      return { code: '', name: 'Unknown', flag: '🌍' };
+    };
+
+    // 优先使用 countryCode，否则从 packageName 提取
+    const countryCode = userSim.countryCode ||
+      (userSim.packageName.startsWith('United States') || userSim.packageName.startsWith('USA') ? 'US' : '');
+    const countryInfo = countryCode && countryCodeToInfo[countryCode]
+      ? { code: countryCode, ...countryCodeToInfo[countryCode] }
+      : extractCountryFromPackageName(userSim.packageName);
+
+    // 转换状态：inactive/INACTIVE -> PENDING_ACTIVATION
+    const mapStatus = (status: string): ActiveSim['status'] => {
+      const upper = status.toUpperCase();
+      if (upper === 'PENDING' || upper === 'INACTIVE') return 'PENDING_ACTIVATION';
+      return status as ActiveSim['status'];
     };
 
     return {
       id: userSim.id,
       iccid: userSim.iccid,
       country: {
-        id: userSim.countryCode.toLowerCase(),
+        id: countryInfo.code.toLowerCase(),
         name: countryInfo.name,
         flag: countryInfo.flag,
-        countryCode: userSim.countryCode,
+        countryCode: countryInfo.code,
         region: '',
         startPrice: 0,
         networkCount: 0,
@@ -184,19 +248,67 @@ function CustomerApp() {
       expiryDate: userSim.expiredTime,
       dataTotalGB: Math.round(totalGB * 10) / 10,
       dataUsedGB: Math.round(usedGB * 10) / 10,
-      status: userSim.status === 'PENDING' ? 'PENDING_ACTIVATION' : userSim.status,
+      status: mapStatus(userSim.status),
     };
   };
 
-  // 从后端获取用户 SIM 卡列表
+  // 从后端获取用户 SIM 卡列表 + 实时用量
+  //
+  // `/h5/user/sims` returns the bound-SIM list with the cached
+  // `traffic_limit` / `traffic_usage` columns from our DB — which for PCCW
+  // physical SIMs is usually the purchased-plan total with `used=0`, so the
+  // UI would show "3 GB / 3 GB remaining, 0 used" even when the card has
+  // actually consumed data.
+  //
+  // For live usage we hit `/h5/esim/{iccid}/usage` per SIM — that endpoint
+  // dispatches to the right supplier provider (EsimAccess for eSIMs, PCCW
+  // for physical SIMs) and returns the real volume/usage from upstream.
+  // We fan this out in parallel after getSims() and merge the result in.
   const fetchUserSims = useCallback(async () => {
-    if (!authService.isLoggedIn()) return;
+    if (!authService.isLoggedIn()) {
+      console.log('[fetchUserSims] Not logged in, skipping');
+      return;
+    }
     try {
       const response = await userService.getSims();
       const convertedSims = response.list.map(convertUserSimToActiveSim);
       setServerSims(convertedSims);
+
+      // Fan-out live usage refresh (PCCW / EsimAccess) — best-effort; on
+      // any single-SIM failure we keep the cached DB values rather than
+      // blanking the card.
+      const usageResults = await Promise.all(
+        convertedSims.map(async (sim) => {
+          if (!sim.iccid) return null;
+          try {
+            const usage = await checkDataUsage(sim.iccid);
+            const totalGB = usage.totalVolume / (1024 * 1024 * 1024);
+            const usedGB = usage.usedVolume / (1024 * 1024 * 1024);
+            if (!Number.isFinite(totalGB) || !Number.isFinite(usedGB)) return null;
+            return {
+              id: sim.id,
+              dataTotalGB: Math.round(totalGB * 10) / 10,
+              dataUsedGB: Math.round(usedGB * 100) / 100,
+              expiryDate: usage.expiredTime || sim.expiryDate,
+            };
+          } catch {
+            return null;
+          }
+        }),
+      );
+      const byId = new Map(
+        usageResults.filter((r): r is NonNullable<typeof r> => r !== null).map((r) => [r.id, r]),
+      );
+      if (byId.size > 0) {
+        setServerSims((prev) =>
+          prev.map((sim) => {
+            const fresh = byId.get(sim.id);
+            return fresh ? { ...sim, ...fresh } : sim;
+          }),
+        );
+      }
     } catch (err) {
-      console.error('Failed to fetch user SIMs:', err);
+      console.error('[fetchUserSims] Failed:', err);
     }
   }, []);
 
@@ -296,6 +408,9 @@ function CustomerApp() {
     window.scrollTo(0, 0);
   };
 
+  // Push token cached so we can detach it on explicit logout.
+  const pushTokenRef = useRef<string | null>(null);
+
   // 登录成功回调 - 接收后端返回的用户信息
   const handleLoginSuccess = (userData: UserDto) => {
     setIsLoggedIn(true);
@@ -307,12 +422,27 @@ function CustomerApp() {
     });
     setIsLoginModalOpen(false);
 
-    // TODO: 登录成功后可以从 userService.getSims() 获取用户的 SIM 卡列表
+    // Fire-and-forget: inside the native shell, ask for notification
+    // permission and ship the APNs/FCM token to Laravel. No-op in a
+    // regular browser. See services/pushService.ts.
+    initPush()
+      .then((token) => {
+        if (token) pushTokenRef.current = token;
+      })
+      .catch((err) => {
+        console.warn('[push] initPush failed', err);
+      });
   };
 
   // 登出处理
   const handleLogout = async () => {
     try {
+      const token = pushTokenRef.current;
+      if (token) {
+        // Fire-and-forget; don't block logout on a slow backend.
+        void unregisterPush(token);
+        pushTokenRef.current = null;
+      }
       await authService.logout();
     } finally {
       setIsLoggedIn(false);
@@ -322,16 +452,36 @@ function CustomerApp() {
     }
   };
 
-  const handlePurchaseComplete = (purchaseInfo?: { planName?: string; countryCode?: string; type?: SimType; orderNo?: string; iccid?: string; dataTotalGB?: number; durationDays?: number }) => {
+  const handlePurchaseComplete = (purchaseInfo?: { planName?: string; countryCode?: string; locationCode?: string; type?: SimType; orderNo?: string; iccid?: string; dataTotalGB?: number; durationDays?: number }) => {
     const currentType: SimType = purchaseInfo?.type ?? (activeTab === Tab.SIM_CARD ? 'PHYSICAL' : 'ESIM');
     const cc = purchaseInfo?.countryCode || 'US';
     const ccToFlag = (code: string) => code.toUpperCase().split('').map(c => String.fromCodePoint(127397 + c.charCodeAt(0))).join('');
-    const dataGB = purchaseInfo?.dataTotalGB || 3.0;
+
+    // Clamp obviously broken volumes: no eSIM plan exceeds ~200 GB in practice
+    const MAX_SANE_GB = 500;
+    const rawGB = purchaseInfo?.dataTotalGB || 3.0;
+    const dataGB = rawGB > MAX_SANE_GB ? 3.0 : rawGB;
     const days = purchaseInfo?.durationDays || 30;
-    
+
+    const CC_NAME: Record<string, string> = {
+      US:'United States',CA:'Canada',MX:'Mexico',BR:'Brazil',CO:'Colombia',CR:'Costa Rica',
+      DO:'Dominican Republic',AR:'Argentina',CL:'Chile',PE:'Peru',EC:'Ecuador',
+      GB:'United Kingdom',DE:'Germany',FR:'France',ES:'Spain',IT:'Italy',NL:'Netherlands',
+      CH:'Switzerland',SE:'Sweden',NO:'Norway',DK:'Denmark',FI:'Finland',AT:'Austria',
+      BE:'Belgium',PL:'Poland',PT:'Portugal',GR:'Greece',IE:'Ireland',CZ:'Czech Republic',
+      HU:'Hungary',RO:'Romania',BG:'Bulgaria',HR:'Croatia',SI:'Slovenia',SK:'Slovakia',
+      RU:'Russia',TR:'Turkey',UA:'Ukraine',
+      JP:'Japan',KR:'South Korea',CN:'China',TW:'Taiwan',HK:'Hong Kong',MO:'Macau',
+      SG:'Singapore',TH:'Thailand',MY:'Malaysia',ID:'Indonesia',VN:'Vietnam',PH:'Philippines',
+      IN:'India',AE:'United Arab Emirates',SA:'Saudi Arabia',IL:'Israel',
+      AU:'Australia',NZ:'New Zealand',
+      ZA:'South Africa',EG:'Egypt',NG:'Nigeria',KE:'Kenya',MA:'Morocco',
+    };
+    const countryName = CC_NAME[cc] || purchaseInfo?.planName || cc;
+
     const country = MOCK_COUNTRIES.find(c => c.countryCode === cc) || {
         id: cc.toLowerCase(),
-        name: purchaseInfo?.planName || cc,
+        name: countryName,
         flag: ccToFlag(cc),
         countryCode: cc,
         region: '',
@@ -341,6 +491,7 @@ function CustomerApp() {
         vpmn: '',
         vpn: false,
         plans: [],
+        isPopular: false,
     };
 
     const isPhysical = currentType === 'PHYSICAL';
@@ -348,6 +499,7 @@ function CustomerApp() {
         id: `${currentType}-${Math.floor(Math.random() * 10000)}`,
         iccid: purchaseInfo?.iccid,
         country,
+        locationCode: purchaseInfo?.locationCode,
         plan: { id: `plan-${Date.now()}`, name: purchaseInfo?.planName || 'eSIM Plan', data: `${dataGB} GB`, days, price: 0, features: [] },
         type: currentType,
         activationDate: new Date().toISOString(),
@@ -382,13 +534,30 @@ function CustomerApp() {
 
   const handleDeleteSim = (simId: string) => {
     setActiveSims(prev => prev.filter(s => s.id !== simId));
+    setServerSims(prev => prev.filter(s => s.id !== simId));
+    // Re-fetch from server to ensure consistency
+    fetchUserSims();
   };
 
   const handleUpdateSim = useCallback((simId: string, updates: Partial<ActiveSim>) => {
     setActiveSims(prev => prev.map(s => s.id === simId ? { ...s, ...updates } : s));
   }, []);
 
-  const handleAddCard = (iccid: string, profile?: EsimProfileResult) => {
+  const handleAddCard = async (iccid: string, profile?: EsimProfileResult, activationCode?: string) => {
+    try {
+      console.log('[handleAddCard] Calling bindSim API with iccid:', iccid);
+      await bindSim(iccid, activationCode);
+      console.log('[handleAddCard] bindSim succeeded, updating local state');
+    } catch (err: any) {
+      const msg = err?.message?.toLowerCase() || '';
+      if (msg.includes('already bound') || msg.includes('already exist')) {
+        console.warn('[handleAddCard] SIM already bound — treating as success, adding to wallet');
+      } else {
+        console.error('[handleAddCard] bindSim failed:', err);
+        throw err;
+      }
+    }
+
     const pkgName = profile?.packageName || '';
 
     const COUNTRY_NAME_TO_CODE: Record<string, string> = {
@@ -416,56 +585,69 @@ function CustomerApp() {
       }
     }
 
-    const totalGB = profile?.totalVolume
+    let totalGB = profile?.totalVolume
       ? profile.totalVolume / (1024 * 1024 * 1024)
       : 10;
+    if (totalGB > 500) totalGB = 10;
     const durationDays = profile?.totalDuration || 30;
     const redTeaStatus = mapRedTeaStatus(profile?.status || '');
 
-    const existingSim = activeSims.find(s => s.iccid === iccid);
-    if (existingSim) {
-      setActiveSims(prev => prev.map(s => s.iccid === iccid ? {
-        ...s,
-        status: redTeaStatus,
+    // Use functional update to avoid stale closure
+    setActiveSims(prev => {
+      const existingSim = prev.find(s => s.iccid === iccid);
+      if (existingSim) {
+        return prev.map(s => s.iccid === iccid ? {
+          ...s,
+          status: redTeaStatus,
+          dataTotalGB: Math.round(totalGB * 10) / 10,
+          dataUsedGB: profile?.usedVolume ? profile.usedVolume / (1024 * 1024 * 1024) : s.dataUsedGB,
+        } : s);
+      }
+
+      const flag = countryCode.toUpperCase().split('').map(c => String.fromCodePoint(127397 + c.charCodeAt(0))).join('');
+      const carrier = CARRIER_MAP[countryCode];
+
+      const country = {
+        id: countryCode.toLowerCase(),
+        name: countryName,
+        flag,
+        countryCode,
+        region: '',
+        startPrice: 0,
+        networkCount: 0,
+        networks: carrier ? [carrier.carrier] : [],
+        vpmn: '',
+        vpn: true,
+        plans: [],
+        isPopular: false,
+      };
+
+      const plan = MOCK_PLANS_US[0];
+
+      const newSim: ActiveSim = {
+        id: `SIM-PHYS-${Math.floor(Math.random() * 10000)}`,
+        iccid,
+        country,
+        plan,
+        type: 'PHYSICAL',
+        activationDate: new Date().toISOString(),
+        expiryDate: new Date(Date.now() + durationDays * 24 * 60 * 60 * 1000).toISOString(),
         dataTotalGB: Math.round(totalGB * 10) / 10,
-        dataUsedGB: profile?.usedVolume ? profile.usedVolume / (1024 * 1024 * 1024) : s.dataUsedGB,
-      } : s));
-      return;
-    }
+        dataUsedGB: profile?.usedVolume ? profile.usedVolume / (1024 * 1024 * 1024) : 0,
+        status: redTeaStatus,
+      };
+      return [newSim, ...prev];
+    });
 
-    const flag = countryCode.toUpperCase().split('').map(c => String.fromCodePoint(127397 + c.charCodeAt(0))).join('');
-    const carrier = CARRIER_MAP[countryCode];
-
-    const country = {
-      id: countryCode.toLowerCase(),
-      name: countryName,
-      flag,
-      countryCode,
-      region: '',
-      startPrice: 0,
-      networkCount: 0,
-      networks: carrier ? [carrier.carrier] : [],
-      vpmn: '',
-      vpn: true,
-      plans: [],
-      isPopular: false,
-    };
-
-    const plan = MOCK_PLANS_US[0];
-
-    const newSim: ActiveSim = {
-      id: `SIM-PHYS-${Math.floor(Math.random() * 10000)}`,
+    // Log activation to Supabase for analytics (fire-and-forget)
+    logSimActivation({
       iccid,
-      country,
-      plan,
-      type: 'PHYSICAL',
-      activationDate: new Date().toISOString(),
-      expiryDate: new Date(Date.now() + durationDays * 24 * 60 * 60 * 1000).toISOString(),
-      dataTotalGB: Math.round(totalGB * 10) / 10,
-      dataUsedGB: profile?.usedVolume ? profile.usedVolume / (1024 * 1024 * 1024) : 0,
-      status: redTeaStatus,
-    };
-    setActiveSims([newSim, ...activeSims]);
+      device: /iPhone|iPad/i.test(navigator.userAgent) ? 'iPhone' : /Android/i.test(navigator.userAgent) ? 'Android' : 'other',
+      user_agent: navigator.userAgent.slice(0, 512),
+    }).catch(() => {});
+
+    // Re-fetch user SIMs to ensure serverSims is in sync
+    fetchUserSims();
   };
 
   const ProtectedView = ({ title }: { title: string }) => (
@@ -484,7 +666,17 @@ function CustomerApp() {
     </div>
   );
 
-  const [currentSimType, setCurrentSimType] = useState<SimType>('PHYSICAL');
+  const [currentSimType, setCurrentSimType] = useState<SimType>(
+    () => (sessionStorage.getItem('evair-simType') as SimType) || 'PHYSICAL'
+  );
+
+  useEffect(() => {
+    sessionStorage.setItem('evair-activeTab', activeTab);
+  }, [activeTab]);
+
+  useEffect(() => {
+    sessionStorage.setItem('evair-simType', currentSimType);
+  }, [currentSimType]);
 
   const handleSwitchSimType = (type: SimType) => {
     setCurrentSimType(type);
@@ -512,10 +704,11 @@ function CustomerApp() {
                 onNavigate={handleTabChange}
                 onSwitchSimType={handleSwitchSimType}
                 notifications={notifications}
+                testMode={testMode}
             />
         );
       case Tab.INBOX:
-        return <InboxView notifications={notifications} onUpdateNotifications={setNotifications} onNavigate={(tab) => setActiveTab(tab as Tab)} onBack={() => { setActiveTab(currentSimType === 'PHYSICAL' ? Tab.SIM_CARD : Tab.ESIM); window.scrollTo(0,0); }} />;
+        return <InboxView notifications={notifications} onUpdateNotifications={setNotifications} onNavigate={(tab) => setActiveTab(tab as Tab)} onBack={() => { setActiveTab(previousTab.current); window.scrollTo(0,0); }} />;
       case Tab.PROFILE:
         return (
             <ProfileView
@@ -524,15 +717,15 @@ function CustomerApp() {
                 onLogin={() => { setLoginModalMode('LOGIN'); setIsLoginModalOpen(true); }}
                 onSignup={() => { setLoginModalMode('REGISTER'); setIsLoginModalOpen(true); }}
                 onLogout={handleLogout}
-                onOpenDialer={() => setActiveTab(Tab.DIALER)}
-                onOpenInbox={() => setActiveTab(Tab.INBOX)}
+                onOpenDialer={() => { previousTab.current = activeTab; setActiveTab(Tab.DIALER); }}
+                onOpenInbox={() => { previousTab.current = activeTab; setActiveTab(Tab.INBOX); }}
                 notifications={notifications}
                 onBack={() => { setActiveTab(currentSimType === 'PHYSICAL' ? Tab.SIM_CARD : Tab.ESIM); window.scrollTo(0,0); }}
                 onUserUpdate={(updatedUser) => setUser(prev => prev ? { ...prev, ...updatedUser } : undefined)}
             />
         );
       case Tab.DIALER:
-        return <ContactUsView onBack={() => { setActiveTab(currentSimType === 'PHYSICAL' ? Tab.SIM_CARD : Tab.ESIM); window.scrollTo(0,0); }} userName={user?.name} />;
+        return <ContactUsView onBack={() => { setActiveTab(previousTab.current); window.scrollTo(0,0); }} userName={user?.name} />;
       default:
         return null;
     }
@@ -557,8 +750,37 @@ function CustomerApp() {
         </div>
 
         {/* Main Content Area */}
-        <main className="w-full relative lg:overflow-hidden" style={{ height: 'calc(100% - 54px)' }}>
-           {renderContent()}
+        <main className="w-full relative lg:overflow-hidden flex flex-col" style={{ height: 'calc(100% - 54px)' }}>
+          {testMode ? (
+            <div className="shrink-0 bg-amber-400 text-amber-950 px-3 py-2 z-50 border-b border-amber-500/30 flex flex-wrap items-center justify-center gap-x-2 gap-y-1 text-center">
+              <span className="inline-flex items-center gap-1.5 text-xs font-bold tracking-wide">
+                <Zap size={14} className="shrink-0" aria-hidden />
+                {t('app.test_mode_banner')}
+              </span>
+              <span className="text-[11px] font-medium text-amber-900/90 w-full sm:w-auto sm:inline">
+                {t('app.test_mode_subline')}
+              </span>
+              <button
+                type="button"
+                onClick={exitTestMode}
+                className="text-[10px] font-bold uppercase tracking-wide bg-amber-950/15 hover:bg-amber-950/25 px-2 py-1 rounded-md transition-colors"
+              >
+                {t('app.test_mode_exit')}
+              </button>
+            </div>
+          ) : (
+            // When the test banner is hidden, inject a safe-area spacer so
+            // the iPhone notch / Android status bar doesn't overlap the
+            // first row of UI (e.g. the "Hello New Friend" greeting).
+            // Desktop (lg) is inside a mock phone frame so it doesn't
+            // need the inset; `lg:hidden` keeps the mock pixel-perfect.
+            <div
+              className="shrink-0 lg:hidden bg-white"
+              style={{ height: 'env(safe-area-inset-top, 0px)' }}
+              aria-hidden
+            />
+          )}
+          <div className="flex-1 min-h-0 overflow-hidden">{renderContent()}</div>
         </main>
 
         <LoginModal 

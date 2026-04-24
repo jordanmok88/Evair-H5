@@ -1,0 +1,56 @@
+---
+description: Keep H5 / APP / Admin / Backend in lockstep on shared contracts
+alwaysApply: true
+---
+
+# Cross-repo sync (H5 / APP / Admin / Backend)
+
+The Evair product is split across 4 repos that share contracts. When touching
+anything listed below, check the other repos BEFORE finishing the change.
+
+| Repo                                    | Path                                                        | Role                                |
+|-----------------------------------------|-------------------------------------------------------------|-------------------------------------|
+| Evair-H5 (this one)                     | `.../Cursor Codes/Evair-H5`                                 | React H5 shop (runs inside APP WebView) |
+| EvairSIM-App                            | `~/Development/EvairSIM-App`                                | Flutter native shell (iOS/Android)  |
+| admin                                   | `.../Cursor Codes/admin`                                    | Sales / ops panel (Vue)             |
+| Evair-Laravel                           | `.../Cursor Codes/Evair-Laravel`                            | PHP API + DB (source of truth)      |
+
+## When to cross-check
+
+1. **Backend API contract** (`Evair-Laravel/app/Http/Controllers/Api/**`,
+   `routes/api.php`, request/response shapes) — check consumers:
+   - H5 `services/api/**`, `services/esimApi.ts`
+   - APP `lib/core/api/**`, `lib/features/**`
+   - admin `src/api/**`
+2. **Shop catalogue / `/v1/h5/packages*`** — H5 and APP both consume this.
+   Per-country plan counts MUST match. Keep `size` / region-code parsing in
+   sync with `esimApi.ts :: fetchPackagesFromBackstage` (H5) and
+   `shop_providers.dart` (APP). See `esim-api-services.mdc` shop-catalogue
+   guardrail — never reroute that path through `packageService`.
+3. **Auth / user model** (`/v1/auth/*`, token shape, `UserDto`) — H5 `services/api/auth.ts`,
+   APP `lib/features/auth/**`, admin `src/store/auth.ts`.
+4. **H5 UX changes** — the native APP is a thin WebView shell; H5 changes
+   ship to the APP automatically on deploy. Verify layout/safe-area still
+   works in the APP preview (`http://localhost:3000#app-preview`) AND on a
+   real device/simulator when altering gestures, viewport, or storage.
+5. **Admin panel features that write data** — confirm the corresponding
+   Laravel endpoint exists, is authorized correctly, and is not silently
+   consumed by H5/APP in a way that would regress.
+
+## Workflow
+
+- State up-front which repos the change touches and why.
+- Make the edits in every repo in one pass — do not ship a contract change
+  to one side and leave another broken.
+- Run or at least `curl` the affected endpoint end-to-end before reporting done.
+- If a change cannot be fully synced (missing access / out of scope), call
+  it out explicitly and list the TODOs for the unsynced repos.
+
+## Known hot zones (regressions have happened here)
+
+- Shop catalogue — see `esim-api-services.mdc`.
+- Multi-country region list (`/v1/h5/packages/locations.multi_countries`)
+  — H5 and APP both intersect with this; diverging lists → mismatched
+  per-country plan counts.
+- PCCW physical-SIM bind flow — Laravel is authoritative; Red Tea path does
+  not know PCCW ICCIDs.
