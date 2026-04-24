@@ -1,0 +1,52 @@
+---
+description: "Product decisions Jordan has already made. Do not re-litigate these without asking."
+alwaysApply: true
+---
+
+# Product decisions (locked in — don't re-debate)
+
+Last updated: 2026-04-24. When something changes, edit this file.
+
+## Catalogue & inventory
+- Physical SIMs are **USA-only** right now. Do NOT show a country picker or
+  "United States · AT&T · Verizon · T-Mobile" banner in the SIM card section —
+  it was removed on 2026-04-24 as redundant (one country = no filtering value).
+  Reintroduce a picker only when we add a second country.
+- Physical SIM checkout goes through **Amazon Storefront** (external link from
+  ShopView). Not in-app Stripe, not Laravel orders. Don't "fix" this without asking.
+- eSIM catalogue fetches **only** via the supplier path (`supplierFetchPackages`
+  in `services/dataService.ts`). Do NOT reroute through `packageService` — it
+  crashed the shop on 2026-04-22 and the regression guard is in
+  `.cursor/rules/esim-api-services.mdc`.
+
+## Suppliers
+- **eSIM supplier**: Red Tea / ESIMAccess. Live, works.
+- **Physical SIM supplier**: PCCW. Credentials currently show
+  `401 Distributor is De-activated` — external blocker. UI falls back to local
+  DB snapshots gracefully. Don't hide this from Jordan if it regresses.
+
+## App shell
+- The Flutter app (`EvairSIM-App`) is a **thin InAppWebView wrapper** around
+  the H5 site. Don't propose native screens; every feature ships to H5 first.
+- `H5_URL` in `lib/core/constants/app_constants.dart` must point at the
+  **`feature/api-integration` Netlify branch**
+  (`https://feature-api-integration--evair-h5.netlify.app/`), NOT the `main`
+  branch. `main` is the old version; pointing there regresses the app to the
+  outdated UI. This has happened twice — do not repeat.
+
+## AI support assistant (`ai/evairAssistant.ts`)
+- **No emojis.** Ever. Tone must be professional, welcoming, polite.
+- Supplier-aware vocabulary is required (eSIM vs. physical SIM, Red Tea vs.
+  PCCW, USA-only for physical).
+- Updated 2026-04-24; see file header for knowledge-base conventions.
+
+## Tab title / preview mode
+- `#app-preview` hash in the URL → set `document.title = "Evair APP"`.
+- Everything else → `"Evair H5"`.
+- Logic lives in `App.tsx` + `utils/testMode.ts::isAppPreviewHash()`.
+
+## Save workflow
+- Default for every meaningful change: run
+  `bash "/Users/jordanmok/Desktop/iCloud Drive/Cursor Codes/save-all.sh"` so
+  GitHub + Aliyun + iCloud mirrors all capture the change. See
+  `.cursor/rules/auto-save-workflow.mdc`.

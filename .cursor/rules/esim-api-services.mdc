@@ -15,6 +15,39 @@ Component → dataService.ts → esimApi.ts (supplier, current)
                             → api/esim.ts (backend, future)
 ```
 
+## Shop catalogue — DO NOT reroute through `packageService` (regression guard)
+
+`fetchPackages()` / `prefetchPackages()` in `services/dataService.ts` MUST always
+delegate to `supplierFetchPackages` / `supplierPrefetch` (i.e. the `esimApi.ts`
+`/packages` path), regardless of `VITE_USE_BACKEND_API`. Both paths hit the same
+Laravel endpoint via `/laravel-api/v1/h5/packages` in dev, but only the supplier
+path does what the catalogue needs:
+
+1. Pulls the full catalogue with `size=5000`. `packageService.getPackages()` omits
+   `size`, so Laravel defaults to `size=20` and only 20 packages come back —
+   which in practice are all multi-country SKUs and get filtered out, producing
+   "Single Country eSIMs (0)" / "No plans found for this region."
+2. Extracts the supplier region code (`NA-3`, `AS-7`, `GL-139`, …) embedded in
+   the `locations` array via `SUPPLIER_REGION_RE`. Without it,
+   `groupPackagesByLocation` drops every multi-country plan
+   (`services/esimApi.ts` around the `if (!pkg.supplierRegionCode) continue;`
+   check).
+
+`VITE_USE_BACKEND_API` exists for `queryProfile`, `fetchTopUpPackages`, and the
+PCCW physical-SIM bind flow — those paths still legitimately go through
+`services/api/*`. Do not expand its reach to the shop catalogue.
+
+```ts
+// ❌ BAD — breaks the shop list (defaults to size=20, no region code parsing)
+if (USE_BACKEND_API) {
+  const resp = await packageService.getPackages({ ... });
+  return resp.packages.map(backendPkgToEsimPackage);
+}
+
+// ✅ GOOD — always use the supplier path for the shop catalogue
+return supplierFetchPackages(params);
+```
+
 ## Catalogue — China-team Backstage (Option A, default ON)
 `fetchPackages()` and `fetchTopUpPackages()` read from the Laravel admin at
 `https://evair.zhhwxt.cn/api/v1/h5/packages` (+ `/packages/recharge`). This is

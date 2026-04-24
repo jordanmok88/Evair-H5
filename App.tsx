@@ -16,7 +16,7 @@ import { checkDataUsage, prefetchPackages, DEMO_MODE, mapRedTeaStatus, bindSim }
 import { supabaseConfigured, fetchNotifications, logSimActivation } from './services/supabase';
 import { authService, userService, type UserDto } from './services/api';
 import { initPush, unregisterPush } from './services/pushService';
-import { computeTestModeEnabled, dismissTestModeForSession, stripTestModeFromUrl } from './utils/testMode';
+import { computeTestModeEnabled, dismissTestModeForSession, isAppPreviewHash, stripTestModeFromUrl } from './utils/testMode';
 
 function App() {
 
@@ -29,6 +29,25 @@ function App() {
     };
     window.addEventListener('hashchange', onHash);
     return () => window.removeEventListener('hashchange', onHash);
+  }, []);
+
+  // Dev-only tab title override: the APP preview tab
+  // (http://localhost:3000/#app-preview opened by start-all-previews.sh)
+  // shares index.html with the H5 tab, so the static <title> says
+  // "Evair H5" on both. Relabel it to "Evair APP" at runtime so the two
+  // Chrome tabs are distinguishable at a glance.
+  useEffect(() => {
+    if (!import.meta.env.DEV) return;
+    const applyTitle = () => {
+      if (isAppPreviewHash()) {
+        document.title = 'Evair APP';
+      } else if (document.title === 'Evair APP') {
+        document.title = 'Evair H5';
+      }
+    };
+    applyTitle();
+    window.addEventListener('hashchange', applyTitle);
+    return () => window.removeEventListener('hashchange', applyTitle);
   }, []);
 
   if (isApiTest) return <ApiTestPage />;
@@ -226,19 +245,61 @@ function CustomerApp() {
     };
   };
 
-  // 从后端获取用户 SIM 卡列表
+  // 从后端获取用户 SIM 卡列表 + 实时用量
+  //
+  // `/h5/user/sims` returns the bound-SIM list with the cached
+  // `traffic_limit` / `traffic_usage` columns from our DB — which for PCCW
+  // physical SIMs is usually the purchased-plan total with `used=0`, so the
+  // UI would show "3 GB / 3 GB remaining, 0 used" even when the card has
+  // actually consumed data.
+  //
+  // For live usage we hit `/h5/esim/{iccid}/usage` per SIM — that endpoint
+  // dispatches to the right supplier provider (EsimAccess for eSIMs, PCCW
+  // for physical SIMs) and returns the real volume/usage from upstream.
+  // We fan this out in parallel after getSims() and merge the result in.
   const fetchUserSims = useCallback(async () => {
     if (!authService.isLoggedIn()) {
       console.log('[fetchUserSims] Not logged in, skipping');
       return;
     }
     try {
-      console.log('[fetchUserSims] Fetching from API...');
       const response = await userService.getSims();
-      console.log('[fetchUserSims] API response:', response);
       const convertedSims = response.list.map(convertUserSimToActiveSim);
-      console.log('[fetchUserSims] Converted sims:', convertedSims);
       setServerSims(convertedSims);
+
+      // Fan-out live usage refresh (PCCW / EsimAccess) — best-effort; on
+      // any single-SIM failure we keep the cached DB values rather than
+      // blanking the card.
+      const usageResults = await Promise.all(
+        convertedSims.map(async (sim) => {
+          if (!sim.iccid) return null;
+          try {
+            const usage = await checkDataUsage(sim.iccid);
+            const totalGB = usage.totalVolume / (1024 * 1024 * 1024);
+            const usedGB = usage.usedVolume / (1024 * 1024 * 1024);
+            if (!Number.isFinite(totalGB) || !Number.isFinite(usedGB)) return null;
+            return {
+              id: sim.id,
+              dataTotalGB: Math.round(totalGB * 10) / 10,
+              dataUsedGB: Math.round(usedGB * 100) / 100,
+              expiryDate: usage.expiredTime || sim.expiryDate,
+            };
+          } catch {
+            return null;
+          }
+        }),
+      );
+      const byId = new Map(
+        usageResults.filter((r): r is NonNullable<typeof r> => r !== null).map((r) => [r.id, r]),
+      );
+      if (byId.size > 0) {
+        setServerSims((prev) =>
+          prev.map((sim) => {
+            const fresh = byId.get(sim.id);
+            return fresh ? { ...sim, ...fresh } : sim;
+          }),
+        );
+      }
     } catch (err) {
       console.error('[fetchUserSims] Failed:', err);
     }

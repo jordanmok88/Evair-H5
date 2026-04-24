@@ -99,7 +99,7 @@ const zh = {
     data_amount_gb: '{{n}} GB',
     data_amount_na: '—',
     used_with_unit: '已用 {{data}}',
-    gb_used: 'GB 已用',
+    gb_used: '已用',
     gb_remaining: '剩余',
     active: '已激活',
     pending: '待激活',

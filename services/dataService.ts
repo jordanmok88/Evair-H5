@@ -94,30 +94,32 @@ function backendPkgToEsimPackage(dto: PackageDto): EsimPackage {
 }
 
 // ─── Package listing ─────────────────────────────────────────────────
+//
+// The shop catalogue ALWAYS goes through the supplier path
+// (`fetchPackagesFromBackstage` in esimApi.ts), even when
+// VITE_USE_BACKEND_API=true. Both paths ultimately hit the same
+// Laravel endpoint (`/v1/h5/packages`, proxied via `/laravel-api` in
+// dev), but the supplier path does two things the backend path
+// does not:
+//   1. Pulls the full catalogue (`size=5000`) — `packageService.getPackages`
+//      omits `size`, so Laravel defaults to `size=20` and most users see
+//      "No plans found" because the first page is dominated by
+//      multi-country SKUs.
+//   2. Extracts the supplier region code (`NA-3`, `AS-7`, `GL-139`, …)
+//      embedded in the `locations` array. Without it,
+//      `groupPackagesByLocation` drops every multi-country plan
+//      (services/esimApi.ts ~line 674).
+//
+// The VITE_USE_BACKEND_API flag was introduced for profile / top-up /
+// PCCW bind flows (see .env.local comment); routing the shop catalogue
+// through it was overreach.
 
 export async function fetchPackages(params: FetchPackagesParams = {}): Promise<EsimPackage[]> {
-  if (!USE_BACKEND_API) {
-    return supplierFetchPackages(params);
-  }
-
-  try {
-    const resp = await packageService.getPackages({
-      locationCode: params.locationCode,
-      type: params.type,
-      iccid: params.iccid,
-    });
-    return (resp.packages || []).map(backendPkgToEsimPackage);
-  } catch {
-    // Fallback to supplier if backend fails
-    return supplierFetchPackages(params);
-  }
+  return supplierFetchPackages(params);
 }
 
 export function prefetchPackages(): Promise<EsimPackage[]> {
-  if (!USE_BACKEND_API) {
-    return supplierPrefetch();
-  }
-  return fetchPackages();
+  return supplierPrefetch();
 }
 
 /**

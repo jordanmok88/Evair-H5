@@ -81,23 +81,48 @@ const MySimsView: React.FC<MySimsViewProps> = ({ activeSims, onNavigate, filterT
 
   const currentSim = filteredSims.find(s => s.id === selectedSimId) || filteredSims[0];
 
+  // Per-SIM refresh button. Hits `/h5/esim/{iccid}/usage` via
+  // `checkDataUsage` — that endpoint dispatches to EsimAccess for digital
+  // eSIMs and to PCCW for physical SIMs, so the same call works for both
+  // SIM types. The legacy path used `queryProfile` (Red Tea only), which
+  // silently returned stale/default data for PCCW cards.
   const handleRefreshStatus = useCallback(async (sim: ActiveSim) => {
-    if (!sim.iccid || !onUpdateSim) return;
+    if (!onUpdateSim) return;
+    const iccid = resolveIccid(sim);
+    if (!iccid) return;
     setRefreshingSimId(sim.id);
     try {
-      const profile = await queryProfile(sim.iccid);
-      const newStatus = mapRedTeaStatus(profile.status);
-      let usedGB = profile.usedVolume ? profile.usedVolume / (1024 * 1024 * 1024) : sim.dataUsedGB;
-      let totalGB = profile.totalVolume ? profile.totalVolume / (1024 * 1024 * 1024) : sim.dataTotalGB;
-      if (totalGB > 500) totalGB = sim.dataTotalGB || 3;
-      if (usedGB > totalGB) usedGB = sim.dataUsedGB;
-      onUpdateSim(sim.id, {
-        status: newStatus,
-        dataUsedGB: Math.round(usedGB * 100) / 100,
-        dataTotalGB: Math.round(totalGB * 10) / 10,
-      });
+      const usage = await checkDataUsage(iccid);
+      const totalGB = usage.totalVolume / (1024 * 1024 * 1024);
+      const usedGB = usage.usedVolume / (1024 * 1024 * 1024);
+      const updates: Partial<ActiveSim> = {};
+      if (Number.isFinite(totalGB) && totalGB > 0 && totalGB <= 500) {
+        updates.dataTotalGB = Math.round(totalGB * 10) / 10;
+      }
+      if (Number.isFinite(usedGB) && usedGB >= 0 && usedGB <= (updates.dataTotalGB ?? sim.dataTotalGB ?? Infinity)) {
+        updates.dataUsedGB = Math.round(usedGB * 100) / 100;
+      }
+      if (usage.expiredTime) {
+        updates.expiryDate = usage.expiredTime;
+      }
+      // eSIM status still comes from the Red Tea profile query since the
+      // usage endpoint doesn't carry lifecycle state. For physical SIMs
+      // the PCCW status is already surfaced on the bound-list endpoint,
+      // so skip the profile call there to avoid a useless Red Tea hit
+      // that always returns "not found" for PCCW ICCIDs.
+      if (sim.type === 'ESIM') {
+        try {
+          const profile = await queryProfile(iccid);
+          updates.status = mapRedTeaStatus(profile.status);
+        } catch {
+          /* keep previous status */
+        }
+      }
+      if (Object.keys(updates).length > 0) {
+        onUpdateSim(sim.id, updates);
+      }
     } catch {
-      // silently fail -- profile may not be queryable yet
+      // silently fail -- SIM may be unreachable upstream
     } finally {
       setRefreshingSimId(null);
     }
@@ -141,13 +166,17 @@ const MySimsView: React.FC<MySimsViewProps> = ({ activeSims, onNavigate, filterT
     }
   }, [isRechargeModalOpen, currentSim]);
 
+  // Top-bar sync button on the ring-gauge card. `checkDataUsage` routes
+  // to the right supplier (EsimAccess / PCCW) backend-side, so the same
+  // call works for both ESIM and PHYSICAL SIMs. We also piggy-back
+  // `handleRefreshStatus` so the store reflects the freshly fetched
+  // volume — otherwise the sync spinner finishes but the UI keeps the
+  // stale numbers.
   const handleSync = async () => {
+    if (!currentSim) return;
     setIsSyncing(true);
     try {
-      if (currentSim?.type === 'ESIM') {
-        const iccid = resolveIccid(currentSim);
-        await checkDataUsage(iccid);
-      }
+      await handleRefreshStatus(currentSim);
     } finally {
       setTimeout(() => setIsSyncing(false), 1500);
     }

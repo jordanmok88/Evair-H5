@@ -99,7 +99,7 @@ const en = {
     data_amount_gb: '{{n}} GB',
     data_amount_na: '—',
     used_with_unit: '{{data}} used',
-    gb_used: 'GB used',
+    gb_used: 'used',
     gb_remaining: 'remaining',
     active: 'Active',
     pending: 'Pending Activation',

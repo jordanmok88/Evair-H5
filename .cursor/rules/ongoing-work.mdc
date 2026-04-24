@@ -1,0 +1,50 @@
+---
+description: "Current work-in-progress and open threads. Read this first at the start of every session so you know what Jordan is in the middle of."
+alwaysApply: true
+---
+
+# Ongoing work — read this first
+
+Last updated: 2026-04-24. Update this file at the END of every meaningful work session.
+
+## Active thread: front-page redesign
+
+Jordan asked us to study competitors (Airalo + EIOTCLUB) in depth, then
+discuss how to improve Evair's front page. Research is done and saved to
+`.cursor/rules/competitor-analysis.mdc`.
+
+**Next step**: answer the 4 open questions in PART 6 of that file before
+any design work starts:
+1. Primary audience (travelers vs. use-case buyers)?
+2. Physical SIM checkout (Amazon Storefront vs. in-app)?
+3. Home top-level cut (SIM/eSIM tabs vs. country/use-case)?
+4. Public Netlify H5 role (SEO marketing site vs. app shell only)?
+
+Do NOT write code on the front page until Jordan answers these.
+
+## Resolved recently (don't re-open without cause)
+- APP preview title = "Evair APP" (2026-04-24)
+- `#app-preview` testing banner removed from APP mode (2026-04-24)
+- eSIM catalogue routing via `supplierFetchPackages` only (2026-04-22)
+- Live SIM usage via `checkDataUsage()` for both ESIM and physical SIMs (2026-04-23)
+- `gb_used` i18n fixed to avoid "GB GB used" (2026-04-23)
+- AI assistant professionalized, emojis removed (2026-04-24)
+- Flutter app `H5_URL` repointed to `feature/api-integration` Netlify branch (2026-04-24)
+- `user_push_preferences` + `push_tokens` migrations run (2026-04-23)
+- US carrier/country banner removed from ShopView physical SIM section (2026-04-24)
+
+## Known external blockers
+- **PCCW supplier API** returns `401 Distributor is De-activated`. External
+  (Jordan's PCCW account). UI handles it gracefully; don't silently hide it.
+
+## Pre-existing issues (not fixed, documented for when Jordan asks)
+- `npm test` reports "No test files found" — no Vitest tests are configured.
+- TypeScript errors in `BarcodeScanner.tsx`, `esimApi.ts`, `pushService.ts` —
+  pre-existing, not from recent work. Ask Jordan before touching.
+
+## House rules for updating this file
+- When a thread is resolved, move it from "Active" to "Resolved recently".
+- When a new task starts, write a one-paragraph "Active thread" entry with the
+  concrete next step.
+- Prune "Resolved recently" to the last ~10 items; older stuff lives in
+  `docs/CONVERSATION_HISTORY.md`.

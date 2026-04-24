@@ -30,7 +30,7 @@ function runningInsideNativeApp(): boolean {
  * QA purposes, so we should render without the dev-only banners / test
  * scaffolding — exactly like the real APP does on a phone.
  */
-function isAppPreviewHash(): boolean {
+export function isAppPreviewHash(): boolean {
   if (typeof window === 'undefined') return false;
   return window.location.hash.includes('app-preview');
 }

@@ -1,6 +1,6 @@
 # Evair H5 — Development Conversation History
 
-> Last updated: April 18, 2026
+> Last updated: April 24, 2026
 >
 > **Flutter successor app**: A native mobile app (EvairSIM, Flutter 3.38) has been started to replace this H5.
 > Full Flutter history lives at `~/Development/EvairSIM-App/docs/CONVERSATION_HISTORY.md`.
@@ -298,3 +298,52 @@ Milestones M0–M7 complete in one autonomous pass:
    **Implication for this H5 codebase**: the `ShopView` marketplace pattern (country browse, purchase flow) is now a LEGACY concept for the new product direction. If we ever touch `ShopView.tsx` going forward, we should consider whether it still belongs. For now the H5 continues to serve existing customers while Flutter becomes the PCCW-first app.
 
 Full Flutter-side history, architecture decisions, API endpoint mappings, pivot TODO list, and session-by-session log live in `~/Development/EvairSIM-App/docs/CONVERSATION_HISTORY.md`.
+
+---
+
+## Session 3 (April 22–24, 2026) — APP preview fixes, live usage, AI assistant, iOS build, competitor research
+
+### 1. APP preview polish (Apr 22–23)
+- Browser tab title now flips to "Evair APP" when URL hash contains `#app-preview`. Logic in `App.tsx` using `isAppPreviewHash()` from `utils/testMode.ts` (now exported).
+- Removed the stray "testing banner" from APP preview mode.
+
+### 2. eSIM catalogue regression fix (Apr 22)
+- Shop was showing "0 plans found" because `services/dataService.ts::fetchPackages` routed through `packageService.getPackages()` with no `size` param, and `backendPkgToEsimPackage` crashed on the empty response.
+- Fix: `fetchPackages` + `prefetchPackages` now always call the supplier path (`supplierFetchPackages` / `supplierPrefetch` from `esimApi.ts`). Regression guard written into `.cursor/rules/esim-api-services.mdc`.
+
+### 3. Live SIM usage for APP (Apr 23)
+- Usage display mismatch (e.g. "0 GB GB used" / "3 GB / 3 GB remaining" when actual was 451 MB / 2 GB).
+- Fixed i18n: `gb_used` changed from "GB used" to "used" in all three locales.
+- `App.tsx::fetchUserSims` now fans out parallel `checkDataUsage(iccid)` calls after loading SIMs, merging live `totalGB` / `usedGB` / `expiryDate` back into state.
+- `MySimsView.tsx::handleRefreshStatus` now uses `checkDataUsage` for BOTH eSIM and physical SIMs; `queryProfile` is only called for Red Tea (eSIM), skipped for PCCW.
+
+### 4. Supplier API audit (Apr 23)
+- Confirmed all PCCW + Red Tea endpoints are wired through `ProviderFactory` / `ConnectivityProvider`. Provider contract is honored by `EsimAccessProvider` and `PccwProvider`.
+- PCCW currently returns `401 Distributor is De-activated` — external blocker on Jordan's PCCW account. UI falls back to local DB snapshots.
+- Ran `php artisan migrate` to create `push_tokens` + `user_push_preferences` (were missing, causing a 500 on `/push/preferences`).
+
+### 5. AI assistant professionalization (Apr 24)
+- Rewrote `ai/evairAssistant.ts`: removed every emoji, professional/welcoming/polite tone throughout, supplier-aware vocabulary (eSIM vs. physical SIM, Red Tea vs. PCCW, USA-only for physical), expanded knowledge base.
+
+### 6. iOS app not loading on iPhone (Apr 24)
+Multi-step debug:
+- First issue: iPhone on same Wi-Fi couldn't reach Mac dev server — solved by using Mac's LAN IP `http://192.168.31.125:3000/#app-preview` in Safari.
+- Second issue: Xcode build error — Dart type mismatch in `lib/core/push/push_notification_service.dart` line 267 (`URLRequest(url:)` expects `WebUri`, not `Uri`). Wrapped with `WebUri(target.toString())`.
+- Third issue: App froze on splash — `Firebase.initializeApp()` was crashing because `GoogleService-Info.plist` / `google-services.json` were missing. Added fail-soft `try/catch` + `_firebaseReady` flag, then ran `flutterfire configure` to generate `firebase_options.dart` + both native config files, then updated `Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform)`.
+- Fourth issue: App loaded Laravel welcome page (wrong URL), then loaded OLD version of H5. Root cause: `AppConstants.h5Url` defaulted to `https://evair.zhhwxt.cn/` and then to the `main` branch of Netlify. Fixed by repointing to `https://feature-api-integration--evair-h5.netlify.app/` — the branch where the current H5 work lives. **Locked into `product-decisions.mdc`** — do not change back.
+
+### 7. USA banner removal (Apr 24)
+- Removed the "United States · AT&T · Verizon · T-Mobile · 3G/4G/5G" country card from ShopView's physical SIM section — all physical SIMs are USA-only, a single-country banner added no filtering value. Re-introduce a picker only if we add a second country.
+
+### 8. Competitor research (Apr 24)
+Deep crawl of Airalo (www.airalo.com) and EIOTCLUB (www.eiotclub.com), multi-tier (homepage, country pages, product detail pages, policy/help/blog, cart/account flows). Full dossier saved to **`.cursor/rules/competitor-analysis.mdc`** — covers site trees, page templates, hidden features (Airmoney, EiotclubCredits, renewals, eSIM recycling, shared plans, ICCID refill portal), and a gap checklist vs. Evair.
+
+### 9. Persistent memory system (Apr 24)
+Set up three alwaysApply rule files so every new session starts with loaded context:
+- `.cursor/rules/ongoing-work.mdc` — active threads + recently resolved
+- `.cursor/rules/product-decisions.mdc` — locked-in decisions
+- `.cursor/rules/competitor-analysis.mdc` — competitor dossier (on-demand)
+Plus CLAUDE.md pointer block at the top. Stubs mirrored into the three sister repos (Evair-Laravel, admin, EvairSIM-App) so cross-repo work also sees it.
+
+### Open thread at end of session
+Front-page redesign is blocked on 4 questions in PART 6 of `competitor-analysis.mdc` (primary audience, physical SIM checkout, home top-level cut, public Netlify H5 role). Do not start design work until answered.

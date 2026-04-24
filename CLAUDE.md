@@ -2,6 +2,28 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+## Active context (read these first, every session)
+
+Three `alwaysApply` rule files hold Jordan's persistent memory — the agent
+should treat them as preloaded context:
+
+- `.cursor/rules/ongoing-work.mdc` — what's in-flight right now, what was just
+  resolved, what the next step is. **Always read first.**
+- `.cursor/rules/product-decisions.mdc` — locked-in product decisions.
+  Do not re-debate.
+- `.cursor/rules/auto-save-workflow.mdc` — how to save work across all mirrors.
+
+On-demand reference (load when the topic comes up):
+
+- `.cursor/rules/competitor-analysis.mdc` — Airalo + EIOTCLUB dossier
+  (home page, shop UX, pricing, trust signals, loyalty, blog, SEO).
+- `.cursor/rules/esim-api-services.mdc` — supplier integration + shop
+  catalogue regression guards.
+- `.cursor/rules/business-context.mdc` / `business-decisions.mdc` — product
+  and business context.
+- `docs/CONVERSATION_HISTORY.md` — chronological log of past work sessions
+  and major decisions.
+
 ## Build & Development Commands
 
 ```bash
