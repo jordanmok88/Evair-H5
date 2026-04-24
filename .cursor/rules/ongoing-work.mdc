@@ -41,16 +41,22 @@ Do not touch home page, country pages, or device pages yet — that's Phase 2/3.
 - APP preview title, catalogue routing, live SIM usage, AI assistant polish,
   iOS/Firebase fixes, USA banner removal (see `docs/CONVERSATION_HISTORY.md`).
 
+## Current branch
+
+Working directly on `main` (feature/api-integration was merged into main on
+2026-04-24 evening, commit `63de1fa`). Going forward, new work commits
+straight to main. The `feature/api-integration` branch still exists for
+history and as a Netlify deploy-preview alias, but is no longer the
+working branch.
+
 ## Known external blockers
 
 - **PCCW supplier API**: `401 Distributor is De-activated` — Jordan's account
   with PCCW. UI falls back to local DB snapshots gracefully.
-- **`evairdigital.com` DNS**: being set up by Jordan 2026-04-24 evening. Once
-  live, switch `AppConstants.h5Url` to `https://evairdigital.com/app` and
-  test. Cert provisioning usually takes 5–30 min post-propagation.
-- **`main` branch is stale**: production branch on Netlify; serves the old
-  H5. All current work is on `feature/api-integration`. Decision pending on
-  whether to merge → `main` or switch Netlify's production branch.
+- **`evairdigital.com` DNS**: Jordan is setting it up now (2026-04-24 evening).
+  Once DNS + Netlify cert are live, the domain will serve the freshly-merged
+  main branch (which now contains all current work). No further code change
+  needed — DNS is purely a Netlify + registrar operation.
 
 ## Pre-existing issues (not fixed, documented for when Jordan asks)
 
