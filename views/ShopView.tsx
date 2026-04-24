@@ -1273,18 +1273,14 @@ const ShopView: React.FC<ShopViewProps> = ({ testMode = false, isLoggedIn, user,
             <>
               <h3 className="text-lg font-bold text-slate-900 mb-3 tracking-tight">{t('shop.purchase_sim_cards')}</h3>
 
-              {/* Country / carrier info header */}
-              <div className="bg-white rounded-xl p-4 mb-4 shadow-sm border border-slate-100">
-                <div className="flex items-center gap-3">
-                  <FlagIcon countryCode="US" size="sm" />
-                  <div className="flex-1 min-w-0">
-                    <p className="text-base font-semibold text-slate-900 leading-tight">United States</p>
-                    <p className="text-xs text-slate-400 mt-0.5">AT&amp;T · Verizon · T-Mobile · <span className="text-[11px] font-semibold text-slate-600">3G/4G/5G</span></p>
-                  </div>
-                </div>
-              </div>
-
-              {/* Amazon storefront CTA — replaces the in-app plan grid. */}
+              {/* Amazon storefront CTA — replaces the in-app plan grid.
+                  Note: the standalone "United States · AT&T · Verizon ·
+                  T-Mobile · 3G/4G/5G" country card used to live here but
+                  was removed on 2026-04-24 — all physical SIMs are USA-only
+                  right now, so a single-country banner added no filtering
+                  value and just took up prime screen real estate. If we
+                  later add physical SIMs for additional countries, bring
+                  back a list/picker instead of a single hard-coded card. */}
               <a
                 href={AMAZON_SIM_STOREFRONT_URL}
                 target="_blank"
