@@ -25,7 +25,13 @@ const SiteFooter: React.FC = () => (
     <footer className="bg-slate-900 text-slate-400 px-4 md:px-8 py-8 text-sm">
         <div className="max-w-6xl mx-auto flex flex-col md:flex-row items-center gap-4 justify-between">
             <div className="flex items-center gap-2">
-                <span className="inline-block w-6 h-6 rounded-md bg-gradient-to-br from-orange-500 to-amber-400" />
+                <img
+                    src="/evairsim-logo.png"
+                    alt="EvairSIM"
+                    width={24}
+                    height={24}
+                    className="w-6 h-6 rounded-md"
+                />
                 <span className="font-semibold text-white">Evair Digital</span>
                 <span>© {new Date().getFullYear()}</span>
             </div>

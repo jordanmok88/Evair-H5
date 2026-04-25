@@ -41,8 +41,14 @@ const SiteHeader: React.FC<SiteHeaderProps> = ({ active = null }) => (
     <header className="sticky top-0 bg-white/90 backdrop-blur-md z-30 border-b border-slate-100">
         <div className="max-w-6xl mx-auto px-4 md:px-8 h-16 flex items-center justify-between">
             <a href="/" className="flex items-center gap-2 font-bold text-lg text-slate-900">
-                <span className="inline-block w-8 h-8 rounded-lg bg-gradient-to-br from-orange-500 to-amber-400" />
-                Evair
+                <img
+                    src="/evairsim-logo.png"
+                    alt="EvairSIM"
+                    width={32}
+                    height={32}
+                    className="w-8 h-8 rounded-lg shadow-sm"
+                />
+                <span className="hidden sm:inline">EvairSIM</span>
             </a>
             <nav className="hidden md:flex items-center gap-6 text-sm font-medium text-slate-600">
                 {NAV_ITEMS.map(item => (
@@ -63,7 +69,7 @@ const SiteHeader: React.FC<SiteHeaderProps> = ({ active = null }) => (
                 href="/app"
                 className="text-sm font-semibold text-orange-600 hover:text-orange-700"
             >
-                Open app →
+                Sign in →
             </a>
         </div>
     </header>

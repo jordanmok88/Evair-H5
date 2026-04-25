@@ -43,6 +43,33 @@ function App() {
     };
   }, []);
 
+  // Phone-frame scroll lock. The customer-app shell uses an iPhone-style
+  // contained layout on tablet/desktop (see <CustomerApp/>) and locks the
+  // outer page so the inner phone frame is the only scroll container.
+  // Every other public surface (marketing, device landing, travel, help,
+  // blog, legal, activate, top-up, apiTest) needs normal page scrolling,
+  // so we toggle the `app-shell` class only when CustomerApp renders.
+  // CSS scopes overflow:hidden behind html.app-shell — see app.css.
+  useEffect(() => {
+    const isCustomerApp =
+      route.kind !== 'apiTest' &&
+      route.kind !== 'activate' &&
+      route.kind !== 'topup' &&
+      route.kind !== 'marketing' &&
+      route.kind !== 'device' &&
+      route.kind !== 'travel' &&
+      route.kind !== 'help' &&
+      route.kind !== 'blog' &&
+      route.kind !== 'legal';
+    const root = document.documentElement;
+    if (isCustomerApp) {
+      root.classList.add('app-shell');
+    } else {
+      root.classList.remove('app-shell');
+    }
+    return () => { root.classList.remove('app-shell'); };
+  }, [route]);
+
   // Tab title override. Three surfaces own the document title:
   //   1. /activate(*)    → "Activate your Evair SIM"
   //   2. /app(*) or

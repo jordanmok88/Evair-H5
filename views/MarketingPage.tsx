@@ -50,8 +50,14 @@ const MarketingPage: React.FC = () => {
             <header className="sticky top-0 bg-white/90 backdrop-blur-md z-30 border-b border-slate-100">
                 <div className="max-w-6xl mx-auto px-4 md:px-8 h-16 flex items-center justify-between">
                     <a href="/" className="flex items-center gap-2 font-bold text-lg">
-                        <span className="inline-block w-8 h-8 rounded-lg bg-gradient-to-br from-orange-500 to-amber-400" />
-                        Evair
+                        <img
+                            src="/evairsim-logo.png"
+                            alt="EvairSIM"
+                            width={32}
+                            height={32}
+                            className="w-8 h-8 rounded-lg shadow-sm"
+                        />
+                        <span className="hidden sm:inline">EvairSIM</span>
                     </a>
                     <nav className="hidden md:flex items-center gap-6 text-sm font-medium text-slate-600">
                         <a href="/travel-esim" className="hover:text-slate-900">Travel eSIM</a>
@@ -65,15 +71,17 @@ const MarketingPage: React.FC = () => {
                         href={APP_PATH}
                         className="text-sm font-semibold text-orange-600 hover:text-orange-700"
                     >
-                        Open app →
+                        Sign in →
                     </a>
                 </div>
             </header>
 
             {/* Hero — audience split.
-                The right-hand "card" is purely decorative on desktop; on
-                mobile it collapses below so the two CTAs always sit above
-                the fold. */}
+                The right-hand product photo shows the real EvairSIM card
+                (with brand mark + ICCID barcode + Top-up QR) so visitors
+                see the actual product on first paint. We also surface a
+                smaller version below the CTAs on mobile so phone users
+                aren't left with a text-only hero. */}
             <section className="px-4 md:px-8 py-12 md:py-20 max-w-6xl mx-auto">
                 <div className="grid md:grid-cols-2 gap-10 items-center">
                     <div>
@@ -113,22 +121,37 @@ const MarketingPage: React.FC = () => {
                             <CheckCircle2 size={14} className="text-emerald-500 ml-2" />
                             24/7 support.
                         </div>
+
+                        {/* Mobile-only product photo. Sits beneath the
+                            CTAs so they remain above the fold on phones,
+                            while still giving mobile users a credible
+                            visual of the actual SIM card. */}
+                        <div className="md:hidden mt-10">
+                            <div className="relative max-w-sm mx-auto">
+                                <div className="absolute -inset-4 bg-gradient-to-br from-orange-500/15 to-amber-400/15 rounded-3xl blur-2xl" />
+                                <img
+                                    src="/evairsim-card.png"
+                                    alt="EvairSIM travel SIM card with QR top-up and ICCID barcode"
+                                    width={1024}
+                                    height={576}
+                                    className="relative w-full h-auto rounded-2xl shadow-xl"
+                                    loading="eager"
+                                />
+                            </div>
+                        </div>
                     </div>
 
                     <div className="hidden md:block">
                         <div className="relative">
                             <div className="absolute -inset-6 bg-gradient-to-br from-orange-500/20 to-amber-400/20 rounded-3xl blur-2xl" />
-                            <div className="relative aspect-[4/5] bg-gradient-to-br from-orange-500 to-amber-400 rounded-3xl p-8 flex flex-col justify-between text-white shadow-2xl shadow-orange-500/20">
-                                <div>
-                                    <div className="text-xs uppercase tracking-widest opacity-90 mb-1">Evair eSIM</div>
-                                    <div className="text-2xl font-bold">USA · Global</div>
-                                </div>
-                                <Wifi size={48} className="opacity-60" />
-                                <div>
-                                    <div className="font-mono text-sm opacity-90">8985 2000 2633 ••••</div>
-                                    <div className="text-xs opacity-75 mt-1">Instant activation</div>
-                                </div>
-                            </div>
+                            <img
+                                src="/evairsim-card.png"
+                                alt="EvairSIM travel SIM card with QR top-up and ICCID barcode"
+                                width={1024}
+                                height={576}
+                                className="relative w-full h-auto rounded-2xl shadow-2xl shadow-orange-500/20"
+                                loading="eager"
+                            />
                         </div>
                     </div>
                 </div>
@@ -259,8 +282,14 @@ const MarketingPage: React.FC = () => {
                 <div className="max-w-6xl mx-auto grid md:grid-cols-5 gap-8 text-sm">
                     <div className="md:col-span-1">
                         <div className="flex items-center gap-2 font-bold text-white text-lg mb-3">
-                            <span className="inline-block w-7 h-7 rounded-lg bg-gradient-to-br from-orange-500 to-amber-400" />
-                            Evair
+                            <img
+                                src="/evairsim-logo.png"
+                                alt="EvairSIM"
+                                width={28}
+                                height={28}
+                                className="w-7 h-7 rounded-lg"
+                            />
+                            EvairSIM
                         </div>
                         <p className="text-slate-400 leading-relaxed">
                             Connectivity for travelers, residents, and the people in between.

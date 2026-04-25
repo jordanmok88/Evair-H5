@@ -20,9 +20,16 @@ body {
   overscroll-behavior: none;
 }
 
-/* Phone frame: contained layout for tablet/desktop */
+/* Phone frame: contained layout for tablet/desktop. Opt-in via the
+   `app-shell` class on <html> — set by App.tsx only when rendering
+   the customer-app phone frame. Marketing / help / blog / legal /
+   device-landing / travel / activate / top-up pages need normal
+   page-level scrolling, so they leave the class off and the body
+   scrolls naturally. */
 @media (min-width: 640px) {
-  html, body, #root {
+  html.app-shell,
+  html.app-shell body,
+  html.app-shell #root {
     height: 100%;
     overflow: hidden;
   }
