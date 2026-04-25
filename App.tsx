@@ -14,6 +14,8 @@ import TopUpPage from './views/TopUpPage';
 import MarketingPage from './views/MarketingPage';
 import DeviceLandingPage from './views/DeviceLandingPage';
 import TravelEsimPage from './views/TravelEsimPage';
+import HelpCenterPage from './views/HelpCenterPage';
+import BlogPage from './views/BlogPage';
 import { Tab, ActiveSim, SimType, User, AppNotification, EsimProfileResult } from './types';
 import { Lock } from 'lucide-react';
 import { MOCK_COUNTRIES, MOCK_PLANS_US, MOCK_ACTIVE_SIMS, MOCK_NOTIFICATIONS, CARRIER_MAP } from './constants';
@@ -59,6 +61,11 @@ function App() {
         // hydration (so the country / category appears in the tab),
         // but we set a sensible default in case content loads slow.
         document.title = 'Evair — Mobile data, simplified';
+      } else if (route.kind === 'help' || route.kind === 'blog') {
+        // Same pattern as device/travel — pages own their own title
+        // once hydrated; this is a fallback for the brief flash before
+        // React mounts.
+        document.title = route.kind === 'help' ? 'Help center — Evair' : 'Evair Blog';
       } else if (isAppPreviewHash() || isAppPath()) {
         document.title = 'Evair APP';
       } else if (document.title === 'Evair APP') {
@@ -74,6 +81,8 @@ function App() {
   if (route.kind === 'marketing') return <MarketingPage />;
   if (route.kind === 'device') return <DeviceLandingPage category={route.category} />;
   if (route.kind === 'travel') return <TravelEsimPage countryCode={route.countryCode} />;
+  if (route.kind === 'help') return <HelpCenterPage slug={route.slug} />;
+  if (route.kind === 'blog') return <BlogPage slug={route.slug} />;
 
   return <CustomerApp />;
 }

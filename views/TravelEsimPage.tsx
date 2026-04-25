@@ -75,6 +75,8 @@ const TravelEsimPage: React.FC<TravelEsimPageProps> = ({ countryCode }) => {
                         <a href="/travel-esim" className="text-orange-600 font-semibold">
                             Travel eSIM
                         </a>
+                        <a href="/help" className="hover:text-slate-900">Help</a>
+                        <a href="/blog" className="hover:text-slate-900">Blog</a>
                     </nav>
                     <a
                         href="/app"
@@ -101,6 +103,8 @@ const TravelEsimPage: React.FC<TravelEsimPageProps> = ({ countryCode }) => {
                         <a href="/sim/camera" className="hover:text-white">Camera</a>
                         <a href="/sim/iot" className="hover:text-white">IoT</a>
                         <a href="/travel-esim" className="hover:text-white">Travel eSIM</a>
+                        <a href="/help" className="hover:text-white">Help</a>
+                        <a href="/blog" className="hover:text-white">Blog</a>
                         <a href="/legal/refund" className="hover:text-white">Refunds</a>
                         <a href="mailto:service@evairdigital.com" className="hover:text-white">
                             Support

@@ -58,7 +58,8 @@ const MarketingPage: React.FC = () => {
                         <a href="/sim/phone" className="hover:text-slate-900">Phone</a>
                         <a href="/sim/camera" className="hover:text-slate-900">Camera</a>
                         <a href="/sim/iot" className="hover:text-slate-900">IoT</a>
-                        <a href="#why" className="hover:text-slate-900">Why Evair</a>
+                        <a href="/help" className="hover:text-slate-900">Help</a>
+                        <a href="/blog" className="hover:text-slate-900">Blog</a>
                     </nav>
                     <a
                         href={APP_PATH}
@@ -255,8 +256,8 @@ const MarketingPage: React.FC = () => {
 
             {/* Footer */}
             <footer className="bg-slate-900 text-slate-300 px-4 md:px-8 py-10">
-                <div className="max-w-6xl mx-auto grid md:grid-cols-4 gap-8 text-sm">
-                    <div>
+                <div className="max-w-6xl mx-auto grid md:grid-cols-5 gap-8 text-sm">
+                    <div className="md:col-span-1">
                         <div className="flex items-center gap-2 font-bold text-white text-lg mb-3">
                             <span className="inline-block w-7 h-7 rounded-lg bg-gradient-to-br from-orange-500 to-amber-400" />
                             Evair
@@ -282,6 +283,15 @@ const MarketingPage: React.FC = () => {
                             { label: 'Security & trail cameras', href: '/sim/camera' },
                             { label: 'IoT & smart devices', href: '/sim/iot' },
                             { label: 'Activate a SIM', href: ACTIVATE_PATH },
+                        ]}
+                    />
+                    <FooterColumn
+                        title="Resources"
+                        links={[
+                            { label: 'Help center', href: '/help' },
+                            { label: 'Install your eSIM', href: '/help/install-esim-iphone' },
+                            { label: 'Refund policy', href: '/help/refund-policy' },
+                            { label: 'Blog', href: '/blog' },
                         ]}
                     />
                     <FooterColumn

@@ -34,6 +34,8 @@ export type Route =
     | { kind: 'marketing' }                            // /welcome (Phase 3 apex landing page)
     | { kind: 'device'; category: DeviceCategory }     // /sim/phone, /sim/camera, /sim/iot (Phase 2 SEO)
     | { kind: 'travel'; countryCode: string | null }   // /travel-esim, /travel-esim/jp (Phase 2 SEO)
+    | { kind: 'help'; slug: string | null }            // /help, /help/install-esim (Phase 4)
+    | { kind: 'blog'; slug: string | null }            // /blog, /blog/sim-vs-esim (Phase 4)
     | { kind: 'apiTest' };                             // legacy #api-test debug surface
 
 const DEVICE_CATEGORIES: ReadonlySet<DeviceCategory> = new Set(['phone', 'camera', 'iot']);
@@ -104,6 +106,27 @@ export function getRoute(): Route {
         return { kind: 'travel', countryCode: cleaned.length === 2 ? cleaned : null };
     }
 
+    // Phase 4 — help center: /help (index) and /help/{slug} (article).
+    // Slugs are validated by the page component against the static
+    // article catalogue; unknown slugs render the "article not found"
+    // empty state rather than 404 at the network layer.
+    if (path === '/help' || path === '/help/') {
+        return { kind: 'help', slug: null };
+    }
+    if (path.startsWith('/help/')) {
+        const slug = sanitiseSlug(path.slice('/help/'.length));
+        return { kind: 'help', slug: slug || null };
+    }
+
+    // Phase 4 — blog: /blog (index) and /blog/{slug} (post).
+    if (path === '/blog' || path === '/blog/') {
+        return { kind: 'blog', slug: null };
+    }
+    if (path.startsWith('/blog/')) {
+        const slug = sanitiseSlug(path.slice('/blog/'.length));
+        return { kind: 'blog', slug: slug || null };
+    }
+
     // Apex evairdigital.com renders the marketing page at `/`. App users
     // still hit /app, /activate, /top-up explicitly so they're unaffected.
     if (path === '/' && MARKETING_HOSTS.has(window.location.hostname.toLowerCase())) {
@@ -121,6 +144,16 @@ export function getRoute(): Route {
  * constraint). Callers should treat `null` as "ask the user to scan or type
  * their ICCID" rather than as an error.
  */
+/**
+ * Pull the first path segment as a content slug. Strips anything other
+ * than lowercase letters, digits, and hyphens so a malformed URL can't
+ * sneak HTML/JS into the page title via the slug parameter.
+ */
+function sanitiseSlug(rest: string): string {
+    const first = rest.split('/')[0] ?? '';
+    return first.toLowerCase().replace(/[^a-z0-9-]/g, '').slice(0, 100);
+}
+
 function extractIccidFromQuery(): string | null {
     try {
         const raw = new URLSearchParams(window.location.search).get('iccid');

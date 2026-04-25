@@ -79,6 +79,12 @@ const DeviceLandingPage: React.FC<DeviceLandingPageProps> = ({ category }) => {
                         <a href="/travel-esim" className={navLinkClass(false)}>
                             Travel eSIM
                         </a>
+                        <a href="/help" className={navLinkClass(false)}>
+                            Help
+                        </a>
+                        <a href="/blog" className={navLinkClass(false)}>
+                            Blog
+                        </a>
                     </nav>
                     <a
                         href="/app"
@@ -296,6 +302,8 @@ const DeviceLandingPage: React.FC<DeviceLandingPageProps> = ({ category }) => {
                         <a href="/sim/camera" className="hover:text-white">Camera</a>
                         <a href="/sim/iot" className="hover:text-white">IoT</a>
                         <a href="/travel-esim" className="hover:text-white">Travel eSIM</a>
+                        <a href="/help" className="hover:text-white">Help</a>
+                        <a href="/blog" className="hover:text-white">Blog</a>
                         <a href="/legal/refund" className="hover:text-white">Refunds</a>
                         <a href="mailto:service@evairdigital.com" className="hover:text-white">
                             Support
