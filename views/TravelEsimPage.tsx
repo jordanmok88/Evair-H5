@@ -456,13 +456,23 @@ const CatalogueIndexView: React.FC = () => {
                 <div className="inline-flex items-center gap-2 bg-orange-50 text-orange-700 text-xs font-bold uppercase tracking-wider px-3 py-1 rounded-full mb-4">
                     <Globe size={12} /> Travel eSIM
                 </div>
+                {/* Hero count is the *carrier-supported* country count from
+                    the RedTea/Maya travel eSIM catalogue (200+), not the
+                    length of TRAVEL_COUNTRIES (which is just the curated
+                    SEO landing pages we've authored — 21 destinations
+                    today, growing as Search Console shows demand). The
+                    grid below is positioned as "popular destinations" so
+                    the catalogue depth and the curated highlights are
+                    both honest. Keep this string in sync with the
+                    `TRAVELER_COUNTRIES` constant in MarketingPage.tsx. */}
                 <h1 className="text-4xl md:text-5xl font-extrabold leading-tight tracking-tight mb-5 max-w-3xl mx-auto">
-                    Stay connected in {TRAVEL_COUNTRIES.length}+ destinations
+                    Stay connected in 200+ destinations
                 </h1>
                 <p className="text-lg text-slate-600 mb-8 max-w-2xl mx-auto">
                     One app, one travel eSIM library, and an optional US 5G data plan
-                    waiting for you when you land. Pick your country below — install
-                    in minutes, connect when you arrive.
+                    waiting for you when you land. Browse our most-popular
+                    destinations below or search the full catalogue in the app —
+                    install in minutes, connect when you arrive.
                 </p>
                 <a
                     href="/app#esim"
@@ -473,6 +483,16 @@ const CatalogueIndexView: React.FC = () => {
             </section>
 
             <section className="px-4 md:px-8 pb-16 max-w-6xl mx-auto">
+                <div className="text-center mb-8">
+                    <div className="inline-flex items-center gap-2 bg-slate-100 text-slate-700 text-xs font-bold uppercase tracking-wider px-3 py-1 rounded-full mb-3">
+                        Popular destinations
+                    </div>
+                    <p className="text-sm text-slate-500 max-w-xl mx-auto">
+                        A curated set of the {TRAVEL_COUNTRIES.length} most-searched
+                        countries — the full catalogue covering 200+ destinations is
+                        searchable inside the app.
+                    </p>
+                </div>
                 {regionOrder
                     .filter(r => grouped[r]?.length)
                     .map(region => (
