@@ -35,17 +35,28 @@ body {
   }
 }
 
-/* The desktop phone preview is hard-coded at 880 px tall so the design
-   matches a real iPhone. On laptops with shorter viewports (most 13"
-   MacBooks render around 700–820 px once browser chrome is accounted
-   for) that fixed height plus the surrounding `overflow: hidden` would
-   clip the top and bottom of the phone. Cap the frame to the available
-   viewport minus the outer p-8 padding, so the entire phone is always
-   visible regardless of the user's screen size. The `880px` ceiling
-   keeps the design from stretching ridiculously tall on 4K displays. */
+/* Desktop phone preview. Reference dimensions are 430 × 880 px (iPhone
+   15 Pro Max-ish, ratio ≈ 0.489). On laptops with shorter viewports
+   (most 13" MacBooks render around 700–820 px after browser chrome)
+   the original fixed 880 px height + surrounding `overflow: hidden`
+   clipped the top and bottom of the phone. Capping ONLY the height
+   keeps the width at 430 px, which made the phone look "fat" (wrong
+   aspect ratio).
+
+   The fix: cap the height to viewport-minus-padding AND lock the
+   aspect ratio so the width shrinks in lockstep. The 880 px ceiling
+   keeps the design from stretching ridiculously tall on 4K displays;
+   the 430 px width cap kicks in only when the viewport is tall enough
+   that the aspect-ratio-derived width would exceed it (i.e. never,
+   since the ceiling enforces height ≤ 880). */
 @media (min-width: 1024px) {
   .phone-frame-fit {
     height: min(880px, calc(100dvh - 4rem));
+    aspect-ratio: 430 / 880;
+    /* Width is implied by height + aspect-ratio. Cap it as a belt-and-
+       braces guard against future ceiling changes. */
+    width: auto;
+    max-width: 430px;
   }
 }
 
