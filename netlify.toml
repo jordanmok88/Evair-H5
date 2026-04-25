@@ -8,6 +8,39 @@
 [functions]
   directory = "netlify/functions"
 
+# Edge functions run on Deno Deploy in front of the CDN. Used here
+# for per-route OG / Twitter Card rewriting so social scrapers
+# (Twitter, Slack, iMessage, Facebook, LinkedIn) get correct link
+# previews — the SPA's client-side <title>/meta updates don't reach
+# them. See netlify/edge-functions/og-rewriter.ts for details.
+[[edge_functions]]
+  function = "og-rewriter"
+  path = "/help"
+
+[[edge_functions]]
+  function = "og-rewriter"
+  path = "/help/*"
+
+[[edge_functions]]
+  function = "og-rewriter"
+  path = "/blog"
+
+[[edge_functions]]
+  function = "og-rewriter"
+  path = "/blog/*"
+
+[[edge_functions]]
+  function = "og-rewriter"
+  path = "/travel-esim"
+
+[[edge_functions]]
+  function = "og-rewriter"
+  path = "/travel-esim/*"
+
+[[edge_functions]]
+  function = "og-rewriter"
+  path = "/sim/*"
+
 [[redirects]]
   from = "/api/track"
   to = "/.netlify/functions/track"

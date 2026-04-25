@@ -27,7 +27,8 @@ import {
     type BlogTag,
 } from '../data/blogPosts';
 import ArticleBlocks from '../components/article/ArticleBlocks';
-import { SharedHeader, SharedFooter } from './HelpCenterPage';
+import SiteHeader from '../components/marketing/SiteHeader';
+import SiteFooter from '../components/marketing/SiteFooter';
 
 interface BlogPageProps {
     slug: string | null;
@@ -50,7 +51,7 @@ const BlogPage: React.FC<BlogPageProps> = ({ slug }) => {
 
     return (
         <div className="min-h-screen bg-white text-slate-900">
-            <SharedHeader currentSection="blog" />
+            <SiteHeader active="blog" />
 
             {slug && !post ? (
                 <NotFound slug={slug} />
@@ -60,7 +61,7 @@ const BlogPage: React.FC<BlogPageProps> = ({ slug }) => {
                 <BlogIndex />
             )}
 
-            <SharedFooter />
+            <SiteFooter />
         </div>
     );
 };

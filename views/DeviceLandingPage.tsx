@@ -32,6 +32,8 @@ import React, { useEffect } from 'react';
 import { ArrowRight, CheckCircle2, Gauge } from 'lucide-react';
 import { DEVICE_CONTENT } from '../data/deviceLandings';
 import type { DeviceCategory } from '../utils/routing';
+import SiteHeader from '../components/marketing/SiteHeader';
+import SiteFooter from '../components/marketing/SiteFooter';
 
 interface DeviceLandingPageProps {
     category: DeviceCategory;
@@ -59,41 +61,7 @@ const DeviceLandingPage: React.FC<DeviceLandingPageProps> = ({ category }) => {
 
     return (
         <div className="min-h-screen bg-white text-slate-900">
-            {/* Header — minimal, links back to marketing site */}
-            <header className="sticky top-0 bg-white/90 backdrop-blur-md z-30 border-b border-slate-100">
-                <div className="max-w-6xl mx-auto px-4 md:px-8 h-16 flex items-center justify-between">
-                    <a href="/" className="flex items-center gap-2 font-bold text-lg">
-                        <span className="inline-block w-8 h-8 rounded-lg bg-gradient-to-br from-orange-500 to-amber-400" />
-                        Evair
-                    </a>
-                    <nav className="hidden md:flex items-center gap-6 text-sm font-medium text-slate-600">
-                        <a href="/sim/phone" className={navLinkClass(category === 'phone')}>
-                            Phone
-                        </a>
-                        <a href="/sim/camera" className={navLinkClass(category === 'camera')}>
-                            Camera
-                        </a>
-                        <a href="/sim/iot" className={navLinkClass(category === 'iot')}>
-                            IoT
-                        </a>
-                        <a href="/travel-esim" className={navLinkClass(false)}>
-                            Travel eSIM
-                        </a>
-                        <a href="/help" className={navLinkClass(false)}>
-                            Help
-                        </a>
-                        <a href="/blog" className={navLinkClass(false)}>
-                            Blog
-                        </a>
-                    </nav>
-                    <a
-                        href="/app"
-                        className="text-sm font-semibold text-orange-600 hover:text-orange-700"
-                    >
-                        Open app →
-                    </a>
-                </div>
-            </header>
+            <SiteHeader active={category} />
 
             {/* Hero */}
             <section className="px-4 md:px-8 py-12 md:py-20 max-w-6xl mx-auto">
@@ -287,38 +255,9 @@ const DeviceLandingPage: React.FC<DeviceLandingPageProps> = ({ category }) => {
                 </a>
             </section>
 
-            {/* Footer (kept lighter than the marketing-page footer; the
-                full sitemap lives on /welcome) */}
-            <footer className="bg-slate-900 text-slate-400 px-4 md:px-8 py-8 text-sm">
-                <div className="max-w-6xl mx-auto flex flex-col md:flex-row items-center gap-4 justify-between">
-                    <div className="flex items-center gap-2">
-                        <span className="inline-block w-6 h-6 rounded-md bg-gradient-to-br from-orange-500 to-amber-400" />
-                        <span className="font-semibold text-white">Evair Digital</span>
-                        <span>© {new Date().getFullYear()}</span>
-                    </div>
-                    <div className="flex flex-wrap items-center gap-x-5 gap-y-2 justify-center">
-                        <a href="/welcome" className="hover:text-white">Home</a>
-                        <a href="/sim/phone" className="hover:text-white">Phone</a>
-                        <a href="/sim/camera" className="hover:text-white">Camera</a>
-                        <a href="/sim/iot" className="hover:text-white">IoT</a>
-                        <a href="/travel-esim" className="hover:text-white">Travel eSIM</a>
-                        <a href="/help" className="hover:text-white">Help</a>
-                        <a href="/blog" className="hover:text-white">Blog</a>
-                        <a href="/legal/refund" className="hover:text-white">Refunds</a>
-                        <a href="mailto:service@evairdigital.com" className="hover:text-white">
-                            Support
-                        </a>
-                    </div>
-                </div>
-            </footer>
+            <SiteFooter />
         </div>
     );
 };
-
-function navLinkClass(active: boolean): string {
-    return active
-        ? 'text-orange-600 font-semibold'
-        : 'hover:text-slate-900';
-}
 
 export default DeviceLandingPage;

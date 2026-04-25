@@ -139,6 +139,38 @@ function CustomerApp() {
     () => (sessionStorage.getItem('evair-activeTab') as Tab) || Tab.SIM_CARD
   );
   const previousTab = useRef<Tab>(Tab.SIM_CARD);
+
+  // Hash deep-links: external surfaces (help articles, marketing
+  // page, third-party emails) can land users on a specific tab via
+  // `/app#contact`, `/app#inbox`, etc. We honour the hash on mount
+  // and on subsequent hashchange events. The hash is preserved (not
+  // cleared) so the back button feels right.
+  //
+  // Mapping intentionally narrow — only the tabs we publish externally:
+  //   #contact → DIALER (Contact Us / chat)
+  //   #inbox   → INBOX  (notifications)
+  //   #profile → PROFILE
+  useEffect(() => {
+    const HASH_TO_TAB: Record<string, Tab> = {
+      '#contact': Tab.DIALER,
+      '#inbox': Tab.INBOX,
+      '#profile': Tab.PROFILE,
+    };
+    const apply = () => {
+      const tab = HASH_TO_TAB[window.location.hash.toLowerCase()];
+      if (tab) {
+        previousTab.current = activeTab;
+        setActiveTab(tab);
+      }
+    };
+    apply(); // honour initial hash on mount
+    window.addEventListener('hashchange', apply);
+    return () => window.removeEventListener('hashchange', apply);
+    // Intentional: we only want to wire the listener once. activeTab
+    // moves through the closure via previousTab.current which is fine
+    // for the "back to previous tab" intent.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
   const [loginModalMode, setLoginModalMode] = useState<'LOGIN' | 'REGISTER'>('LOGIN');
   

@@ -148,13 +148,33 @@ EvairSIM 实际上是 **2 个代码库 + 3 个用户入口**：
 
 ---
 
-## 九、当前进度速览（截至 2026-04-25）
+## 九、当前进度速览（截至 2026-04-25 晚）
 
 | Phase | 状态 | 备注 |
 |---|---|---|
-| Phase 0 — 路由地基 | 已完成 | 2026-04-24 晚合并到 `main`（commit `63de1fa`） |
-| Phase 1 — 激活+充值漏斗 | 准备开始 | 当前活跃任务，从 `/activate` 落地页开始 |
-| Phase 2 — 设备分类页 | 待开始 | |
-| Phase 3 — 品牌首页 | 待开始 | 开启 `VITE_MARKETING_HOME=1` 在这一步 |
-| Phase 4 — 帮助中心+博客 | 待开始 | |
-| Phase 5 — App 内物理 SIM 结账 | 待开始 | 取决于 Phase 1 的资金回流 |
+| Phase 0 — 路由地基 | ✅ 已完成 | 2026-04-24 晚合并到 `main`（commit `63de1fa`） |
+| Phase 1 — 激活+充值漏斗 | ✅ 已完成 | `/activate`、`/top-up`、ICCID 绑定、auto-renew 合规、Resend 邮件、SB-313 取消流程、Phase 1 SIM 卡查找/状态 API 全部上线 |
+| Phase 2 — 设备分类页 | ✅ 已完成 | `/sim/phone`、`/sim/camera`、`/sim/iot`、`/travel-esim/[country]`（21 国，按地区分组），全部静态可索引（commit `5880519`） |
+| Phase 3 — 品牌首页 | ✅ 已完成 | `/welcome` 双门 hero、三大支柱、Airalo 风视觉；`evairdigital.com/` 已在 apex host 自动渲染（无需 `VITE_MARKETING_HOME` 标志） |
+| Phase 4 — 帮助中心+博客 | ✅ 已完成 | `/help`（10 篇核心文章）、`/blog`（5 篇基石长文）、共享 ArticleBlocks 渲染器、tag 过滤、相关文章；commit `e0aced4`、`da827aa` |
+| Phase 5 — App 内物理 SIM 结账 | ⏸ 暂缓中 | **按规划保持不动**。等 Phase 1 自动续订漏斗的资金回流稳定后再启动；现阶段 Amazon 跳转是正确架构 |
+
+### 附加完成项（不在原规划，但已交付）
+
+| 内容 | 状态 | 备注 |
+|---|---|---|
+| H5 客服聊天升级 | ✅ 已完成 | 把 Ben 在 Flutter 草稿里的 11 项功能（分页历史、乐观图片、订单/产品卡、消息分组、客服头像、状态图标、状态横幅、长按复制、灯箱、附件菜单、空状态）全部移植到 WebView 壳，commit `88feb68` |
+| 跨平台合约（Cross-Platform Contract） | ✅ 已完成 | `docs/CROSS_PLATFORM_CONTRACT.md`，明确 `_cents` 整数字段约定 |
+| Sitemap 自动生成 | ✅ 已完成 | `vite-plugins/sitemap.ts` — 从 `data/*.ts` 数据文件自动生成 46-URL sitemap，每次 build 自动更新 |
+| robots.txt 修正 | ✅ 已完成 | 指向 `evairdigital.com` 而不是 `netlify.app` 预览域 |
+
+### 规划之外的已知遗留事项（已处理 / 仍待做）
+
+| 项 | 状态 | 备注 |
+|---|---|---|
+| 每条 URL 的 OG / Twitter Card | ✅ 已处理 | `netlify/edge-functions/og-rewriter.ts` 在 CDN 边缘改写 `<title>` / OG / Twitter 标签；社交爬虫（Twitter / Slack / iMessage / Facebook）现在能正确预览 `/help/*`、`/blog/*`、`/travel-esim/*`、`/sim/*` |
+| Header / Footer 重复 | ✅ 已处理 | 抽成 `components/marketing/SiteHeader.tsx` + `SiteFooter.tsx`，DeviceLanding / TravelEsim / HelpCenter / BlogPage 全部复用；MarketingPage 保留自己的富 5-列 footer（首页特殊处理） |
+| `/app#contact` 深链 | ✅ 已处理 | `App.tsx` 内 CustomerApp 加了 hash 监听器：`#contact` → DIALER tab，`#inbox` → INBOX，`#profile` → PROFILE。挂载时和 hashchange 时都会响应 |
+| 每条 URL 的专属 OG 图片（PNG） | ⏸ 暂缓 | 当前所有路由统一回退到 `/og-image.png`。要做"每文章不同图"需要引入 `satori` 或 `@vercel/og` 动态渲染管线 — 工作量约半天，当下投入产出比不高，等社交分享流量起来再说 |
+
+**Phase 0–4 + 上述三项打磨**全部完成后，按规划 Phase 5（App 内物理 SIM 结账）保持暂缓，直到 Phase 1 自动续订漏斗的资金回流稳定。
