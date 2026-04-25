@@ -1307,7 +1307,7 @@ const ProfileView: React.FC<ProfileViewProps> = ({ isLoggedIn, user, onLogin, on
                         menu so it's the most visible loyalty hook. */}
                     <MenuGroup>
                         <MenuItem
-                            label={t('profile.refer_and_earn', { defaultValue: 'Refer & earn $5' })}
+                            label={t('profile.refer_and_earn')}
                             onClick={() => setCurrentView('REFERRAL')}
                             isLast
                             rightElement={

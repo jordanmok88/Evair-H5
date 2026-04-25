@@ -113,7 +113,7 @@ const ReferralView: React.FC<ReferralViewProps> = ({ onBack }) => {
         e.preventDefault();
         const cleaned = redeemCode.trim().toUpperCase();
         if (cleaned.length < 4) {
-            setRedeemError('Please enter the full code your friend shared.');
+            setRedeemError(t('referral.code_too_short'));
             return;
         }
         setRedeemBusy(true);
@@ -133,7 +133,7 @@ const ReferralView: React.FC<ReferralViewProps> = ({ onBack }) => {
                     ? err.message
                     : err instanceof Error
                         ? err.message
-                        : "We couldn't apply that code.";
+                        : t('referral.error_default');
             setRedeemError(msg);
         } finally {
             setRedeemBusy(false);
@@ -150,9 +150,7 @@ const ReferralView: React.FC<ReferralViewProps> = ({ onBack }) => {
                 >
                     <ChevronLeft size={22} className="text-slate-900" />
                 </button>
-                <h1 className="text-lg font-bold text-slate-900 ml-2">
-                    {t('referral.title', { defaultValue: 'Refer & earn' })}
-                </h1>
+                <h1 className="text-lg font-bold text-slate-900 ml-2">{t('referral.title')}</h1>
             </div>
 
             <div className="flex-1 px-4 pt-4 pb-6">
@@ -165,15 +163,13 @@ const ReferralView: React.FC<ReferralViewProps> = ({ onBack }) => {
                 {!loading && error && (
                     <div className="bg-white rounded-2xl border border-slate-200 p-6 text-center">
                         <AlertCircle className="w-8 h-8 mx-auto mb-2 text-red-500" />
-                        <div className="font-bold text-slate-900 mb-1">
-                            Couldn't load your referrals
-                        </div>
+                        <div className="font-bold text-slate-900 mb-1">{t('referral.error_load')}</div>
                         <p className="text-sm text-slate-500 mb-4">{error}</p>
                         <button
                             onClick={load}
                             className="px-4 py-2 bg-slate-900 text-white rounded-full text-sm font-semibold"
                         >
-                            Try again
+                            {t('referral.try_again')}
                         </button>
                     </div>
                 )}
@@ -185,12 +181,10 @@ const ReferralView: React.FC<ReferralViewProps> = ({ onBack }) => {
                             <div className="absolute -top-8 -right-8 w-32 h-32 rounded-full bg-white/10 pointer-events-none" />
                             <Gift size={20} className="mb-2" />
                             <div className="text-xs font-bold uppercase tracking-wider opacity-90 mb-1">
-                                Give {formatDollars(data.rewards.referee_cents)} · Get{' '}
-                                {formatDollars(data.rewards.referrer_cents)}
+                                {t('referral.hero_eyebrow')}
                             </div>
                             <p className="text-sm leading-relaxed mb-4 pr-2 opacity-95">
-                                Share your code. When your friend makes their first paid order,
-                                you both get top-up credit.
+                                {t('referral.hero_body')}
                             </p>
                             <div className="bg-white/15 backdrop-blur-sm rounded-xl px-4 py-3 mb-4 flex items-center justify-between">
                                 <span className="font-mono text-2xl font-bold tracking-[0.2em]">
@@ -199,7 +193,7 @@ const ReferralView: React.FC<ReferralViewProps> = ({ onBack }) => {
                                 <button
                                     onClick={handleCopy}
                                     className="bg-white text-orange-600 rounded-full w-10 h-10 flex items-center justify-center active:scale-95 transition-transform"
-                                    aria-label="Copy code"
+                                    aria-label={t('referral.copy_label')}
                                 >
                                     {copied ? <CheckCircle2 size={18} /> : <Copy size={16} />}
                                 </button>
@@ -209,22 +203,22 @@ const ReferralView: React.FC<ReferralViewProps> = ({ onBack }) => {
                                 className="w-full bg-white text-orange-600 font-bold py-3 rounded-xl flex items-center justify-center gap-2 active:scale-[0.98] transition-transform"
                             >
                                 <Share size={16} />
-                                Share with a friend
+                                {t('referral.share_button')}
                             </button>
                         </div>
 
                         {/* Stats */}
                         <div className="grid grid-cols-3 gap-2 mb-5">
                             <Stat
-                                label="Friends joined"
+                                label={t('referral.stat_friends')}
                                 value={String(data.total_redemptions)}
                             />
                             <Stat
-                                label="Earned"
+                                label={t('referral.stat_earned')}
                                 value={formatDollars(data.total_credit_cents)}
                             />
                             <Stat
-                                label="Balance"
+                                label={t('referral.stat_balance')}
                                 value={formatDollars(data.credit_balance_cents)}
                                 highlight
                             />
@@ -241,11 +235,11 @@ const ReferralView: React.FC<ReferralViewProps> = ({ onBack }) => {
                                         <Coins size={18} className="text-emerald-500" />
                                     </div>
                                     <span className="font-semibold text-slate-900 text-sm">
-                                        Got a friend's code?
+                                        {t('referral.got_code')}
                                     </span>
                                 </div>
                                 <span className="text-xs font-semibold text-orange-600">
-                                    {redeemOpen ? 'Hide' : 'Apply'}
+                                    {redeemOpen ? t('referral.hide') : t('referral.apply')}
                                 </span>
                             </button>
                             {redeemOpen && (
@@ -253,14 +247,14 @@ const ReferralView: React.FC<ReferralViewProps> = ({ onBack }) => {
                                     {redeemSuccess ? (
                                         <div className="bg-emerald-50 text-emerald-700 text-sm font-semibold rounded-xl p-3 flex items-center gap-2">
                                             <CheckCircle2 size={16} />
-                                            Code applied — credit will land after your first paid order.
+                                            {t('referral.code_applied')}
                                         </div>
                                     ) : (
                                         <>
                                             <input
                                                 value={redeemCode}
                                                 onChange={e => setRedeemCode(e.target.value)}
-                                                placeholder="Enter code (e.g. EVAIR123)"
+                                                placeholder={t('referral.code_placeholder')}
                                                 className="w-full border border-slate-200 rounded-xl px-3 py-2 font-mono uppercase tracking-widest focus:outline-none focus:border-orange-400"
                                                 autoCapitalize="characters"
                                             />
@@ -273,7 +267,7 @@ const ReferralView: React.FC<ReferralViewProps> = ({ onBack }) => {
                                                 className="w-full bg-slate-900 text-white py-3 rounded-xl font-bold text-sm flex items-center justify-center gap-2 disabled:opacity-50"
                                             >
                                                 {redeemBusy && <Loader2 size={14} className="animate-spin" />}
-                                                Apply code
+                                                {t('referral.code_apply')}
                                             </button>
                                         </>
                                     )}
@@ -284,11 +278,13 @@ const ReferralView: React.FC<ReferralViewProps> = ({ onBack }) => {
                         {/* Redemptions list */}
                         <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden">
                             <div className="px-4 py-3 border-b border-slate-100">
-                                <h2 className="font-bold text-slate-900 text-sm">Friends you've shared with</h2>
+                                <h2 className="font-bold text-slate-900 text-sm">
+                                    {t('referral.history_title')}
+                                </h2>
                             </div>
                             {data.redemptions.length === 0 ? (
                                 <div className="px-4 py-6 text-center text-sm text-slate-500">
-                                    No redemptions yet — share your code to start earning.
+                                    {t('referral.history_empty')}
                                 </div>
                             ) : (
                                 <ul>
@@ -300,10 +296,10 @@ const ReferralView: React.FC<ReferralViewProps> = ({ onBack }) => {
                                             <div>
                                                 <div className="text-sm font-semibold text-slate-900">
                                                     {r.status === 'awarded'
-                                                        ? `Awarded ${formatDollars(r.reward_cents)}`
+                                                        ? `${t('referral.status_awarded')} ${formatDollars(r.reward_cents)}`
                                                         : r.status === 'pending'
-                                                            ? 'Waiting for first order'
-                                                            : 'Voided'}
+                                                            ? t('referral.status_pending')
+                                                            : t('referral.status_void')}
                                                 </div>
                                                 <div className="text-xs text-slate-500">
                                                     {r.awarded_at ?? r.created_at ?? ''}
@@ -327,7 +323,7 @@ const ReferralView: React.FC<ReferralViewProps> = ({ onBack }) => {
 
             {shareToast && (
                 <div className="fixed bottom-8 left-1/2 -translate-x-1/2 bg-slate-900 text-white text-sm font-semibold px-4 py-2 rounded-full shadow-lg z-50">
-                    Link copied — paste it anywhere.
+                    {t('referral.link_copied')}
                 </div>
             )}
         </div>
