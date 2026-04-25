@@ -145,18 +145,34 @@ export const chatService = {
   },
 
   /**
-   * List messages for the current user's conversation. Pass `since` to
-   * receive only messages created strictly after the given ISO timestamp
-   * (used by the polling fallback when WS isn't available).
+   * List messages for the current user's conversation. Three modes:
+   *
+   *   - No params → newest page (server-defined limit), `has_more` true
+   *     when older history exists. Use this on initial bootstrap.
+   *   - `since` → polling delta, only messages strictly after that
+   *     timestamp, no limit. `has_more` is meaningless here (always false).
+   *   - `before_id` → previous page of history (id < before_id). Used by
+   *     infinite-scroll-up to load older messages.
+   *
+   * The server response is always wrapped in `{ messages, has_more }` so
+   * callers can decide whether to keep paginating without a count round-trip.
    */
   async listMessages(
     conversationId: number,
-    options: { since?: string } = {}
-  ): Promise<ChatMessageDto[]> {
+    options: { since?: string; beforeId?: number; limit?: number } = {}
+  ): Promise<{ messages: ChatMessageDto[]; hasMore: boolean }> {
     const params = new URLSearchParams();
     if (options.since) params.set('since', options.since);
+    if (options.beforeId !== undefined) params.set('before_id', String(options.beforeId));
+    if (options.limit !== undefined) params.set('limit', String(options.limit));
     const qs = params.toString() ? `?${params.toString()}` : '';
-    return await get<ChatMessageDto[]>(`${ENDPOINTS.MESSAGES(conversationId)}${qs}`);
+    const body = await get<{ messages: ChatMessageDto[]; has_more?: boolean }>(
+      `${ENDPOINTS.MESSAGES(conversationId)}${qs}`
+    );
+    return {
+      messages: body.messages ?? [],
+      hasMore: Boolean(body.has_more),
+    };
   },
 
   /**

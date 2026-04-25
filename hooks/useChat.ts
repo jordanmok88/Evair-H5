@@ -122,6 +122,11 @@ export function useChat() {
   const [messages, setMessages] = useState<LocalChatMessage[]>([]);
   const [status, setStatus] = useState<ChatStatus>('idle');
   const [error, setError] = useState<Error | null>(null);
+  // `hasMore` tracks whether older history exists. Set on bootstrap
+  // and refreshed each time `loadMore()` returns. Once false, the
+  // scroll-up handler should stop firing.
+  const [hasMore, setHasMore] = useState<boolean>(false);
+  const [loadingMore, setLoadingMore] = useState<boolean>(false);
 
   // Cleanup tracker: WS subscription, poll interval, and a "mounted" flag
   // for safely setting state from async callbacks.
@@ -129,6 +134,9 @@ export function useChat() {
   const pollTimerRef = useRef<number | null>(null);
   const lastMessageAtRef = useRef<string | null>(null);
   const mountedRef = useRef(true);
+  // Concurrency guard for loadMore() — pagination requests must not
+  // overlap or we'd merge older pages out of order.
+  const loadMoreInFlightRef = useRef<boolean>(false);
 
   // Track the latest messages array in a ref so the polling timer's
   // closure doesn't go stale every render. Without this, we'd either
@@ -170,7 +178,7 @@ export function useChat() {
       pollTimerRef.current = window.setInterval(async () => {
         try {
           const since = lastMessageAtRef.current ?? undefined;
-          const list = await chatService.listMessages(conversationId, { since });
+          const { messages: list } = await chatService.listMessages(conversationId, { since });
           if (list.length > 0) ingestMessages(list);
         } catch (err) {
           // Don't tear down on transient errors — the next tick will retry.
@@ -265,9 +273,11 @@ export function useChat() {
       if (!mountedRef.current) return;
       setConversation(conv);
 
-      const initial = await chatService.listMessages(conv.id);
+      const { messages: initial, hasMore: initialHasMore } =
+        await chatService.listMessages(conv.id);
       if (!mountedRef.current) return;
       setMessages(sortMessages(initial.map(m => ({ ...m }))));
+      setHasMore(initialHasMore);
       lastMessageAtRef.current =
         initial.length > 0 ? initial[initial.length - 1].created_at : null;
 
@@ -364,17 +374,186 @@ export function useChat() {
 
   const sendText = useCallback((text: string) => sendMessage(text, { messageType: 'text' }), [sendMessage]);
 
+  /**
+   * Pick → preview locally → upload → send.
+   *
+   * The local-file preview uses `URL.createObjectURL` so the user sees
+   * their image immediately while the upload is in flight (otherwise
+   * picking a 5MB photo on a slow connection looks like nothing
+   * happened). We swap the local URL for the remote one once the
+   * upload returns; the corresponding object URL is revoked on the
+   * next render to free memory.
+   */
   const sendImage = useCallback(
     async (file: File) => {
-      const upload = await chatService.uploadAttachment(file);
-      return sendMessage('[image]', {
-        messageType: 'image',
-        mediaUrl: upload.url,
-        metadata: { width: upload.width, height: upload.height, bytes: upload.bytes },
-      });
+      if (!conversation) {
+        throw new Error('Cannot send before conversation is ready');
+      }
+
+      const clientMsgId = newClientMsgId();
+      const localUrl =
+        typeof URL !== 'undefined' && typeof URL.createObjectURL === 'function'
+          ? URL.createObjectURL(file)
+          : null;
+
+      // Optimistic insert with the local file URL so the user sees the
+      // photo right away. We mark `isOptimistic` so the merge logic can
+      // replace it with the server-confirmed message later.
+      const optimistic: LocalChatMessage = {
+        id: -Date.now(),
+        conversation_id: conversation.id,
+        sender: 'customer',
+        sender_name: null,
+        content: '[image]',
+        english_content: null,
+        client_msg_id: clientMsgId,
+        is_read: false,
+        message_type: 'image',
+        media_url: localUrl,
+        metadata: { uploading: true },
+        created_at: new Date().toISOString(),
+        isOptimistic: true,
+      };
+      setMessages(prev => sortMessages([...prev, optimistic]));
+
+      try {
+        const upload = await chatService.uploadAttachment(file);
+        const confirmed = await chatService.sendMessage(conversation.id, {
+          content: '[image]',
+          client_msg_id: clientMsgId,
+          message_type: 'image',
+          media_url: upload.url,
+          metadata: { width: upload.width, height: upload.height, bytes: upload.bytes },
+        });
+        if (mountedRef.current) ingestMessages([confirmed]);
+      } catch (err) {
+        console.warn('[useChat] sendImage failed', err);
+        if (!mountedRef.current) return;
+        setMessages(prev =>
+          prev.map(m =>
+            m.client_msg_id === clientMsgId
+              ? { ...m, failed: true, metadata: { ...(m.metadata as object | null), uploading: false } }
+              : m
+          )
+        );
+        throw err;
+      } finally {
+        // Revoke the object URL once the server-confirmed message has
+        // replaced the optimistic entry. Defer one tick so the UI has
+        // already swapped to the remote URL.
+        if (localUrl) {
+          window.setTimeout(() => {
+            try {
+              URL.revokeObjectURL(localUrl);
+            } catch {
+              /* harmless */
+            }
+          }, 1000);
+        }
+      }
     },
+    [conversation, ingestMessages]
+  );
+
+  /**
+   * Send a structured order-card message per CROSS_PLATFORM_CONTRACT §6.3.
+   * The renderer (this side and the agent admin) shows a tap-able card
+   * with the order number, package name, status, and total. Caller
+   * passes dollars (e.g. `9.99`); we serialise as `amount_cents` to
+   * match how Laravel stores money everywhere else.
+   */
+  const sendOrderCard = useCallback(
+    (params: {
+      orderNo: string;
+      packageName: string;
+      status: string;
+      /** Total in major units (dollars). Converted to cents for the contract. */
+      amount: number;
+      currency?: string;
+    }) =>
+      sendMessage(`Order #${params.orderNo}`, {
+        messageType: 'order',
+        metadata: {
+          order_no: params.orderNo,
+          package_name: params.packageName,
+          status: params.status,
+          amount_cents: Math.round(params.amount * 100),
+          currency: params.currency ?? 'USD',
+        },
+      }),
     [sendMessage]
   );
+
+  /**
+   * Send a structured product-card message per CROSS_PLATFORM_CONTRACT §6.4.
+   * Used when the user wants to ask about a specific package
+   * ("Is this plan available in Italy?") and we want the agent to see
+   * a rich preview rather than a raw package code. Tapping the card
+   * (in either client) opens the top-up flow with the package preselected.
+   */
+  const sendProductCard = useCallback(
+    (params: {
+      packageCode: string;
+      name: string;
+      /** Price in major units (dollars). Converted to cents for the contract. */
+      price: number;
+      currency?: string;
+      location?: string;
+      durationDays?: number;
+      dataVolumeGb?: number;
+    }) =>
+      sendMessage(`Recommended: ${params.name}`, {
+        messageType: 'product',
+        metadata: {
+          package_code: params.packageCode,
+          name: params.name,
+          price_cents: Math.round(params.price * 100),
+          currency: params.currency ?? 'USD',
+          ...(params.location ? { location: params.location } : {}),
+          ...(params.durationDays !== undefined ? { duration_days: params.durationDays } : {}),
+          ...(params.dataVolumeGb !== undefined ? { data_volume_gb: params.dataVolumeGb } : {}),
+        },
+      }),
+    [sendMessage]
+  );
+
+  /**
+   * Page back through history. Triggered when the user scrolls to the
+   * top of the message list. Idempotent: while a request is in flight
+   * subsequent calls are no-ops, and once `hasMore` is false this
+   * becomes a no-op forever (until the next mount).
+   *
+   * We use the smallest *real* server id as the cursor — optimistic
+   * entries have negative ids, so they're filtered out.
+   */
+  const loadMore = useCallback(async () => {
+    if (!conversation) return;
+    if (loadMoreInFlightRef.current) return;
+    if (!hasMore) return;
+
+    const realIds = messagesRef.current
+      .filter(m => m.id > 0)
+      .map(m => m.id);
+    if (realIds.length === 0) return;
+    const oldestId = Math.min(...realIds);
+
+    loadMoreInFlightRef.current = true;
+    setLoadingMore(true);
+    try {
+      const { messages: older, hasMore: stillMore } =
+        await chatService.listMessages(conversation.id, { beforeId: oldestId });
+      if (!mountedRef.current) return;
+      // Older pages can't conflict with optimistic entries (different id
+      // ranges), so a plain merge by id is sufficient.
+      setMessages(prev => mergeMessages(prev, older));
+      setHasMore(stillMore);
+    } catch (err) {
+      console.warn('[useChat] loadMore failed', err);
+    } finally {
+      loadMoreInFlightRef.current = false;
+      if (mountedRef.current) setLoadingMore(false);
+    }
+  }, [conversation, hasMore]);
 
   /**
    * Re-attempt sending a message that previously failed (the optimistic
@@ -402,14 +581,34 @@ export function useChat() {
       messages,
       status,
       error,
+      hasMore,
+      loadingMore,
       sendText,
       sendImage,
+      sendOrderCard,
+      sendProductCard,
       sendMessage,
       retry,
+      loadMore,
       reload: bootstrap,
       disconnect: disconnectEcho,
     }),
-    [conversation, messages, status, error, sendText, sendImage, sendMessage, retry, bootstrap]
+    [
+      conversation,
+      messages,
+      status,
+      error,
+      hasMore,
+      loadingMore,
+      sendText,
+      sendImage,
+      sendOrderCard,
+      sendProductCard,
+      sendMessage,
+      retry,
+      loadMore,
+      bootstrap,
+    ]
   );
 }
 

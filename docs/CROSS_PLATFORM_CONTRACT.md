@@ -344,18 +344,40 @@ Payload (mirrors `ChatMessageResource` — same keys appear from REST):
 }
 ```
 
-### 5.4 Polling fallback
+### 5.4 Listing messages — three modes
+
+`GET /v1/app/conversations/{id}/messages` supports three mutually-
+exclusive query patterns. The response is **always** wrapped in
+`{ messages, has_more }` so callers can paginate without a count
+round-trip.
+
+| Mode | Query | Order | Cap | Use case |
+|---|---|---|---|---|
+| Initial load | (no params) | id ASC | server-defined `limit` (default 50, max 100) | First open of the chat — load the latest page |
+| Polling delta | `?since=<ISO timestamp>` | id ASC | uncapped (small payload by definition) | Plan-B fallback when WS is unhealthy |
+| Scroll-up history | `?before_id=<int>` | id ASC | server-defined `limit` | Infinite-scroll older history |
+
+```jsonc
+{
+  "code": "200",
+  "msg":  "成功",
+  "data": {
+    "messages": [ /* ChatMessageResource[] */ ],
+    "has_more": true   // older history exists; client may call again with before_id
+  }
+}
+```
+
+`has_more` is meaningful in initial-load and pagination modes. Polling
+callers can ignore it.
+
+### 5.4.1 Polling fallback
 
 When the WebSocket is unhealthy (auth fails, disconnect won't recover,
-mobile network blocks WS), the client **must** fall back to polling:
-
-```
-GET /v1/app/conversations/{id}/messages?since=<last_received_created_at>
-```
-
-at 5-second intervals until the WS recovers. New messages from polling
-are dedup'd against WS messages by `id` (preferred) or `client_msg_id`
-(when `id` is not yet known on the sender side, see §5.6).
+mobile network blocks WS), the client **must** fall back to polling
+the `?since=` mode at 5-second intervals until the WS recovers. New
+messages from polling are dedup'd against WS messages by `id`
+(preferred) or `client_msg_id` (see §5.6).
 
 ### 5.5 Optimistic send and dedup
 
