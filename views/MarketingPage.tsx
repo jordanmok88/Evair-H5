@@ -16,7 +16,8 @@
  * copy, two strong CTAs above the fold. Nothing here calls authenticated
  * APIs — it must render even when the customer is logged out and even on
  * a brand-new device. Anything that requires the user (e.g. activation)
- * lives behind the CTA buttons that route into `/activate` or `/app`.
+ * lives behind the CTA buttons that route into `/activate`, `/travel-esim`,
+ * or `/app` depending on device and product.
  *
  * Sections (top → bottom):
  *   - Hero (audience split)
@@ -50,6 +51,8 @@ const TRAVELER_COUNTRIES = '200+';
 const STAY_PRICE_USD = '9.99';
 const APP_PATH = '/app';
 const ACTIVATE_PATH = '/activate';
+/** Desktop travel eSIM browse + SEO surface (Phase 2). */
+const TRAVEL_ESIM_LANDING = '/travel-esim';
 
 /**
  * Public Amazon storefront for EvairSIM physical SIM cards.
@@ -63,19 +66,14 @@ const AMAZON_STOREFRONT_URL =
     'https://www.amazon.com/s?k=EvairSIM';
 
 /**
- * Click handler for every CTA whose desktop fallback is the H5 eSIM
- * tab. On mobile we hijack the click and replace the URL with the
- * H5 deep-link so the customer lands in the full-screen app on the
- * very first paint. On desktop we let the browser follow the `<a>`
- * tag's `href`, which now also goes to `/app#esim` — App.tsx renders
- * that tab full-width without the phone-mock chrome (see App.tsx
- * `showStoreLayout`).
+ * Travel eSIM CTAs: desktop → `/travel-esim` (marketing landing +
+ * country catalogue), mobile → `/app#esim` (full-screen H5 store).
  *
- * The `<a>` tag's `href` deliberately stays set to `/app#esim` for
- * SEO bots (which all identify as desktop) and for users with JS
- * disabled — both groups should reach the same destination.
+ * The `<a href>` is always `TRAVEL_ESIM_LANDING` so crawlers and
+ * no-JS desktop users hit the proper desktop page. On mobile we
+ * intercept the click and send the customer straight into the app.
  */
-const goEsim = (e: React.MouseEvent<HTMLAnchorElement>) => {
+const goTravelEsimCta = (e: React.MouseEvent<HTMLAnchorElement>) => {
     if (isMobileDevice()) {
         e.preventDefault();
         window.location.assign(`${APP_PATH}#esim`);
@@ -113,10 +111,8 @@ const MarketingPage: React.FC = () => {
                         Labelled "Mobile Sign in" so desktop visitors
                         aren't surprised when /app still renders the
                         phone-mock for the account/dashboard tabs.
-                        (The eSIM tab is full-width via the marketing
-                        CTAs above; this top-right link is for
-                        returning customers signing into their
-                        account.) */}
+                        Travel eSIM shopping starts on `/travel-esim`
+                        (hero CTA above), not here. */}
                     <a
                         href={APP_PATH}
                         className="text-sm font-semibold text-orange-600 hover:text-orange-700"
@@ -164,8 +160,8 @@ const MarketingPage: React.FC = () => {
                             shop in. */}
                         <div className="max-w-md">
                             <a
-                                href={`${APP_PATH}#esim`}
-                                onClick={goEsim}
+                                href={TRAVEL_ESIM_LANDING}
+                                onClick={goTravelEsimCta}
                                 className="flex items-center justify-center gap-2 bg-orange-500 text-white font-bold px-5 py-3 rounded-xl shadow-lg shadow-orange-500/20 active:scale-[0.98] transition-transform w-full"
                             >
                                 <Globe size={18} /> Travel eSIM
@@ -254,8 +250,8 @@ const MarketingPage: React.FC = () => {
                             <li className="flex items-center gap-2"><CheckCircle2 size={16} className="text-emerald-500" /> 4G/5G on tier-1 carriers</li>
                         </ul>
                         <a
-                            href={`${APP_PATH}#esim`}
-                            onClick={goEsim}
+                            href={TRAVEL_ESIM_LANDING}
+                            onClick={goTravelEsimCta}
                             className="mt-auto inline-flex items-center justify-center gap-2 bg-orange-500 text-white font-bold px-5 py-3 rounded-xl"
                         >
                             Browse plans <ArrowRight size={16} />
@@ -356,8 +352,8 @@ const MarketingPage: React.FC = () => {
                         intent, and desktop users get the full-width
                         store layout (App.tsx `showStoreLayout`). */}
                     <a
-                        href={`${APP_PATH}#esim`}
-                        onClick={goEsim}
+                        href={TRAVEL_ESIM_LANDING}
+                        onClick={goTravelEsimCta}
                         className="inline-flex items-center justify-center gap-2 bg-orange-500 text-white font-bold px-6 py-4 rounded-xl shadow-lg shadow-orange-500/20"
                     >
                         Get started <ArrowRight size={18} />

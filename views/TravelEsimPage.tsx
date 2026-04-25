@@ -15,6 +15,10 @@
  * the H5 app and changes per supplier sync. Marketing anchor uses
  * `priceFromUsd` from the static data file.
  *
+ * Desktop visitors from the apex marketing page land here first
+ * (`/travel-esim`) instead of the phone-shaped H5 shell; CTAs that
+ * continue to checkout point at `/app#esim` or `/app/travel-esim/{iso2}`.
+ *
  * Unknown country codes (typo, country we don't yet stock) fall back
  * to the catalogue index with a small "we don't have that one yet"
  * note so the user isn't 404'd.
@@ -228,7 +232,7 @@ const CatalogueIndexView: React.FC = () => {
                     in minutes, connect when you arrive.
                 </p>
                 <a
-                    href="/app"
+                    href="/app#esim"
                     className="inline-flex items-center justify-center gap-2 bg-orange-500 text-white font-bold px-5 py-3 rounded-xl shadow-lg shadow-orange-500/20"
                 >
                     Browse all plans <ArrowRight size={18} />
