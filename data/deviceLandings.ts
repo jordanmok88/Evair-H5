@@ -75,27 +75,27 @@ export interface DeviceContent {
 export const DEVICE_CONTENT: Record<DeviceCategory, DeviceContent> = {
     phone: {
         category: 'phone',
-        heroTitle: 'A US line for your phone, tablet, or hotspot',
+        heroTitle: 'US 5G data for your phone, tablet, or hotspot',
         heroSubtitle:
-            'Real 5G on the T-Mobile network. Bring your iPhone, Android, iPad, or pocket Wi-Fi — set up in minutes, no contract.',
-        speedHeadline: '5G, up to 650 Mbps',
+            'Real 5G on AT&T, Verizon, and T-Mobile. Bring your iPhone, Android, iPad, or pocket Wi-Fi — plug-and-use in minutes, no contract. Data-only.',
+        speedHeadline: '5G, up to 200 Mbps',
         throttleNote:
-            'First 9 GB at top 5G speeds. After that you stay connected at 10 Mbps — fast enough for HD video, maps, and video calls.',
+            'First 5 GB at top 5G speeds. After that you stay connected at lower speed for the remainder of the cycle — fast enough for maps, messaging, and standard-def video. We never cut you off.',
         pillars: [
             {
                 icon: Wifi,
                 title: 'Real 5G coverage',
-                body: 'Powered by T-Mobile (PCCW MVNO). Same towers, no Wi-Fi-calling-only workaround.',
+                body: 'AT&T, Verizon, and T-Mobile via PCCW. Same towers as the big carriers, no APN workaround.',
             },
             {
                 icon: Smartphone,
-                title: 'A real US number',
-                body: 'Texts, two-factor codes, Venmo, banks, Uber. All your US apps just work.',
+                title: 'Plug & use',
+                body: 'Drop the SIM into any unlocked phone, tablet, or hotspot. APN auto-configures on first boot — no setup screens.',
             },
             {
                 icon: Shield,
                 title: 'No contract',
-                body: 'Pay monthly. Cancel anytime in the app. No credit check, no shutoff fees.',
+                body: 'Pay monthly. Cancel anytime in the app. No SSN, no credit check, no shutoff fees.',
             },
         ],
         devices: [
@@ -124,15 +124,15 @@ export const DEVICE_CONTENT: Record<DeviceCategory, DeviceContent> = {
         faq: [
             {
                 q: 'Will my iPhone or Android work?',
-                a: 'Yes — any unlocked phone from the last 5 years on the T-Mobile bands (most phones sold in the US). Carrier-locked phones from AT&T or Verizon need to be unlocked first.',
+                a: 'Yes — any unlocked phone from the last 5 years that supports US 5G/LTE bands (AT&T, Verizon, T-Mobile). Carrier-locked phones need to be unlocked first.',
             },
             {
-                q: 'Is this a real US number?',
-                a: 'Yes. You get a real US mobile number you can use for texts, calls, two-factor codes, Venmo, and any US app that needs SMS verification.',
+                q: 'Does this include voice, SMS, or a US phone number?',
+                a: 'No. EvairSIM is a data-only service — there is no US phone number, no voice calls, and no SMS over the cellular network. For calls and messaging, use WhatsApp, FaceTime, iMessage, Google Voice, or any other VoIP app over data or Wi-Fi. This is what keeps the price at $9.99/mo.',
             },
             {
                 q: 'What happens after I use my high-speed data?',
-                a: 'You stay online — speeds drop to 10 Mbps for the rest of the month, which still streams HD video, runs maps, and handles video calls comfortably. We never cut you off.',
+                a: 'You stay online — speeds drop for the rest of the cycle but you can still load maps, send messages, and stream standard-def video. We never cut you off.',
             },
             {
                 q: 'Can I use my phone as a hotspot?',
@@ -140,7 +140,7 @@ export const DEVICE_CONTENT: Record<DeviceCategory, DeviceContent> = {
             },
         ],
         ctaHref: '/app',
-        ctaLabel: 'Get a phone plan',
+        ctaLabel: 'Get a data plan',
     },
 
     camera: {

@@ -59,7 +59,7 @@ export const HELP_CATEGORIES: { key: HelpCategory; title: string; blurb: string 
     {
         key: 'physical-sim',
         title: 'US physical SIMs',
-        blurb: 'Setup, APN, hotspot, and number management.',
+        blurb: 'Setup, APN, hotspot, and data plan management.',
     },
     {
         key: 'billing',

@@ -5,7 +5,12 @@
  * paint so customers self-segment immediately:
  *
  *   1. **Travelers** — eSIM in 200+ countries, instant QR delivery.
- *   2. **Long-stay / immigrants** — physical SIM, US number, $9.99/mo.
+ *   2. **Long-stay / immigrants** — physical SIM, US 5G data plan, $9.99/mo.
+ *
+ * IMPORTANT: EvairSIM is a **data-only** service. There is no US phone
+ * number, no voice, no SMS over the cellular network. Customers use
+ * WhatsApp / FaceTime / iMessage over data for calls and messaging.
+ * Do NOT add copy that promises a "US phone number" or "talk & text".
  *
  * This page is intentionally Airalo-clean: lots of whitespace, minimal
  * copy, two strong CTAs above the fold. Nothing here calls authenticated
@@ -96,8 +101,8 @@ const MarketingPage: React.FC = () => {
                             </span>
                         </h1>
                         <p className="text-lg text-slate-600 mb-8 max-w-md leading-relaxed">
-                            Travel eSIMs for short trips. A US line for long stays. Same app,
-                            zero airport markups, instant activation.
+                            Travel eSIMs for short trips. A US 5G data plan for long stays.
+                            Data-only, no contract, instant activation.
                         </p>
                         <div className="grid sm:grid-cols-2 gap-3 max-w-md">
                             <a
@@ -131,9 +136,9 @@ const MarketingPage: React.FC = () => {
                                 <div className="absolute -inset-4 bg-gradient-to-br from-orange-500/15 to-amber-400/15 rounded-3xl blur-2xl" />
                                 <img
                                     src="/evairsim-card-front.png"
-                                    alt="EvairSIM US 5G travel SIM card — AT&T, Verizon, T-Mobile, plug & use"
-                                    width={1480}
-                                    height={960}
+                                    alt="EvairSIM US 5G data SIM card — AT&T, Verizon, T-Mobile, plug & use, data only"
+                                    width={1618}
+                                    height={1121}
                                     className="relative w-full h-auto rounded-2xl shadow-xl"
                                     loading="eager"
                                 />
@@ -146,9 +151,9 @@ const MarketingPage: React.FC = () => {
                             <div className="absolute -inset-6 bg-gradient-to-br from-orange-500/20 to-amber-400/20 rounded-3xl blur-2xl" />
                             <img
                                 src="/evairsim-card-front.png"
-                                alt="EvairSIM US 5G travel SIM card — AT&T, Verizon, T-Mobile, plug & use"
-                                width={1480}
-                                height={960}
+                                alt="EvairSIM US 5G data SIM card — AT&T, Verizon, T-Mobile, plug & use, data only"
+                                width={1618}
+                                height={1121}
                                 className="relative w-full h-auto rounded-2xl shadow-2xl shadow-orange-500/20"
                                 loading="eager"
                             />
@@ -194,14 +199,15 @@ const MarketingPage: React.FC = () => {
                         <div className="text-xs font-bold uppercase tracking-wide text-slate-600 mb-1">
                             For long-stay & new arrivals
                         </div>
-                        <h2 className="text-2xl font-bold mb-2">US line — ${STAY_PRICE_USD}/month</h2>
+                        <h2 className="text-2xl font-bold mb-2">US 5G data — ${STAY_PRICE_USD}/month</h2>
                         <p className="text-slate-600 text-sm leading-relaxed mb-5">
-                            A real US phone number, unlimited talk &amp; text, the data you
-                            need. Order online, activate when your SIM arrives.
+                            Real US 5G on AT&amp;T, Verizon, and T-Mobile. Plug-and-use in any
+                            unlocked phone, tablet, or hotspot. Data-only — pair with WhatsApp,
+                            FaceTime or iMessage for calls and messaging.
                         </p>
                         <ul className="text-sm text-slate-700 space-y-2 mb-6">
                             <li className="flex items-center gap-2"><CheckCircle2 size={16} className="text-emerald-500" /> No SSN, no credit check</li>
-                            <li className="flex items-center gap-2"><CheckCircle2 size={16} className="text-emerald-500" /> Coverage on AT&amp;T network</li>
+                            <li className="flex items-center gap-2"><CheckCircle2 size={16} className="text-emerald-500" /> AT&amp;T &middot; Verizon &middot; T-Mobile coverage</li>
                             <li className="flex items-center gap-2"><CheckCircle2 size={16} className="text-emerald-500" /> Auto-renew or pay monthly</li>
                         </ul>
                         <a
@@ -227,7 +233,7 @@ const MarketingPage: React.FC = () => {
                         <Pillar
                             icon={<Globe className="text-orange-500" size={24} />}
                             title="Global coverage"
-                            body="200+ countries with tier-1 carriers, plus a stable US number for residents and long-stay customers."
+                            body="200+ countries with tier-1 carriers, plus a stable US 5G data plan for residents and long-stay customers."
                         />
                         <Pillar
                             icon={<DollarSign className="text-emerald-500" size={24} />}

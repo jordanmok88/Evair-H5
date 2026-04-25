@@ -185,7 +185,7 @@ export const BLOG_POSTS: BlogPost[] = [
                 type: 'ul',
                 items: [
                     'Travelling internationally: eSIM. You can hold profiles for 5+ countries and switch on the fly. No SIM-tray fumbling at the airport.',
-                    'Long-term US line: either works. Physical SIM is easier if you swap phones often (just move the card). eSIM is easier if you carry one phone for a long time.',
+                    'Long-term US data plan: either works. Physical SIM is easier if you swap phones often (just move the card). eSIM is easier if you carry one phone for a long time.',
                     'IoT / camera / GPS device: physical SIM. Most embedded devices do not yet support eSIM.',
                     'Older phone (pre-2018): physical SIM only — your phone almost certainly does not support eSIM.',
                 ],

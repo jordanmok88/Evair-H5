@@ -573,8 +573,8 @@ const ReadyState: React.FC<ReadyProps> = ({
         <div>
             <h1 className="text-2xl font-bold text-slate-900 mb-1">Top up your SIM</h1>
             <p className="text-sm text-slate-600 mb-5 leading-relaxed">
-                Pick a plan below — we'll add it to your existing card without
-                changing your phone number.
+                Pick a plan below — we'll add it to your existing SIM without
+                replacing the card or interrupting your data.
             </p>
 
             {/* SIM summary chip */}

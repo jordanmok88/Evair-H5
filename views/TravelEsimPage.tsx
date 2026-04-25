@@ -223,8 +223,9 @@ const CatalogueIndexView: React.FC = () => {
                     Stay connected in {TRAVEL_COUNTRIES.length}+ destinations
                 </h1>
                 <p className="text-lg text-slate-600 mb-8 max-w-2xl mx-auto">
-                    One app, one US number, one travel eSIM library. Pick your country
-                    below — install in minutes, connect when you land.
+                    One app, one travel eSIM library, and an optional US 5G data plan
+                    waiting for you when you land. Pick your country below — install
+                    in minutes, connect when you arrive.
                 </p>
                 <a
                     href="/app"
