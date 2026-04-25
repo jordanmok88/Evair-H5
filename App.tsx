@@ -151,9 +151,28 @@ function CustomerApp() {
   }, []);
 
 
-  const [activeTab, setActiveTab] = useState<Tab>(
-    () => (sessionStorage.getItem('evair-activeTab') as Tab) || Tab.SIM_CARD
-  );
+  // Resolve the initial tab from URL hash first, then sessionStorage,
+  // then fall back to SIM_CARD. Reading the hash here (rather than
+  // letting the hash-change effect override after first paint) avoids
+  // a one-frame flash where the customer sees the SIM-Card view even
+  // though they came in through `/app#esim` from the marketing CTA.
+  // The hash table here intentionally mirrors the one in the
+  // hashchange effect below — keep them in lock-step.
+  const [activeTab, setActiveTab] = useState<Tab>(() => {
+    if (typeof window !== 'undefined') {
+      const HASH_TO_TAB: Record<string, Tab> = {
+        '#contact': Tab.DIALER,
+        '#inbox': Tab.INBOX,
+        '#profile': Tab.PROFILE,
+        '#sim-card': Tab.SIM_CARD,
+        '#esim': Tab.ESIM,
+        '#shop': Tab.ESIM,
+      };
+      const fromHash = HASH_TO_TAB[window.location.hash.toLowerCase()];
+      if (fromHash) return fromHash;
+    }
+    return (sessionStorage.getItem('evair-activeTab') as Tab) || Tab.SIM_CARD;
+  });
   const previousTab = useRef<Tab>(Tab.SIM_CARD);
 
   // Phone-frame scroll lock — opt-in via `html.app-shell`. The CSS
@@ -207,8 +226,19 @@ function CustomerApp() {
   //   #inbox    → INBOX     (notifications)
   //   #profile  → PROFILE
   //   #sim-card → SIM_CARD  (physical SIM landing — used by the
-  //               marketing homepage "US SIM (long-stay)" CTA)
-  //   #esim, #shop → ESIM   (digital eSIM catalogue)
+  //               marketing homepage "Buy SIM card" / "Activate
+  //               my SIM" follow-up flows)
+  //   #esim, #shop → ESIM   (digital eSIM catalogue — used by the
+  //               marketing homepage "Travel eSIM" CTA)
+  //
+  // Important: the SIM_CARD / ESIM tabs are both rendered by
+  // <ProductTab/>, which switches its content via a SEPARATE state
+  // (`currentSimType`, sessionStorage-backed, default 'PHYSICAL').
+  // Setting `activeTab` alone is not enough — if `currentSimType`
+  // is still 'PHYSICAL' from a previous visit the customer lands
+  // on the physical-SIM view despite `#esim` in the URL. We mirror
+  // the hash into `currentSimType` so deep-links land on the
+  // intended product every time.
   useEffect(() => {
     const HASH_TO_TAB: Record<string, Tab> = {
       '#contact': Tab.DIALER,
@@ -223,6 +253,11 @@ function CustomerApp() {
       if (tab) {
         previousTab.current = activeTabRef.current;
         setActiveTab(tab);
+        if (tab === Tab.ESIM) {
+          setCurrentSimType('ESIM');
+        } else if (tab === Tab.SIM_CARD) {
+          setCurrentSimType('PHYSICAL');
+        }
       }
     };
     apply(); // honour initial hash on mount
@@ -790,9 +825,20 @@ function CustomerApp() {
     </div>
   );
 
-  const [currentSimType, setCurrentSimType] = useState<SimType>(
-    () => (sessionStorage.getItem('evair-simType') as SimType) || 'PHYSICAL'
-  );
+  // Resolve initial SimType from URL hash first, then sessionStorage.
+  // Same rationale as activeTab above — without this a customer
+  // landing on `/app#esim` would briefly see the PHYSICAL view (the
+  // SIM-Card landing) before the hash effect rewrote currentSimType.
+  // `#sim-card` and `#esim` are the only hashes that map onto a
+  // SimType; every other hash leaves the previous selection alone.
+  const [currentSimType, setCurrentSimType] = useState<SimType>(() => {
+    if (typeof window !== 'undefined') {
+      const hash = window.location.hash.toLowerCase();
+      if (hash === '#esim' || hash === '#shop') return 'ESIM';
+      if (hash === '#sim-card') return 'PHYSICAL';
+    }
+    return (sessionStorage.getItem('evair-simType') as SimType) || 'PHYSICAL';
+  });
 
   useEffect(() => {
     sessionStorage.setItem('evair-activeTab', activeTab);
