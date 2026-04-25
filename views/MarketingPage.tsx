@@ -54,10 +54,11 @@ const MarketingPage: React.FC = () => {
                         Evair
                     </a>
                     <nav className="hidden md:flex items-center gap-6 text-sm font-medium text-slate-600">
-                        <a href="#travelers" className="hover:text-slate-900">For travelers</a>
-                        <a href="#stay" className="hover:text-slate-900">For long-stay</a>
+                        <a href="/travel-esim" className="hover:text-slate-900">Travel eSIM</a>
+                        <a href="/sim/phone" className="hover:text-slate-900">Phone</a>
+                        <a href="/sim/camera" className="hover:text-slate-900">Camera</a>
+                        <a href="/sim/iot" className="hover:text-slate-900">IoT</a>
                         <a href="#why" className="hover:text-slate-900">Why Evair</a>
-                        <a href="#support" className="hover:text-slate-900">Support</a>
                     </nav>
                     <a
                         href={APP_PATH}
@@ -265,19 +266,22 @@ const MarketingPage: React.FC = () => {
                         </p>
                     </div>
                     <FooterColumn
-                        title="Products"
+                        title="Travel"
                         links={[
-                            { label: 'Travel eSIM', href: APP_PATH },
-                            { label: 'US SIM card', href: `${APP_PATH}#sim-card` },
-                            { label: 'Activate a SIM', href: ACTIVATE_PATH },
+                            { label: 'Travel eSIM', href: '/travel-esim' },
+                            { label: 'Japan eSIM', href: '/travel-esim/jp' },
+                            { label: 'UK eSIM', href: '/travel-esim/gb' },
+                            { label: 'Mexico eSIM', href: '/travel-esim/mx' },
                             { label: 'Top up data', href: '/top-up' },
                         ]}
                     />
                     <FooterColumn
-                        title="Company"
+                        title="US SIMs"
                         links={[
-                            { label: 'Support', href: 'mailto:service@evairdigital.com' },
-                            { label: 'Status', href: 'https://status.evairdigital.com' },
+                            { label: 'Phone & tablet', href: '/sim/phone' },
+                            { label: 'Security & trail cameras', href: '/sim/camera' },
+                            { label: 'IoT & smart devices', href: '/sim/iot' },
+                            { label: 'Activate a SIM', href: ACTIVATE_PATH },
                         ]}
                     />
                     <FooterColumn

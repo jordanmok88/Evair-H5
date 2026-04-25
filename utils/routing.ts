@@ -19,12 +19,24 @@
  * @see docs/ACTIVATION_FUNNEL.md §2 — Architecture: path-based routing
  */
 
+/**
+ * Device-category SEO landing pages live under `/sim/{category}`. The
+ * union literal here is the source of truth for what the router will
+ * accept — adding a new category means adding a copy block in
+ * `data/deviceLandings.ts` AND extending this list.
+ */
+export type DeviceCategory = 'phone' | 'camera' | 'iot';
+
 export type Route =
     | { kind: 'app' }                                  // /, /app, /app/*, anything not matched below
     | { kind: 'activate'; iccid: string | null }       // /activate, /activate?iccid=...
     | { kind: 'topup'; iccid: string | null }          // /top-up, /top-up?iccid=...
     | { kind: 'marketing' }                            // /welcome (Phase 3 apex landing page)
+    | { kind: 'device'; category: DeviceCategory }     // /sim/phone, /sim/camera, /sim/iot (Phase 2 SEO)
+    | { kind: 'travel'; countryCode: string | null }   // /travel-esim, /travel-esim/jp (Phase 2 SEO)
     | { kind: 'apiTest' };                             // legacy #api-test debug surface
+
+const DEVICE_CATEGORIES: ReadonlySet<DeviceCategory> = new Set(['phone', 'camera', 'iot']);
 
 /**
  * Hostnames where `/` should boot directly into the marketing page
@@ -67,6 +79,29 @@ export function getRoute(): Route {
 
     if (path === '/welcome' || path === '/marketing') {
         return { kind: 'marketing' };
+    }
+
+    // Phase 2 device-category landing pages: /sim/phone, /sim/camera,
+    // /sim/iot. Anything we don't recognise (e.g. /sim/typo) falls
+    // through to the customer app rather than 404 — Netlify rewrites
+    // catch real 404s above.
+    if (path.startsWith('/sim/')) {
+        const slug = path.slice('/sim/'.length).split('/')[0]?.toLowerCase();
+        if (slug && DEVICE_CATEGORIES.has(slug as DeviceCategory)) {
+            return { kind: 'device', category: slug as DeviceCategory };
+        }
+    }
+
+    // Phase 2 travel eSIM pages: /travel-esim (catalogue index) and
+    // /travel-esim/{iso2} (single-country page). ISO-2 is normalised to
+    // lowercase here; the page component treats it case-insensitively.
+    if (path === '/travel-esim' || path === '/travel-esim/') {
+        return { kind: 'travel', countryCode: null };
+    }
+    if (path.startsWith('/travel-esim/')) {
+        const slug = path.slice('/travel-esim/'.length).split('/')[0]?.toLowerCase() ?? '';
+        const cleaned = slug.replace(/[^a-z]/g, '').slice(0, 2);
+        return { kind: 'travel', countryCode: cleaned.length === 2 ? cleaned : null };
     }
 
     // Apex evairdigital.com renders the marketing page at `/`. App users

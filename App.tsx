@@ -12,6 +12,8 @@ import ApiTestPage from './views/ApiTestPage';
 import ActivatePage from './views/ActivatePage';
 import TopUpPage from './views/TopUpPage';
 import MarketingPage from './views/MarketingPage';
+import DeviceLandingPage from './views/DeviceLandingPage';
+import TravelEsimPage from './views/TravelEsimPage';
 import { Tab, ActiveSim, SimType, User, AppNotification, EsimProfileResult } from './types';
 import { Lock } from 'lucide-react';
 import { MOCK_COUNTRIES, MOCK_PLANS_US, MOCK_ACTIVE_SIMS, MOCK_NOTIFICATIONS, CARRIER_MAP } from './constants';
@@ -52,6 +54,11 @@ function App() {
         document.title = 'Top up your Evair SIM';
       } else if (route.kind === 'marketing') {
         document.title = 'Evair — Mobile data, simplified';
+      } else if (route.kind === 'device' || route.kind === 'travel') {
+        // Device + travel landing pages set their own <title> after
+        // hydration (so the country / category appears in the tab),
+        // but we set a sensible default in case content loads slow.
+        document.title = 'Evair — Mobile data, simplified';
       } else if (isAppPreviewHash() || isAppPath()) {
         document.title = 'Evair APP';
       } else if (document.title === 'Evair APP') {
@@ -65,6 +72,8 @@ function App() {
   if (route.kind === 'activate') return <ActivatePage iccid={route.iccid} />;
   if (route.kind === 'topup') return <TopUpPage iccid={route.iccid} />;
   if (route.kind === 'marketing') return <MarketingPage />;
+  if (route.kind === 'device') return <DeviceLandingPage category={route.category} />;
+  if (route.kind === 'travel') return <TravelEsimPage countryCode={route.countryCode} />;
 
   return <CustomerApp />;
 }
