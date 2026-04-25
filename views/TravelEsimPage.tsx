@@ -452,7 +452,7 @@ const CatalogueIndexView: React.FC = () => {
 
     return (
         <>
-            <section className="px-4 md:px-8 py-12 md:py-16 max-w-6xl mx-auto text-center">
+            <section className="px-4 md:px-8 pt-12 md:pt-16 pb-6 md:pb-8 max-w-6xl mx-auto text-center">
                 <div className="inline-flex items-center gap-2 bg-orange-50 text-orange-700 text-xs font-bold uppercase tracking-wider px-3 py-1 rounded-full mb-4">
                     <Globe size={12} /> Travel eSIM
                 </div>
@@ -468,21 +468,23 @@ const CatalogueIndexView: React.FC = () => {
                 <h1 className="text-4xl md:text-5xl font-extrabold leading-tight tracking-tight mb-5 max-w-3xl mx-auto">
                     Stay connected in 200+ destinations
                 </h1>
-                <p className="text-lg text-slate-600 mb-8 max-w-2xl mx-auto">
-                    One app, one travel eSIM library, and an optional US 5G data plan
-                    waiting for you when you land. Browse our most-popular
-                    destinations below or search the full catalogue in the app —
-                    install in minutes, connect when you arrive.
+                {/* No standalone "Browse all plans" CTA on this page — the
+                    country grid directly below is the primary browse
+                    surface, and any redirect to /app#esim from a desktop
+                    visit just bumps the customer into the H5 store layout
+                    they already came here to bypass. The subhead points
+                    them at the grid; we trust them to scroll. */}
+                <p className="text-lg text-slate-600 max-w-2xl mx-auto">
+                    One app, one travel eSIM library, and an optional US 5G data
+                    plan waiting for you when you land. Pick your destination
+                    below — install in minutes, connect when you arrive.
                 </p>
-                <a
-                    href="/app#esim"
-                    className="inline-flex items-center justify-center gap-2 bg-orange-500 text-white font-bold px-5 py-3 rounded-xl shadow-lg shadow-orange-500/20"
-                >
-                    Browse all plans <ArrowRight size={18} />
-                </a>
             </section>
 
-            <section className="px-4 md:px-8 pb-16 max-w-6xl mx-auto">
+            <section
+                id="popular-destinations"
+                className="px-4 md:px-8 pb-16 max-w-6xl mx-auto"
+            >
                 <div className="text-center mb-8">
                     <div className="inline-flex items-center gap-2 bg-slate-100 text-slate-700 text-xs font-bold uppercase tracking-wider px-3 py-1 rounded-full mb-3">
                         Popular destinations
