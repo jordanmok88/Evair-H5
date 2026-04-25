@@ -108,8 +108,11 @@ const MarketingPage: React.FC = () => {
                             Data-only, no contract, instant activation.
                         </p>
                         <div className="grid sm:grid-cols-2 gap-3 max-w-md">
+                            {/* Both CTAs use the hash deep-link mechanism in
+                                App.tsx (see HASH_TO_TAB) so the H5 customer
+                                shell opens directly on the matching tab. */}
                             <a
-                                href={APP_PATH}
+                                href={`${APP_PATH}#esim`}
                                 className="flex items-center justify-center gap-2 bg-orange-500 text-white font-bold px-5 py-3 rounded-xl shadow-lg shadow-orange-500/20 active:scale-[0.98] transition-transform"
                             >
                                 <Globe size={18} /> Travel eSIM
@@ -188,7 +191,7 @@ const MarketingPage: React.FC = () => {
                             <li className="flex items-center gap-2"><CheckCircle2 size={16} className="text-emerald-500" /> 4G/5G on tier-1 carriers</li>
                         </ul>
                         <a
-                            href={APP_PATH}
+                            href={`${APP_PATH}#esim`}
                             className="mt-auto inline-flex items-center justify-center gap-2 bg-orange-500 text-white font-bold px-5 py-3 rounded-xl"
                         >
                             Browse plans <ArrowRight size={16} />

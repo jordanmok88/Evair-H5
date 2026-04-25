@@ -842,7 +842,12 @@ function CustomerApp() {
   return (
     <div className="lg:bg-[#E5E5E5] lg:h-full lg:min-h-screen lg:flex lg:items-center lg:justify-center lg:p-8 font-sans antialiased selection:bg-orange-100">
       
-      <div ref={phoneRef} className="w-full lg:max-w-[430px] lg:h-[880px] bg-[#F2F4F7] lg:rounded-[3.5rem] lg:overflow-hidden lg:shadow-[0_50px_100px_-20px_rgba(0,0,0,0.25)] relative lg:border-[8px] lg:border-slate-900 lg:ring-1 lg:ring-black/50">
+      {/* Phone preview frame. `phone-frame-fit` is defined in app.css and
+          caps the desktop frame at min(880px, viewport-padding) so a 13"
+          MacBook never clips the top/bottom of the phone. We keep the
+          tailwind `lg:h-[880px]` as a fallback for older browsers
+          (it's overridden by the cascade-loaded class on modern ones). */}
+      <div ref={phoneRef} className="phone-frame-fit w-full lg:max-w-[430px] lg:h-[880px] bg-[#F2F4F7] lg:rounded-[3.5rem] lg:overflow-hidden lg:shadow-[0_50px_100px_-20px_rgba(0,0,0,0.25)] relative lg:border-[8px] lg:border-slate-900 lg:ring-1 lg:ring-black/50">
         
         {/* Generic status bar — only visible in desktop phone frame */}
         <div className="hidden lg:block relative z-50 shrink-0 bg-[#F2F4F7]">
