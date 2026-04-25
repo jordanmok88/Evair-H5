@@ -132,8 +132,8 @@ const MarketingPage: React.FC = () => {
                                 <img
                                     src="/evairsim-card-front.png"
                                     alt="EvairSIM US 5G travel SIM card — AT&T, Verizon, T-Mobile, plug & use"
-                                    width={1281}
-                                    height={780}
+                                    width={1480}
+                                    height={960}
                                     className="relative w-full h-auto rounded-2xl shadow-xl"
                                     loading="eager"
                                 />
@@ -147,8 +147,8 @@ const MarketingPage: React.FC = () => {
                             <img
                                 src="/evairsim-card-front.png"
                                 alt="EvairSIM US 5G travel SIM card — AT&T, Verizon, T-Mobile, plug & use"
-                                width={1281}
-                                height={780}
+                                width={1480}
+                                height={960}
                                 className="relative w-full h-auto rounded-2xl shadow-2xl shadow-orange-500/20"
                                 loading="eager"
                             />
