@@ -32,6 +32,7 @@ export {
 
   // 错误类
   ApiError,
+  isSuccessApiCode,
 
   // 命名转换工具
   toSnakeCase,

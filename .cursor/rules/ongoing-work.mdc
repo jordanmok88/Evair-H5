@@ -5,7 +5,53 @@ alwaysApply: true
 
 # Ongoing work — read this first
 
-Last updated: 2026-04-25 night (Step 7 done, full Activation Funnel ships modulo email log). Update this file at the END of every meaningful work session.
+Last updated: 2026-04-25 night (Phase 2 kickoff: token-refresh interceptor + cross-platform contract doc shipped, chat module deferred). Update this file at the END of every meaningful work session.
+
+## Active thread: Phase 2 — cross-platform consolidation
+
+After auditing the China team's Flutter `feature/evairsim-jordan` branch
+(25+ commits we don't have, full native app + Reverb live chat) we kept
+our WebView-shell direction and ported the *patterns* worth keeping
+without merging any of their code. Outcomes shipped 2026-04-25:
+
+1. **H5 axios token-refresh interceptor** (`services/api/client.ts`):
+   - Now accepts both `code: 0` (legacy `/h5/*`) and `code: '200'`/`'201'`
+     (new `/v1/app/*`) as success via the new `isSuccessApiCode()`
+     helper. Closed a latent prod bug — the old `body.code !== 0` check
+     would have thrown ApiError on every successful `bindSim`,
+     `setupIntent`, `setAutoRenew` call. The Activation Funnel smoke
+     test only exercised the preview path which kept the legacy shape.
+   - Refresh now hits `/v1/app/auth/refresh` instead of legacy
+     `/h5/auth/refresh` (both write to `user_tokens` so legacy tokens
+     keep working).
+   - Single-flight queue: N parallel 401s coalesce into one refresh.
+   - 11 vitest cases in `services/api/client.test.ts` covering both
+     conventions, parallel 401s, refresh failure, endpoint correctness.
+2. **`docs/CROSS_PLATFORM_CONTRACT.md`** — single source of truth for
+   what crosses the H5 ↔ Flutter ↔ Laravel boundary. Pins response
+   envelope, error namespace, auth flow, channel auth, chat REST + WS
+   contract, message-type metadata payloads, dedup keys, versioning
+   policy. Edit here whenever you change a wire-format field.
+3. **Laravel `MessageSent::broadcastWith()`** — extended to include
+   `message_type`, `media_url`, `metadata` so the WS payload mirrors
+   the REST `ChatMessageResource`. The Flutter team's "fetch via REST
+   after every WS event" workaround can be retired whenever they pull.
+
+Deferred (intentional):
+
+- **H5 chat module**: the actual `LiveChatPage.tsx` + `useChat()` hook
+  + `services/api/chat.ts` + bottom-sheet pickers. Estimated 3-5 days
+  of focused work. Decision: hold until Activation Funnel has live
+  traffic and we know it's healthy. Customers can email
+  `service@evairdigital.com` for support during the rollout — Resend
+  routes those.
+- **Flutter aliyun branch sync**: their `feature/evairsim-jordan` has
+  25+ commits we don't have. Our local `main` deletes files they
+  modified (because of our WebView shell pivot). User decided to ask
+  the China team to rebase their work on top of our WebView shell, so
+  we don't merge anything from their side. The save-all.sh now pushes
+  Flutter to `feature/jordan-webview-shell` on Aliyun (renamed in
+  `EvairSIM-App/scripts/save.sh`) so we no longer collide.
 
 ## Active thread: Activation Funnel (highest-ROI work block)
 
@@ -462,7 +508,12 @@ Decide when wiring the first Mail class — won't block schema/endpoint work.
 
 ## Pre-existing issues (not fixed, documented for when Jordan asks)
 
-- `npm test` reports "No test files found" — no Vitest tests are configured.
+- ~~`npm test` reports "No test files found"~~ — **resolved 2026-04-25**.
+  `services/api/client.test.ts` is the first vitest suite, 11 cases.
+  Add new tests as `*.test.ts` next to the file under test. The
+  `vi.hoisted()` localStorage shim at the top of `client.test.ts` is
+  the pattern to copy when a test needs to touch storage without
+  pulling in jsdom / happy-dom.
 - TypeScript errors in `BarcodeScanner.tsx`, `esimApi.ts`, `pushService.ts` —
   pre-existing, not from recent work. Ask Jordan before touching.
 
