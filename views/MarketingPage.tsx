@@ -80,6 +80,29 @@ const goTravelEsimCta = (e: React.MouseEvent<HTMLAnchorElement>) => {
     }
 };
 
+/**
+ * Activate-my-SIM CTAs: desktop → `/activate` (standalone Amazon-insert
+ * landing where customers type/scan their ICCID on a wide-format page),
+ * mobile → `/app#sim-card` (in-app phone-mock SIM_CARD tab whose hero
+ * exposes a prominent "Bind your SIM" CTA that opens the in-app
+ * PhysicalSimSetupView).
+ *
+ * Mobile customers expect to land in the H5 customer app — same UX as
+ * the Travel eSIM CTA above. Desktop customers want a real form-shaped
+ * page they can paste their ICCID into without being squeezed into a
+ * 430-px iPhone mock. The `<a href>` stays `/activate` so crawlers and
+ * no-JS clients still resolve to a sensible destination.
+ *
+ * @see App.tsx HASH_TO_TAB — `#sim-card` is the documented mobile
+ *      landing for both "Buy SIM card" and "Activate my SIM" flows.
+ */
+const goActivateCta = (e: React.MouseEvent<HTMLAnchorElement>) => {
+    if (isMobileDevice()) {
+        e.preventDefault();
+        window.location.assign(`${APP_PATH}#sim-card`);
+    }
+};
+
 const MarketingPage: React.FC = () => {
     return (
         <div className="min-h-screen bg-white text-slate-900">
@@ -177,6 +200,7 @@ const MarketingPage: React.FC = () => {
                                 </a>
                                 <a
                                     href={ACTIVATE_PATH}
+                                    onClick={goActivateCta}
                                     className="flex items-center justify-center gap-2 bg-white text-slate-900 font-bold px-5 py-3 rounded-xl border border-slate-200 shadow-sm active:scale-[0.98] transition-transform"
                                 >
                                     <BadgeCheck size={18} /> Activate my SIM
@@ -290,6 +314,7 @@ const MarketingPage: React.FC = () => {
                             </a>
                             <a
                                 href={ACTIVATE_PATH}
+                                onClick={goActivateCta}
                                 className="inline-flex items-center justify-center gap-2 bg-white text-slate-900 font-bold px-5 py-3 rounded-xl border border-slate-300"
                             >
                                 <BadgeCheck size={16} /> Activate my SIM
