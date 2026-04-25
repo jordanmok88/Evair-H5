@@ -2,7 +2,15 @@
  * Modal shown to desktop visitors who tap "Mobile Sign in →" on the
  * marketing site.
  *
- * Why a modal instead of just navigating to /app:
+ * IMPORTANT: this modal is **never rendered for mobile visitors**.
+ * `useMobileSignInGate.gateClick` returns early on mobile without
+ * preventing the click default, so the underlying <a href="/app">
+ * navigates straight to the customer app — and the customer app at
+ * /app renders fullscreen on mobile (the phone-mock chrome in
+ * app.css is gated behind `@media (min-width: 1024px)`). Mobile
+ * users get the real H5, not a popup.
+ *
+ * Why a modal for desktop instead of just navigating to /app:
  *
  *   The customer-app shell at `/app` is rendered inside a 430-px iPhone
  *   mock on desktop. That's a great brand showcase for visitors browsing
@@ -137,9 +145,10 @@ const MobileOnlyNotice: React.FC<MobileOnlyNoticeProps> = ({
                         Sign in is on your phone
                     </h2>
                     <p className="text-sm text-slate-600 leading-relaxed">
-                        Your EvairSIM account, eSIMs, and SIM card live in the
-                        EvairSIM app on your phone — that&rsquo;s where the QR
-                        codes install and the data plans run.
+                        This page automatically opens as the full EvairSIM app
+                        when you visit it from a phone. Scan the QR below to
+                        switch to mobile view — your account, eSIMs, and SIM
+                        card all live there.
                     </p>
                 </div>
 
@@ -154,8 +163,9 @@ const MobileOnlyNotice: React.FC<MobileOnlyNoticeProps> = ({
                             loading="lazy"
                         />
                         <p className="text-xs text-slate-500 mt-3 text-center leading-relaxed">
-                            Point your phone&rsquo;s camera at the code, then
-                            tap the link to open EvairSIM.
+                            Point your phone&rsquo;s camera at the code &mdash;
+                            EvairSIM will open in full mobile view, ready to
+                            sign in.
                         </p>
                     </div>
                 </div>
