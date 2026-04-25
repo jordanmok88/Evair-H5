@@ -5,24 +5,414 @@ alwaysApply: true
 
 # Ongoing work — read this first
 
-Last updated: 2026-04-24. Update this file at the END of every meaningful work session.
+Last updated: 2026-04-25 night (Step 7 done, full Activation Funnel ships modulo email log). Update this file at the END of every meaningful work session.
 
-## Active thread: Phase 1 — activation + top-up funnel (highest-ROI)
+## Active thread: Activation Funnel (highest-ROI work block)
 
-Phase 0 done (2026-04-24 evening). Next: build the funnel the unit economics
-actually depend on.
+**Renamed 2026-04-25 from "Phase 1" to "Activation Funnel"** — the China team
+has their own "Phase 1" in `docs/api-integration-guide/phase1-supplier-package.md`
+(Laravel repo) referring to Flutter→App API migration. To avoid commit/doc
+confusion we drop the colliding number. Internally still the next major work
+block in our 0-5 phase plan, just without the conflicting label.
 
-**Phase 1 scope**:
-1. `/activate?iccid=...` landing page. Reads ICCID (from Amazon box QR code),
-   looks up the bundled plan, prompts account creation + auto-renew opt-in.
-2. `/top-up?iccid=...` — top-up by ICCID, login required only at checkout.
-3. In-app `/app/my-sims` — prominent auto-renew toggle + accurate usage bar.
-4. Transactional emails (Resend via Netlify function): 80% used, plan ending
-   in 3 days, auto-renew success/failure.
-5. Auto-renew disclosure copy (ROSCA + CA SB-313 compliant). Draft into
-   `docs/AUTO_RENEW_DISCLOSURE.md`.
+Single source of truth: `docs/ACTIVATION_FUNNEL.md` (formerly
+`docs/PHASE_1_ACTIVATION.md`). All 7 strategic decisions are locked in §8.
 
-Do not touch home page, country pages, or device pages yet — that's Phase 2/3.
+**Scope**:
+1. `/activate?iccid=...` landing page. Reads ICCID (from Amazon box QR),
+   shows bundled plan preview, prompts email+pw signup + auto-renew opt-in
+   (SetupIntent for $0 card save).
+2. `/top-up?iccid=...` — public catalogue, login at checkout. Hits the
+   App-tier `POST /v1/app/recharge` (already real Stripe).
+3. In-app `/app/my-sims` — auto-renew toggle (with cancel-confirm modal +
+   ROSCA disclosure popover), polished usage bar.
+4. Transactional emails via **Resend in Laravel** (not Netlify function any
+   more — server-side jobs are the source of truth): activation welcome,
+   80% usage, 3-day expiry, auto-renew success / failure / cancellation.
+5. `docs/AUTO_RENEW_DISCLOSURE.md` finalized + linked from H5 popovers and
+   admin force-off modal.
+
+**Cross-repo sync** (each shipped as one PR per repo):
+- **Laravel**: schema migration on `sim_assets` (auto-renew columns + index),
+  `SimResource` extension, new public `GET /v1/app/sims/preview/{iccid}`,
+  extend `POST /v1/app/users/bind-sim` with auto-renew fields, new
+  `PATCH /v1/app/sims/{iccid}/auto-renew`, `RenewExpiringSims` scheduled job,
+  6 mail classes, Resend webhook receiver.
+- **H5**: ActivatePage, TopUpPage, my-sims auto-renew toggle, `getRoute()`
+  router extension. Hits `/v1/app/*` not `/v1/h5/*`.
+- **admin**: SIM list new columns (claimed-by + auto-renew + next-charge),
+  filters (claim_state + auto_renew), CS force-off button + ROSCA confirm
+  modal, transactional email log page.
+- **Flutter**: nothing — `h5Url` already points at production (DONE 2026-04-25).
+
+**Critical reconciliation note (2026-04-25)**: before writing code, fetched
+Laravel from `origin` (Aliyun, the China team's main remote) and discovered
+significant changes since my last mental model:
+- A whole `/v1/app/*` API tier exists (parallel to `/v1/h5/*`), with real
+  Stripe via `OrderPaymentService` / `RechargeController`, refund/dispute
+  webhook handlers in `StripePaymentService`, polished `SimResource` with
+  `usage_percent` / `is_low_data` / `is_expired`, `bind-sim` endpoint with
+  `activation_code` validation against `SimAsset.matching_id`.
+- The canonical owned-SIM record is `sim_assets` (created
+  2026-03-12), NOT the legacy `app_user_sims` pivot.
+- Recharge unified into `RechargeController` (`c17dcca3` 2026-04-23). The
+  H5 `OrderController::createTopup` is `@deprecated`.
+- China team's phase numbering is independent: their Phase 0A/0B/0C/0D
+  payment-and-SIM-resource cleanup is shipped, their Phase 1 is the Flutter
+  endpoint migration.
+
+Net effect on this funnel: ~4-5 days of work saved (Stripe wiring, webhook
+handlers, resource fields all done). Same scope, same UX, lower risk.
+
+Do not touch home page, country pages, or device pages yet — that's the
+later phases (formerly Phase 2/3, will renumber if needed when we get
+there).
+
+## Activation Funnel — implementation progress (Laravel side)
+
+Tracking against the corrected ship sequence in `docs/ACTIVATION_FUNNEL.md` §10.
+
+- [x] **Step 1 — schema + model + resource** (2026-04-25 morning).
+  - Migration `2026_04_25_120847_add_auto_renew_to_sim_assets_table` applied to
+    local + simtest. Added `auto_renew`, `auto_renew_package_id`,
+    `auto_renew_next_charge_at`, `auto_renew_disabled_at`,
+    `auto_renew_disabled_reason`, `auto_renew_payment_method_id` + composite
+    index `idx_sim_assets_renewal_due`.
+  - `SimAsset` model: fillable, casts, `AUTORENEW_REASON_*` constants,
+    `scopeDueForRenewal()`, `isAutoRenewEnabled()`, `disableAutoRenew()`.
+  - `App\Http\Resources\App\SimResource`: 3 new keys (`auto_renew`,
+    `auto_renew_next_charge_at`, `auto_renew_disabled_reason`).
+- [x] **Step 2 — three endpoints** (2026-04-25 noon).
+  - `GET /api/v1/app/sims/preview/{iccid}` — new public lookup,
+    `App\Http\Controllers\Api\App\PublicSimController`. Returns
+    `claim_state` derived from `app_user_sims` pivot (NOT
+    `sim_assets.user_id`, which FKs to admin `users` table) and a
+    best-effort package preview.
+  - `POST /api/v1/app/users/bind-sim` — extended `BindSimRequest` with
+    optional `auto_renew` / `auto_renew_package_id` /
+    `stripe_payment_method_id` (latter validated via `starts_with:pm_`).
+    `AppUserController::bindSim` now writes auto-renew columns to
+    `SimAsset` inside the existing transaction when opt-in.
+  - `PATCH /api/v1/app/sims/{iccid}/auto-renew` — new
+    `SimController::updateAutoRenew` + `UpdateAutoRenewRequest`. Locks
+    SimAsset row, supports both enable + disable with reason, returns the
+    refreshed `SimResource`. Mail dispatch deferred to step 3.
+  - 14 feature tests in
+    `tests/Feature/Api/App/ActivationFunnelEndpointsTest.php` covering
+    not-found / pending-shipment / available / claimed-by-other /
+    auth-required / payment-method-validation / disable-with-default-reason
+    / invalid-reason — all green.
+- [x] **Step 3 — six mail classes** (2026-04-25 afternoon).
+  - All in `app/Mail/App/Activation/` namespace, blades in
+    `resources/views/emails/app/activation/`.
+  - `ActivationWelcomeMail` — branches on `$autoRenewEnabled`, includes
+    ROSCA disclosure block when on.
+  - `UsageAlertMail` — 80% data threshold, progress bar, top-up CTA.
+  - `ExpirySoonMail` — non-auto-renew expiry warning, subject pluralised
+    ("expires tomorrow" vs "expires in 3 days").
+  - `AutoRenewSuccessMail` — charge breakdown table with cancel link.
+  - `AutoRenewFailedMail` — branches on `$isFinalRetry` (different
+    subject + grace-period vs suspension copy).
+  - `AutoRenewCancelledMail` — ROSCA / CA SB-313 acknowledgement, copy
+    branches on all four `AUTORENEW_REASON_*` codes, footer cites the
+    statutes.
+  - `SimController::updateAutoRenew` now dispatches `AutoRenewCancelledMail`
+    on disable (best-effort, errors logged not raised). Enable does NOT
+    send a mail (would be misleading — no charge yet).
+  - 10 unit tests in `tests/Unit/Mail/App/Activation/ActivationMailRenderingTest`
+    verify each blade renders + subjects + reason-code branching. All
+    14 endpoint tests still green.
+- [x] **Step 3b — brand polish, supplier scrub, logo + network info**
+  (2026-04-25 evening, on Jordan's feedback):
+  - **Supplier confidentiality**: removed `supplier` field from
+    `PublicSimController::preview` response, killed
+    `guessSupplierFromSim()`, scrubbed PCCW from feature tests + docs,
+    added doc-comment warning on `Evair-H5/types.ts` `TopUpRequest.supplierType`.
+  - **Six emails redesigned** to match competitor polish (Airalo-style):
+    brand orange CTA buttons, three-pillar benefit strip, card-style
+    sections, receipt tables, full footer with `_footer.blade.php` partial,
+    ROSCA legal note slot.
+  - **Real logo wired**: actual EvairSIM logo at
+    `public/email-assets/logo.jpg` (1024x359 JPEG). Shared
+    `_header.blade.php` partial renders white band + logo + 4px
+    orange/yellow/red brand stripe (logo's three colors). All six
+    templates now `@include` it; fallback is text wordmark
+    `Evair`+red`SIM` if no `logoUrl` configured.
+  - **Plan-specific network info** (welcome email): new `networkRows`
+    constructor param on `ActivationWelcomeMail` — array of
+    `[label, value]` pairs rendered as a "Your network" card. Default
+    rows for the U.S. plan: Speed 650 Mbps · 5G/LTE, Coverage AT&T /
+    T-Mobile / Verizon, IP region U.S. (Netflix/YouTube/Twitch),
+    Auto APN. Section is hidden when array is empty.
+  - **Hero illustration slot**: optional `heroImageUrl` /
+    `heroImageAlt` on welcome mail. Now placed in the body
+    (between welcome heading and plan card), centered, max 320px.
+    Brand-colored placeholder SVG at `public/email-assets/welcome-hero.svg`
+    (orange/yellow/red SIM card with signal arcs, U.S. badge, 5G dot).
+    Email-client safe PNG fallback at `welcome-hero.png` from
+    `scripts/generate-welcome-hero-png.php`. Final art swappable via
+    `BRANDING_WELCOME_HERO_URL`.
+  - **`config/branding.php`** centralises `logo_url` +
+    `welcome_hero_url` + `welcome_hero_alt` (env-driven).
+  - **Mailable signatures**: all six mailables accept optional
+    `?string $logoUrl = null`. `ActivationWelcomeMail` additionally
+    accepts `?string $heroImageUrl`, `?string $heroImageAlt`,
+    `array $networkRows = []`. Backward compatible — existing call
+    sites continue to work.
+  - **Production wire-up still pending**: `bindSim` controller does
+    not yet dispatch `ActivationWelcomeMail` (no current call site).
+    When wired in step 5, pass
+    `logoUrl: config('branding.logo_url')` and a `networkRows`
+    array derived from the package metadata.
+  - Tests: 13 unit + 16 feature = 29 total, all green. Two new
+    welcome-mail tests cover logo render + network-row render +
+    section omission. Pint clean.
+  - Local preview gallery rebuilt at `/tmp/evair-mail-previews/index.html`
+- [x] **Step 3c — full SKU coverage + auto-top-up policy + tight contact
+  sheet** (2026-04-25 night, on Jordan's feedback):
+  - **Policy locked**: every public SKU defaults to `auto_renew = ON`
+    (Jordan: "all our plans should be auto top up"). Backend column
+    default stays `false` — the H5 `/activate` page ships the opt-in
+    checkbox **pre-checked** with ROSCA disclosure beneath it. Stripe
+    SetupIntent still required, so affirmative consent is preserved.
+    `scripts/render-activation-mails.php` now renders every welcome
+    variant with `autoRenewEnabled: true`.
+  - **300 MB phone SKU**: corrected to 2-network coverage (AT&T +
+    Verizon, no T-Mobile) per row 3 of `流量策略-2026.4.24.xlsx`.
+    `PackageNetworkProfile::profiles()['300mb-30d']` updated; new
+    regression test `test_phone_sku_300mb_30d_drops_t_mobile_per_supplier_sheet`.
+    All other phone SKUs (2 GB / 10 GB / 20 GB / 5 GB-60D) stay
+    3-network. Cameras at ≥180 days stay 2-network.
+  - **Contact-sheet rewrite**: `scripts/build-activation-mail-contact-sheet.php`
+    now renders 14 cells (one welcome per public SKU + 6 lifecycle
+    templates) on a single 320 mm × 660 mm page. Layout switched from
+    CSS Grid to an explicit 3-column flex with hand-tuned cell-to-
+    column mapping (4 phone-welcomes left, 2 cameras + 3 lifecycle
+    middle/right) so columns end at within ~100 mm of each other.
+    Inline JS measures each email's natural height at 600 px design
+    width, applies `transform: scale(cellW / 600)`, and sets the
+    cell-frame's height to `naturalHeight × scale` — eliminating the
+    grey dead space below short cells that `zoom` couldn't fix.
+    Chrome flags: `--virtual-time-budget=4000
+    --run-all-compositor-stages-before-draw` so the JS-driven layout
+    settles before print. Output: `~/Desktop/Evair-activation-emails-YYYY-MM-DD.pdf`
+    (single page, 1.3 MB).
+    (assets copied next to it so iframes resolve via relative URLs —
+    fixes the broken-image issue from the v2 gallery).
+- [x] **Step 4 — Resend live wiring + bind-sim welcome dispatch**
+  (2026-04-25 night → 2026-04-26 morning).
+  - **Resend live**: `MAIL_MAILER=resend`, `RESEND_API_KEY` in `.env`,
+    `MAIL_FROM_ADDRESS=noreply@evairdigital.com`. All 14 templates sent
+    successfully to `jordan_mok@icloud.com` via
+    `scripts/send-real-activation-mail.php all-14` with 0.6 s usleep
+    throttling. SPF on apex still points only at Zoho — Resend DKIM is
+    enough for delivery, SPF cleanup deferred.
+  - **bindSim → ActivationWelcomeMail**: `AppUserController::bindSim`
+    now composes the welcome mail with `PackageNetworkProfile::rowsFor()`
+    network rows + `Sim::initialPackage()` for plan name / volume /
+    duration. Wrapped in try/catch + Log::warning so a Resend hiccup
+    never blocks the bind itself. 2 new feature tests:
+    `test_bind_sim_dispatches_activation_welcome_mail_on_success`,
+    `test_bind_sim_dispatches_welcome_mail_with_auto_renew_flag`.
+    All 16 tests green. Pint clean.
+- [x] **Step 4a — H5 ActivatePage routing + UI + bind end-to-end**
+  (2026-04-26 morning).
+  - `utils/routing.ts`: new `getRoute()` discriminated-union parser
+    (replaces the ad-hoc `isApiTest` check in App.tsx). Returns
+    `{kind: 'app' | 'activate' | 'topup' | 'apiTest', iccid?}`.
+    Strips junk chars from the `iccid` query param and validates
+    15-22 ASCII alphanumerics before forwarding.
+  - `App.tsx`: top-level switch routes `/activate` → `<ActivatePage>`
+    while `/top-up` and everything else fall through to `<CustomerApp>`
+    (top-up gets its own page in chunk B). Document title flips to
+    "Activate your Evair SIM" / "Top up your Evair SIM" / "Evair APP" /
+    "Evair H5" based on route.
+  - `services/api/activation.ts`: new `activationService.previewByIccid`
+    (skipAuth, returns discriminated `{kind: ok|not_found|error}` so
+    the page doesn't try/catch ApiError) + thin `bindSim` wrapper for
+    `/v1/app/users/bind-sim`.
+  - `views/ActivatePage.tsx` (~480 LOC): full UI with all 5 phase
+    states — idle (manual ICCID input + scanner button), loading,
+    not_found, pending_shipment, claimed_by_other, error, available
+    (signup form). The available state shows the bundled-plan card
+    (name + ICCID + duration), name/email/password inputs, an
+    auto-renew checkbox **pre-checked** with expandable ROSCA
+    disclosure, a separate unchecked marketing-opt-in checkbox, and
+    a brand-orange Activate CTA. Reuses `BarcodeScanner` for the
+    scan flow, `authService.register` for signup, and the new
+    `activationService.bindSim` for the claim.
+  - **Stripe SetupIntent NOT yet wired**. The auto-renew preference
+    is collected but bind-sim is called without `auto_renew=true`
+    (server requires `stripe_payment_method_id` when set). After
+    successful bind we redirect to
+    `/app/my-sims?iccid=…&prompt_auto_renew=1` so the next surface
+    (chunk B) can pick up the intent and run the SetupIntent flow.
+  - i18n: added `activate.invalid_iccid` to en/zh/es. Other strings
+    inline pending the i18n sweep step (deferred per ACTIVATION_FUNNEL.md
+    §10).
+  - Type-check: clean for new files. Three pre-existing errors
+    (BarcodeScanner / esimApi / pushService) unchanged. Vite build
+    succeeds, ActivatePage chunk verified in `dist/assets/index-*.js`.
+- [x] **Step 4b — Stripe SetupIntent end-to-end** (2026-04-25 evening).
+  - **Laravel**:
+    - Migration `2026_04_26_080000_add_stripe_customer_id_to_app_users_table`
+      adds nullable `stripe_customer_id` (cus_…) to `app_users` plus an
+      index for webhook lookups. `AppUser::$fillable` updated.
+    - `StripeService::getOrCreateCustomerForAppUser()` lazily mints a
+      Stripe Customer and persists the id; idempotent across calls.
+    - `StripeService::createSetupIntentForAppUser()` returns a
+      `usage: 'off_session'` SetupIntent with automatic payment
+      methods enabled. Metadata defaults to `{app_user_id, purpose:
+      activation_auto_renew}`; controller adds `iccid` when supplied.
+    - `PaymentController::setupIntent` (new) → `POST /v1/app/payments/setup-intent`.
+      Auth-gated. Returns `{client_secret, setup_intent_id, customer_id,
+      publishable_key}`. Strict iccid metadata whitelist (`/^[0-9A-Za-z]{15,22}$/`).
+      Stripe failures surface as 503 BUSINESS_001 — the binding flow
+      itself doesn't depend on this endpoint succeeding.
+    - `services.stripe.publishable_key` config key added; backend
+      echoes it on the response so the H5 can never pair a live key
+      with a test SetupIntent.
+    - `PublicSimController::preview` now also returns
+      `renew_package_id` (= `Sim::supplier_package_id`). The H5
+      echoes it back on `bind-sim` instead of hard-coding it.
+    - Tests: new `tests/Feature/Api/App/SetupIntentEndpointTest.php`
+      (4 tests — auth, happy path, metadata strip, 503 on Stripe
+      failure). `SetupIntent::constructFrom([...])` used instead of
+      mocking the Stripe SDK class (its `__set` magic methods break
+      Mockery). Existing preview test extended to assert
+      `renew_package_id` in `assertJsonStructure`. All 20 endpoint
+      tests green.
+  - **H5**:
+    - `services/api/payment.ts` gains `createSetupIntent({iccid?})`
+      hitting the `/app/payments/setup-intent` endpoint, plus
+      `SetupIntentSession` / `CreateSetupIntentRequest` types
+      re-exported from the api barrel.
+    - `services/api/activation.ts`: `ActivationPreviewData` extended
+      with `renewPackageId: string | null`.
+    - `components/SetupIntentCardForm.tsx` (new): self-contained
+      card collector. Mints SetupIntent on mount, mounts Stripe Card
+      Element, confirms via `confirmCardSetup`, bubbles `pm_…` to
+      parent. Picks publishable key from the SetupIntent response
+      first, falls back to `VITE_STRIPE_PUBLISHABLE_KEY` for local
+      dev. Includes branded error / success / mint-loading states
+      and a "Skip auto-renew for now" escape hatch so a Stripe
+      outage can't strand the activation.
+    - `views/ActivatePage.tsx` rewritten around an
+      `AvailablePhase = 'details' | 'card' | 'binding'` state
+      machine. Auto-renew checkbox is disabled when
+      `renewPackageId === null`. Submit branches: card step when
+      auto-renew on + package id present, otherwise straight to
+      bind-sim. `prompt_auto_renew` URL hack removed; my-sims now
+      gets a clean `?iccid=...` (+ optional `marketing_opt_in=1`).
+      bind-sim now receives `{simId, autoRenew: true,
+      autoRenewPackageId, stripePaymentMethodId}` for the renewal
+      branch.
+    - Type-check: clean for new files; three pre-existing errors
+      unchanged. Vite build succeeds.
+- [x] **Step 5 — H5 TopUpPage + my-sims auto-renew toggle**
+  (2026-04-25 night).
+  - **TopUpPage** (`Evair-H5/views/TopUpPage.tsx`, ~470 LOC): full
+    state machine `idle | loading | not_found | pending_shipment |
+    needs_activation | ready | error`, ICCID input via manual entry
+    or `BarcodeScanner`, per-ICCID recharge package picker via
+    `getRechargePackages` (live Stripe pricing), inline
+    `InlineAuthForm` shown at checkout when unauthenticated (no
+    bounce to a separate page), `StripePaymentModal` confirms the
+    charge, success redirects to `/app/my-sims`. Wired into
+    `App.tsx` via `getRoute().kind === 'topup'`. New i18n keys
+    behind `topup.*` (en/zh/es).
+  - **MySimsView auto-renew toggle**: new
+    `Evair-H5/components/AutoRenewToggle.tsx` self-contained Stripe
+    + ROSCA component. Reuses `SetupIntentCardForm` for enable
+    flow, fetches `GET /v1/app/sims/{iccid}` for current state,
+    calls `PATCH /v1/app/sims/{iccid}/auto-renew` (new
+    `appSimService.updateAutoRenew` in `services/api/simApp.ts`).
+    Disable shows `CancelConfirmModal` that surfaces ROSCA copy +
+    service-continues-until date before confirming. `client.ts`
+    gained a `patch` helper (mirror of `post`/`put` with
+    snake_case body conversion) and is exported from the api
+    barrel. The toggle row only renders when
+    `currentSim.iccid` is set, so legacy mock SIMs and demo-mode
+    SIMs (which lack a server-side SimAsset) silently skip it
+    instead of blowing up the row with a 404 spinner.
+- [x] **Step 6 — `RenewExpiringSims` scheduled job + reminders**
+  (2026-04-25 night).
+  - Migration `2026_04_26_090000_add_renewal_tracking_to_sim_assets_table`
+    adds `auto_renew_attempts`, `auto_renew_last_attempt_at`,
+    `auto_renew_last_charge_intent_id`, `usage_alert_80_sent_at`,
+    `expiry_soon_3d_sent_at` for retry bookkeeping + reminder
+    idempotency. `SimAsset::$fillable`/`$casts` updated.
+  - `StripeService::chargeOffSession()` — new helper for
+    `PaymentIntent::create({off_session: true, confirm: true})`.
+    Catches `CardException` distinctly from generic exceptions so
+    the renewal command can split soft-decline → grace path from
+    `requires_action` → cancel path.
+  - `RenewExpiringSimsCommand` (`activation:renew-expiring`):
+    runs `SimAsset::dueForRenewal()`, locks each row in a txn,
+    charges via `chargeOffSession`, on success extends
+    `expired_at`, recomputes `auto_renew_next_charge_at`, resets
+    attempts + reminder timestamps, dispatches
+    `AutoRenewSuccessMail`. On hard decline: bumps
+    `auto_renew_attempts`, dispatches `AutoRenewFailedMail`
+    (`isFinalRetry=false`), pushes next charge 24h. On 2nd hard
+    decline: disables auto-renew (`reason=payment_failed`) +
+    sends final-retry email. Transient (network/5xx) errors
+    leave the row untouched for the next hour.
+  - `SendActivationRemindersCommand` (`activation:send-reminders`):
+    daily 10:00 UTC. Sends `UsageAlertMail` once when
+    `used_bytes/total_bytes >= 80%`, sends `ExpirySoonMail` once
+    when `expired_at` is 2-3 days out. Idempotency via the new
+    `usage_alert_80_sent_at` / `expiry_soon_3d_sent_at` columns,
+    cleared on successful renewal.
+  - **TenantContext fix**: both commands run outside the HTTP
+    request lifecycle so `TenantScope` would otherwise reject
+    every query. Wrapped each command's body in
+    `TenantContext::enableGlobalView()` ... `finally
+    TenantContext::clear()` so a chained `schedule:run` cycle
+    doesn't leak global view into the next job.
+  - `routes/console.php`: `activation:renew-expiring --limit=200`
+    hourly, `activation:send-reminders` daily 10:00 UTC, both
+    `withoutOverlapping()` + `onFailure(Log::error)`.
+  - Smoke: dry-run on both commands prints `Summary: ...=0` cleanly
+    (no fixture data on local DB). Pint clean, lint clean.
+- [x] **Step 7 — admin SIM list columns + CS force-off button**
+  (2026-04-25 night, email-log page intentionally deferred — see
+  below).
+  - `SimController::index` eager-loads `simAsset`, exposes a flat
+    `activation` snapshot via `SimResource` (`is_claimed`,
+    `auto_renew`, `auto_renew_next_charge_at`,
+    `auto_renew_disabled_*`, attempts, last_charge_intent_id).
+    For unbound SIMs the snapshot collapses to
+    `{is_claimed:false, auto_renew:false}`.
+  - New filters in `SimListRequest`: `auto_renew=true|false` and
+    `unclaimed=true` (the latter joins `whereDoesntHave('simAsset')`
+    OR `simAsset.user_id IS NULL` — the unclaimed-Amazon list CS
+    chases up).
+  - New endpoint `POST /api/v1/admin/sims/{id}/force-disable-auto-renew`:
+    requires a `reason` from CS, flips `SimAsset.auto_renew` off
+    with `AUTORENEW_REASON_CS`, stores the free-text reason in
+    `metadata.cs_force_off_reason`, dispatches the
+    `AutoRenewCancelledMail` (best-effort) and writes a
+    `sim_lifecycle_logs` `info_update` event so the action is
+    auditable. No supplier round-trip — auto-renew toggling
+    never affects connectivity.
+  - Admin UI (`src/views/sim/index.vue`): new "Auto-renew"
+    column with three-way tag (`On` / `Off` / `Unclaimed`), a
+    select-style filter that maps to `auto_renew`/`unclaimed`
+    query params via `mapActivationFilter()`. New "Force off"
+    danger-link button in the operations column visible only
+    when `activation.isClaimed && activation.autoRenew`. Click
+    pops a confirm prompt that demands a ≥3-char reason and
+    calls `forceDisableAutoRenew()` (new helper in
+    `src/api/modules/sim.ts`). Bilingual copy under
+    `sim.autoRenew.*` in `en.ts` + `zh.ts`.
+  - **Email log page deferred**: an MVP-friendly pivot. With
+    Resend we already have a hosted dashboard (Resend → Logs)
+    that shows delivered/bounced/opened per recipient with a
+    full HTML preview. Building a parallel admin UI before any
+    operator has asked for it would be ~2 days of work for
+    little incremental value. Re-open this when CS reports a
+    workflow that the Resend dashboard can't satisfy.
 
 ## Recently resolved (don't re-open without cause)
 
@@ -53,10 +443,22 @@ working branch.
 
 - **PCCW supplier API**: `401 Distributor is De-activated` — Jordan's account
   with PCCW. UI falls back to local DB snapshots gracefully.
-- **`evairdigital.com` DNS**: Jordan is setting it up now (2026-04-24 evening).
-  Once DNS + Netlify cert are live, the domain will serve the freshly-merged
-  main branch (which now contains all current work). No further code change
-  needed — DNS is purely a Netlify + registrar operation.
+- ~~`evairdigital.com` DNS~~ — **DONE 2026-04-24 20:09 PT**. Apex + www live,
+  Let's Encrypt cert issued (`CN=evairdigital.com`), HTTP→HTTPS redirect on,
+  www→apex 301 redirect on. Email stack (Zoho inbound, Amazon SES on
+  `send.evairdigital.com`, Resend DKIM on apex) preserved. Shopify records
+  fully removed. DNS stayed on Aliyun nameservers (`dns21/22.hichina.com`),
+  Netlify only receives A + CNAME pointers.
+- ~~Flutter `h5Url` repoint~~ — **DONE 2026-04-25**. Default now
+  `https://evairdigital.com/app` in `EvairSIM-App/lib/core/constants/app_constants.dart`.
+
+## Email subdomain decision (deferred to first mail-class implementation)
+
+Amazon SES is currently authoritative on `send.evairdigital.com`. Resend has
+DKIM on apex `evairdigital.com`. For Activation Funnel transactional emails
+we need to either (a) move all transactional to Resend on `send.` (retire
+SES) or (b) put Resend on a different subdomain like `mail.evairdigital.com`.
+Decide when wiring the first Mail class — won't block schema/endpoint work.
 
 ## Pre-existing issues (not fixed, documented for when Jordan asks)
 
@@ -73,26 +475,6 @@ working branch.
 - **Unit economics**: top-up recharges drive margin, not the initial SIM sale.
 - **First Amazon batch**: 2,980 SIMs across 7 SKUs + 240 seed-link SIMs
   (see `product-decisions.mdc` speed-tier table for lineup).
-
-## Resolved recently (don't re-open without cause)
-- APP preview title = "Evair APP" (2026-04-24)
-- `#app-preview` testing banner removed from APP mode (2026-04-24)
-- eSIM catalogue routing via `supplierFetchPackages` only (2026-04-22)
-- Live SIM usage via `checkDataUsage()` for both ESIM and physical SIMs (2026-04-23)
-- `gb_used` i18n fixed to avoid "GB GB used" (2026-04-23)
-- AI assistant professionalized, emojis removed (2026-04-24)
-- Flutter app `H5_URL` repointed to `feature/api-integration` Netlify branch (2026-04-24)
-- `user_push_preferences` + `push_tokens` migrations run (2026-04-23)
-- US carrier/country banner removed from ShopView physical SIM section (2026-04-24)
-
-## Known external blockers
-- **PCCW supplier API** returns `401 Distributor is De-activated`. External
-  (Jordan's PCCW account). UI handles it gracefully; don't silently hide it.
-
-## Pre-existing issues (not fixed, documented for when Jordan asks)
-- `npm test` reports "No test files found" — no Vitest tests are configured.
-- TypeScript errors in `BarcodeScanner.tsx`, `esimApi.ts`, `pushService.ts` —
-  pre-existing, not from recent work. Ask Jordan before touching.
 
 ## House rules for updating this file
 - When a thread is resolved, move it from "Active" to "Resolved recently".

@@ -438,6 +438,9 @@ const en = {
     spanish: 'Spanish',
     chinese: 'Chinese',
   },
+  activate: {
+    invalid_iccid: "That doesn't look like a valid ICCID. Check the digits on your box (15-22 characters).",
+  },
 };
 
 export default en;

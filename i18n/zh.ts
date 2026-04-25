@@ -428,6 +428,9 @@ const zh = {
     spanish: '西班牙语',
     chinese: '中文',
   },
+  activate: {
+    invalid_iccid: 'ICCID 格式无效，请检查包装盒上的数字（15-22 位）。',
+  },
 };
 
 export default zh;

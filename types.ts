@@ -241,6 +241,11 @@ export interface TopUpRequest {
   packageCode: string;
   transactionId: string;
   amount: number;
+  /**
+   * Internal supplier-routing hint sent to the backend so the right adapter
+   * is invoked. NEVER render this value in user-facing copy — supplier
+   * identity (PCCW etc.) is commercially confidential.
+   */
   supplierType?: 'esimaccess' | 'pccw';
 }
 

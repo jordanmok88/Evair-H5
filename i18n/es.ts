@@ -430,6 +430,9 @@ const es = {
     spanish: 'Español',
     chinese: 'Chino',
   },
+  activate: {
+    invalid_iccid: 'Ese ICCID no parece válido. Revisa los dígitos en la caja (15-22 caracteres).',
+  },
 };
 
 export default es;

@@ -9,6 +9,8 @@ import DialerView from './views/DialerView';
 import ContactUsView from './views/ContactUsView';
 import InboxView from './views/InboxView';
 import ApiTestPage from './views/ApiTestPage';
+import ActivatePage from './views/ActivatePage';
+import TopUpPage from './views/TopUpPage';
 import { Tab, ActiveSim, SimType, User, AppNotification, EsimProfileResult } from './types';
 import { Lock } from 'lucide-react';
 import { MOCK_COUNTRIES, MOCK_PLANS_US, MOCK_ACTIVE_SIMS, MOCK_NOTIFICATIONS, CARRIER_MAP } from './constants';
@@ -17,47 +19,48 @@ import { supabaseConfigured, fetchNotifications, logSimActivation } from './serv
 import { authService, userService, type UserDto } from './services/api';
 import { initPush, unregisterPush } from './services/pushService';
 import { computeTestModeEnabled, dismissTestModeForSession, isAppPath, isAppPreviewHash, stripTestModeFromUrl } from './utils/testMode';
+import { getRoute, type Route } from './utils/routing';
 
 function App() {
 
-  // API Test mode: detected via URL hash
-  const [isApiTest, setIsApiTest] = useState(() => window.location.hash.includes('api-test'));
+  // Top-level route detection. Falls back to <CustomerApp/> for any path
+  // we don't explicitly handle, so existing app surfaces are unaffected.
+  const [route, setRoute] = useState<Route>(() => getRoute());
 
   useEffect(() => {
-    const onHash = () => {
-      setIsApiTest(window.location.hash.includes('api-test'));
+    const sync = () => setRoute(getRoute());
+    window.addEventListener('hashchange', sync);
+    window.addEventListener('popstate', sync);
+    return () => {
+      window.removeEventListener('hashchange', sync);
+      window.removeEventListener('popstate', sync);
     };
-    window.addEventListener('hashchange', onHash);
-    return () => window.removeEventListener('hashchange', onHash);
   }, []);
 
-  // Tab title override. Two modes flip the document title to "Evair APP":
-  //   1. Desktop dev: the `#app-preview` hash opened by
-  //      start-all-previews.sh simulates the native shell for QA.
-  //   2. Production path-based: any URL under `/app` (Phase 0 of the
-  //      marketing/app split on 2026-04-24). This is what Flutter's
-  //      WebView actually loads, and what browser visitors see after
-  //      clicking through from marketing.
-  // Both branches run in production because they're cheap and the title
-  // is legitimately different for the two surfaces — marketing vs. app.
+  // Tab title override. Three surfaces own the document title:
+  //   1. /activate(*)    → "Activate your Evair SIM"
+  //   2. /app(*) or
+  //      desktop dev-only `#app-preview` hash → "Evair APP"
+  //      (the latter is what start-all-previews.sh opens for QA).
+  //   3. anything else   → "Evair H5"
   useEffect(() => {
     const applyTitle = () => {
-      if (isAppPreviewHash() || isAppPath()) {
+      if (route.kind === 'activate') {
+        document.title = 'Activate your Evair SIM';
+      } else if (route.kind === 'topup') {
+        document.title = 'Top up your Evair SIM';
+      } else if (isAppPreviewHash() || isAppPath()) {
         document.title = 'Evair APP';
       } else if (document.title === 'Evair APP') {
         document.title = 'Evair H5';
       }
     };
     applyTitle();
-    window.addEventListener('hashchange', applyTitle);
-    window.addEventListener('popstate', applyTitle);
-    return () => {
-      window.removeEventListener('hashchange', applyTitle);
-      window.removeEventListener('popstate', applyTitle);
-    };
-  }, []);
+  }, [route]);
 
-  if (isApiTest) return <ApiTestPage />;
+  if (route.kind === 'apiTest') return <ApiTestPage />;
+  if (route.kind === 'activate') return <ActivatePage iccid={route.iccid} />;
+  if (route.kind === 'topup') return <TopUpPage iccid={route.iccid} />;
 
   return <CustomerApp />;
 }

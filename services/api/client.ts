@@ -407,6 +407,20 @@ export function del<T>(endpoint: string, config?: RequestConfig): Promise<T> {
   return request<T>(endpoint, { ...config, method: 'DELETE' });
 }
 
+/**
+ * PATCH request — used by the Activation Funnel auto-renew toggle and
+ * other partial-update surfaces. Body keys are converted from
+ * camelCase → snake_case to match the Laravel form-request expectations.
+ */
+export function patch<T>(endpoint: string, data?: unknown, config?: RequestConfig): Promise<T> {
+  const snakeData = data ? toSnakeCase(data) : undefined;
+  return request<T>(endpoint, {
+    ...config,
+    method: 'PATCH',
+    body: snakeData ? JSON.stringify(snakeData) : undefined,
+  });
+}
+
 // ─── 默认拦截器设置 ──────────────────────────────────────────────────────
 
 // 默认错误拦截器：在控制台打印错误

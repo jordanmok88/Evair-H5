@@ -4,6 +4,7 @@ import { Wifi, Phone, Zap, ChevronDown, CheckCircle2, QrCode, Copy, X, Calendar,
 import { ActiveSim, Tab, SimType, EsimPackage } from '../types';
 import FlagIcon from '../components/FlagIcon';
 import StripePaymentModal from '../components/StripePaymentModal';
+import AutoRenewToggle from '../components/AutoRenewToggle';
 import { CARRIER_MAP } from '../constants';
 import { topUp, fetchTopUpPackages, fetchPackages, checkDataUsage, formatVolume, formatPrice, retailPrice, packagePriceUsd, formatGB, queryProfile, mapRedTeaStatus, USE_BACKEND_API, unbindSim } from '../services/dataService';
 import { useEdgeSwipeBack } from '../hooks/useEdgeSwipeBack';
@@ -850,6 +851,24 @@ const MySimsView: React.FC<MySimsViewProps> = ({ activeSims, onNavigate, filterT
                   </div>
                   <span className="text-sm font-bold text-slate-500">{currentSim.country.name}</span>
               </div>
+
+              {/*
+                * Auto-renew row — only shown for SIMs we've successfully bound
+                * to a backend record (have an iccid). Mock SIMs and SIMs in
+                * demo mode lack a server-side SimAsset, so the toggle's
+                * GET /v1/app/sims/{iccid} call would 404 and the row would
+                * just render an error spinner.
+                */}
+              {currentSim.iccid && (
+                <AutoRenewToggle
+                    iccid={currentSim.iccid}
+                    eligible={
+                        currentSim.status === 'ACTIVE' ||
+                        currentSim.status === 'IN_USE' ||
+                        currentSim.status === 'ONBOARD'
+                    }
+                />
+              )}
 
               {currentSim.type === 'ESIM' && (
                   <button 

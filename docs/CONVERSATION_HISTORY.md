@@ -1,6 +1,6 @@
 # Evair H5 — Development Conversation History
 
-> Last updated: April 24, 2026
+> Last updated: April 24, 2026 (evening — DNS cutover complete)
 >
 > **Flutter successor app**: A native mobile app (EvairSIM, Flutter 3.38) has been started to replace this H5.
 > Full Flutter history lives at `~/Development/EvairSIM-App/docs/CONVERSATION_HISTORY.md`.
@@ -387,8 +387,105 @@ Invisible-to-users foundation for the marketing + functional split:
 - `.cursor/rules/ongoing-work.mdc` updated — Phase 0 resolved, Phase 1 (activation + top-up funnel) now the active thread.
 - `.cursor/rules/competitor-analysis.mdc` remains the on-demand dossier.
 
-### 4. Open at end of session
+### 4. DNS cutover — `evairdigital.com` live (2026-04-24 20:09 PT)
 
-- **DNS**: Jordan has domain portal ready. Will point `evairdigital.com` at Netlify. Needs a call on whether to point at `main` (old) or merge `feature/api-integration → main` first (so evairdigital.com serves the current work).
+Domain successfully cut over to Netlify without breaking existing email infrastructure. Key decisions and gotchas for posterity:
+
+- **Approach chosen**: kept Aliyun nameservers (`dns21/22.hichina.com`) authoritative, added A + CNAME records pointing at Netlify. Did NOT delegate nameservers to Netlify. Rationale: the domain already hosted a full email stack (Zoho inbound, Amazon SES on `send.evairdigital.com`, Resend DKIM on apex) that would have been lost in a nameserver switch.
+- **Shopify removal**: domain was previously pointing at a Shopify store. Removed two records — apex A `23.227.38.65` and www CNAME `shops.myshopify.com` — which had been silently round-robining with Netlify, causing ~50% of traffic to hit Shopify. Jordan confirmed Shopify is abandoned.
+- **Final record state**:
+  - `@` A → `75.2.60.5` (Netlify edge)
+  - `www` CNAME → `evair-h5.netlify.app.`
+  - All other records untouched (Zoho MX + SPF + verification TXT, SES MX/TXT/DKIM CNAMEs on `send`, Resend DKIM, etc.)
+- **SSL**: Let's Encrypt cert issued automatically ~5 min after DNS went green (`CN=evairdigital.com`, issuer `E7` ECDSA intermediate). HTTP→HTTPS redirect and www→apex 301 both enforced by Netlify.
+- **Total cutover time**: ~15 min from first record change to fully green cert.
+- **Flutter follow-up**: `EvairSIM-App/lib/core/constants/app_constants.dart` `h5Url` default should be updated from `https://feature-api-integration--evair-h5.netlify.app/app` to `https://evairdigital.com/app` at start of Phase 1. (Left deliberately on the preview URL during DNS propagation.)
+
+### 5. Open at end of session
+
 - **Phase 1**: next piece to build. Activation landing (`/activate?iccid=`), top-up (`/top-up?iccid=`), auto-renew toggle on my-sims, transactional emails, ROSCA-compliant disclosure copy.
 - **Red Tea breakout-IP field**: not yet surfaced in `esimApi.ts`. Needed for Phase 2 when we build country pages that highlight the US-IP variants. Research task.
+- **Flutter `h5Url` repoint**: move from preview branch URL to `https://evairdigital.com/app` at start of Phase 1.
+
+---
+
+## 2026-04-25 — Phase 1 design reconciled with China team's Laravel work; renamed to Activation Funnel
+
+### Trigger
+
+Jordan, before letting code start, said: "before you continue, my china team
+remind me that laravel has some update, please make sure you also take a
+look first." Fetched `origin` (Aliyun) on the Laravel repo. Local was
+already current on `f96d4e49`, but in the process discovered the China team
+(ben + Jordan + Claude Sonnet 4.5 co-author) had landed major architectural
+work over the last 10 days that I had not absorbed.
+
+### Discoveries that changed the plan
+
+1. **Parallel `/v1/app/*` API tier exists** alongside legacy `/v1/h5/*`.
+   - `auth:app` guard, same `app_users` provider (Sanctum tokens interchangeable in theory).
+   - 50 endpoints, 48 fully implemented (only 2 mock — both eliminated by 2026-04-23).
+   - This was originally for native Flutter; after Jordan's April WebView
+     pivot the App tier is somewhat orphaned but is far more polished than
+     the H5 tier.
+2. **`sim_assets` table is the canonical owned-SIM record** (migration
+   `2026_03_12_100004_create_sim_assets_table.php`). Owns `user_id`,
+   `status` (INVENTORY / ACTIVE / SUSPENDED / EXPIRED / TERMINATED),
+   `activated_at`, `expired_at`, `current_package_id`, `metadata` json,
+   plus eSIM-specific `lpa_code` / `smdp_address` / `matching_id`.
+   The legacy `app_user_sims` pivot predates this and is no longer the
+   right target for new features.
+3. **`POST /v1/app/users/bind-sim` already supports `activation_code`**
+   validated against `SimAsset.matching_id`. Exactly the activation flow
+   the funnel needs — extend it instead of building new.
+4. **Real Stripe is wired end-to-end on App tier**: `PaymentController::create`,
+   `PaymentController::show`, `OrderController::pay`, all webhook handlers
+   in `StripePaymentService` (canceled / refunded / dispute.created /
+   dispute.closed / checkout.session.completed / checkout.session.expired,
+   with tenant context fallback). Recharge unified into
+   `RechargeController` 2026-04-23. The H5 `OrderController::createTopup`
+   is `@deprecated`.
+5. **`SimResource` (App tier) already exposes** `package_name`, `country_code`,
+   `qr_code_url`, `usage_percent`, `total_display`, `is_low_data`,
+   `is_expired` plus aliases (`total_volume` / `expired_time` /
+   `activation_code`). The H5 my-sims page would benefit from these but
+   doesn't need to migrate this phase.
+6. **China team uses their own Phase numbering**:
+   `docs/api-integration-guide/phase1-supplier-package.md` (their Phase 1)
+   and `docs/plans/2026-04-22-flutter-app-implementation-plan.md` (Phase
+   0A/0B/0C/0D + their Phase 1 = Flutter→App migration). My "Phase 1"
+   would have collided directly.
+
+### Decisions made (Jordan, in real time)
+
+| # | Question | Choice |
+|---|---|---|
+| 1 | Phase naming | **Rename to "Activation Funnel"** — drop the colliding number |
+| 2 | API tier for new endpoints | **App namespace only** (`/v1/app/*`) |
+| 3 | Where do auto-renew columns live | **`sim_assets`** (not the legacy pivot) |
+| 4 | Lookup endpoint approach | **Extend** the preview pattern with a `claim_state` field |
+| 5 | Top-up flow Laravel target | **App `RechargeController`** (already real Stripe, polished) |
+
+### Cleanup work shipped
+
+- Renamed `Evair-H5/docs/PHASE_1_ACTIVATION.md` → `docs/ACTIVATION_FUNNEL.md`
+  and rewrote §4 (Laravel deliverables) and §7 (API contract) against the
+  actual data model. Other sections (H5 / admin / Flutter / customer story
+  / wireframes / disclosure plan) unchanged.
+- Updated `Evair-H5/.cursor/rules/ongoing-work.mdc` — Active thread
+  renamed to "Activation Funnel"; added critical reconciliation note;
+  cleaned up duplicate Resolved/Blockers sections.
+- Updated `Evair-Laravel/.cursor/rules/cross-repo-sync.mdc` with a
+  forward pointer for ben/the China team explaining the upcoming
+  cross-repo PR (schema migration + 2 new endpoints + 1 extended +
+  scheduled job + 6 mail classes).
+- Deleted iCloud-sync duplicate files
+  `Evair-Laravel/.cursor/rules/cross-repo-sync 2.mdc` and
+  `competitor-analysis 2.mdc`.
+
+### Net effect
+
+~4-5 days of expected work removed from the funnel scope (Stripe wiring,
+webhook handlers, SIM resource fields, bind-sim activation_code support
+all already done). Same scope, same UX, lower risk. Ready to start the
+Laravel migration on `sim_assets` as step 1 of the corrected ship sequence.
