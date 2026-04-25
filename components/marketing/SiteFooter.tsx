@@ -24,14 +24,15 @@ const FOOTER_LINKS: { label: string; href: string }[] = [
 const SiteFooter: React.FC = () => (
     <footer className="bg-slate-900 text-slate-400 px-4 md:px-8 py-8 text-sm">
         <div className="max-w-6xl mx-auto flex flex-col md:flex-row items-center gap-4 justify-between">
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-3">
                 <img
-                    src="/evairsim-logo.png"
+                    src="/evairsim-wordmark.png"
                     alt="EvairSIM"
-                    width={24}
-                    height={24}
-                    className="w-6 h-6 rounded-md"
+                    width={896}
+                    height={228}
+                    className="h-7 w-auto"
                 />
+                <span className="text-slate-500">·</span>
                 <span className="font-semibold text-white">Evair Digital</span>
                 <span>© {new Date().getFullYear()}</span>
             </div>

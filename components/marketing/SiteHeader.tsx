@@ -40,15 +40,20 @@ const NAV_ITEMS: { key: Exclude<SiteSection, null>; label: string; href: string 
 const SiteHeader: React.FC<SiteHeaderProps> = ({ active = null }) => (
     <header className="sticky top-0 bg-white/90 backdrop-blur-md z-30 border-b border-slate-100">
         <div className="max-w-6xl mx-auto px-4 md:px-8 h-16 flex items-center justify-between">
-            <a href="/" className="flex items-center gap-2 font-bold text-lg text-slate-900">
+            {/* Official EvairSIM wordmark — shipped at native 896×228 (≈3.93:1).
+                We render at h-8 (32 px) so the visible wordmark is ~126 px wide,
+                matching the previous icon + text layout. The wordmark is the
+                only logo treatment Marketing/Brand uses across surfaces; do
+                not pair it with an extra text label or it will read as a
+                duplicated brand name. */}
+            <a href="/" className="flex items-center" aria-label="EvairSIM home">
                 <img
-                    src="/evairsim-logo.png"
+                    src="/evairsim-wordmark.png"
                     alt="EvairSIM"
-                    width={32}
-                    height={32}
-                    className="w-8 h-8 rounded-lg shadow-sm"
+                    width={896}
+                    height={228}
+                    className="h-8 w-auto"
                 />
-                <span className="hidden sm:inline">EvairSIM</span>
             </a>
             <nav className="hidden md:flex items-center gap-6 text-sm font-medium text-slate-600">
                 {NAV_ITEMS.map(item => (

@@ -54,15 +54,18 @@ const MarketingPage: React.FC = () => {
             {/* Top nav */}
             <header className="sticky top-0 bg-white/90 backdrop-blur-md z-30 border-b border-slate-100">
                 <div className="max-w-6xl mx-auto px-4 md:px-8 h-16 flex items-center justify-between">
-                    <a href="/" className="flex items-center gap-2 font-bold text-lg">
+                    {/* Official EvairSIM wordmark. The wordmark image already
+                        contains the brand name, so we do NOT pair it with a
+                        separate "EvairSIM" text label. h-8 ≈ 32 px tall to
+                        match the rest of the 64-px nav chrome. */}
+                    <a href="/" className="flex items-center" aria-label="EvairSIM home">
                         <img
-                            src="/evairsim-logo.png"
+                            src="/evairsim-wordmark.png"
                             alt="EvairSIM"
-                            width={32}
-                            height={32}
-                            className="w-8 h-8 rounded-lg shadow-sm"
+                            width={896}
+                            height={228}
+                            className="h-8 w-auto"
                         />
-                        <span className="hidden sm:inline">EvairSIM</span>
                     </a>
                     <nav className="hidden md:flex items-center gap-6 text-sm font-medium text-slate-600">
                         <a href="/travel-esim" className="hover:text-slate-900">Travel eSIM</a>
@@ -287,15 +290,14 @@ const MarketingPage: React.FC = () => {
             <footer className="bg-slate-900 text-slate-300 px-4 md:px-8 py-10">
                 <div className="max-w-6xl mx-auto grid md:grid-cols-5 gap-8 text-sm">
                     <div className="md:col-span-1">
-                        <div className="flex items-center gap-2 font-bold text-white text-lg mb-3">
+                        <div className="mb-3">
                             <img
-                                src="/evairsim-logo.png"
+                                src="/evairsim-wordmark.png"
                                 alt="EvairSIM"
-                                width={28}
-                                height={28}
-                                className="w-7 h-7 rounded-lg"
+                                width={896}
+                                height={228}
+                                className="h-9 w-auto"
                             />
-                            EvairSIM
                         </div>
                         <p className="text-slate-400 leading-relaxed">
                             Connectivity for travelers, residents, and the people in between.
