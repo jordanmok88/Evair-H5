@@ -73,6 +73,18 @@ export interface EsimCheckoutFlowState {
 }
 
 const PENDING_KEY = 'pending_esim_order';
+// Tab-scoped cache so an in-tab refresh after the success screen
+// re-renders the QR rather than dropping back to the marketing page.
+// Cleared on tab close (sessionStorage), so it never persists past
+// the customer's session — they can always re-access the eSIM from
+// the email or /app/my-sims.
+const SUCCESS_CACHE_KEY = 'esim_checkout_last_success';
+
+interface SuccessSnapshot {
+    result: EsimOrderResult;
+    pending: PendingEsimOrder | null;
+    emailSent: boolean;
+}
 
 function readPending(): PendingEsimOrder | null {
     const raw = typeof window === 'undefined'
@@ -88,6 +100,30 @@ function readPending(): PendingEsimOrder | null {
     }
 }
 
+function readSuccessSnapshot(): SuccessSnapshot | null {
+    if (typeof window === 'undefined') return null;
+    try {
+        const raw = sessionStorage.getItem(SUCCESS_CACHE_KEY);
+        if (!raw) return null;
+        return JSON.parse(raw) as SuccessSnapshot;
+    } catch {
+        try { sessionStorage.removeItem(SUCCESS_CACHE_KEY); } catch { /* ignore */ }
+        return null;
+    }
+}
+
+function writeSuccessSnapshot(snap: SuccessSnapshot): void {
+    if (typeof window === 'undefined') return;
+    try {
+        sessionStorage.setItem(SUCCESS_CACHE_KEY, JSON.stringify(snap));
+    } catch { /* quota — ignore */ }
+}
+
+function clearSuccessSnapshot(): void {
+    if (typeof window === 'undefined') return;
+    try { sessionStorage.removeItem(SUCCESS_CACHE_KEY); } catch { /* ignore */ }
+}
+
 function cleanUrl(): void {
     if (typeof window === 'undefined') return;
     try {
@@ -97,10 +133,14 @@ function cleanUrl(): void {
 }
 
 export function useEsimCheckoutFlow(): EsimCheckoutFlowState {
-    const [phase, setPhase] = useState<CheckoutPhase>('idle');
-    const [result, setResult] = useState<EsimOrderResult | null>(null);
-    const [pending, setPending] = useState<PendingEsimOrder | null>(null);
-    const [emailSent, setEmailSent] = useState(false);
+    // Hydrate from the per-tab snapshot so an in-tab refresh after a
+    // successful purchase keeps the QR visible. Empty on cold load.
+    const initialSnap = typeof window !== 'undefined' ? readSuccessSnapshot() : null;
+
+    const [phase, setPhase] = useState<CheckoutPhase>(initialSnap ? 'success' : 'idle');
+    const [result, setResult] = useState<EsimOrderResult | null>(initialSnap?.result ?? null);
+    const [pending, setPending] = useState<PendingEsimOrder | null>(initialSnap?.pending ?? null);
+    const [emailSent, setEmailSent] = useState(initialSnap?.emailSent ?? false);
     const [error, setError] = useState<string | null>(null);
 
     useEffect(() => {
@@ -169,6 +209,11 @@ export function useEsimCheckoutFlow(): EsimCheckoutFlowState {
 
                 setResult(orderResult);
                 setPhase('success');
+                writeSuccessSnapshot({
+                    result: orderResult,
+                    pending: pendingOrder,
+                    emailSent: false,
+                });
 
                 if (pendingOrder.email) {
                     fetch('/.netlify/functions/send-esim-email', {
@@ -185,7 +230,18 @@ export function useEsimCheckoutFlow(): EsimCheckoutFlowState {
                             iccid: orderResult.iccid,
                         }),
                     })
-                        .then(r => { if (!cancelled && r.ok) setEmailSent(true); })
+                        .then(r => {
+                            if (cancelled || !r.ok) return;
+                            setEmailSent(true);
+                            // Persist the email-sent flag too so the
+                            // refreshed page still shows "Confirmation
+                            // sent to {email}".
+                            writeSuccessSnapshot({
+                                result: orderResult,
+                                pending: pendingOrder,
+                                emailSent: true,
+                            });
+                        })
                         .catch(() => { /* email is best-effort */ });
                 }
             } catch (err) {
@@ -212,6 +268,11 @@ export function useEsimCheckoutFlow(): EsimCheckoutFlowState {
         reset: () => {
             setPhase('idle');
             setError(null);
+            // If the customer dismisses the success screen we drop the
+            // snapshot too — they won't expect the QR to come back on
+            // the next visit, only on an in-tab refresh while the
+            // success view is still showing.
+            clearSuccessSnapshot();
         },
     };
 }
