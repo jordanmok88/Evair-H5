@@ -130,10 +130,10 @@ const MarketingPage: React.FC = () => {
                             <div className="relative max-w-sm mx-auto">
                                 <div className="absolute -inset-4 bg-gradient-to-br from-orange-500/15 to-amber-400/15 rounded-3xl blur-2xl" />
                                 <img
-                                    src="/evairsim-card-back.png"
-                                    alt="EvairSIM travel SIM card with ICCID, barcode and setup QR"
-                                    width={1024}
-                                    height={697}
+                                    src="/evairsim-card-front.png"
+                                    alt="EvairSIM US 5G travel SIM card — AT&T, Verizon, T-Mobile, plug & use"
+                                    width={1455}
+                                    height={998}
                                     className="relative w-full h-auto rounded-2xl shadow-xl"
                                     loading="eager"
                                 />
@@ -145,10 +145,10 @@ const MarketingPage: React.FC = () => {
                         <div className="relative">
                             <div className="absolute -inset-6 bg-gradient-to-br from-orange-500/20 to-amber-400/20 rounded-3xl blur-2xl" />
                             <img
-                                src="/evairsim-card-back.png"
-                                alt="EvairSIM travel SIM card with ICCID, barcode and setup QR"
-                                width={1024}
-                                height={697}
+                                src="/evairsim-card-front.png"
+                                alt="EvairSIM US 5G travel SIM card — AT&T, Verizon, T-Mobile, plug & use"
+                                width={1455}
+                                height={998}
                                 className="relative w-full h-auto rounded-2xl shadow-2xl shadow-orange-500/20"
                                 loading="eager"
                             />
