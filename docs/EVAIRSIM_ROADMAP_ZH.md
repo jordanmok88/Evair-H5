@@ -175,6 +175,8 @@ EvairSIM 实际上是 **2 个代码库 + 3 个用户入口**：
 | 每条 URL 的 OG / Twitter Card | ✅ 已处理 | `netlify/edge-functions/og-rewriter.ts` 在 CDN 边缘改写 `<title>` / OG / Twitter 标签；社交爬虫（Twitter / Slack / iMessage / Facebook）现在能正确预览 `/help/*`、`/blog/*`、`/travel-esim/*`、`/sim/*` |
 | Header / Footer 重复 | ✅ 已处理 | 抽成 `components/marketing/SiteHeader.tsx` + `SiteFooter.tsx`，DeviceLanding / TravelEsim / HelpCenter / BlogPage 全部复用；MarketingPage 保留自己的富 5-列 footer（首页特殊处理） |
 | `/app#contact` 深链 | ✅ 已处理 | `App.tsx` 内 CustomerApp 加了 hash 监听器：`#contact` → DIALER tab，`#inbox` → INBOX，`#profile` → PROFILE。挂载时和 hashchange 时都会响应 |
+| **SB-313 合规漏洞**：Welcome 邮件缺少一键取消链接 | ✅ 已修复 | 审计 Phase 1 合规要求时发现：`ActivationWelcomeMail`（24-小时确认邮件）只有"打开 Dashboard"按钮，没有 SB-313 §17602(c) / 16 CFR §425.1 (ROSCA) 强制要求的"一键取消"链接。已加：构造函数新增 `?string $cancelUrl` 参数；`welcome.blade.php` 在 auto-renew callout 内渲染 `Cancel auto-renew →` 链接；`AppUserController::bindSim` 调用点传入；新增 2 条单元测试锁定行为（`includes_cancel_link_when_auto_renew_on` / `omits_cancel_link_when_auto_renew_off`） |
 | 每条 URL 的专属 OG 图片（PNG） | ⏸ 暂缓 | 当前所有路由统一回退到 `/og-image.png`。要做"每文章不同图"需要引入 `satori` 或 `@vercel/og` 动态渲染管线 — 工作量约半天，当下投入产出比不高，等社交分享流量起来再说 |
+| Phase 2/3/4 营销页 i18n 覆盖 | ⏸ 已知偏离 | 原则 #4 要求"任何用户可见文案必须走 `t()` key"，但 MarketingPage / DeviceLandingPage / TravelEsimPage / HelpCenterPage / BlogPage 当前都是硬编码英文字符串。**理由**：这些是 SEO 落地页，目标受众是 Google 英文搜索用户（Airalo / Holafly / Nomad 等竞品同样只做英文 SEO 页）。客户应用 `/app/*` 内部仍然是完整三语 i18n。如果未来要做中文 SEO 进入大陆 / 港台市场，这是切入点 |
 
-**Phase 0–4 + 上述三项打磨**全部完成后，按规划 Phase 5（App 内物理 SIM 结账）保持暂缓，直到 Phase 1 自动续订漏斗的资金回流稳定。
+**Phase 0–4 + 上述四项打磨**全部完成后，按规划 Phase 5（App 内物理 SIM 结账）保持暂缓，直到 Phase 1 自动续订漏斗的资金回流稳定。
