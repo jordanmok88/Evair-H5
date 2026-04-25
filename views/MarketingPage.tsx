@@ -46,6 +46,8 @@ import {
     BadgeCheck,
 } from 'lucide-react';
 import { isMobileDevice } from '../utils/device';
+import { useMobileSignInGate } from '../hooks/useMobileSignInGate';
+import MobileOnlyNotice from '../components/marketing/MobileOnlyNotice';
 
 const TRAVELER_COUNTRIES = '200+';
 const STAY_PRICE_USD = '9.99';
@@ -104,6 +106,7 @@ const goActivateCta = (e: React.MouseEvent<HTMLAnchorElement>) => {
 };
 
 const MarketingPage: React.FC = () => {
+    const signInGate = useMobileSignInGate(APP_PATH);
     return (
         <div className="min-h-screen bg-white text-slate-900">
             {/* Top nav */}
@@ -138,6 +141,7 @@ const MarketingPage: React.FC = () => {
                         (hero CTA above), not here. */}
                     <a
                         href={APP_PATH}
+                        onClick={signInGate.gateClick}
                         className="text-sm font-semibold text-orange-600 hover:text-orange-700"
                     >
                         Mobile Sign in →
@@ -458,6 +462,12 @@ const MarketingPage: React.FC = () => {
                     <span>Made for travelers and the people who stay.</span>
                 </div>
             </footer>
+
+            <MobileOnlyNotice
+                open={signInGate.open}
+                onClose={signInGate.onClose}
+                onContinueAnyway={signInGate.onContinueAnyway}
+            />
         </div>
     );
 };
