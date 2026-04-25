@@ -136,13 +136,13 @@ const MarketingPage: React.FC = () => {
                             visual of the actual SIM card. */}
                         <div className="md:hidden mt-10">
                             <div className="relative max-w-sm mx-auto">
-                                <div className="absolute -inset-4 bg-gradient-to-br from-orange-500/15 to-amber-400/15 rounded-3xl blur-2xl" />
+                                <div className="absolute -inset-6 bg-gradient-to-br from-orange-500/15 to-amber-400/15 rounded-3xl blur-2xl" />
                                 <img
                                     src="/evairsim-card-front.png"
                                     alt="EvairSIM US 5G data SIM card — AT&T, Verizon, T-Mobile, plug & use, data only"
-                                    width={1618}
-                                    height={1121}
-                                    className="relative w-full h-auto rounded-2xl shadow-xl"
+                                    width={1024}
+                                    height={644}
+                                    className="relative w-full h-auto drop-shadow-xl"
                                     loading="eager"
                                 />
                             </div>
@@ -151,13 +151,13 @@ const MarketingPage: React.FC = () => {
 
                     <div className="hidden md:block">
                         <div className="relative">
-                            <div className="absolute -inset-6 bg-gradient-to-br from-orange-500/20 to-amber-400/20 rounded-3xl blur-2xl" />
+                            <div className="absolute -inset-8 bg-gradient-to-br from-orange-500/20 to-amber-400/20 rounded-3xl blur-2xl" />
                             <img
                                 src="/evairsim-card-front.png"
                                 alt="EvairSIM US 5G data SIM card — AT&T, Verizon, T-Mobile, plug & use, data only"
-                                width={1618}
-                                height={1121}
-                                className="relative w-full h-auto rounded-2xl shadow-2xl shadow-orange-500/20"
+                                width={1024}
+                                height={644}
+                                className="relative w-full h-auto drop-shadow-2xl"
                                 loading="eager"
                             />
                         </div>
