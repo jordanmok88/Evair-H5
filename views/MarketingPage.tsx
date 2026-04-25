@@ -41,12 +41,46 @@ import {
     Star,
     CheckCircle2,
     ArrowRight,
+    ShoppingCart,
+    BadgeCheck,
 } from 'lucide-react';
+import { isMobileDevice } from '../utils/device';
 
 const TRAVELER_COUNTRIES = '200+';
 const STAY_PRICE_USD = '9.99';
 const APP_PATH = '/app';
 const ACTIVATE_PATH = '/activate';
+
+/**
+ * Public Amazon storefront for EvairSIM physical SIM cards.
+ *
+ * TODO(jordan): paste the real Amazon URL here. Until then we route
+ * the "Buy SIM card" CTAs to the Amazon search results page for our
+ * brand so clicks don't 404. When the storefront link is finalised,
+ * just swap this constant — no other code changes needed.
+ */
+const AMAZON_STOREFRONT_URL =
+    'https://www.amazon.com/s?k=EvairSIM';
+
+/**
+ * Click handler for every CTA whose desktop fallback is the H5 eSIM
+ * tab. On mobile we hijack the click and replace the URL with the
+ * H5 deep-link so the customer lands in the full-screen app on the
+ * very first paint. On desktop we let the browser follow the `<a>`
+ * tag's `href`, which now also goes to `/app#esim` — App.tsx renders
+ * that tab full-width without the phone-mock chrome (see App.tsx
+ * `showStoreLayout`).
+ *
+ * The `<a>` tag's `href` deliberately stays set to `/app#esim` for
+ * SEO bots (which all identify as desktop) and for users with JS
+ * disabled — both groups should reach the same destination.
+ */
+const goEsim = (e: React.MouseEvent<HTMLAnchorElement>) => {
+    if (isMobileDevice()) {
+        e.preventDefault();
+        window.location.assign(`${APP_PATH}#esim`);
+    }
+};
 
 const MarketingPage: React.FC = () => {
     return (
@@ -75,11 +109,19 @@ const MarketingPage: React.FC = () => {
                         <a href="/help" className="hover:text-slate-900">Help</a>
                         <a href="/blog" className="hover:text-slate-900">Blog</a>
                     </nav>
+                    {/* Sign-in CTA.
+                        Labelled "Mobile Sign in" so desktop visitors
+                        aren't surprised when /app still renders the
+                        phone-mock for the account/dashboard tabs.
+                        (The eSIM tab is full-width via the marketing
+                        CTAs above; this top-right link is for
+                        returning customers signing into their
+                        account.) */}
                     <a
                         href={APP_PATH}
                         className="text-sm font-semibold text-orange-600 hover:text-orange-700"
                     >
-                        Sign in →
+                        Mobile Sign in →
                     </a>
                 </div>
             </header>
@@ -107,22 +149,43 @@ const MarketingPage: React.FC = () => {
                             Travel eSIMs for short trips. A US 5G data plan for long stays.
                             Data-only, no contract, instant activation.
                         </p>
-                        <div className="grid sm:grid-cols-2 gap-3 max-w-md">
-                            {/* Both CTAs use the hash deep-link mechanism in
-                                App.tsx (see HASH_TO_TAB) so the H5 customer
-                                shell opens directly on the matching tab. */}
+                        {/* Hero CTAs.
+                            ┌───────────────────────────────────────────────┐
+                            │   Travel eSIM (primary, full-width)           │
+                            ├──────────────────────┬────────────────────────┤
+                            │  Buy SIM card  (Amz) │   Activate my SIM      │
+                            └──────────────────────┴────────────────────────┘
+                            The long-stay product splits into two distinct
+                            jobs-to-be-done: customers who don't own a SIM
+                            yet (Amazon) and customers who already have one
+                            in hand (the /activate page). Lumping both into
+                            a single "US SIM" button forced confused users
+                            into a phone-mock that they couldn't actually
+                            shop in. */}
+                        <div className="max-w-md">
                             <a
                                 href={`${APP_PATH}#esim`}
-                                className="flex items-center justify-center gap-2 bg-orange-500 text-white font-bold px-5 py-3 rounded-xl shadow-lg shadow-orange-500/20 active:scale-[0.98] transition-transform"
+                                onClick={goEsim}
+                                className="flex items-center justify-center gap-2 bg-orange-500 text-white font-bold px-5 py-3 rounded-xl shadow-lg shadow-orange-500/20 active:scale-[0.98] transition-transform w-full"
                             >
                                 <Globe size={18} /> Travel eSIM
                             </a>
-                            <a
-                                href={`${APP_PATH}#sim-card`}
-                                className="flex items-center justify-center gap-2 bg-slate-900 text-white font-bold px-5 py-3 rounded-xl shadow-lg shadow-slate-900/20 active:scale-[0.98] transition-transform"
-                            >
-                                <Smartphone size={18} /> US SIM (long-stay)
-                            </a>
+                            <div className="grid sm:grid-cols-2 gap-3 mt-3">
+                                <a
+                                    href={AMAZON_STOREFRONT_URL}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="flex items-center justify-center gap-2 bg-slate-900 text-white font-bold px-5 py-3 rounded-xl shadow-lg shadow-slate-900/20 active:scale-[0.98] transition-transform"
+                                >
+                                    <ShoppingCart size={18} /> Buy SIM card
+                                </a>
+                                <a
+                                    href={ACTIVATE_PATH}
+                                    className="flex items-center justify-center gap-2 bg-white text-slate-900 font-bold px-5 py-3 rounded-xl border border-slate-200 shadow-sm active:scale-[0.98] transition-transform"
+                                >
+                                    <BadgeCheck size={18} /> Activate my SIM
+                                </a>
+                            </div>
                         </div>
                         <div className="flex items-center gap-2 mt-6 text-xs text-slate-500">
                             <CheckCircle2 size={14} className="text-emerald-500" />
@@ -192,6 +255,7 @@ const MarketingPage: React.FC = () => {
                         </ul>
                         <a
                             href={`${APP_PATH}#esim`}
+                            onClick={goEsim}
                             className="mt-auto inline-flex items-center justify-center gap-2 bg-orange-500 text-white font-bold px-5 py-3 rounded-xl"
                         >
                             Browse plans <ArrowRight size={16} />
@@ -216,12 +280,25 @@ const MarketingPage: React.FC = () => {
                             <li className="flex items-center gap-2"><CheckCircle2 size={16} className="text-emerald-500" /> AT&amp;T &middot; Verizon &middot; T-Mobile coverage</li>
                             <li className="flex items-center gap-2"><CheckCircle2 size={16} className="text-emerald-500" /> Auto-renew or pay monthly</li>
                         </ul>
-                        <a
-                            href={ACTIVATE_PATH}
-                            className="mt-auto inline-flex items-center justify-center gap-2 bg-slate-900 text-white font-bold px-5 py-3 rounded-xl"
-                        >
-                            Activate or order <ArrowRight size={16} />
-                        </a>
+                        {/* Mirror the hero's two-button split so the
+                            second-scroll CTA matches the customer's
+                            existing mental model. */}
+                        <div className="mt-auto grid sm:grid-cols-2 gap-3">
+                            <a
+                                href={AMAZON_STOREFRONT_URL}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="inline-flex items-center justify-center gap-2 bg-slate-900 text-white font-bold px-5 py-3 rounded-xl"
+                            >
+                                <ShoppingCart size={16} /> Buy SIM card
+                            </a>
+                            <a
+                                href={ACTIVATE_PATH}
+                                className="inline-flex items-center justify-center gap-2 bg-white text-slate-900 font-bold px-5 py-3 rounded-xl border border-slate-300"
+                            >
+                                <BadgeCheck size={16} /> Activate my SIM
+                            </a>
+                        </div>
                     </div>
                 </div>
             </section>
@@ -274,8 +351,13 @@ const MarketingPage: React.FC = () => {
                     Pick your trip or your stay. We'll handle the rest.
                 </p>
                 <div className="flex flex-col sm:flex-row gap-3 justify-center">
+                    {/* "Get started" routes into the eSIM store on both
+                        device classes — most apex traffic is travel-
+                        intent, and desktop users get the full-width
+                        store layout (App.tsx `showStoreLayout`). */}
                     <a
-                        href={APP_PATH}
+                        href={`${APP_PATH}#esim`}
+                        onClick={goEsim}
                         className="inline-flex items-center justify-center gap-2 bg-orange-500 text-white font-bold px-6 py-4 rounded-xl shadow-lg shadow-orange-500/20"
                     >
                         Get started <ArrowRight size={18} />

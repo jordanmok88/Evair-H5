@@ -70,11 +70,18 @@ const SiteHeader: React.FC<SiteHeaderProps> = ({ active = null }) => (
                     </a>
                 ))}
             </nav>
+            {/* Sign-in CTA.
+                Labelled "Mobile Sign in" so desktop visitors aren't
+                surprised when the destination is a mobile-shaped UI:
+                /app still renders the iPhone-style mock for every
+                tab except eSIM (which is the public store and is
+                full-width). The href stays `/app` regardless of
+                device — there is only one customer-app surface. */}
             <a
                 href="/app"
                 className="text-sm font-semibold text-orange-600 hover:text-orange-700"
             >
-                Sign in →
+                Mobile Sign in →
             </a>
         </div>
     </header>

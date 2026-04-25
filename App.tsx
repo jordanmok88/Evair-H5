@@ -43,32 +43,17 @@ function App() {
     };
   }, []);
 
-  // Phone-frame scroll lock. The customer-app shell uses an iPhone-style
-  // contained layout on tablet/desktop (see <CustomerApp/>) and locks the
-  // outer page so the inner phone frame is the only scroll container.
-  // Every other public surface (marketing, device landing, travel, help,
-  // blog, legal, activate, top-up, apiTest) needs normal page scrolling,
-  // so we toggle the `app-shell` class only when CustomerApp renders.
-  // CSS scopes overflow:hidden behind html.app-shell — see app.css.
-  useEffect(() => {
-    const isCustomerApp =
-      route.kind !== 'apiTest' &&
-      route.kind !== 'activate' &&
-      route.kind !== 'topup' &&
-      route.kind !== 'marketing' &&
-      route.kind !== 'device' &&
-      route.kind !== 'travel' &&
-      route.kind !== 'help' &&
-      route.kind !== 'blog' &&
-      route.kind !== 'legal';
-    const root = document.documentElement;
-    if (isCustomerApp) {
-      root.classList.add('app-shell');
-    } else {
-      root.classList.remove('app-shell');
-    }
-    return () => { root.classList.remove('app-shell'); };
-  }, [route]);
+  // Phone-frame scroll lock is owned by <CustomerApp/> (see its
+  // own useEffect on `activeTab`). We deliberately do NOT toggle
+  // `html.app-shell` here because the rule depends on the customer
+  // app's *current tab*: the eSIM tab needs to render full-width
+  // with normal page scrolling on desktop (it's a real store, not
+  // a mock-phone screen), while every other tab keeps the iPhone
+  // contained layout. Centralising the toggle in CustomerApp also
+  // means the class is added only after CustomerApp mounts and
+  // removed on unmount — so the public surfaces (marketing, device,
+  // travel, help, blog, legal, activate, top-up, apiTest) stay
+  // free-scrolling without any opt-out lists to maintain.
 
   // Tab title override. Three surfaces own the document title:
   //   1. /activate(*)    → "Activate your Evair SIM"
@@ -170,6 +155,37 @@ function CustomerApp() {
     () => (sessionStorage.getItem('evair-activeTab') as Tab) || Tab.SIM_CARD
   );
   const previousTab = useRef<Tab>(Tab.SIM_CARD);
+
+  // Phone-frame scroll lock — opt-in via `html.app-shell`. The CSS
+  // rule in app.css scopes `overflow: hidden` behind that class so
+  // the iPhone-style contained layout is the only scroll container.
+  //
+  // The eSIM tab is a public-facing store on desktop (no phone-mock
+  // chrome — see `showStoreLayout` below) so it needs normal page
+  // scrolling; we keep the class OFF for that tab. Every other tab
+  // is a customer-account screen and keeps the contained layout, so
+  // the class stays ON. The cleanup function strips the class on
+  // unmount, which is what restores normal scrolling when the user
+  // navigates from /app to a marketing/device/travel surface.
+  useEffect(() => {
+    const root = document.documentElement;
+    if (activeTab === Tab.ESIM) {
+      root.classList.remove('app-shell');
+    } else {
+      root.classList.add('app-shell');
+    }
+    return () => { root.classList.remove('app-shell'); };
+  }, [activeTab]);
+
+  // Desktop layout switch. The customer-app phone-mock is a useful
+  // brand showcase for the account/dashboard tabs (My SIMs, Profile,
+  // etc.), but it actively gets in the way of the eSIM store: a
+  // desktop visitor coming from the marketing CTA expects a real
+  // wide-format catalogue, not a tiny iPhone-shaped panel centred
+  // on a grey page. When the eSIM tab is active we drop the entire
+  // phone-mock styling (border, rounded corners, fixed height and
+  // width, status-bar mock) and let `<main>` use the full page.
+  const showStoreLayout = activeTab === Tab.ESIM;
   // Mirror activeTab into a ref so the hashchange listener (which we
   // wire once on mount) reads the *current* tab when remembering the
   // previous one — without this the listener captured the initial
@@ -840,34 +856,63 @@ function CustomerApp() {
   };
 
   return (
-    <div className="lg:bg-[#E5E5E5] lg:h-full lg:min-h-screen lg:flex lg:items-center lg:justify-center lg:p-8 font-sans antialiased selection:bg-orange-100">
-      
-      {/* Phone preview frame. The `.phone-frame-fit` class in app.css
-          owns ALL desktop sizing — it caps the frame to
-          `min(880px, viewport-padding)` AND locks the iPhone aspect
-          ratio (430/880) so the width shrinks in lockstep with the
-          height on shorter laptop screens. We deliberately do NOT add
-          `lg:h-[880px]` or `lg:max-w-[430px]` here because they would
-          fight the aspect-ratio cascade and squash the phone. Mobile
-          (no `lg:` overrides) still gets the full-width treatment via
-          `w-full`. */}
-      <div ref={phoneRef} className="phone-frame-fit w-full bg-[#F2F4F7] lg:rounded-[3.5rem] lg:overflow-hidden lg:shadow-[0_50px_100px_-20px_rgba(0,0,0,0.25)] relative lg:border-[8px] lg:border-slate-900 lg:ring-1 lg:ring-black/50">
-        
-        {/* Generic status bar — only visible in desktop phone frame */}
-        <div className="hidden lg:block relative z-50 shrink-0 bg-[#F2F4F7]">
-          <div className="relative h-[54px]">
-            <div className="absolute top-[10px] left-1/2 -translate-x-1/2 w-[126px] h-[37px] bg-black rounded-[24px] z-10" />
-            <span className="absolute left-5 top-4 text-[15px] font-semibold text-[#1a1a1a]" style={{ fontFamily: 'system-ui, sans-serif' }}>12:18</span>
-            <div className="absolute right-5 top-[18px] flex items-center gap-[6px]">
-              <svg width="16" height="12" viewBox="0 0 16 12" fill="none"><rect x="0" y="5" width="3" height="7" rx="1" fill="#1a1a1a"/><rect x="4.5" y="3" width="3" height="9" rx="1" fill="#1a1a1a"/><rect x="9" y="1" width="3" height="11" rx="1" fill="#1a1a1a"/><rect x="13" y="0" width="3" height="12" rx="1" fill="#1a1a1a" opacity="0.3"/></svg>
-              <svg width="16" height="12" viewBox="0 0 16 12" fill="none"><path d="M8 2.5C5.5 2.5 3.3 3.5 1.7 5.1L0.3 3.7C2.3 1.7 4.9 0.5 8 0.5s5.7 1.2 7.7 3.2L14.3 5.1C12.7 3.5 10.5 2.5 8 2.5z" fill="#1a1a1a" opacity="0.3"/><path d="M8 6.5c-1.7 0-3.2.7-4.3 1.8L2.3 6.9C3.8 5.4 5.8 4.5 8 4.5s4.2.9 5.7 2.4L12.3 8.3C11.2 7.2 9.7 6.5 8 6.5z" fill="#1a1a1a"/><circle cx="8" cy="11" r="1.5" fill="#1a1a1a"/></svg>
-              <svg width="25" height="12" viewBox="0 0 25 12" fill="none"><rect x="0" y="0.5" width="21" height="11" rx="2.5" stroke="#1a1a1a" strokeWidth="1"/><rect x="1.5" y="2" width="16" height="8" rx="1.5" fill="#1a1a1a"/><rect x="22" y="3.5" width="2.5" height="5" rx="1" fill="#1a1a1a" opacity="0.4"/></svg>
+    <div
+      className={
+        showStoreLayout
+          ? 'min-h-screen bg-white font-sans antialiased selection:bg-orange-100'
+          : 'lg:bg-[#E5E5E5] lg:h-full lg:min-h-screen lg:flex lg:items-center lg:justify-center lg:p-8 font-sans antialiased selection:bg-orange-100'
+      }
+    >
+
+      {/* Phone preview frame.
+          When `showStoreLayout` is on (eSIM tab) we render full-width
+          with no border / no rounded corners / no shadow / no fixed
+          height — the eSIM catalogue and checkout become a real
+          desktop store. Tab switching from eSIM into any account
+          tab (My SIMs, Profile, etc.) flips the layout back to the
+          contained iPhone-style mock by toggling these classes on
+          the same node, so the H5 still works as a brand showcase
+          for the customer-facing tabs. */}
+      <div
+        ref={phoneRef}
+        className={
+          showStoreLayout
+            ? 'w-full bg-white relative'
+            : 'phone-frame-fit w-full bg-[#F2F4F7] lg:rounded-[3.5rem] lg:overflow-hidden lg:shadow-[0_50px_100px_-20px_rgba(0,0,0,0.25)] relative lg:border-[8px] lg:border-slate-900 lg:ring-1 lg:ring-black/50'
+        }
+      >
+
+        {/* Generic status bar — only visible in desktop phone frame.
+            Hidden entirely in store layout because there is no
+            phone frame to put a status bar inside of. */}
+        {!showStoreLayout && (
+          <div className="hidden lg:block relative z-50 shrink-0 bg-[#F2F4F7]">
+            <div className="relative h-[54px]">
+              <div className="absolute top-[10px] left-1/2 -translate-x-1/2 w-[126px] h-[37px] bg-black rounded-[24px] z-10" />
+              <span className="absolute left-5 top-4 text-[15px] font-semibold text-[#1a1a1a]" style={{ fontFamily: 'system-ui, sans-serif' }}>12:18</span>
+              <div className="absolute right-5 top-[18px] flex items-center gap-[6px]">
+                <svg width="16" height="12" viewBox="0 0 16 12" fill="none"><rect x="0" y="5" width="3" height="7" rx="1" fill="#1a1a1a"/><rect x="4.5" y="3" width="3" height="9" rx="1" fill="#1a1a1a"/><rect x="9" y="1" width="3" height="11" rx="1" fill="#1a1a1a"/><rect x="13" y="0" width="3" height="12" rx="1" fill="#1a1a1a" opacity="0.3"/></svg>
+                <svg width="16" height="12" viewBox="0 0 16 12" fill="none"><path d="M8 2.5C5.5 2.5 3.3 3.5 1.7 5.1L0.3 3.7C2.3 1.7 4.9 0.5 8 0.5s5.7 1.2 7.7 3.2L14.3 5.1C12.7 3.5 10.5 2.5 8 2.5z" fill="#1a1a1a" opacity="0.3"/><path d="M8 6.5c-1.7 0-3.2.7-4.3 1.8L2.3 6.9C3.8 5.4 5.8 4.5 8 4.5s4.2.9 5.7 2.4L12.3 8.3C11.2 7.2 9.7 6.5 8 6.5z" fill="#1a1a1a"/><circle cx="8" cy="11" r="1.5" fill="#1a1a1a"/></svg>
+                <svg width="25" height="12" viewBox="0 0 25 12" fill="none"><rect x="0" y="0.5" width="21" height="11" rx="2.5" stroke="#1a1a1a" strokeWidth="1"/><rect x="1.5" y="2" width="16" height="8" rx="1.5" fill="#1a1a1a"/><rect x="22" y="3.5" width="2.5" height="5" rx="1" fill="#1a1a1a" opacity="0.4"/></svg>
+              </div>
             </div>
           </div>
-        </div>
+        )}
 
-        {/* Main Content Area */}
-        <main className="w-full relative lg:overflow-hidden flex flex-col" style={{ height: 'calc(100% - 54px)' }}>
+        {/* Main Content Area.
+            In phone-mock mode we subtract the 54-px status bar from
+            the parent's height so the inner scroll fits exactly.
+            In store mode there is no status bar, so we let the page
+            grow naturally (`min-h-screen`) and rely on the body's
+            normal scroll. */}
+        <main
+          className={
+            showStoreLayout
+              ? 'w-full relative flex flex-col min-h-screen'
+              : 'w-full relative lg:overflow-hidden flex flex-col'
+          }
+          style={showStoreLayout ? undefined : { height: 'calc(100% - 54px)' }}
+        >
           {testMode ? (
             <div className="shrink-0 bg-amber-400 text-amber-950 px-3 py-2 z-50 border-b border-amber-500/30 flex flex-wrap items-center justify-center gap-x-2 gap-y-1 text-center">
               <span className="inline-flex items-center gap-1.5 text-xs font-bold tracking-wide">
@@ -897,7 +942,15 @@ function CustomerApp() {
               aria-hidden
             />
           )}
-          <div className="flex-1 min-h-0 overflow-hidden">{renderContent()}</div>
+          {/* Inner content wrapper.
+              Phone-mock: `min-h-0 overflow-hidden` so the inner view
+              owns its own scroll inside the fixed-height phone frame.
+              Store layout: drop the height/overflow constraints so
+              the eSIM catalogue can grow freely and the body
+              provides the page-level scroll. */}
+          <div className={showStoreLayout ? 'flex-1' : 'flex-1 min-h-0 overflow-hidden'}>
+            {renderContent()}
+          </div>
         </main>
 
         <LoginModal 
