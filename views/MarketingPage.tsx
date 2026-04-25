@@ -412,7 +412,10 @@ const MarketingPage: React.FC = () => {
                     <FooterColumn
                         title="Travel"
                         links={[
-                            { label: 'Travel eSIM', href: '/travel-esim' },
+                            // Same device-aware split as the hero CTA — mobile
+                            // visitors are expected to land in the H5 store, not
+                            // on the desktop catalogue index.
+                            { label: 'Travel eSIM', href: '/travel-esim', onClick: goTravelEsimCta },
                             { label: 'Japan eSIM', href: '/travel-esim/jp' },
                             { label: 'UK eSIM', href: '/travel-esim/gb' },
                             { label: 'Mexico eSIM', href: '/travel-esim/mx' },
@@ -425,7 +428,11 @@ const MarketingPage: React.FC = () => {
                             { label: 'Phone & tablet', href: '/sim/phone' },
                             { label: 'Security & trail cameras', href: '/sim/camera' },
                             { label: 'IoT & smart devices', href: '/sim/iot' },
-                            { label: 'Activate a SIM', href: ACTIVATE_PATH },
+                            // Mirrors the hero "Activate my SIM" CTA — mobile
+                            // visitors land in the H5 phone-mock SIM_CARD tab
+                            // (where the bind flow lives), desktop visitors get
+                            // the wide-format /activate landing.
+                            { label: 'Activate a SIM', href: ACTIVATE_PATH, onClick: goActivateCta },
                         ]}
                     />
                     <FooterColumn
@@ -478,7 +485,19 @@ const TrustItem: React.FC<{ icon: React.ReactNode; label: string }> = ({ icon, l
     </div>
 );
 
-const FooterColumn: React.FC<{ title: string; links: { label: string; href: string }[] }> = ({
+interface FooterLink {
+    label: string;
+    href: string;
+    /**
+     * Optional click interceptor — used by device-aware CTAs ("Travel eSIM",
+     * "Activate a SIM") to redirect mobile visitors into the H5 customer
+     * app at click time while keeping the rendered href pointed at the
+     * desktop landing for crawlers and no-JS clients.
+     */
+    onClick?: (e: React.MouseEvent<HTMLAnchorElement>) => void;
+}
+
+const FooterColumn: React.FC<{ title: string; links: FooterLink[] }> = ({
     title,
     links,
 }) => (
@@ -487,7 +506,11 @@ const FooterColumn: React.FC<{ title: string; links: { label: string; href: stri
         <ul className="space-y-2">
             {links.map(l => (
                 <li key={l.href}>
-                    <a href={l.href} className="hover:text-white transition-colors">
+                    <a
+                        href={l.href}
+                        onClick={l.onClick}
+                        className="hover:text-white transition-colors"
+                    >
                         {l.label}
                     </a>
                 </li>
