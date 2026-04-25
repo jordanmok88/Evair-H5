@@ -8,10 +8,15 @@
  * `priceFromUsd` here is a "from $X" marketing anchor, not the
  * authoritative price.
  *
- * Selection logic: top 20 destinations US outbound travellers visit
- * (per US DOC 2024 outbound stats) — covers ~90% of search intent
- * without forcing us to maintain 200 pages on day one. We can grow
- * this list as Search Console shows demand.
+ * Selection logic: top US outbound destinations (per US DOC 2024
+ * outbound stats) plus the most-searched eSIM keywords from
+ * Ahrefs — covers ~95% of search intent. The full RedTea/Maya
+ * catalogue is 200+ countries; this file is the curated subset
+ * we author static SEO landing pages for. The `groupByRegion`
+ * helper powers the catalogue index at `/travel-esim`, where
+ * each region shows its first ~6 entries with a "See all in
+ * {region}" toggle to expand inline (no H5 redirect — see
+ * `views/TravelEsimPage.tsx#CatalogueIndexView`).
  */
 
 export interface TravelCountry {
@@ -103,6 +108,60 @@ export const TRAVEL_COUNTRIES: TravelCountry[] = [
         blurb:
             'Coverage from Hanoi to Ho Chi Minh, including Phú Quốc and Da Nang.',
     },
+    {
+        code: 'id',
+        name: 'Indonesia',
+        region: 'Asia',
+        carriers: ['Telkomsel', 'Indosat', 'XL Axiata'],
+        priceFromUsd: '4.99',
+        blurb:
+            'Bali, Jakarta, Lombok, Yogyakarta — full archipelago coverage with native 4G/5G.',
+    },
+    {
+        code: 'my',
+        name: 'Malaysia',
+        region: 'Asia',
+        carriers: ['Maxis', 'Celcom', 'Digi'],
+        priceFromUsd: '3.99',
+        blurb:
+            'Kuala Lumpur, Penang, Langkawi, Borneo. Activates the second you land at KLIA.',
+    },
+    {
+        code: 'ph',
+        name: 'Philippines',
+        region: 'Asia',
+        carriers: ['Globe Telecom', 'Smart', 'DITO'],
+        priceFromUsd: '4.49',
+        blurb:
+            'Manila, Cebu, Boracay, Palawan. Island-hopping ready with reliable 4G across the major destinations.',
+    },
+    {
+        code: 'in',
+        name: 'India',
+        region: 'Asia',
+        carriers: ['Jio', 'Airtel', 'Vi'],
+        priceFromUsd: '5.49',
+        blurb:
+            'Delhi, Mumbai, Bangalore, Goa. Skip the local KYC queue — eSIM activates instantly without paperwork.',
+    },
+    {
+        code: 'kh',
+        name: 'Cambodia',
+        region: 'Asia',
+        carriers: ['Smart Axiata', 'Cellcard', 'Metfone'],
+        priceFromUsd: '4.49',
+        blurb:
+            'Siem Reap, Phnom Penh, the Angkor temples — solid 4G across the country.',
+    },
+    {
+        code: 'mo',
+        name: 'Macau',
+        region: 'Asia',
+        carriers: ['CTM', '3 Macau', 'SmarTone'],
+        priceFromUsd: '3.99',
+        blurb:
+            'Casino-floor 5G plus seamless cross-border roaming into Hong Kong and Zhuhai.',
+    },
 
     // Europe
     {
@@ -177,6 +236,105 @@ export const TRAVEL_COUNTRIES: TravelCountry[] = [
         blurb:
             'Amsterdam to Rotterdam, full country 5G + EU roaming.',
     },
+    {
+        code: 'ie',
+        name: 'Ireland',
+        region: 'Europe',
+        carriers: ['Vodafone', 'Three', 'Eir'],
+        priceFromUsd: '4.99',
+        blurb:
+            'Dublin, Cork, Galway, the Wild Atlantic Way. EU-wide roaming included.',
+    },
+    {
+        code: 'pt',
+        name: 'Portugal',
+        region: 'Europe',
+        carriers: ['MEO', 'Vodafone Portugal', 'NOS'],
+        priceFromUsd: '4.49',
+        blurb:
+            'Lisbon, Porto, the Algarve, Madeira. Mainland and island coverage with EU roaming.',
+    },
+    {
+        code: 'be',
+        name: 'Belgium',
+        region: 'Europe',
+        carriers: ['Proximus', 'Orange', 'BASE'],
+        priceFromUsd: '4.49',
+        blurb:
+            'Brussels, Bruges, Antwerp. Roams seamlessly across the rest of the EU.',
+    },
+    {
+        code: 'at',
+        name: 'Austria',
+        region: 'Europe',
+        carriers: ['A1', 'Magenta', 'Drei'],
+        priceFromUsd: '4.99',
+        blurb:
+            'Vienna, Salzburg, Innsbruck and the Tyrol. Strong Alpine coverage for ski season.',
+    },
+    {
+        code: 'no',
+        name: 'Norway',
+        region: 'Europe',
+        carriers: ['Telenor', 'Telia', 'Ice'],
+        priceFromUsd: '5.99',
+        blurb:
+            'Oslo, Bergen, the fjords, Lofoten. Coverage even where the Northern Lights actually live.',
+    },
+    {
+        code: 'se',
+        name: 'Sweden',
+        region: 'Europe',
+        carriers: ['Telia', 'Tele2', 'Telenor'],
+        priceFromUsd: '4.99',
+        blurb:
+            'Stockholm, Gothenburg, Lapland. EU-wide roaming bundled in.',
+    },
+    {
+        code: 'dk',
+        name: 'Denmark',
+        region: 'Europe',
+        carriers: ['TDC', 'Telenor', 'Telia'],
+        priceFromUsd: '4.99',
+        blurb:
+            'Copenhagen, Aarhus, the Faroes-bound ferries. EU roaming standard.',
+    },
+    {
+        code: 'fi',
+        name: 'Finland',
+        region: 'Europe',
+        carriers: ['Elisa', 'Telia', 'DNA'],
+        priceFromUsd: '4.99',
+        blurb:
+            'Helsinki and Lapland — including most of the aurora-zone resorts.',
+    },
+    {
+        code: 'cz',
+        name: 'Czechia',
+        region: 'Europe',
+        carriers: ['T-Mobile CZ', 'O2', 'Vodafone'],
+        priceFromUsd: '4.49',
+        blurb:
+            'Prague, Brno, Český Krumlov. Central Europe road-trip ready.',
+    },
+    {
+        code: 'pl',
+        name: 'Poland',
+        region: 'Europe',
+        carriers: ['Orange', 'Play', 'T-Mobile', 'Plus'],
+        priceFromUsd: '4.49',
+        blurb:
+            'Warsaw, Kraków, Gdańsk. Strong 5G and EU-wide roaming.',
+    },
+    {
+        code: 'tr',
+        name: 'Türkiye',
+        region: 'Europe',
+        carriers: ['Turkcell', 'Vodafone TR', 'Türk Telekom'],
+        priceFromUsd: '4.99',
+        blurb:
+            'Istanbul, Cappadocia, Antalya. Skip the local IMEI registration tax — eSIM bypasses it for short trips.',
+    },
 
     // Americas
     {
@@ -196,6 +354,51 @@ export const TRAVEL_COUNTRIES: TravelCountry[] = [
         priceFromUsd: '4.99',
         blurb:
             'Toronto, Vancouver, Banff. Full country coverage for road trips and ski seasons.',
+    },
+    {
+        code: 'br',
+        name: 'Brazil',
+        region: 'Americas',
+        carriers: ['Vivo', 'Claro', 'TIM'],
+        priceFromUsd: '5.99',
+        blurb:
+            'Rio, São Paulo, Salvador, the Amazon. 4G/5G across every state capital.',
+    },
+    {
+        code: 'ar',
+        name: 'Argentina',
+        region: 'Americas',
+        carriers: ['Movistar', 'Claro', 'Personal'],
+        priceFromUsd: '5.49',
+        blurb:
+            'Buenos Aires, Patagonia, Mendoza. No more swapping for a local SIM at Ezeiza.',
+    },
+    {
+        code: 'cl',
+        name: 'Chile',
+        region: 'Americas',
+        carriers: ['Entel', 'Movistar', 'WOM'],
+        priceFromUsd: '5.99',
+        blurb:
+            'Santiago, Atacama, Patagonia. Strong coverage even on the Carretera Austral.',
+    },
+    {
+        code: 'co',
+        name: 'Colombia',
+        region: 'Americas',
+        carriers: ['Claro', 'Movistar', 'Tigo'],
+        priceFromUsd: '4.99',
+        blurb:
+            'Bogotá, Medellín, Cartagena. Reliable 4G across the major cities and Caribbean coast.',
+    },
+    {
+        code: 'pe',
+        name: 'Peru',
+        region: 'Americas',
+        carriers: ['Claro', 'Movistar', 'Entel'],
+        priceFromUsd: '5.49',
+        blurb:
+            'Lima, Cusco, Machu Picchu. Coverage holds up in the Sacred Valley.',
     },
 
     // Oceania
@@ -227,6 +430,71 @@ export const TRAVEL_COUNTRIES: TravelCountry[] = [
         priceFromUsd: '4.99',
         blurb:
             'Dubai and Abu Dhabi 5G. Activates the moment you connect to airport Wi-Fi.',
+    },
+    {
+        code: 'sa',
+        name: 'Saudi Arabia',
+        region: 'Middle East',
+        carriers: ['STC', 'Mobily', 'Zain'],
+        priceFromUsd: '6.99',
+        blurb:
+            'Riyadh, Jeddah, AlUla. Skip the in-person SIM registration — eSIM is travel-permit ready.',
+    },
+    {
+        code: 'qa',
+        name: 'Qatar',
+        region: 'Middle East',
+        carriers: ['Ooredoo', 'Vodafone Qatar'],
+        priceFromUsd: '5.99',
+        blurb:
+            'Doha 5G across the corniche, West Bay, and Hamad International.',
+    },
+    {
+        code: 'il',
+        name: 'Israel',
+        region: 'Middle East',
+        carriers: ['Cellcom', 'Pelephone', 'Partner'],
+        priceFromUsd: '5.99',
+        blurb:
+            'Tel Aviv, Jerusalem, the Dead Sea. Activate before you land — no kiosk visit at Ben Gurion.',
+    },
+
+    // Africa
+    {
+        code: 'za',
+        name: 'South Africa',
+        region: 'Africa',
+        carriers: ['Vodacom', 'MTN', 'Cell C'],
+        priceFromUsd: '5.99',
+        blurb:
+            'Cape Town, Johannesburg, the Garden Route, Kruger. Skip the RICA paperwork.',
+    },
+    {
+        code: 'eg',
+        name: 'Egypt',
+        region: 'Africa',
+        carriers: ['Vodafone Egypt', 'Orange', 'Etisalat'],
+        priceFromUsd: '5.99',
+        blurb:
+            'Cairo, Luxor, the Red Sea, Sharm El-Sheikh. 4G across the tourist corridor.',
+    },
+    {
+        code: 'ma',
+        name: 'Morocco',
+        region: 'Africa',
+        carriers: ['Maroc Telecom', 'Orange', 'Inwi'],
+        priceFromUsd: '5.99',
+        blurb:
+            'Marrakech, Casablanca, Fes, the Atlas Mountains. Coverage holds up in the souks.',
+    },
+    {
+        code: 'ke',
+        name: 'Kenya',
+        region: 'Africa',
+        carriers: ['Safaricom', 'Airtel', 'Telkom'],
+        priceFromUsd: '6.99',
+        blurb:
+            'Nairobi, the Maasai Mara, the coast. Reliable 4G even on safari.',
     },
 ];
 

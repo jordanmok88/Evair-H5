@@ -439,6 +439,18 @@ const ErrorView: React.FC<{ message: string | null; onDismiss: () => void }> = (
 
 // ─── catalogue index mode ────────────────────────────────────────────
 
+/**
+ * Per-region "see all" toggle.
+ *
+ * Each region collapses to `INITIAL_VISIBLE_PER_REGION` cards by
+ * default. The toggle expands the rest *inline* — no /app redirect.
+ * Earlier iterations linked "See all" to the H5 store, which forced
+ * desktop users into a phone-mock view of a catalogue they were
+ * trying to browse on a 27" monitor; the inline expansion keeps the
+ * desktop-native browsing surface intact.
+ */
+const INITIAL_VISIBLE_PER_REGION = 6;
+
 const CatalogueIndexView: React.FC = () => {
     const grouped = groupByRegion();
     const regionOrder: (keyof typeof grouped)[] = [
@@ -450,6 +462,22 @@ const CatalogueIndexView: React.FC = () => {
         'Africa',
     ];
 
+    // Track which regions the user has expanded. Set keeps the
+    // re-render minimal and lets a region's expanded state survive
+    // unrelated re-renders (e.g. window resizes).
+    const [expandedRegions, setExpandedRegions] = useState<Set<string>>(
+        () => new Set(),
+    );
+
+    const toggleRegion = (region: string) => {
+        setExpandedRegions(prev => {
+            const next = new Set(prev);
+            if (next.has(region)) next.delete(region);
+            else next.add(region);
+            return next;
+        });
+    };
+
     return (
         <>
             <section className="px-4 md:px-8 pt-12 md:pt-16 pb-6 md:pb-8 max-w-6xl mx-auto text-center">
@@ -459,12 +487,9 @@ const CatalogueIndexView: React.FC = () => {
                 {/* Hero count is the *carrier-supported* country count from
                     the RedTea/Maya travel eSIM catalogue (200+), not the
                     length of TRAVEL_COUNTRIES (which is just the curated
-                    SEO landing pages we've authored — 21 destinations
-                    today, growing as Search Console shows demand). The
-                    grid below is positioned as "popular destinations" so
-                    the catalogue depth and the curated highlights are
-                    both honest. Keep this string in sync with the
-                    `TRAVELER_COUNTRIES` constant in MarketingPage.tsx. */}
+                    SEO landing pages we've authored). The grid below is
+                    positioned as "popular destinations" so the catalogue
+                    depth and the curated highlights are both honest. */}
                 <h1 className="text-4xl md:text-5xl font-extrabold leading-tight tracking-tight mb-5 max-w-3xl mx-auto">
                     Stay connected in 200+ destinations
                 </h1>
@@ -485,43 +510,113 @@ const CatalogueIndexView: React.FC = () => {
                 id="popular-destinations"
                 className="px-4 md:px-8 pb-16 max-w-6xl mx-auto"
             >
-                <div className="text-center mb-8">
-                    <div className="inline-flex items-center gap-2 bg-slate-100 text-slate-700 text-xs font-bold uppercase tracking-wider px-3 py-1 rounded-full mb-3">
-                        Popular destinations
+                <div className="text-center mb-10 md:mb-12">
+                    <div className="inline-flex items-center gap-2 bg-orange-50 text-orange-700 text-xs font-bold uppercase tracking-wider px-3 py-1 rounded-full mb-4">
+                        <Globe size={12} /> Popular destinations
                     </div>
-                    <p className="text-sm text-slate-500 max-w-xl mx-auto">
-                        A curated set of the {TRAVEL_COUNTRIES.length} most-searched
-                        countries — the full catalogue covering 200+ destinations is
+                    {/* Bigger, more prominent section heading — earlier
+                        version used a small pill which got lost between
+                        the hero and the country cards. */}
+                    <h2 className="text-3xl md:text-4xl font-extrabold text-slate-900 leading-tight tracking-tight mb-3">
+                        Pick a destination
+                    </h2>
+                    <p className="text-base text-slate-600 max-w-2xl mx-auto">
+                        Browse the {TRAVEL_COUNTRIES.length} most-searched
+                        countries below — tap{' '}
+                        <span className="font-semibold text-slate-700">
+                            See all
+                        </span>{' '}
+                        in any region to expand the full list. The complete
+                        RedTea catalogue covering 200+ destinations is also
                         searchable inside the app.
                     </p>
                 </div>
                 {regionOrder
                     .filter(r => grouped[r]?.length)
-                    .map(region => (
-                        <div key={region} className="mb-10">
-                            <h2 className="text-xl font-bold text-slate-900 mb-4">{region}</h2>
-                            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                                {grouped[region].map(c => (
-                                    <a
-                                        key={c.code}
-                                        href={`/travel-esim/${c.code}`}
-                                        className="bg-white border border-slate-200 hover:border-orange-300 hover:shadow-md transition-all rounded-2xl p-4 flex items-center gap-3"
+                    .map(region => {
+                        const all = grouped[region];
+                        const isExpanded = expandedRegions.has(region);
+                        const showToggle = all.length > INITIAL_VISIBLE_PER_REGION;
+                        const visible = isExpanded
+                            ? all
+                            : all.slice(0, INITIAL_VISIBLE_PER_REGION);
+                        const hiddenCount = all.length - INITIAL_VISIBLE_PER_REGION;
+
+                        return (
+                            <div key={region} className="mb-12">
+                                <div className="flex items-baseline justify-between mb-4">
+                                    <h3 className="text-xl md:text-2xl font-bold text-slate-900">
+                                        {region}
+                                        <span className="ml-2 text-sm font-normal text-slate-400">
+                                            {all.length}{' '}
+                                            {all.length === 1
+                                                ? 'destination'
+                                                : 'destinations'}
+                                        </span>
+                                    </h3>
+                                    {showToggle && (
+                                        <button
+                                            type="button"
+                                            onClick={() => toggleRegion(region as string)}
+                                            className="text-sm font-semibold text-orange-600 hover:text-orange-700 inline-flex items-center gap-1 shrink-0"
+                                            aria-expanded={isExpanded}
+                                            aria-controls={`region-grid-${region}`}
+                                        >
+                                            {isExpanded
+                                                ? 'Show fewer'
+                                                : `See all ${all.length}`}
+                                            <ArrowRight
+                                                size={14}
+                                                className={`transition-transform ${
+                                                    isExpanded ? 'rotate-90' : ''
+                                                }`}
+                                            />
+                                        </button>
+                                    )}
+                                </div>
+                                <div
+                                    id={`region-grid-${region}`}
+                                    className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3"
+                                >
+                                    {visible.map(c => (
+                                        <a
+                                            key={c.code}
+                                            href={`/travel-esim/${c.code}`}
+                                            className="bg-white border border-slate-200 hover:border-orange-300 hover:shadow-md transition-all rounded-2xl p-4 flex items-center gap-3"
+                                        >
+                                            <span className="text-3xl">
+                                                {flagEmoji(c.code)}
+                                            </span>
+                                            <div className="flex-1 min-w-0">
+                                                <div className="font-bold text-slate-900 truncate">
+                                                    {c.name}
+                                                </div>
+                                                <div className="text-xs text-slate-500">
+                                                    from ${c.priceFromUsd}
+                                                </div>
+                                            </div>
+                                            <ArrowRight
+                                                size={16}
+                                                className="text-slate-300"
+                                            />
+                                        </a>
+                                    ))}
+                                </div>
+                                {showToggle && !isExpanded && (
+                                    <button
+                                        type="button"
+                                        onClick={() => toggleRegion(region as string)}
+                                        className="mt-4 w-full md:w-auto inline-flex items-center justify-center gap-2 px-5 py-3 rounded-xl border-2 border-dashed border-slate-300 text-slate-600 hover:border-orange-400 hover:text-orange-600 hover:bg-orange-50/40 transition-colors text-sm font-semibold"
+                                        aria-expanded={isExpanded}
+                                        aria-controls={`region-grid-${region}`}
                                     >
-                                        <span className="text-3xl">{flagEmoji(c.code)}</span>
-                                        <div className="flex-1 min-w-0">
-                                            <div className="font-bold text-slate-900 truncate">
-                                                {c.name}
-                                            </div>
-                                            <div className="text-xs text-slate-500">
-                                                from ${c.priceFromUsd}
-                                            </div>
-                                        </div>
-                                        <ArrowRight size={16} className="text-slate-300" />
-                                    </a>
-                                ))}
+                                        See {hiddenCount} more in {region}
+                                        <ArrowRight size={14} />
+                                    </button>
+                                )}
                             </div>
-                        </div>
-                    ))}
+                        );
+                    })}
             </section>
         </>
     );
