@@ -30,7 +30,22 @@ export default async (req) => {
   }
 
   try {
-    const { packageName, priceUsd, email, packageCode, transactionId, countryCode } = await req.json();
+    const {
+      packageName,
+      priceUsd,
+      email,
+      packageCode,
+      transactionId,
+      countryCode,
+      // Optional caller-supplied return URLs. The mobile shop in
+      // ShopView.tsx never sends these and falls back to the apex
+      // origin (where ShopView mounts and consumes the redirect).
+      // The desktop /travel-esim/{country} page DOES send these so
+      // Stripe redirects back to the same desktop URL the customer
+      // started on, where useEsimCheckoutFlow handles fulfilment.
+      successUrl,
+      cancelUrl,
+    } = await req.json();
 
     if (!packageName || !priceUsd || !packageCode) {
       return new Response(
@@ -42,6 +57,20 @@ export default async (req) => {
     const stripe = new Stripe(secretKey);
 
     const origin = req.headers.get('origin') || 'https://evair-h5.netlify.app';
+
+    // Defence in depth: only accept caller-supplied return URLs that
+    // start with our own origin. Stripe will refuse anything that
+    // doesn't include a literal `{CHECKOUT_SESSION_ID}` placeholder
+    // for `success_url`, but we still avoid being a redirect oracle.
+    const isSafeReturn = (url) =>
+      typeof url === 'string' && url.length < 2048 && url.startsWith(origin);
+
+    const safeSuccessUrl = isSafeReturn(successUrl)
+      ? successUrl
+      : `${origin}/?stripe_status=success&session_id={CHECKOUT_SESSION_ID}`;
+    const safeCancelUrl = isSafeReturn(cancelUrl)
+      ? cancelUrl
+      : `${origin}/?stripe_status=cancelled`;
 
     const flagUrl = countryCode
       ? `https://wsrv.nl/?url=flagcdn.com/w320/${countryCode.toLowerCase()}.png&w=324&h=217&fit=contain&we&cbg=d0d3d8`
@@ -71,8 +100,8 @@ export default async (req) => {
         transactionId,
         packageName,
       },
-      success_url: `${origin}/?stripe_status=success&session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: `${origin}/?stripe_status=cancelled`,
+      success_url: safeSuccessUrl,
+      cancel_url: safeCancelUrl,
     });
 
     return new Response(
