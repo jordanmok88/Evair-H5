@@ -137,14 +137,6 @@ export function getRoute(): Route {
 }
 
 /**
- * Pull `?iccid=...` from the current URL and normalise it.
- *
- * Returns `null` when the param is missing, empty, or fails the loose ICCID
- * shape check (15-22 ASCII alphanumerics — matches the Laravel route
- * constraint). Callers should treat `null` as "ask the user to scan or type
- * their ICCID" rather than as an error.
- */
-/**
  * Pull the first path segment as a content slug. Strips anything other
  * than lowercase letters, digits, and hyphens so a malformed URL can't
  * sneak HTML/JS into the page title via the slug parameter.
@@ -154,6 +146,14 @@ function sanitiseSlug(rest: string): string {
     return first.toLowerCase().replace(/[^a-z0-9-]/g, '').slice(0, 100);
 }
 
+/**
+ * Pull `?iccid=...` from the current URL and normalise it.
+ *
+ * Returns `null` when the param is missing, empty, or fails the loose ICCID
+ * shape check (15-22 ASCII alphanumerics — matches the Laravel route
+ * constraint). Callers should treat `null` as "ask the user to scan or type
+ * their ICCID" rather than as an error.
+ */
 function extractIccidFromQuery(): string | null {
     try {
         const raw = new URLSearchParams(window.location.search).get('iccid');

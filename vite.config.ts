@@ -3,6 +3,7 @@ import { defineConfig, loadEnv } from 'vite';
 import react from '@vitejs/plugin-react';
 import tailwindcss from '@tailwindcss/vite';
 import { apiResponseCapture } from './vite-plugins/apiResponseCapture';
+import { sitemapPlugin } from './vite-plugins/sitemap';
 
 // Dev-only: rewrite the <title> so the tab reads "Evair H5" instead of the
 // long SEO title we serve in production. Keeps prod HTML / OG tags untouched.
@@ -54,6 +55,10 @@ export default defineConfig(({ mode }) => {
         tailwindcss(),
         apiResponseCapture(), // API 响应捕获插件
         devTitlePlugin,       // Dev-only: tab title -> "Evair H5"
+        // Build-time sitemap.xml — single source of truth pulls from
+        // data/{travelEsimCountries,helpArticles,blogPosts}.ts so adding
+        // a country page or article auto-lands in the next sitemap.
+        sitemapPlugin({ baseUrl: 'https://evairdigital.com' }),
       ],
       define: {
         'process.env.API_KEY': JSON.stringify(env.GEMINI_API_KEY),
