@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useLayoutEffect, useRef } from 'react';
 import { SimType, ActiveSim, Tab, User, AppNotification, EsimProfileResult } from '../types';
 import ShopView from './ShopView';
 import MySimsView from './MySimsView';
@@ -17,22 +17,28 @@ interface ProductTabProps {
   onNavigate: (tab: Tab) => void;
   onSwitchSimType?: (type: SimType) => void;
   notifications?: AppNotification[];
+  /** From `/app/travel-esim/{iso2}` — opens that country in the eSIM shop once. */
+  initialEsimLocationCode?: string | null;
+  /** Called after the deep-link country is applied (or load finished with no match). */
+  onInitialEsimDeepLinkConsumed?: () => void;
 }
 
-const ProductTab: React.FC<ProductTabProps> = ({ 
+const ProductTab: React.FC<ProductTabProps> = ({
   type,
   testMode = false,
-  isLoggedIn, 
+  isLoggedIn,
   user,
-  onLoginRequest, 
-  onPurchaseComplete, 
+  onLoginRequest,
+  onPurchaseComplete,
   onAddCard,
   onDeleteSim,
   onUpdateSim,
   activeSims,
   onNavigate,
   onSwitchSimType,
-  notifications 
+  notifications,
+  initialEsimLocationCode = null,
+  onInitialEsimDeepLinkConsumed,
 }) => {
   const mySims = activeSims.filter(s => s.type === type);
   
@@ -46,6 +52,14 @@ const ProductTab: React.FC<ProductTabProps> = ({
   useEffect(() => {
     sessionStorage.setItem('evair-viewMode', viewMode);
   }, [viewMode]);
+
+  // `/app/travel-esim/jp` must land in the eSIM shop, not "My SIMs"
+  // (sessionStorage can restore viewMode === 'MINE' from a prior visit).
+  useLayoutEffect(() => {
+    if (initialEsimLocationCode) {
+      setViewMode('SHOP');
+    }
+  }, [initialEsimLocationCode]);
 
   // Callers used to pass `(tab, trackingNumber)` to open the setup
   // flow on the TRACKING tab. After the 2026-04 FBA pivot the tracking
@@ -74,7 +88,7 @@ const ProductTab: React.FC<ProductTabProps> = ({
   return (
     <div className="lg:h-full relative">
        {viewMode === 'SHOP' && (
-          <ShopView 
+          <ShopView
             simType={type}
             testMode={testMode}
             isLoggedIn={isLoggedIn}
@@ -95,6 +109,8 @@ const ProductTab: React.FC<ProductTabProps> = ({
             onNavigate={(tab) => onNavigate(tab as Tab)}
             onSwitchSimType={onSwitchSimType}
             notifications={notifications}
+            initialEsimLocationCode={initialEsimLocationCode}
+            onInitialEsimDeepLinkConsumed={onInitialEsimDeepLinkConsumed}
           />
        )}
        

@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { Zap } from 'lucide-react';
 import BottomNav from './components/BottomNav';
 import ProductTab from './views/ProductTab';
+import { parseAppTravelEsimCountry } from './utils/appTravelPath';
 import ProfileView from './views/ProfileView';
 import LoginModal from './views/LoginModal';
 import DialerView from './views/DialerView';
@@ -160,6 +161,11 @@ function CustomerApp() {
   // hashchange effect below — keep them in lock-step.
   const [activeTab, setActiveTab] = useState<Tab>(() => {
     if (typeof window !== 'undefined') {
+      // `/app/travel-esim/jp` — travel SEO / marketing funnel; must win
+      // over sessionStorage so the eSIM store opens on first paint.
+      if (parseAppTravelEsimCountry(window.location.pathname)) {
+        return Tab.ESIM;
+      }
       const HASH_TO_TAB: Record<string, Tab> = {
         '#contact': Tab.DIALER,
         '#inbox': Tab.INBOX,
@@ -174,6 +180,18 @@ function CustomerApp() {
     return (sessionStorage.getItem('evair-activeTab') as Tab) || Tab.SIM_CARD;
   });
   const previousTab = useRef<Tab>(Tab.SIM_CARD);
+
+  /** ISO-2 from `/app/travel-esim/{xx}` — passed to ShopView once, then cleared. */
+  const [travelEsimOpenCode, setTravelEsimOpenCode] = useState<string | null>(() =>
+    typeof window !== 'undefined' ? parseAppTravelEsimCountry(window.location.pathname) : null,
+  );
+
+  const handleTravelEsimDeepLinkConsumed = useCallback(() => {
+    setTravelEsimOpenCode(null);
+    if (typeof window !== 'undefined' && parseAppTravelEsimCountry(window.location.pathname)) {
+      window.history.replaceState(null, '', '/app#esim');
+    }
+  }, []);
 
   // Phone-frame scroll lock — opt-in via `html.app-shell`. The CSS
   // rule in app.css scopes `overflow: hidden` behind that class so
@@ -833,6 +851,7 @@ function CustomerApp() {
   // SimType; every other hash leaves the previous selection alone.
   const [currentSimType, setCurrentSimType] = useState<SimType>(() => {
     if (typeof window !== 'undefined') {
+      if (parseAppTravelEsimCountry(window.location.pathname)) return 'ESIM';
       const hash = window.location.hash.toLowerCase();
       if (hash === '#esim' || hash === '#shop') return 'ESIM';
       if (hash === '#sim-card') return 'PHYSICAL';
@@ -875,6 +894,8 @@ function CustomerApp() {
                 onSwitchSimType={handleSwitchSimType}
                 notifications={notifications}
                 testMode={testMode}
+                initialEsimLocationCode={travelEsimOpenCode}
+                onInitialEsimDeepLinkConsumed={handleTravelEsimDeepLinkConsumed}
             />
         );
       case Tab.INBOX:

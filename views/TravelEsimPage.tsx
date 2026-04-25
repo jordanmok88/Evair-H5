@@ -9,7 +9,8 @@
  * esim", "esim for japan", etc. The page must:
  *   - Mention country name in <title>, <h1>, and meta description
  *   - State the carrier names + "from $X.XX" anchor above the fold
- *   - Funnel into `/app/travel-esim/{iso2}` for the live catalogue
+ *   - Funnel into `/app/travel-esim/{iso2}` for the live store (eSIM tab,
+ *     country pre-selected — see `utils/appTravelPath.ts` + ShopView).
  *
  * Live pricing intentionally not shown — Red Tea catalogue lives in
  * the H5 app and changes per supplier sync. Marketing anchor uses
@@ -17,7 +18,8 @@
  *
  * Desktop visitors from the apex marketing page land here first
  * (`/travel-esim`) instead of the phone-shaped H5 shell; CTAs that
- * continue to checkout point at `/app#esim` or `/app/travel-esim/{iso2}`.
+ * continue to checkout at `/app#esim` (browse all) or
+ * `/app/travel-esim/{iso2}` (country-specific).
  *
  * Unknown country codes (typo, country we don't yet stock) fall back
  * to the catalogue index with a small "we don't have that one yet"
