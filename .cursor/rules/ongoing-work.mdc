@@ -5,7 +5,96 @@ alwaysApply: true
 
 # Ongoing work — read this first
 
-Last updated: 2026-04-25 night (Phase 2 kickoff: token-refresh interceptor + cross-platform contract doc shipped, chat module deferred). Update this file at the END of every meaningful work session.
+Last updated: 2026-04-25 22:30 PT — Phase 3/4/5 wrap session: shipped marketing page, top-up polish, post-activation cross-sell, full referral system (backend + H5 panel), email subdomain migration plan, cleared 3 pre-existing TS errors. Update this file at the END of every meaningful work session.
+
+## Wrap session 2026-04-25 — Phases 3, 4, 5 + housekeeping
+
+This session closed the remaining roadmap items that were genuinely
+useful to ship before launch. Nothing was duplicated; every change is
+either additive on existing surfaces or a new file in a directory that
+had no prior implementation.
+
+**Shipped:**
+
+1. **Phase 4 — Top-up polish** (`views/TopUpPage.tsx`,
+   `views/MySimsView.tsx`, `views/ActivatePage.tsx`):
+   - "Best value" / "Most data" badges, $/GB unit price, auto-select
+     of cheapest plan on first render.
+   - Post-activation `?just_activated=1` URL flag → one-time celebration
+     banner on `/app/my-sims` with CTA to `/top-up`.
+
+2. **Phase 3 — Marketing landing page** (`views/MarketingPage.tsx`,
+   `utils/routing.ts`, `App.tsx`):
+   - Apex `evairdigital.com` and `/welcome` now serve a clean,
+     audience-split landing page (travelers vs. long-stay) styled
+     after Airalo's restraint.
+   - The H5 app continues to live at `/app/*`; this page only renders
+     for unauthenticated apex visitors.
+
+3. **Phase 5 — Referral system**
+   - Laravel: `referral_codes`, `referral_redemptions`,
+     `app_user_credit_ledger` migrations; `ReferralCode` /
+     `ReferralRedemption` models; `ReferralService` (redeem, awardForOrder,
+     applyCredit); `ReferralController` (`GET /referrals/me`,
+     `POST /referrals/redeem`, `GET /credits/me`); `AwardReferralOnPayment`
+     listener on `PaymentSucceeded`. `AppUser::credit_cents` cached column.
+   - H5: `services/api/referrals.ts` + `views/ReferralView.tsx`
+     wired into `ProfileView` as a top-of-menu "Refer & earn $5" entry.
+     Hero card with code, share button, copy-to-clipboard, redeem form,
+     redemption history.
+
+4. **Email subdomain migration plan**
+   (`Evair-Laravel/docs/EMAIL_SUBDOMAIN_MIGRATION.md`):
+   - Step-by-step DNS / Resend / DMARC plan to move from
+     `noreply@evairdigital.com` to `noreply@mail.evairdigital.com`.
+   - Plan only — execute when ready to flip. No code changes
+     required beyond two env vars.
+
+5. **TS cleanup** (3 pre-existing errors):
+   - `components/BarcodeScanner.tsx` — `formatsToSupport` cast
+     (outdated `@types/html5-qrcode`).
+   - `services/esimApi.ts` — demo mode `TopUpResult` cast.
+   - `services/pushService.ts` — discriminated-union narrowing on
+     `PushRegisterResult.reason`.
+
+**Out of scope for this session (explicitly deferred):**
+
+- Native push wiring on the Flutter shell (the H5 already exposes
+  `services/pushService.ts`; the Flutter `injectJSEventDispatcher`
+  handler will pick it up when the China team is ready).
+- Marketing site CMS / multilingual copy — current page is
+  English-only static content, deliberately so we can iterate on
+  conversion before investing in i18n.
+- Referral admin views — admins can audit via the existing
+  `app_user_credit_ledger` table; no Element Plus screen yet.
+
+**Build status:** `npm run build` clean; `tsc --noEmit` clean.
+
+## ⚠️ Read this before believing any phase numbering
+
+Two unrelated phase systems live in this codebase. Confusing them has caused
+agents to either rebuild already-shipped work or skip ahead.
+
+| Naming | What it actually refers to | Authoritative status |
+|---|---|---|
+| **Product Phases 0–5** (Jordan's strategic roadmap) | Phase 0 = routing split. Phase 1 = activation funnel. Phase 2 = device/country SEO. Phase 3 = brand homepage. Phase 4 = help/blog. Phase 5 = in-app physical SIM checkout. | Phase 0 ✅ done. **Phase 1 ✅ shipped (renamed "Activation Funnel" — see below)**. Phase 2-5 not started. |
+| **"Activation Funnel"** (what Phase 1 was renamed to on 2026-04-25) | Same scope as the original product Phase 1, renamed to avoid the collision below. | `docs/ACTIVATION_FUNNEL.md` is single source of truth. Steps 1-7 all shipped across H5/Laravel/admin/Flutter. |
+| **China-team backend phases** (commit prefixes like `feat(phase1):`, `feat(phase2):`) | Backend migration work owned by the China dev team. Their `phase1` = supplier-package backend migration. Their `phase2` = token-refresh interceptor + cross-platform contract. UNRELATED to Jordan's product phases. | Their phase 0A/0B/0C/0D and phase 1 are shipped. Their phase 2 just shipped 2026-04-25. |
+
+Whenever you see "Phase 1" in a doc/commit/comment, **disambiguate which system
+the author meant before acting**.
+
+### Reference docs (with their respective scope)
+
+- `docs/EVAIRSIM_ROADMAP_ZH.pdf` (generated 2026-04-25 22:00 PT) — Chinese-language overview
+  of Jordan's product Phases 0–5. **Uses the original "Phase 1 = activation funnel" naming**,
+  generated from a stale snapshot before the rename. Do not treat its "Phase 1 准备开始"
+  status as current — the funnel is shipped. Useful for big-picture orientation only.
+- `docs/EVAIRSIM_ROADMAP_ZH.md` — markdown source for the PDF (same caveats).
+- `docs/ACTIVATION_FUNNEL.md` — current source of truth for what was shipped.
+- `.cursor/rules/product-decisions.mdc` — long-term product decisions (also lists
+  Phase 0–5 in §"Phase order"; same "Phase 1 = activation funnel" naming, accurate
+  for what _was originally_ scoped under that label).
 
 ## Active thread: Phase 2 — cross-platform consolidation
 

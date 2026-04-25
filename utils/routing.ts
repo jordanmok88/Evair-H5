@@ -23,7 +23,20 @@ export type Route =
     | { kind: 'app' }                                  // /, /app, /app/*, anything not matched below
     | { kind: 'activate'; iccid: string | null }       // /activate, /activate?iccid=...
     | { kind: 'topup'; iccid: string | null }          // /top-up, /top-up?iccid=...
+    | { kind: 'marketing' }                            // /welcome (Phase 3 apex landing page)
     | { kind: 'apiTest' };                             // legacy #api-test debug surface
+
+/**
+ * Hostnames where `/` should boot directly into the marketing page
+ * instead of the customer app. This lets us serve the same Vite build
+ * from `evairdigital.com` (marketing) and `app.evairdigital.com` (app)
+ * without a separate deployment. Keep this list short — it only needs
+ * the apex; any subdomain we don't recognise falls through to `app`.
+ */
+const MARKETING_HOSTS = new Set([
+    'evairdigital.com',
+    'www.evairdigital.com',
+]);
 
 /**
  * Inspect `window.location` and return the route the app should render.
@@ -50,6 +63,16 @@ export function getRoute(): Route {
 
     if (path === '/top-up' || path.startsWith('/top-up/')) {
         return { kind: 'topup', iccid: extractIccidFromQuery() };
+    }
+
+    if (path === '/welcome' || path === '/marketing') {
+        return { kind: 'marketing' };
+    }
+
+    // Apex evairdigital.com renders the marketing page at `/`. App users
+    // still hit /app, /activate, /top-up explicitly so they're unaffected.
+    if (path === '/' && MARKETING_HOSTS.has(window.location.hostname.toLowerCase())) {
+        return { kind: 'marketing' };
     }
 
     return { kind: 'app' };

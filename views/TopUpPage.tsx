@@ -510,6 +510,43 @@ const ReadyState: React.FC<ReadyProps> = ({
         [packages],
     );
 
+    // Phase 4 polish: rank plans by $ / GB so we can label the lowest-rate
+    // plan "Best value" and highlight it. We also tag the largest-volume
+    // plan "Most data" to anchor power users. Both labels are derived
+    // from the catalogue itself, no extra API call needed.
+    const { bestValueCode, mostDataCode } = useMemo(() => {
+        let bestRate = Infinity;
+        let bestCode: string | null = null;
+        let bestVolume = 0;
+        let mostCode: string | null = null;
+        for (const pkg of sorted) {
+            const volumeMB = pkg.volume ?? 0;
+            const price = pkg.price ?? 0;
+            if (volumeMB > 0 && price > 0) {
+                const ratePerGb = price / (volumeMB / 1024);
+                if (ratePerGb < bestRate) {
+                    bestRate = ratePerGb;
+                    bestCode = pkg.packageCode;
+                }
+                if (volumeMB > bestVolume) {
+                    bestVolume = volumeMB;
+                    mostCode = pkg.packageCode;
+                }
+            }
+        }
+        return { bestValueCode: bestCode, mostDataCode: mostCode };
+    }, [sorted]);
+
+    // Auto-select the best-value plan on first render so the CTA is
+    // already enabled when the customer lands. They can still pick
+    // anything else; this just cuts a tap from the happy path.
+    useEffect(() => {
+        if (!selectedPackageCode && bestValueCode) {
+            onSelectPackage(bestValueCode);
+        }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [bestValueCode]);
+
     if (sorted.length === 0) {
         return (
             <ErrorBox
@@ -559,17 +596,35 @@ const ReadyState: React.FC<ReadyProps> = ({
             <div className="space-y-3 mb-6">
                 {sorted.map((pkg) => {
                     const selected = pkg.packageCode === selectedPackageCode;
+                    const isBestValue = pkg.packageCode === bestValueCode;
+                    const isMostData = pkg.packageCode === mostDataCode && !isBestValue;
+                    const volumeGb = (pkg.volume ?? 0) / 1024;
+                    const pricePerGb =
+                        volumeGb > 0 && pkg.price > 0
+                            ? formatPrice(pkg.price / volumeGb, pkg.currency)
+                            : null;
                     return (
                         <button
                             type="button"
                             key={pkg.packageCode}
                             onClick={() => onSelectPackage(pkg.packageCode)}
-                            className={`w-full text-left bg-white rounded-2xl p-4 border-2 transition-all ${
+                            className={`w-full text-left bg-white rounded-2xl p-4 border-2 transition-all relative ${
                                 selected
                                     ? 'border-brand-orange shadow-md shadow-orange-500/10'
                                     : 'border-slate-200 hover:border-slate-300'
                             }`}
                         >
+                            {(isBestValue || isMostData) && (
+                                <div
+                                    className={`absolute -top-2 left-3 inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wide ${
+                                        isBestValue
+                                            ? 'bg-emerald-500 text-white'
+                                            : 'bg-blue-500 text-white'
+                                    }`}
+                                >
+                                    {isBestValue ? 'Best value' : 'Most data'}
+                                </div>
+                            )}
                             <div className="flex items-start justify-between gap-3">
                                 <div className="flex-1 min-w-0">
                                     <div className="text-base font-bold text-slate-900 mb-1">
@@ -585,6 +640,11 @@ const ReadyState: React.FC<ReadyProps> = ({
                                     <div className="text-lg font-bold text-brand-orange">
                                         {formatPrice(pkg.price, pkg.currency)}
                                     </div>
+                                    {pricePerGb && (
+                                        <div className="text-[11px] text-slate-500 mt-0.5">
+                                            {pricePerGb}/GB
+                                        </div>
+                                    )}
                                 </div>
                             </div>
                             {pkg.description && (

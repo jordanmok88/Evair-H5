@@ -1,9 +1,10 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
-import { ChevronLeft, Send, Paperclip, CheckCheck, Bot, Sparkles } from 'lucide-react';
+import { ChevronLeft, Send, Paperclip, CheckCheck, Bot, Sparkles, Headphones } from 'lucide-react';
 import { getMultilingualResponse } from '../ai/evairAssistant';
 import { ChatMessage } from '../types';
 import { useEdgeSwipeBack } from '../hooks/useEdgeSwipeBack';
+import LiveChatView from './LiveChatView';
 import {
   supabaseConfigured,
   createConversation,
@@ -14,6 +15,7 @@ import {
   subscribeToMessages,
   DbChatMessage,
 } from '../services/supabase';
+
 
 interface ContactUsViewProps {
   onBack: () => void;
@@ -72,6 +74,10 @@ const ContactUsView: React.FC<ContactUsViewProps> = ({ onBack, userName = 'Jorda
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [isTyping, setIsTyping] = useState(false);
   const [conversationId, setConversationId] = useState<string | null>(null);
+  // When the customer escalates ("speak to human"), we flip this on and
+  // mount the Laravel-backed LiveChatView. The bot conversation stays
+  // resident below so the user can swipe back to it.
+  const [showLiveChat, setShowLiveChat] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const initialized = useRef(false);
@@ -186,11 +192,15 @@ const ContactUsView: React.FC<ContactUsViewProps> = ({ onBack, userName = 'Jorda
       setMessages(prev => prev.map(m => m.id === userMsg.id ? { ...m, status: 'delivered' } : m));
     }, 800);
 
-    // Check if customer wants a human agent
+    // Check if customer wants a human agent. If so, flag the legacy
+    // Supabase row (used by the old admin tooling) AND open the Laravel
+    // live-chat surface so a real agent can pick it up over Reverb.
     if (HUMAN_KEYWORDS.test(trimmed)) {
       if (supabaseConfigured && !convId.startsWith('local-')) {
         await markNeedsHuman(convId);
       }
+      setShowLiveChat(true);
+      return;
     }
 
     // AI responds in the customer's language
@@ -227,6 +237,10 @@ const ContactUsView: React.FC<ContactUsViewProps> = ({ onBack, userName = 'Jorda
     }
   };
 
+  if (showLiveChat) {
+    return <LiveChatView onBack={() => setShowLiveChat(false)} />;
+  }
+
   return (
     <div className="lg:h-full min-h-screen lg:min-h-0 flex flex-col bg-[#F2F4F7] relative">
       {/* Header */}
@@ -242,6 +256,14 @@ const ContactUsView: React.FC<ContactUsViewProps> = ({ onBack, userName = 'Jorda
               <span className="text-sm text-white/85 font-medium">{t('contact.online_status')}</span>
             </div>
           </div>
+          <button
+            onClick={() => setShowLiveChat(true)}
+            className="w-9 h-9 rounded-full bg-white/20 flex items-center justify-center active:bg-white/30 transition-colors"
+            aria-label={t('contact.talk_to_human', { defaultValue: 'Talk to a human' })}
+            title={t('contact.talk_to_human', { defaultValue: 'Talk to a human' })}
+          >
+            <Headphones size={18} color="#fff" strokeWidth={2.5} />
+          </button>
         </div>
         <div className="flex items-center gap-3 ml-12">
           <div className="relative">

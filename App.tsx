@@ -11,6 +11,7 @@ import InboxView from './views/InboxView';
 import ApiTestPage from './views/ApiTestPage';
 import ActivatePage from './views/ActivatePage';
 import TopUpPage from './views/TopUpPage';
+import MarketingPage from './views/MarketingPage';
 import { Tab, ActiveSim, SimType, User, AppNotification, EsimProfileResult } from './types';
 import { Lock } from 'lucide-react';
 import { MOCK_COUNTRIES, MOCK_PLANS_US, MOCK_ACTIVE_SIMS, MOCK_NOTIFICATIONS, CARRIER_MAP } from './constants';
@@ -49,6 +50,8 @@ function App() {
         document.title = 'Activate your Evair SIM';
       } else if (route.kind === 'topup') {
         document.title = 'Top up your Evair SIM';
+      } else if (route.kind === 'marketing') {
+        document.title = 'Evair — Mobile data, simplified';
       } else if (isAppPreviewHash() || isAppPath()) {
         document.title = 'Evair APP';
       } else if (document.title === 'Evair APP') {
@@ -61,6 +64,7 @@ function App() {
   if (route.kind === 'apiTest') return <ApiTestPage />;
   if (route.kind === 'activate') return <ActivatePage iccid={route.iccid} />;
   if (route.kind === 'topup') return <TopUpPage iccid={route.iccid} />;
+  if (route.kind === 'marketing') return <MarketingPage />;
 
   return <CustomerApp />;
 }

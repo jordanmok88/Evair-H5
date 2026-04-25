@@ -501,9 +501,12 @@ const AvailableState: React.FC<{ data: ActivationPreviewData }> = ({ data }) => 
             // Auto-renew is now wired end-to-end here, so the
             // `prompt_auto_renew` URL hack is gone. We still forward
             // the marketing opt-in so the my-sims surface can persist
-            // it on the AppUser preferences row.
+            // it on the AppUser preferences row. The `just_activated`
+            // flag lets MySimsView render a one-off celebration banner
+            // with a top-up cross-sell CTA (Phase 4).
             const params = new URLSearchParams({
                 iccid: data.iccid,
+                just_activated: '1',
                 ...(marketingOptIn ? { marketing_opt_in: '1' } : {}),
             });
             window.location.href = `/app/my-sims?${params.toString()}`;

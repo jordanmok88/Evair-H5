@@ -24,6 +24,9 @@ const BarcodeScanner: React.FC<BarcodeScannerProps> = ({ open, onClose, onDetect
     scanner
       .start(
         { facingMode },
+        // `formatsToSupport` IS honoured by html5-qrcode at runtime but
+        // its TypeScript types are out of date. Cast through `unknown`
+        // so we still get strong typing for the documented fields.
         {
           fps: 15,
           qrbox: { width: 320, height: 160 },
@@ -37,7 +40,7 @@ const BarcodeScanner: React.FC<BarcodeScannerProps> = ({ open, onClose, onDetect
             11, // EAN_13
             6,  // EAN_8
           ],
-        },
+        } as unknown as Parameters<Html5Qrcode['start']>[1],
         (decodedText) => {
           if (cancelled) return;
           const digits = decodedText.replace(/\D/g, '');

@@ -154,8 +154,10 @@ export async function initPush(options: InitPushOptions = {}): Promise<string | 
     return null;
   }
 
-  if (!result.ok) {
-    console.info('[push] not registered:', result.reason);
+  if (result.ok !== true) {
+    // Narrow to the failure branch via `in` so TS sees `reason`.
+    const reason = 'reason' in result ? result.reason : 'unknown';
+    console.info('[push] not registered:', reason);
     return null;
   }
 
