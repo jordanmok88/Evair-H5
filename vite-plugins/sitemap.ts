@@ -60,6 +60,12 @@ const STATIC_URLS: SitemapEntry[] = [
     { path: '/blog', changefreq: 'weekly', priority: 0.7 },
     { path: '/activate', changefreq: 'monthly', priority: 0.6 },
     { path: '/top-up', changefreq: 'monthly', priority: 0.6 },
+    // Legal — Stripe live mode and most app stores require these to be
+    // crawlable, and search engines should know they exist so users can
+    // find them via "evair refund policy" type queries.
+    { path: '/legal/terms', changefreq: 'yearly', priority: 0.3 },
+    { path: '/legal/privacy', changefreq: 'yearly', priority: 0.3 },
+    { path: '/legal/refund', changefreq: 'yearly', priority: 0.4 },
 ];
 
 export interface SitemapPluginOptions {

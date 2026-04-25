@@ -27,6 +27,8 @@
  */
 export type DeviceCategory = 'phone' | 'camera' | 'iot';
 
+export type LegalSlug = 'terms' | 'privacy' | 'refund';
+
 export type Route =
     | { kind: 'app' }                                  // /, /app, /app/*, anything not matched below
     | { kind: 'activate'; iccid: string | null }       // /activate, /activate?iccid=...
@@ -36,9 +38,11 @@ export type Route =
     | { kind: 'travel'; countryCode: string | null }   // /travel-esim, /travel-esim/jp (Phase 2 SEO)
     | { kind: 'help'; slug: string | null }            // /help, /help/install-esim (Phase 4)
     | { kind: 'blog'; slug: string | null }            // /blog, /blog/sim-vs-esim (Phase 4)
+    | { kind: 'legal'; slug: LegalSlug }                // /legal/terms, /legal/privacy, /legal/refund
     | { kind: 'apiTest' };                             // legacy #api-test debug surface
 
 const DEVICE_CATEGORIES: ReadonlySet<DeviceCategory> = new Set(['phone', 'camera', 'iot']);
+const LEGAL_SLUGS: ReadonlySet<LegalSlug> = new Set(['terms', 'privacy', 'refund']);
 
 /**
  * Hostnames where `/` should boot directly into the marketing page
@@ -125,6 +129,18 @@ export function getRoute(): Route {
     if (path.startsWith('/blog/')) {
         const slug = sanitiseSlug(path.slice('/blog/'.length));
         return { kind: 'blog', slug: slug || null };
+    }
+
+    // Legal surfaces: /legal/terms, /legal/privacy, /legal/refund.
+    // These are linked from the marketing footer and Stripe-required
+    // for live mode — without a real route they would silently fall
+    // through to the customer-app shell and present users with the
+    // bottom-tab UI when they expect a policy document.
+    if (path.startsWith('/legal/')) {
+        const slug = sanitiseSlug(path.slice('/legal/'.length));
+        if (slug && LEGAL_SLUGS.has(slug as LegalSlug)) {
+            return { kind: 'legal', slug: slug as LegalSlug };
+        }
     }
 
     // Apex evairdigital.com renders the marketing page at `/`. App users

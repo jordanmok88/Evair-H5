@@ -445,7 +445,22 @@ const ShopView: React.FC<ShopViewProps> = ({ testMode = false, isLoggedIn, user,
       const pendingRaw = localStorage.getItem('pending_esim_order');
       if (!pendingRaw) return;
 
-      const pending = JSON.parse(pendingRaw);
+      // Defensive parse: a corrupted pending order (e.g. previous tab
+      // crashed mid-write, manual edit, quota eviction) would otherwise
+      // throw inside the effect and leave the user staring at a blank
+      // screen with their money already taken. Treat parse failure as
+      // "no pending order" and surface a toast so support can help.
+      let pending: ReturnType<typeof JSON.parse>;
+      try {
+        pending = JSON.parse(pendingRaw);
+      } catch (err) {
+        console.error('[ShopView] pending_esim_order corrupt, dropping', err);
+        localStorage.removeItem('pending_esim_order');
+        setOrderError(
+          'We could not match your payment to a pending order. Please contact support — your card was charged.'
+        );
+        return;
+      }
       localStorage.removeItem('pending_esim_order');
 
       setIsProcessing(true);

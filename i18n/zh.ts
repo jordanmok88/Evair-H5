@@ -431,6 +431,7 @@ const zh = {
   },
   activate: {
     invalid_iccid: 'ICCID 格式无效，请检查包装盒上的数字（15-22 位）。',
+    preview_failed: '无法连接激活服务，请检查网络后重试。',
   },
   referral: {
     title: '推荐好友',

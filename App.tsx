@@ -16,6 +16,7 @@ import DeviceLandingPage from './views/DeviceLandingPage';
 import TravelEsimPage from './views/TravelEsimPage';
 import HelpCenterPage from './views/HelpCenterPage';
 import BlogPage from './views/BlogPage';
+import LegalPage from './views/LegalPage';
 import { Tab, ActiveSim, SimType, User, AppNotification, EsimProfileResult } from './types';
 import { Lock } from 'lucide-react';
 import { MOCK_COUNTRIES, MOCK_PLANS_US, MOCK_ACTIVE_SIMS, MOCK_NOTIFICATIONS, CARRIER_MAP } from './constants';
@@ -66,6 +67,8 @@ function App() {
         // once hydrated; this is a fallback for the brief flash before
         // React mounts.
         document.title = route.kind === 'help' ? 'Help center — Evair' : 'Evair Blog';
+      } else if (route.kind === 'legal') {
+        document.title = 'Legal — Evair';
       } else if (isAppPreviewHash() || isAppPath()) {
         document.title = 'Evair APP';
       } else if (document.title === 'Evair APP') {
@@ -83,6 +86,7 @@ function App() {
   if (route.kind === 'travel') return <TravelEsimPage countryCode={route.countryCode} />;
   if (route.kind === 'help') return <HelpCenterPage slug={route.slug} />;
   if (route.kind === 'blog') return <BlogPage slug={route.slug} />;
+  if (route.kind === 'legal') return <LegalPage slug={route.slug} />;
 
   return <CustomerApp />;
 }
@@ -139,6 +143,15 @@ function CustomerApp() {
     () => (sessionStorage.getItem('evair-activeTab') as Tab) || Tab.SIM_CARD
   );
   const previousTab = useRef<Tab>(Tab.SIM_CARD);
+  // Mirror activeTab into a ref so the hashchange listener (which we
+  // wire once on mount) reads the *current* tab when remembering the
+  // previous one — without this the listener captured the initial
+  // activeTab and "back" jumped to the wrong place after the user had
+  // navigated tabs in-app.
+  const activeTabRef = useRef<Tab>(activeTab);
+  useEffect(() => {
+    activeTabRef.current = activeTab;
+  }, [activeTab]);
 
   // Hash deep-links: external surfaces (help articles, marketing
   // page, third-party emails) can land users on a specific tab via
@@ -147,29 +160,31 @@ function CustomerApp() {
   // cleared) so the back button feels right.
   //
   // Mapping intentionally narrow — only the tabs we publish externally:
-  //   #contact → DIALER (Contact Us / chat)
-  //   #inbox   → INBOX  (notifications)
-  //   #profile → PROFILE
+  //   #contact  → DIALER    (Contact Us / chat)
+  //   #inbox    → INBOX     (notifications)
+  //   #profile  → PROFILE
+  //   #sim-card → SIM_CARD  (physical SIM landing — used by the
+  //               marketing homepage "US SIM (long-stay)" CTA)
+  //   #esim, #shop → ESIM   (digital eSIM catalogue)
   useEffect(() => {
     const HASH_TO_TAB: Record<string, Tab> = {
       '#contact': Tab.DIALER,
       '#inbox': Tab.INBOX,
       '#profile': Tab.PROFILE,
+      '#sim-card': Tab.SIM_CARD,
+      '#esim': Tab.ESIM,
+      '#shop': Tab.ESIM,
     };
     const apply = () => {
       const tab = HASH_TO_TAB[window.location.hash.toLowerCase()];
       if (tab) {
-        previousTab.current = activeTab;
+        previousTab.current = activeTabRef.current;
         setActiveTab(tab);
       }
     };
     apply(); // honour initial hash on mount
     window.addEventListener('hashchange', apply);
     return () => window.removeEventListener('hashchange', apply);
-    // Intentional: we only want to wire the listener once. activeTab
-    // moves through the closure via previousTab.current which is fine
-    // for the "back to previous tab" intent.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
   const [loginModalMode, setLoginModalMode] = useState<'LOGIN' | 'REGISTER'>('LOGIN');
@@ -386,14 +401,23 @@ function CustomerApp() {
     if (notifFetched.current || !supabaseConfigured) return;
     notifFetched.current = true;
     const lang = localStorage.getItem('evair-lang') || 'en';
-    fetchNotifications(lang).then(serverNotifs => {
-      if (serverNotifs.length > 0) {
-        setNotifications(prev => {
-          const localOnly = prev.filter(n => n.id.startsWith('auto-') || n.id.startsWith('N-'));
-          return [...serverNotifs, ...localOnly.filter(n => n.id.startsWith('auto-'))];
-        });
-      }
-    });
+    fetchNotifications(lang)
+      .then(serverNotifs => {
+        if (serverNotifs.length > 0) {
+          setNotifications(prev => {
+            const localOnly = prev.filter(n => n.id.startsWith('auto-') || n.id.startsWith('N-'));
+            return [...serverNotifs, ...localOnly.filter(n => n.id.startsWith('auto-'))];
+          });
+        }
+      })
+      .catch(err => {
+        // Notifications are best-effort — Supabase being temporarily
+        // unreachable shouldn't surface as an unhandled rejection in
+        // production logs. Reset the latch so a later retry (e.g. via
+        // user re-login) can try again.
+        console.warn('[notifications] fetch failed', err);
+        notifFetched.current = false;
+      });
   }, []);
 
   const addNotification = useCallback((notif: AppNotification) => {

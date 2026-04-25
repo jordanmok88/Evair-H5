@@ -148,42 +148,77 @@ const MySimsView: React.FC<MySimsViewProps> = ({ activeSims, onNavigate, filterT
   }, [onUpdateSim]);
 
   useEffect(() => {
-    if (filteredSims.length > 0 && (!selectedSimId || !filteredSims.find(s => s.id === selectedSimId))) {
+    if (filteredSims.length === 0) return;
+
+    // Honour `?iccid=` from the URL — ActivatePage and TopUpPage both
+    // bounce the user to /app/my-sims?iccid=... after a successful
+    // bind/charge, so we should auto-select that SIM rather than
+    // whichever happens to be first in the list. We only consume the
+    // param once, then strip it so a hard refresh doesn't keep
+    // re-selecting it (and so the URL stays clean for sharing).
+    if (typeof window !== 'undefined' && !selectedSimId) {
+      const params = new URLSearchParams(window.location.search);
+      const wantedIccid = params.get('iccid');
+      if (wantedIccid) {
+        const cleaned = wantedIccid.replace(/[^0-9A-Za-z]/g, '');
+        const match = filteredSims.find(s => resolveIccid(s) === cleaned);
+        if (match) {
+          setSelectedSimId(match.id);
+          params.delete('iccid');
+          const next = params.toString();
+          const newUrl = window.location.pathname + (next ? `?${next}` : '');
+          window.history.replaceState(null, '', newUrl);
+          return;
+        }
+      }
+    }
+
+    if (!selectedSimId || !filteredSims.find(s => s.id === selectedSimId)) {
         setSelectedSimId(filteredSims[0].id);
     }
   }, [filteredSims, selectedSimId]);
 
+  // Refetch the recharge catalogue when the *current SIM* changes — not
+  // just when the modal opens. The previous version short-circuited on
+  // `topUpPackages.length === 0`, so a user who opened the modal for
+  // SIM A then swiped the carousel to SIM B would keep seeing SIM A's
+  // plans (plus, worse, charge under SIM A's ICCID if they tapped
+  // through). Keying the effect on `currentSim?.iccid` clears + refetches.
+  const currentIccid = currentSim ? resolveIccid(currentSim) : null;
   useEffect(() => {
-    if (isRechargeModalOpen && topUpPackages.length === 0 && !topUpLoading && currentSim) {
-      setTopUpLoading(true);
-      const iccid = resolveIccid(currentSim);
-      const fallbackLocation = currentSim.locationCode || currentSim.country.countryCode;
-      const locationFallback = () => fetchPackages({ locationCode: fallbackLocation });
-      // Recharge catalogue resolution by SIM type:
-      //
-      //   • ESIM        → EsimAccess / Red Tea top-up templates keyed to
-      //                   the ICCID; fall back to the general location
-      //                   catalogue if none returned.
-      //   • PHYSICAL    → PCCW recharge templates for this ICCID. Pass
-      //                   `'pccw'` explicitly — the backend defaults to
-      //                   `esimaccess` and would otherwise return zero
-      //                   matches. If PCCW has no offers for this SIM
-      //                   (e.g. an ICCID not yet on any whitelist) we
-      //                   fall through to the general catalogue so the
-      //                   user still sees something actionable.
-      const pkgPromise = currentSim.type === 'ESIM'
-        ? fetchTopUpPackages(iccid)
-            .then(pkgs => pkgs.length > 0 ? pkgs : locationFallback())
-            .catch(locationFallback)
-        : fetchTopUpPackages(iccid, 'pccw')
-            .then(pkgs => pkgs.length > 0 ? pkgs : locationFallback())
-            .catch(locationFallback);
-      pkgPromise
-        .then(setTopUpPackages)
-        .catch(() => {})
-        .finally(() => setTopUpLoading(false));
-    }
-  }, [isRechargeModalOpen, currentSim]);
+    if (!isRechargeModalOpen || !currentSim || !currentIccid) return;
+    let cancelled = false;
+    setTopUpLoading(true);
+    setTopUpPackages([]);
+    setSelectedTopUp(null);
+    const fallbackLocation = currentSim.locationCode || currentSim.country.countryCode;
+    const locationFallback = () => fetchPackages({ locationCode: fallbackLocation });
+    // Recharge catalogue resolution by SIM type:
+    //
+    //   • ESIM        → EsimAccess / Red Tea top-up templates keyed to
+    //                   the ICCID; fall back to the general location
+    //                   catalogue if none returned.
+    //   • PHYSICAL    → PCCW recharge templates for this ICCID. Pass
+    //                   `'pccw'` explicitly — the backend defaults to
+    //                   `esimaccess` and would otherwise return zero
+    //                   matches. If PCCW has no offers for this SIM
+    //                   (e.g. an ICCID not yet on any whitelist) we
+    //                   fall through to the general catalogue so the
+    //                   user still sees something actionable.
+    const pkgPromise = currentSim.type === 'ESIM'
+      ? fetchTopUpPackages(currentIccid)
+          .then(pkgs => pkgs.length > 0 ? pkgs : locationFallback())
+          .catch(locationFallback)
+      : fetchTopUpPackages(currentIccid, 'pccw')
+          .then(pkgs => pkgs.length > 0 ? pkgs : locationFallback())
+          .catch(locationFallback);
+    pkgPromise
+      .then(pkgs => { if (!cancelled) setTopUpPackages(pkgs); })
+      .catch(() => {})
+      .finally(() => { if (!cancelled) setTopUpLoading(false); });
+    return () => { cancelled = true; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- currentSim is identified by iccid + type
+  }, [isRechargeModalOpen, currentIccid, currentSim?.type]);
 
   // Top-bar sync button on the ring-gauge card. `checkDataUsage` routes
   // to the right supplier (EsimAccess / PCCW) backend-side, so the same

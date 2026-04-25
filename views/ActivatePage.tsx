@@ -92,31 +92,46 @@ const ActivatePage: React.FC<ActivatePageProps> = ({ iccid: initialIccid }) => {
         let cancelled = false;
         setPhase({ kind: 'loading' });
 
-        activationService.previewByIccid(iccid).then((result: PreviewResult) => {
-            if (cancelled) return;
+        activationService
+            .previewByIccid(iccid)
+            .then((result: PreviewResult) => {
+                if (cancelled) return;
 
-            if (result.kind === 'not_found') {
-                setPhase({ kind: 'not_found' });
-                return;
-            }
+                if (result.kind === 'not_found') {
+                    setPhase({ kind: 'not_found' });
+                    return;
+                }
 
-            if (result.kind === 'error') {
-                setPhase({ kind: 'error', message: result.message });
-                return;
-            }
+                if (result.kind === 'error') {
+                    setPhase({ kind: 'error', message: result.message });
+                    return;
+                }
 
-            const state: ClaimState = result.data.claimState;
-            if (state === 'pending_shipment') {
-                setPhase({ kind: 'pending_shipment' });
-                return;
-            }
-            if (state === 'claimed_by_other') {
-                setPhase({ kind: 'claimed_by_other' });
-                return;
-            }
+                const state: ClaimState = result.data.claimState;
+                if (state === 'pending_shipment') {
+                    setPhase({ kind: 'pending_shipment' });
+                    return;
+                }
+                if (state === 'claimed_by_other') {
+                    setPhase({ kind: 'claimed_by_other' });
+                    return;
+                }
 
-            setPhase({ kind: 'preview', data: result.data });
-        });
+                setPhase({ kind: 'preview', data: result.data });
+            })
+            .catch((err: unknown) => {
+                // Without this catch a transient network failure (offline,
+                // 5xx, timeout) leaves the UI stuck on the loader forever.
+                // The service layer already maps known API errors to a
+                // `{ kind: 'error' }` result, so anything reaching here is
+                // a genuine throw — surface it as a retryable error state.
+                if (cancelled) return;
+                const message =
+                    err instanceof Error && err.message
+                        ? err.message
+                        : t('activate.preview_failed');
+                setPhase({ kind: 'error', message });
+            });
 
         return () => {
             cancelled = true;

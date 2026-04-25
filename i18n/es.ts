@@ -433,6 +433,7 @@ const es = {
   },
   activate: {
     invalid_iccid: 'Ese ICCID no parece válido. Revisa los dígitos en la caja (15-22 caracteres).',
+    preview_failed: 'No pudimos contactar el servicio de activación. Comprueba tu conexión e inténtalo de nuevo.',
   },
   referral: {
     title: 'Invita y gana',
