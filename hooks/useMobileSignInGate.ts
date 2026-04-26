@@ -29,6 +29,7 @@
  */
 
 import { useCallback, useState } from 'react';
+import type React from 'react';
 import { isMobileDevice } from '../utils/device';
 
 const ACK_STORAGE_KEY = 'evair_desktop_signin_acked.v1';

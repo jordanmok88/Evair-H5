@@ -267,6 +267,7 @@ const ContactUsView: React.FC<ContactUsViewProps> = ({ onBack, userName = 'Jorda
   const sendCustomerMessage = async (text: string, opts?: { skipAi?: boolean }) => {
     const provider = providerRef.current;
     const convId = conversationIdRef.current ?? 'local';
+    const isHumanRequest = HUMAN_KEYWORDS.test(text);
 
     const clientMsgId = (window.crypto?.randomUUID?.() ?? `local-${Date.now()}-${Math.random().toString(16).slice(2, 8)}`);
     const optimistic: UnifiedChatMessage = {
@@ -292,9 +293,11 @@ const ContactUsView: React.FC<ContactUsViewProps> = ({ onBack, userName = 'Jorda
       upsertOptimistic({ ...confirmed, clientMsgId });
     } catch {
       upsertOptimistic({ ...optimistic, status: 'failed' });
+      // send 失败时不跳转人工，让用户看到失败状态后决定是否重试
+      return;
     }
 
-    if (HUMAN_KEYWORDS.test(text)) {
+    if (isHumanRequest) {
       provider.markNeedsHuman().catch(() => { /* noop */ });
       setShowLiveChat(true);
       return;

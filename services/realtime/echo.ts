@@ -41,7 +41,8 @@ interface EchoConfig {
 
 function readConfig(): EchoConfig | null {
   const env = (import.meta as any).env ?? {};
-  const appKey = env.VITE_REVERB_APP_KEY;
+  // 与 laravelProvider.ts 统一使用 VITE_REVERB_KEY，避免双份配置
+  const appKey = env.VITE_REVERB_KEY ?? env.VITE_REVERB_APP_KEY;
   const host = env.VITE_REVERB_HOST;
   if (!appKey || !host) return null;
 
