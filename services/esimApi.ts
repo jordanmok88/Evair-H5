@@ -206,7 +206,21 @@ interface BackstagePackagesEnvelope {
 interface BackstagePackageRow {
   package_code: string;
   name: string;
-  price: number;            // USD float, already retail
+  /**
+   * 售价（USD 浮点数，已是最终零售价）。
+   *
+   * 【后端价格链路】
+   * 这个值来自 `products.price`（Laravel），由 `esimaccess:sync-products` 命令
+   * 从 `supplier_packages` 表预计算后写入。优先级：
+   *   1. supplier_packages.final_price  — Admin 手动设置的最终售价（最高优先）
+   *   2. supplier_packages.retail_price — Admin 设置的零售价（当前绝大多数走这个）
+   *   3. supplier_packages.price × 1.5  — 供应商成本价 × markup（兜底，实际未用到）
+   *
+   * ⚠️ Admin 改了 retail_price / final_price 后，必须重新跑
+   * `php artisan esimaccess:sync-products` 才会更新到 products 表，
+   * 否则 H5/APP 不会看到新价格。
+   */
+  price: number;
   currency?: string;
   volume: number;           // bytes
   duration: number;
@@ -227,6 +241,29 @@ interface BackstagePackageRow {
   description?: string | null;
 }
 
+/**
+ * 从 Laravel 后端拉取 C 端可售套餐列表。
+ *
+ * 【数据流链路】
+ *   Red Tea API → SyncEsimaccessPackagesJob → supplier_packages 表
+ *     → `php artisan esimaccess:sync-products` → products 表
+ *       → `GET /api/v1/h5/packages` (此函数) → H5 商店列表
+ *
+ * 【关键约束】
+ *   - H5 只读 `products` 表。`supplier_packages` 有数据但 `products` 没有对应行
+ *     → 不会在商店显示。
+ *   - Admin 改了零售价后需重新跑 `esimaccess:sync-products` 才会生效。
+ *   - `size=5000` 必须和 Flutter APP 的 `shop_providers.dart (perPage: 5000)` 一致，
+ *     否则两端显示的计划数会不一致。
+ *
+ * 【价格说明】
+ *   `price` 字段已是预计算好的最终售价（USD 浮点数），来自 `products.price`。
+ *   详细优先级见 `BackstagePackageRow.price` 字段注释。
+ *
+ * 【环境变量】
+ *   - 请求地址: `BACKSTAGE_BASE`（默认 `https://evair.zhhwxt.cn/api/v1/h5`）
+ *   - 本地开发时在 `.env.local` 设置 `VITE_BACKSTAGE_BASE_URL` 切换
+ */
 async function fetchPackagesFromBackstage(
   params: FetchPackagesParams,
 ): Promise<EsimPackage[]> {
@@ -283,6 +320,15 @@ async function fetchPackagesFromBackstage(
  */
 const SUPPLIER_REGION_RE = /^[A-Z]{2,}-\d+$/;
 
+/**
+ * 将后端 Backstage 套餐行映射为前端 EsimPackage 结构。
+ *
+ * 【价格转换】
+ *   后端返回的 `r.price` 是 USD 浮点数（如 15.2），前端统一用 micro-cents 存储
+ *   (×10000 → 152000)，并标记 `priceIsRetail: true`。这样 `packagePriceUsd()`
+ *   在取价格时会直接除以 10000 返回原值，不做额外的 2× 加价（那是 legacy Red Tea
+ *   直连路径的逻辑，backstage 路径不适用）。
+ */
 function mapBackstageRow(r: BackstagePackageRow): EsimPackage {
   const usd = Number(r.price) || 0;
 
@@ -756,15 +802,22 @@ export function retailPrice(microCents: number): number {
 }
 
 /**
- * Resolve the display / charge price for a package in USD.
+ * 获取套餐的最终展示 / 支付价格（USD）。
  *
- * - Backstage-sourced packages (`priceIsRetail === true`) already carry the
- *   team's chosen retail price — return it as-is.
- * - Legacy Red Tea packages carry a wholesale price — apply the 2× markup
- *   via `retailPrice()`.
+ * 【后端价格链路】
+ *   supplier_packages.final_price（Admin 手动设，最高优先）
+ *     → supplier_packages.retail_price（Admin 设，当前绝大多数走这个）
+ *       → supplier_packages.price × 1.5（兜底，实际未用到）
+ *         ↓ esimaccess:sync-products 预计算
+ *   products.price → H5 API 的 `price` 字段 → 此处取出
  *
- * Use this everywhere the UI or a charge amount needs a USD number for a
- * package, instead of calling `retailPrice(pkg.price)` directly.
+ * 【前端两条路径】
+ *   - Backstage 路径（当前生效）：`priceIsRetail === true`，直接返回
+ *     `pkg.price / 10000`（即后端 products.price 的原值），不做加价。
+ *   - Legacy Red Tea 直连路径：`priceIsRetail` 未设置，走 `retailPrice()`
+ *     做 2× 加价。此路径已不使用。
+ *
+ * ⚠️ 不要直接调用 `retailPrice(pkg.price)` — 对 Backstage 套餐会重复加价。
  */
 export function packagePriceUsd(pkg: EsimPackage): number {
   if (pkg.priceIsRetail) return pkg.price / 10000;

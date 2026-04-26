@@ -3,6 +3,7 @@ import { SimType, ActiveSim, Tab, User, AppNotification, EsimProfileResult } fro
 import ShopView from './ShopView';
 import MySimsView from './MySimsView';
 import PhysicalSimSetupView from './PhysicalSimSetupView';
+import { ActivationPreviewData } from '../services/api/activation';
 interface ProductTabProps {
   type: SimType;
   testMode?: boolean;
@@ -130,13 +131,24 @@ const ProductTab: React.FC<ProductTabProps> = ({
           <PhysicalSimSetupView
              onSwitchToShop={() => setViewMode(setupEntryPoint)}
              onSwitchToList={() => setViewMode('MINE')}
-             onAddCard={async (iccid, profile) => {
+             onAddCard={async (iccid, previewData) => {
                 // Do NOT switch viewMode here — we want PhysicalSimSetupView
                 // to render its own DONE success screen with the
                 // "Go to My SIMs" CTA. Switching to MINE prematurely
                 // unmounts the setup view before the success state can
                 // show, which was one cause of the post-bind "jumps back
                 // to main page" bug.
+                const profile: EsimProfileResult | undefined = previewData ? {
+                  iccid: previewData.iccid,
+                  packageCode: '',
+                  packageName: previewData.package?.name || '',
+                  status: 'ENABLED',
+                  smdpStatus: 'ENABLED',
+                  expiredTime: '',
+                  totalVolume: (previewData.package?.volumeGb ?? 0) * 1024 * 1024 * 1024,
+                  usedVolume: 0,
+                  totalDuration: previewData.package?.durationDays ?? 0,
+                } : undefined;
                 await onAddCard?.(iccid, profile);
              }}
              isLoggedIn={isLoggedIn}

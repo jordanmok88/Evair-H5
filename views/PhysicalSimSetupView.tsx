@@ -17,9 +17,8 @@ import {
   Info,
 } from 'lucide-react';
 import BarcodeScanner from '../components/BarcodeScanner';
-import { queryProfile } from '../services/dataService';
+import { activationService, ActivationPreviewData, ClaimState } from '../services/api/activation';
 import { useEdgeSwipeBack } from '../hooks/useEdgeSwipeBack';
-import { EsimProfileResult } from '../types';
 
 /**
  * Physical SIM registration wizard (PCCW IoT-M).
@@ -56,7 +55,7 @@ type ActivateStep = 'SCAN' | 'CONFIRM' | 'DONE';
 interface PhysicalSimSetupViewProps {
   onSwitchToShop: () => void;
   onSwitchToList: () => void;
-  onAddCard?: (iccid: string, profile?: EsimProfileResult) => void;
+  onAddCard?: (iccid: string, previewData?: ActivationPreviewData | null) => void;
   isLoggedIn?: boolean;
   onLoginRequest?: () => void;
 }
@@ -74,7 +73,7 @@ const PhysicalSimSetupView: React.FC<PhysicalSimSetupViewProps> = ({
   const [activating, setActivating] = useState(false);
   const [activationError, setActivationError] = useState('');
   const [activateStep, setActivateStep] = useState<ActivateStep>('SCAN');
-  const [profileResult, setProfileResult] = useState<EsimProfileResult | null>(null);
+  const [profileResult, setProfileResult] = useState<ActivationPreviewData | null>(null);
   const [binding, setBinding] = useState(false);
   const [bindError, setBindError] = useState('');
   const { t } = useTranslation();
@@ -199,14 +198,37 @@ const PhysicalSimSetupView: React.FC<PhysicalSimSetupViewProps> = ({
                   setActivating(true);
                   setActivationError('');
                   try {
-                    // Physical SIMs are always PCCW-provisioned on this
-                    // screen — force the backend to hit PccwPreviewService
-                    // instead of the default EsimAccess (Red Tea) lookup,
-                    // otherwise we get a "SIM not found" on valid PCCW
-                    // ICCIDs that were never synced into the eSIM table.
-                    const profile = await queryProfile(trimmed, 'pccw');
-                    setProfileResult(profile);
-                    setActivateStep('CONFIRM');
+                    const result = await activationService.previewByIccid(trimmed);
+                    if (result.kind === 'ok') {
+                      const { claimState } = result.data;
+                      if (claimState === 'not_found') {
+                        setActivationError(t('sim_setup.verify_failed', 'SIM not found. Please check the ICCID.'));
+                      // TODO(post-launch): re-enable the claimed_by_other gate.
+                      // Temporarily disabled 2026-04-26 — the public preview
+                      // endpoint is anonymous and cannot tell `claimed_by_self`
+                      // apart from `claimed_by_other` (see
+                      // PublicSimController::resolveClaimState), so a tester
+                      // re-scanning a SIM they already bound gets blocked with
+                      // "registered to another account". Test ICCID pool is
+                      // tiny right now, so we let the flow proceed to CONFIRM
+                      // and rely on the authenticated bind-sim call to reject
+                      // genuine cross-account claims. Restore this branch once
+                      // the H5 cross-checks against the logged-in user's SIM
+                      // list and surfaces a proper `claimed_by_self` state.
+                      // } else if (claimState === 'claimed_by_other') {
+                      //   setActivationError(t('sim_setup.already_claimed', 'This SIM is already registered to another account.'));
+                      } else if (claimState === 'pending_shipment') {
+                        setActivationError(t('sim_setup.pending_shipment', 'This SIM has not been shipped yet. Please try again later.'));
+                      } else {
+                        // available (or claimed_by_other while gate disabled) — proceed to CONFIRM step
+                        setProfileResult(result.data);
+                        setActivateStep('CONFIRM');
+                      }
+                    } else if (result.kind === 'not_found') {
+                      setActivationError(t('sim_setup.verify_failed', 'SIM not found. Please check the ICCID.'));
+                    } else {
+                      setActivationError(result.message || t('sim_setup.verify_failed'));
+                    }
                   } catch (err: any) {
                     setActivationError(err.message || t('sim_setup.verify_failed'));
                   } finally {
@@ -256,24 +278,24 @@ const PhysicalSimSetupView: React.FC<PhysicalSimSetupViewProps> = ({
                   <span className="text-[13px] text-slate-500">ICCID</span>
                   <span className="text-[13px] font-bold text-slate-900 font-mono">{profileResult.iccid}</span>
                 </div>
-                {profileResult.packageName && (
+                {profileResult.package?.name && (
                   <div className="flex justify-between">
                     <span className="text-[13px] text-slate-500">{t('sim_setup.package_label')}</span>
-                    <span className="text-[13px] font-bold text-slate-900">{profileResult.packageName}</span>
+                    <span className="text-[13px] font-bold text-slate-900">{profileResult.package.name}</span>
                   </div>
                 )}
-                {profileResult.totalVolume > 0 && (
+                {(profileResult.package?.volumeGb ?? 0) > 0 && (
                   <div className="flex justify-between">
                     <span className="text-[13px] text-slate-500">{t('sim_setup.data_label')}</span>
                     <span className="text-[13px] font-bold text-slate-900">
-                      {(profileResult.totalVolume / (1024 * 1024 * 1024)).toFixed(profileResult.totalVolume >= 1073741824 ? 0 : 1)} GB
+                      {profileResult.package!.volumeGb} GB
                     </span>
                   </div>
                 )}
-                {profileResult.totalDuration > 0 && (
+                {(profileResult.package?.durationDays ?? 0) > 0 && (
                   <div className="flex justify-between">
                     <span className="text-[13px] text-slate-500">{t('sim_setup.validity_label')}</span>
-                    <span className="text-[13px] font-bold text-slate-900">{profileResult.totalDuration} {t('sim_setup.days_label')}</span>
+                    <span className="text-[13px] font-bold text-slate-900">{profileResult.package!.durationDays} {t('sim_setup.days_label')}</span>
                   </div>
                 )}
                 <div className="flex justify-between">
@@ -355,11 +377,11 @@ const PhysicalSimSetupView: React.FC<PhysicalSimSetupViewProps> = ({
                 </div>
                 <h3 className="text-[18px] font-bold text-slate-900 mb-1">{t('sim_setup.bind_success')}</h3>
                 <p className="text-[14px] text-slate-500 mb-1">
-                  {profileResult?.packageName || 'eSIM Profile'}
+                  {profileResult?.package?.name || 'eSIM Profile'}
                 </p>
-                {profileResult && profileResult.totalVolume > 0 && (
+                {profileResult && (profileResult.package?.volumeGb ?? 0) > 0 && (
                   <p className="text-[13px] text-slate-400">
-                    {(profileResult.totalVolume / (1024 * 1024 * 1024)).toFixed(profileResult.totalVolume >= 1073741824 ? 0 : 1)} GB &middot; {profileResult.totalDuration} {t('sim_setup.days_label')}
+                    {profileResult.package!.volumeGb} GB &middot; {profileResult.package!.durationDays} {t('sim_setup.days_label')}
                   </p>
                 )}
               </div>

@@ -18,7 +18,19 @@ import type {
 } from './types';
 
 // ─── API 端点 ────────────────────────────────────────────────────────────
-
+//
+// 【重要】这些端点走的是 H5 旧接口路径（`services/api/client.ts`，基于 `VITE_API_BASE_URL`），
+// 仅在 `VITE_USE_BACKEND_API=true` 时由 `dataService.ts` 调用。
+// 商店列表（eSIM 套餐浏览）不走这里，而是走 `esimApi.ts` 的 `fetchPackagesFromBackstage`。
+//
+// 端点说明：
+//   - /h5/packages          → 套餐列表（有 size=20 默认限制，不适合全量商店列表）
+//   - /h5/packages/hot       → 热门套餐（Admin 后台排序，少量精选）
+//   - /h5/packages/recharge  → 充值/Top-up 套餐列表（按 ICCID 或 supplier_type 筛选）
+//   - /h5/packages/locations → 国家/地区列表（multi_countries 用于多国分组名称）
+//   - /h5/esim/preview/{iccid}→ eSIM 预览（旧的 H5 端接口，绑定 SIM 卡已改用
+//                               activationService.previewByIccid 即 /app/sims/preview）
+//
 const ENDPOINTS = {
   // 套餐
   PACKAGES: '/h5/packages',
