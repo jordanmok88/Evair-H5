@@ -5,6 +5,9 @@ import { Country, Plan, SimType, User, SimCardProduct, EsimPackage, EsimCountryG
 import { MOCK_COUNTRIES, AMAZON_SIM_STOREFRONT_URL } from '../constants';
 import FlagIcon from '../components/FlagIcon';
 import { fetchPackages, prefetchPackages, groupPackagesByLocation, formatVolume, formatPrice, retailPrice, packagePriceUsd, orderEsim, CONTINENT_TABS, type ContinentTab, formatGB, POPULAR_COUNTRY_CODES, fetchMultiCountryRegionNames } from '../services/dataService';
+import { orderService } from '../services/api';
+import { pollEsimOrderUntilProvisioned } from '../services/api/order';
+import type { OrderDetailDto } from '../services/api/types';
 import { useSwipeBack } from '../hooks/useSwipeBack';
 
 import { Bell, UserCircle } from 'lucide-react';
@@ -437,50 +440,92 @@ const ShopView: React.FC<ShopViewProps> = ({
       return;
     }
 
-    const price = packagePriceUsd(selectedEsimPkg);
+    // ── 生产路径："先建单 → 跳 Stripe → Webhook 履约 → 前端轮询订单状态" ──
+    //
+    // 老路径（直接跳 Stripe → 回跳后调供应商 /esim/order）的问题：
+    //   - 后端零订单记录，对账/退款/客诉无据可查
+    //   - 浏览器在支付完中途关掉，钱扣了但 eSIM 永远不下发
+    // 新路径里 Stripe checkout.session.completed Webhook 是兜底，浏览器
+    // 关掉也能在后端走完履约，前端只是负责"轮询拿结果展示给当前会话"。
+    //
+    // 必须登录：/h5/orders/esim 是 auth:h5 受保护接口，且后续退款/客诉链路
+    // 也要绑定 user_id；guest 订单是另一个独立工作量。
+    if (!isLoggedIn) {
+      onLoginRequest();
+      setIsProcessing(false);
+      return;
+    }
+
+    if (!email || !email.includes('@')) {
+      setOrderError('Please enter a valid email — we send your QR code there.');
+      setIsProcessing(false);
+      return;
+    }
+
+    const packageName = `${selectedEsimGroup?.locationName || selectedEsimPkg.name} — ${formatVolume(selectedEsimPkg.volume)} / ${selectedEsimPkg.duration} Days`;
+    const priceUsd = packagePriceUsd(selectedEsimPkg);
+    const countryCode = selectedEsimGroup?.flag || selectedEsimGroup?.locationCode.split(',')[0];
 
     try {
+      // Step 1: 后端建 PENDING 单（拿 id + order_no）
+      const order = await orderService.createEsimOrder({
+        packageCode: selectedEsimPkg.packageCode,
+        email,
+        quantity: 1,
+      });
+
+      // Step 2: 创建 Stripe Checkout Session，把 order_id 透传给 Webhook
       const res = await fetch('/api/stripe-checkout', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          packageName: `${selectedEsimGroup?.locationName || selectedEsimPkg.name} — ${formatVolume(selectedEsimPkg.volume)} / ${selectedEsimPkg.duration} Days`,
-          priceUsd: price,
-          email: email || undefined,
+          packageName,
+          priceUsd,
+          email,
           packageCode: selectedEsimPkg.packageCode,
           transactionId: txnId,
-          countryCode: selectedEsimGroup?.flag || selectedEsimGroup?.locationCode.split(',')[0],
+          countryCode,
+          orderId: order.id,
+          orderNo: order.orderNo,
+          userId: user?.id,
         }),
       });
 
       const text = await res.text();
-      let data: any;
+      let data: { url?: string; sessionId?: string; error?: string; detail?: string };
       try { data = JSON.parse(text); } catch { throw new Error('Payment service unavailable. Please try again.'); }
       if (!res.ok || !data.url) throw new Error(data.error || data.detail || 'Failed to create payment session');
 
+      // Step 3: 回跳后只需要 order_no 就能轮询 — 不再保留 transactionId/amount
+      // （供应商订单号由 Webhook 履约后写在 OrderDetailResource.esim 里返回）
       localStorage.setItem('pending_esim_order', JSON.stringify({
-        packageCode: selectedEsimPkg.packageCode,
-        transactionId: txnId,
-        amount: selectedEsimPkg.price,
+        orderNo: order.orderNo,
+        packageName,
         email,
-        packageName: `${selectedEsimGroup?.locationName || selectedEsimPkg.name} — ${formatVolume(selectedEsimPkg.volume)} / ${selectedEsimPkg.duration} Days`,
+        countryCode,
         sessionId: data.sessionId,
       }));
 
       window.location.href = data.url;
       setTimeout(() => setIsProcessing(false), 5000);
-    } catch (err: any) {
+    } catch (err) {
       console.error('Stripe checkout error:', err);
-      setOrderError(err.message || 'Payment failed. Please try again.');
+      const msg = err instanceof Error ? err.message : 'Payment failed. Please try again.';
+      setOrderError(msg);
       setIsProcessing(false);
     }
   };
 
   // Handle return from Stripe Checkout
+  //
+  // 新流程（2026-04 起）：履约由后端 Webhook 完成，本副作用只负责轮询
+  // GET /h5/orders/{order_no}，等 esim 字段落库后展示给当前会话。
+  // 浏览器在支付完关掉也没关系 —— 后端 Webhook 路径已经把 SimAsset 落了，
+  // 用户下次进 My SIMs 也能看到。这里只是给"支付完不关浏览器"的用户
+  // 一个即时确认页。
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const stripeStatus = params.get('stripe_status');
-    const sessionId = params.get('session_id');
 
     if (!stripeStatus) return;
 
@@ -488,79 +533,103 @@ const ShopView: React.FC<ShopViewProps> = ({
 
     if (stripeStatus === 'cancelled') return;
 
-    if (stripeStatus === 'success' && sessionId) {
-      const pendingRaw = localStorage.getItem('pending_esim_order');
-      if (!pendingRaw) return;
+    if (stripeStatus !== 'success') return;
 
-      // Defensive parse: a corrupted pending order (e.g. previous tab
-      // crashed mid-write, manual edit, quota eviction) would otherwise
-      // throw inside the effect and leave the user staring at a blank
-      // screen with their money already taken. Treat parse failure as
-      // "no pending order" and surface a toast so support can help.
-      let pending: ReturnType<typeof JSON.parse>;
-      try {
-        pending = JSON.parse(pendingRaw);
-      } catch (err) {
-        console.error('[ShopView] pending_esim_order corrupt, dropping', err);
-        localStorage.removeItem('pending_esim_order');
-        setOrderError(
-          'We could not match your payment to a pending order. Please contact support — your card was charged.'
-        );
-        return;
-      }
+    const pendingRaw = localStorage.getItem('pending_esim_order');
+    if (!pendingRaw) return;
+
+    let pending: { orderNo?: string; packageName?: string; email?: string };
+    try {
+      pending = JSON.parse(pendingRaw);
+    } catch (err) {
+      console.error('[ShopView] pending_esim_order corrupt, dropping', err);
       localStorage.removeItem('pending_esim_order');
+      setOrderError(
+        'We could not match your payment to a pending order. Please contact support — your card was charged.'
+      );
+      return;
+    }
+    localStorage.removeItem('pending_esim_order');
 
-      setIsProcessing(true);
-      setOrderError(null);
-      setEmailSent(false);
+    if (!pending.orderNo) {
+      // 老格式（迁移前的 transactionId/amount/sessionId 三件套）已经没法
+      // 自动履约 —— 当时 orderEsim() 直接调供应商，现在彻底走后端 Webhook，
+      // 这条没 order_no 的记录意味着用户在迁移窗口期支付了一笔。
+      setOrderError(
+        'We could not match your payment to a pending order. Please contact support — your card was charged.'
+      );
+      return;
+    }
 
-      (async () => {
-        try {
-          const verifyRes = await fetch('/api/stripe-verify', {
+    const { orderNo } = pending;
+    setIsProcessing(true);
+    setOrderError(null);
+    setEmailSent(false);
+
+    let cancelled = false;
+
+    (async () => {
+      try {
+        // Webhook 履约通常 < 10s，给到 2 分钟封顶，覆盖供应商抖动。
+        // 轮询条件：esim 字段出现 = 履约成功；status=cancelled/refunded/failed = 终止；
+        // 超时 = 友好提示（订单可能仍在履约，让用户去 My SIMs 看）。
+        const order = await pollEsimOrderUntilProvisioned(orderNo, {
+          intervalMs: 3000,
+          maxAttempts: 40,
+          isCancelled: () => cancelled,
+        });
+
+        if (cancelled) return;
+
+        const esim = order.esim;
+        if (!esim) {
+          setOrderError(
+            "Payment received — your eSIM is still being prepared. Check My SIMs in a moment."
+          );
+          return;
+        }
+
+        const result: EsimOrderResult = {
+          orderNo: order.orderNo,
+          transactionId: order.payment?.transactionId ?? '',
+          iccid: esim.iccid,
+          smdpAddress: esim.smdpAddress,
+          activationCode: esim.activationCode,
+          qrCodeUrl: esim.qrCodeUrl,
+          shortUrl: '',
+          lpaString: esim.lpaString,
+        };
+        setEsimOrderResult(result);
+
+        // 邮件发送暂时仍走 Netlify 函数（后端邮件迁移是另一个工作量）
+        if (pending.email) {
+          fetch('/.netlify/functions/send-esim-email', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ sessionId }),
-          });
-          const verifyData = await verifyRes.json();
-
-          if (!verifyData.paid) {
-            setOrderError('Payment not confirmed. Please contact support.');
-            setIsProcessing(false);
-            return;
-          }
-
-          const result = await orderEsim({
-            packageCode: pending.packageCode,
-            transactionId: pending.transactionId,
-            amount: pending.amount,
-          });
-          setEsimOrderResult(result);
-
-          if (pending.email) {
-            fetch('/.netlify/functions/send-esim-email', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({
-                email: pending.email,
-                qrCodeUrl: result.qrCodeUrl,
-                smdpAddress: result.smdpAddress,
-                activationCode: result.activationCode,
-                lpaString: result.lpaString,
-                orderNo: result.orderNo,
-                packageName: pending.packageName,
-              }),
-            })
-              .then(r => { if (r.ok) setEmailSent(true); })
-              .catch(() => {});
-          }
-        } catch (err: any) {
-          console.error('Post-payment order error:', err);
-          setOrderError(err.message || 'Payment succeeded but eSIM order failed. Please contact support.');
-        } finally {
-          setIsProcessing(false);
+            body: JSON.stringify({
+              email: pending.email,
+              qrCodeUrl: esim.qrCodeUrl,
+              smdpAddress: esim.smdpAddress,
+              activationCode: esim.activationCode,
+              lpaString: esim.lpaString,
+              orderNo: order.orderNo,
+              packageName: pending.packageName,
+            }),
+          })
+            .then(r => { if (!cancelled && r.ok) setEmailSent(true); })
+            .catch(() => { /* 邮件 best-effort */ });
         }
-      })();
-    }
+      } catch (err) {
+        if (cancelled) return;
+        console.error('[ShopView] poll order failed', err);
+        const msg = err instanceof Error ? err.message : 'Payment succeeded but eSIM order failed. Please contact support.';
+        setOrderError(msg);
+      } finally {
+        if (!cancelled) setIsProcessing(false);
+      }
+    })();
+
+    return () => { cancelled = true; };
   }, []);
 
   const handleCopyText = (text: string, field: string) => {

@@ -63,9 +63,12 @@ export type UpdateAutoRenewRequest =
 
 // ─── Endpoints ──────────────────────────────────────────────────────────
 
+// Base URL in `services/api/client.ts` already includes `/api/v1`, so
+// these paths use `/app/...` — adding `/v1/` here would produce
+// `/api/v1/v1/app/sims/...`. See activation.ts for the same convention.
 const ENDPOINTS = {
-    SHOW: (iccid: string) => `/v1/app/sims/${encodeURIComponent(iccid)}`,
-    AUTO_RENEW: (iccid: string) => `/v1/app/sims/${encodeURIComponent(iccid)}/auto-renew`,
+    SHOW: (iccid: string) => `/app/sims/${encodeURIComponent(iccid)}`,
+    AUTO_RENEW: (iccid: string) => `/app/sims/${encodeURIComponent(iccid)}/auto-renew`,
 } as const;
 
 // ─── Service ────────────────────────────────────────────────────────────

@@ -371,6 +371,10 @@ export interface CreatePhysicalOrderRequest {
 }
 
 export interface CreateOrderResponse {
+  /** DB primary key (string-encoded). Forwarded to Stripe Checkout as
+   *  payment_intent_data.metadata.order_id so checkout.session.completed
+   *  can match the order back. */
+  id: string;
   orderNo: string;
   status: OrderStatus;
   amount: number;

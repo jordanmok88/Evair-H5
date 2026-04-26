@@ -34,7 +34,7 @@ import {
     formatVolume,
     packagePriceUsd,
 } from '../../services/dataService';
-import { userService } from '../../services/api';
+import { userService, orderService } from '../../services/api';
 import { isMobileDevice } from '../../utils/device';
 
 interface DesktopEsimCheckoutDrawerProps {
@@ -116,6 +116,14 @@ const DesktopEsimCheckoutDrawer: React.FC<DesktopEsimCheckoutDrawerProps> = ({
         const cancelUrl = `${origin}${returnPath}?stripe_status=cancelled`;
 
         try {
+            // Step 1: 后端建 PENDING 单（拿 id + order_no）
+            const order = await orderService.createEsimOrder({
+                packageCode: pkg.packageCode,
+                email,
+                quantity: 1,
+            });
+
+            // Step 2: 创建 Stripe Checkout Session，把 order_id 透传给 Webhook
             const res = await fetch('/api/stripe-checkout', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -126,6 +134,9 @@ const DesktopEsimCheckoutDrawer: React.FC<DesktopEsimCheckoutDrawerProps> = ({
                     packageCode: pkg.packageCode,
                     transactionId: txnId,
                     countryCode: countryCode.toUpperCase(),
+                    orderId: order.id,
+                    orderNo: order.orderNo,
+                    userId: undefined, // desktop flow doesn't have user.id handy
                     successUrl,
                     cancelUrl,
                 }),
@@ -146,11 +157,9 @@ const DesktopEsimCheckoutDrawer: React.FC<DesktopEsimCheckoutDrawerProps> = ({
             // Same key + shape as mobile ShopView so the shared
             // useEsimCheckoutFlow hook works without branching.
             localStorage.setItem('pending_esim_order', JSON.stringify({
-                packageCode: pkg.packageCode,
-                transactionId: txnId,
-                amount: pkg.price,
-                email,
+                orderNo: order.orderNo,
                 packageName,
+                email,
                 sessionId: data.sessionId,
                 countryCode: countryCode.toLowerCase(),
             }));

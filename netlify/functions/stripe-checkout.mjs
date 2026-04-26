@@ -45,6 +45,19 @@ export default async (req) => {
       // started on, where useEsimCheckoutFlow handles fulfilment.
       successUrl,
       cancelUrl,
+      // Order linkage — populated by callers that pre-create a Laravel
+      // Order via POST /h5/orders/esim before opening Stripe Checkout.
+      // Required so the checkout.session.completed webhook can find the
+      // order and trigger OrderProvisioningService. See docs:
+      //   StripePaymentService::handleCheckoutSessionCompleted
+      //   OrderPaymentService::handlePaymentSuccess
+      // Optional for now to keep older callers (no pre-created order)
+      // alive while we migrate, but those callers WILL fall through to
+      // the legacy "create order after payment" path with no backend
+      // record — see ShopView.tsx for the deprecation path.
+      orderId,
+      orderNo,
+      userId,
     } = await req.json();
 
     if (!packageName || !priceUsd || !packageCode) {
@@ -76,6 +89,19 @@ export default async (req) => {
       ? `https://wsrv.nl/?url=flagcdn.com/w320/${countryCode.toLowerCase()}.png&w=324&h=217&fit=contain&we&cbg=d0d3d8`
       : undefined;
 
+    // Stripe metadata caps every value at 500 chars and only accepts
+    // strings. Coerce defensively so a numeric `orderId` from the
+    // backend doesn't blow up the API call.
+    const orderMetadata = orderId
+      ? {
+          order_type: 'order',
+          order_id: String(orderId),
+          ...(orderNo ? { order_number: String(orderNo) } : {}),
+          ...(userId ? { user_id: String(userId) } : {}),
+          channel: 'h5',
+        }
+      : null;
+
     const session = await stripe.checkout.sessions.create({
       mode: 'payment',
       customer_email: email || undefined,
@@ -99,7 +125,18 @@ export default async (req) => {
         packageCode,
         transactionId,
         packageName,
+        // Mirror order linkage at session level too — useful for
+        // expiry/cancel webhooks (handleCheckoutSessionExpired reads
+        // session.metadata.order_id directly without an intent fetch).
+        ...(orderMetadata ?? {}),
       },
+      // CRITICAL: the Laravel checkout.session.completed handler reads
+      // metadata off the underlying PaymentIntent (not the Session),
+      // because that's what carries through the rest of the Stripe
+      // payment lifecycle. Setting payment_intent_data.metadata is what
+      // wires the order to the webhook. Without this the webhook gets
+      // the event but can't match an Order and provisioning never runs.
+      ...(orderMetadata ? { payment_intent_data: { metadata: orderMetadata } } : {}),
       success_url: safeSuccessUrl,
       cancel_url: safeCancelUrl,
     });

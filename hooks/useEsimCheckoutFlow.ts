@@ -4,28 +4,28 @@
  * Mirrors the inline logic in `views/ShopView.tsx` (the mobile shop)
  * so any page that initiates Stripe Checkout for an eSIM (mobile shop,
  * desktop `/travel-esim/{country}` page, etc.) can react to the
- * `?stripe_status=…&session_id=…` callback in a uniform way.
+ * `?stripe_status=…` callback in a uniform way.
  *
  * On mount the hook:
- *   1. Reads `stripe_status` + `session_id` from `window.location.search`.
+ *   1. Reads `stripe_status` from `window.location.search`.
  *      Idle if absent.
  *   2. If `cancelled` → phase = 'cancelled' and clean the URL.
  *   3. If `success`:
  *        a. Pull `pending_esim_order` from localStorage (written by the
  *           page that initiated Stripe Checkout). Idempotency: we delete
  *           the entry as soon as we read it so a hard refresh after
- *           success will NOT re-order the eSIM (we'd be billed again
- *           and the customer would receive a duplicate QR).
- *        b. POST `/api/stripe-verify` and bail unless `paid === true`.
- *        c. Call `dataService.orderEsim(...)` to provision.
- *        d. Fire-and-forget POST `/.netlify/functions/send-esim-email`.
+ *           success will NOT re-trigger provisioning.
+ *        b. Poll `GET /h5/orders/{order_no}` via
+ *           `pollEsimOrderUntilProvisioned` until the backend webhook
+ *           has finished provisioning (esim field present).
+ *        c. Fire-and-forget POST `/.netlify/functions/send-esim-email`.
  *   4. `history.replaceState` to strip query params so refreshing the
  *      success screen is safe.
  *
  * Exposed state:
  *   - phase: lifecycle marker the UI uses to render verify spinner /
  *     success screen / error toast.
- *   - result: provisioned eSIM (QR, LPA, ICCID) once orderEsim resolves.
+ *   - result: provisioned eSIM (QR, LPA, ICCID) once poll resolves.
  *   - pending: the original pending-order envelope (for packageName,
  *     email — useful in the success UI even if `result` lacks them).
  *   - emailSent: surfaces a "Details also sent to {email}" affordance.
@@ -41,7 +41,7 @@
 
 import { useEffect, useState } from 'react';
 import type { EsimOrderResult } from '../types';
-import { orderEsim } from '../services/dataService';
+import { pollEsimOrderUntilProvisioned } from '../services/api/order';
 
 export type CheckoutPhase =
     | 'idle'
@@ -52,14 +52,16 @@ export type CheckoutPhase =
     | 'error';
 
 export interface PendingEsimOrder {
-    packageCode: string;
-    transactionId: string;
-    amount: number;
-    email?: string;
+    /** New flow: order_no from POST /h5/orders/esim */
+    orderNo?: string;
     packageName?: string;
-    sessionId?: string;
-    /** ISO-2 (lower) the customer was browsing — used by the success UI. */
+    email?: string;
     countryCode?: string;
+    sessionId?: string;
+    /** Legacy fields — kept for type compat, no longer written by new flow */
+    packageCode?: string;
+    transactionId?: string;
+    amount?: number;
 }
 
 export interface EsimCheckoutFlowState {
@@ -73,11 +75,6 @@ export interface EsimCheckoutFlowState {
 }
 
 const PENDING_KEY = 'pending_esim_order';
-// Tab-scoped cache so an in-tab refresh after the success screen
-// re-renders the QR rather than dropping back to the marketing page.
-// Cleared on tab close (sessionStorage), so it never persists past
-// the customer's session — they can always re-access the eSIM from
-// the email or /app/my-sims.
 const SUCCESS_CACHE_KEY = 'esim_checkout_last_success';
 
 interface SuccessSnapshot {
@@ -133,8 +130,6 @@ function cleanUrl(): void {
 }
 
 export function useEsimCheckoutFlow(): EsimCheckoutFlowState {
-    // Hydrate from the per-tab snapshot so an in-tab refresh after a
-    // successful purchase keeps the QR visible. Empty on cold load.
     const initialSnap = typeof window !== 'undefined' ? readSuccessSnapshot() : null;
 
     const [phase, setPhase] = useState<CheckoutPhase>(initialSnap ? 'success' : 'idle');
@@ -148,7 +143,6 @@ export function useEsimCheckoutFlow(): EsimCheckoutFlowState {
 
         const params = new URLSearchParams(window.location.search);
         const stripeStatus = params.get('stripe_status');
-        const sessionId = params.get('session_id');
 
         if (!stripeStatus) return;
 
@@ -158,15 +152,13 @@ export function useEsimCheckoutFlow(): EsimCheckoutFlowState {
             return;
         }
 
-        if (stripeStatus !== 'success' || !sessionId) {
+        if (stripeStatus !== 'success') {
             cleanUrl();
             return;
         }
 
         const pendingOrder = readPending();
         if (!pendingOrder) {
-            // Money was taken but we lost the order envelope — surface a
-            // recoverable error instead of silently retrying or freezing.
             setPhase('error');
             setError(
                 'We could not match your payment to a pending order. Please contact support — your card was charged.',
@@ -179,33 +171,54 @@ export function useEsimCheckoutFlow(): EsimCheckoutFlowState {
         try { localStorage.removeItem(PENDING_KEY); } catch { /* ignore */ }
         cleanUrl();
 
+        // Legacy entries without orderNo can't be fulfilled through the
+        // new webhook path — surface a recoverable error.
+        if (!pendingOrder.orderNo) {
+            setPhase('error');
+            setError(
+                'We could not match your payment to a pending order. Please contact support — your card was charged.',
+            );
+            return;
+        }
+
         let cancelled = false;
 
         (async () => {
             setPhase('verifying');
             setError(null);
             try {
-                const verifyRes = await fetch('/api/stripe-verify', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ sessionId }),
+                // Poll until the backend webhook has finished provisioning.
+                // The webhook (checkout.session.completed → OrderProvisioningService)
+                // creates the SimAsset; pollEsimOrderUntilProvisioned waits until
+                // OrderDetailResource exposes the esim block.
+                setPhase('provisioning');
+                const order = await pollEsimOrderUntilProvisioned(pendingOrder.orderNo!, {
+                    intervalMs: 3000,
+                    maxAttempts: 40,
+                    isCancelled: () => cancelled,
                 });
-                const verifyData = await verifyRes.json().catch(() => ({}));
+
                 if (cancelled) return;
 
-                if (!verifyData?.paid) {
+                const esim = order.esim;
+                if (!esim) {
                     setPhase('error');
-                    setError('Payment not confirmed. Please contact support.');
+                    setError(
+                        "Payment received — your eSIM is still being prepared. Check My SIMs in a moment.",
+                    );
                     return;
                 }
 
-                setPhase('provisioning');
-                const orderResult = await orderEsim({
-                    packageCode: pendingOrder.packageCode,
-                    transactionId: pendingOrder.transactionId,
-                    amount: pendingOrder.amount,
-                });
-                if (cancelled) return;
+                const orderResult: EsimOrderResult = {
+                    orderNo: order.orderNo,
+                    transactionId: order.payment?.transactionId ?? '',
+                    iccid: esim.iccid,
+                    smdpAddress: esim.smdpAddress,
+                    activationCode: esim.activationCode,
+                    qrCodeUrl: esim.qrCodeUrl,
+                    shortUrl: '',
+                    lpaString: esim.lpaString,
+                };
 
                 setResult(orderResult);
                 setPhase('success');
@@ -221,21 +234,18 @@ export function useEsimCheckoutFlow(): EsimCheckoutFlowState {
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({
                             email: pendingOrder.email,
-                            qrCodeUrl: orderResult.qrCodeUrl,
-                            smdpAddress: orderResult.smdpAddress,
-                            activationCode: orderResult.activationCode,
-                            lpaString: orderResult.lpaString,
-                            orderNo: orderResult.orderNo,
+                            qrCodeUrl: esim.qrCodeUrl,
+                            smdpAddress: esim.smdpAddress,
+                            activationCode: esim.activationCode,
+                            lpaString: esim.lpaString,
+                            orderNo: order.orderNo,
                             packageName: pendingOrder.packageName,
-                            iccid: orderResult.iccid,
+                            iccid: esim.iccid,
                         }),
                     })
                         .then(r => {
                             if (cancelled || !r.ok) return;
                             setEmailSent(true);
-                            // Persist the email-sent flag too so the
-                            // refreshed page still shows "Confirmation
-                            // sent to {email}".
                             writeSuccessSnapshot({
                                 result: orderResult,
                                 pending: pendingOrder,
@@ -268,10 +278,6 @@ export function useEsimCheckoutFlow(): EsimCheckoutFlowState {
         reset: () => {
             setPhase('idle');
             setError(null);
-            // If the customer dismisses the success screen we drop the
-            // snapshot too — they won't expect the QR to come back on
-            // the next visit, only on an in-tab refresh while the
-            // success view is still showing.
             clearSuccessSnapshot();
         },
     };

@@ -152,4 +152,66 @@ export const orderService = {
   },
 };
 
+// ─── eSIM 履约专用轮询 ───────────────────────────────────────────────
+//
+// 与 orderService.pollOrderStatus 的区别：
+//   - pollOrderStatus 在 status='paid' 就返回 —— 但此刻
+//     OrderProvisioningService 可能还在调供应商 API，esim 字段尚未落库；
+//   - pollEsimOrderUntilProvisioned 等到 esim 字段出现（履约结束）才返回，
+//     更适合"用户付完款留在页面，等着拿 QR"的 UX；
+//   - 多了 isCancelled 钩子，方便 React 组件卸载时及时退出。
+
+export interface PollEsimOrderOptions {
+  /** 单次轮询间隔，默认 3s */
+  intervalMs?: number;
+  /** 最大轮询次数，默认 40 (= 2 分钟) */
+  maxAttempts?: number;
+  /** 调用方退出钩子，每次循环检查；返回 true 立即抛 PollCancelledError */
+  isCancelled?: () => boolean;
+  /** 每次拿到订单详情时回调，便于 UI 显示进度 */
+  onProgress?: (order: OrderDetailDto) => void;
+}
+
+export class PollCancelledError extends Error {
+  constructor() {
+    super('Poll cancelled');
+    this.name = 'PollCancelledError';
+  }
+}
+
+export async function pollEsimOrderUntilProvisioned(
+  orderNo: string,
+  options: PollEsimOrderOptions = {}
+): Promise<OrderDetailDto> {
+  const intervalMs = options.intervalMs ?? 3000;
+  const maxAttempts = options.maxAttempts ?? 40;
+  const isCancelled = options.isCancelled ?? (() => false);
+
+  for (let attempt = 0; attempt < maxAttempts; attempt++) {
+    if (isCancelled()) throw new PollCancelledError();
+
+    const order = await orderService.getOrderDetail(orderNo);
+    options.onProgress?.(order);
+
+    // 履约失败/取消/退款 —— 终止
+    if (order.status === 'CANCELLED') throw new Error('Order was cancelled');
+    if (order.status === 'REFUNDED') throw new Error('Order was refunded');
+
+    // OrderDetailResource 只在 SimAsset 落库后才暴露 esim 块（H5/OrderDetailResource.php），
+    // 命中即视为履约成功
+    if (order.esim) return order;
+
+    // status=COMPLETED 但没 esim 是后端 bug，明确报错而非静默返回
+    if (order.status === 'COMPLETED') {
+      throw new Error('Order completed but eSIM details are missing — please contact support.');
+    }
+
+    if (attempt < maxAttempts - 1) {
+      await new Promise((resolve) => setTimeout(resolve, intervalMs));
+    }
+  }
+
+  throw new Error('Polling timeout — your eSIM is still being prepared. Check My SIMs in a moment.');
+}
+
 export default orderService;
