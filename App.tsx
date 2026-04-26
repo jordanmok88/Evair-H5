@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react'
 import { useTranslation } from 'react-i18next';
 import { Zap } from 'lucide-react';
 import BottomNav from './components/BottomNav';
+import SupportFab from './components/SupportFab';
 import ProductTab from './views/ProductTab';
 import ProfileView from './views/ProfileView';
 import LoginModal from './views/LoginModal';
@@ -783,13 +784,19 @@ function CustomerApp() {
           <div className="flex-1 min-h-0 overflow-hidden">{renderContent()}</div>
         </main>
 
-        <LoginModal 
-            isOpen={isLoginModalOpen} 
-            onClose={() => setIsLoginModalOpen(false)} 
+        {/* 浮动客服入口：仅在主功能 Tab 出现，不打扰其它流程 */}
+        <SupportFab
+          visible={activeTab === Tab.SIM_CARD || activeTab === Tab.ESIM || activeTab === Tab.INBOX || activeTab === Tab.PROFILE}
+          onClick={() => { previousTab.current = activeTab; setActiveTab(Tab.DIALER); }}
+        />
+
+        <LoginModal
+            isOpen={isLoginModalOpen}
+            onClose={() => setIsLoginModalOpen(false)}
             onLogin={handleLoginSuccess}
             initialMode={loginModalMode}
         />
-        
+
       </div>
     </div>
   );
