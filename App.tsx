@@ -374,11 +374,13 @@ function CustomerApp() {
     };
 
     // 优先使用 countryCode，否则从 packageName 提取
+    // packageName 可能为 null（通过 H5 老路径 POST /h5/user/sims/bind 绑定的卡
+    // 没有 package_name），所以用可选链 ?. 和 || '' 防止 null.startsWith 崩溃。
     const countryCode = userSim.countryCode ||
-      (userSim.packageName.startsWith('United States') || userSim.packageName.startsWith('USA') ? 'US' : '');
+      (userSim.packageName?.startsWith('United States') || userSim.packageName?.startsWith('USA') ? 'US' : '');
     const countryInfo = countryCode && countryCodeToInfo[countryCode]
       ? { code: countryCode, ...countryCodeToInfo[countryCode] }
-      : extractCountryFromPackageName(userSim.packageName);
+      : extractCountryFromPackageName(userSim.packageName || '');
 
     // 转换状态：inactive/INACTIVE -> PENDING_ACTIVATION
     const mapStatus = (status: string): ActiveSim['status'] => {
