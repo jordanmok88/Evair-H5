@@ -128,12 +128,32 @@ export function isAuthenticated(): boolean {
 
 // ─── API 错误类 ──────────────────────────────────────────────────────────
 
+/**
+ * Test whether a Laravel response `code` represents success.
+ *
+ * The /v1/app/* tier returns `'200'` (read) or `'201'` (created) on
+ * success; the legacy /h5/* tier returns numeric `0`. We accept all three
+ * so a single H5 client can talk to both tiers without per-call
+ * branching. Anything else (including `null`, `undefined`, `false`,
+ * `'AUTH_001'`, `1001`, etc.) is a failure.
+ */
+export function isSuccessApiCode(code: unknown): boolean {
+  if (code === 0 || code === '0') return true;
+  if (code === '200' || code === '201') return true;
+  return false;
+}
+
 export class ApiError extends Error {
-  code: ApiErrorCode;
+  code: ApiErrorCode | string;
   httpStatus: number;
   data?: unknown;
 
-  constructor(code: ApiErrorCode, message: string, httpStatus: number, data?: unknown) {
+  constructor(
+    code: ApiErrorCode | string,
+    message: string,
+    httpStatus: number,
+    data?: unknown,
+  ) {
     super(message);
     this.name = 'ApiError';
     this.code = code;
@@ -142,10 +162,20 @@ export class ApiError extends Error {
   }
 
   /**
-   * 是否为认证错误
+   * Auth-related codes from both tiers.
+   *
+   * Legacy /h5: numeric -3 (UNAUTHORIZED), 1021 (INVALID_REFRESH_TOKEN),
+   * 1022 (TOKEN_EXPIRED).
+   *
+   * /v1/app: string 'AUTH_001' (refresh-token invalid / account disabled).
    */
   isAuthError(): boolean {
-    return this.code === -3 || this.code === 1021 || this.code === 1022;
+    return (
+      this.code === -3 ||
+      this.code === 1021 ||
+      this.code === 1022 ||
+      this.code === 'AUTH_001'
+    );
   }
 
   /**
@@ -200,7 +230,17 @@ let isRefreshing = false;
 let refreshPromise: Promise<void> | null = null;
 
 /**
- * 刷新 Token（调用 POST /h5/auth/refresh，静默更新本地 Token）
+ * Refresh the access token via POST /v1/app/auth/refresh.
+ *
+ * Both tiers (`/h5/auth/login` and `/app/auth/login`) write to the same
+ * underlying `user_tokens` table with `TYPE_REFRESH`, so a refresh_token
+ * issued by either flow is redeemable here. We standardize on the /app
+ * endpoint because it's the one the rest of the activation funnel + the
+ * Flutter native app target.
+ *
+ * Updates local storage in place; throws an `ApiError` on failure so the
+ * caller (`request()` 401 handler) can clear tokens and surface the
+ * error to the UI.
  */
 async function refreshAccessToken(): Promise<void> {
   const refreshToken = getRefreshToken();
@@ -209,8 +249,8 @@ async function refreshAccessToken(): Promise<void> {
     throw new ApiError(-3, 'No refresh token', 401);
   }
 
-  // 直接 fetch 避免循环依赖（authService 也 import 自 client）
-  const url = `${baseUrl}/h5/auth/refresh`;
+  // Direct fetch to avoid circular import (authService imports from client).
+  const url = `${baseUrl}/app/auth/refresh`;
   let res: Response;
   try {
     res = await fetch(url, {
@@ -219,11 +259,19 @@ async function refreshAccessToken(): Promise<void> {
       body: JSON.stringify({ refresh_token: refreshToken }),
     });
   } catch {
-    // 网络错误（后端暂时不可达），不清除 Token，让调用方感知失败
+    // Network error — keep the token, let the caller decide whether to
+    // retry. Don't clear so the user isn't logged out by transient WiFi.
     throw new ApiError(-3, 'Network error during token refresh', 0);
   }
 
-  let body: { code: number; data?: { token?: string; refresh_token?: string } };
+  // Note: body shape is intentionally permissive. /h5 returns
+  // `{code:0,data:{token,refresh_token}}`, /v1/app returns
+  // `{code:'200',data:{token,refresh_token,expires_in}}`. We accept
+  // either via isSuccessApiCode().
+  let body: {
+    code?: number | string;
+    data?: { token?: string; access_token?: string; refresh_token?: string };
+  };
   try {
     body = await res.json();
   } catch {
@@ -231,13 +279,17 @@ async function refreshAccessToken(): Promise<void> {
     throw new ApiError(-3, 'Invalid refresh response', res.status);
   }
 
-  if (body.code !== 0 || !body.data?.token) {
+  // Refresh-token invalid / expired / account disabled — server returns
+  // 401 + `code: 'AUTH_001'` (or numeric 1021/1022 on the legacy tier).
+  // Either way, force re-login.
+  const newToken = body.data?.token ?? body.data?.access_token;
+  if (! isSuccessApiCode(body.code) || ! newToken) {
     clearTokens();
     throw new ApiError(-3, 'Token refresh failed', res.status);
   }
 
-  setAccessToken(body.data.token);
-  if (body.data.refresh_token) {
+  setAccessToken(newToken);
+  if (body.data?.refresh_token) {
     setRefreshToken(body.data.refresh_token);
   }
 }
@@ -348,10 +400,11 @@ export async function request<T>(
   // 将响应数据从 snake_case 转换为 camelCase
   body = toCamelCase(body);
 
-  // 检查业务错误码
-  if (body.code !== 0) {
+  // 检查业务错误码 — accepts numeric `0` (legacy /h5/*) and string
+  // `'200'` / `'201'` (new /v1/app/*). See {@link isSuccessApiCode}.
+  if (! isSuccessApiCode(body.code)) {
     const error = new ApiError(
-      body.code as ApiErrorCode,
+      body.code as ApiErrorCode | string,
       body.msg || 'Unknown error',
       response.status,
       body.data
@@ -405,6 +458,20 @@ export function put<T>(endpoint: string, data?: unknown, config?: RequestConfig)
  */
 export function del<T>(endpoint: string, config?: RequestConfig): Promise<T> {
   return request<T>(endpoint, { ...config, method: 'DELETE' });
+}
+
+/**
+ * PATCH request — used by the Activation Funnel auto-renew toggle and
+ * other partial-update surfaces. Body keys are converted from
+ * camelCase → snake_case to match the Laravel form-request expectations.
+ */
+export function patch<T>(endpoint: string, data?: unknown, config?: RequestConfig): Promise<T> {
+  const snakeData = data ? toSnakeCase(data) : undefined;
+  return request<T>(endpoint, {
+    ...config,
+    method: 'PATCH',
+    body: snakeData ? JSON.stringify(snakeData) : undefined,
+  });
 }
 
 // ─── 默认拦截器设置 ──────────────────────────────────────────────────────

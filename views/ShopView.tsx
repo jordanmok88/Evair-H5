@@ -25,6 +25,9 @@ interface ShopViewProps {
   onNavigate?: (tab: string) => void;
   onSwitchSimType?: (type: SimType) => void;
   notifications?: AppNotification[];
+  /** ISO-2 from `/app/travel-esim/{xx}` — auto-open that country group. */
+  initialEsimLocationCode?: string | null;
+  onInitialEsimDeepLinkConsumed?: () => void;
 }
 
 // ─── 国家/地区信息映射 ────────────────────────────────────────────────
@@ -157,7 +160,24 @@ function parseLocationsResponse(
   return { multiCountryRegions, singleCountries };
 }
 
-const ShopView: React.FC<ShopViewProps> = ({ testMode = false, isLoggedIn, user, onLoginRequest, onPurchaseComplete, simType, onSwitchToMySims, hasActiveSims, activeSims = [], onSwitchToSetup, onAddCard, onNavigate, onSwitchSimType, notifications = [] }) => {
+const ShopView: React.FC<ShopViewProps> = ({
+  testMode = false,
+  isLoggedIn,
+  user,
+  onLoginRequest,
+  onPurchaseComplete,
+  simType,
+  onSwitchToMySims,
+  hasActiveSims,
+  activeSims = [],
+  onSwitchToSetup,
+  onAddCard,
+  onNavigate,
+  onSwitchSimType,
+  notifications = [],
+  initialEsimLocationCode = null,
+  onInitialEsimDeepLinkConsumed,
+}) => {
   const { t } = useTranslation();
   const TOP_COUNTRY_COUNT = 10;
   const [selectedCountry, setSelectedCountry] = useState<Country | null>(null);
@@ -244,6 +264,33 @@ const ShopView: React.FC<ShopViewProps> = ({ testMode = false, isLoggedIn, user,
       loadEsimPackages();
     }
   }, [simType, loadEsimPackages]);
+
+  // Open the country whose ISO-2 came from `/app/travel-esim/{xx}`
+  // once packages have loaded (or failed). Then tell App.tsx to
+  // strip the path so refresh doesn't re-enter the deep-link flow.
+  useEffect(() => {
+    if (simType !== 'ESIM' || !initialEsimLocationCode) return;
+    if (esimLoading) return;
+    if (esimGroups.length === 0 && !esimError) return;
+
+    const want = initialEsimLocationCode.toUpperCase();
+    const group = esimGroups.find(
+      g =>
+        !g.isMultiRegion &&
+        (g.locationCode.toUpperCase() === want || g.flag.toUpperCase() === want),
+    );
+    if (group) {
+      setSelectedEsimGroup(group);
+    }
+    onInitialEsimDeepLinkConsumed?.();
+  }, [
+    simType,
+    initialEsimLocationCode,
+    esimLoading,
+    esimError,
+    esimGroups,
+    onInitialEsimDeepLinkConsumed,
+  ]);
 
   useEffect(() => {
     if (user?.email && !email) setEmail(user.email);
@@ -445,7 +492,22 @@ const ShopView: React.FC<ShopViewProps> = ({ testMode = false, isLoggedIn, user,
       const pendingRaw = localStorage.getItem('pending_esim_order');
       if (!pendingRaw) return;
 
-      const pending = JSON.parse(pendingRaw);
+      // Defensive parse: a corrupted pending order (e.g. previous tab
+      // crashed mid-write, manual edit, quota eviction) would otherwise
+      // throw inside the effect and leave the user staring at a blank
+      // screen with their money already taken. Treat parse failure as
+      // "no pending order" and surface a toast so support can help.
+      let pending: ReturnType<typeof JSON.parse>;
+      try {
+        pending = JSON.parse(pendingRaw);
+      } catch (err) {
+        console.error('[ShopView] pending_esim_order corrupt, dropping', err);
+        localStorage.removeItem('pending_esim_order');
+        setOrderError(
+          'We could not match your payment to a pending order. Please contact support — your card was charged.'
+        );
+        return;
+      }
       localStorage.removeItem('pending_esim_order');
 
       setIsProcessing(true);

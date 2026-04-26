@@ -1,9 +1,10 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Wifi, Phone, Zap, ChevronDown, CheckCircle2, QrCode, Copy, X, Calendar, Clock, SignalHigh, Smartphone, RefreshCw, Plus, ShoppingBag, Settings, MoreHorizontal, Trash2, Check, AlertTriangle, Loader2, Globe, Database, ScanLine, ArrowLeft } from 'lucide-react';
+import { Wifi, Phone, Zap, ChevronDown, CheckCircle2, QrCode, Copy, X, Calendar, Clock, SignalHigh, Smartphone, RefreshCw, Plus, ShoppingBag, Settings, MoreHorizontal, Trash2, Check, AlertTriangle, Loader2, Globe, Database, ScanLine, ArrowLeft, PartyPopper, Sparkles } from 'lucide-react';
 import { ActiveSim, Tab, SimType, EsimPackage } from '../types';
 import FlagIcon from '../components/FlagIcon';
 import StripePaymentModal from '../components/StripePaymentModal';
+import AutoRenewToggle from '../components/AutoRenewToggle';
 import { CARRIER_MAP } from '../constants';
 import { topUp, fetchTopUpPackages, fetchPackages, checkDataUsage, formatVolume, formatPrice, retailPrice, packagePriceUsd, formatGB, queryProfile, mapRedTeaStatus, USE_BACKEND_API, unbindSim } from '../services/dataService';
 import { useEdgeSwipeBack } from '../hooks/useEdgeSwipeBack';
@@ -52,8 +53,26 @@ const MySimsView: React.FC<MySimsViewProps> = ({ activeSims, onNavigate, filterT
   useEdgeSwipeBack(swipeBack);
   const filteredSims = activeSims.filter(s => s.type === filterType);
   
+  // Phase 4 cross-sell: ActivatePage redirects here with `?just_activated=1`
+  // so we can render a one-off welcome + top-up CTA banner. Read it once
+  // on mount and immediately scrub the URL so a refresh doesn't re-show
+  // the banner.
+  const [showActivationBanner, setShowActivationBanner] = useState(() => {
+    if (typeof window === 'undefined') return false;
+    const params = new URLSearchParams(window.location.search);
+    const flag = params.get('just_activated') === '1';
+    if (flag) {
+      params.delete('just_activated');
+      const next = params.toString();
+      const newUrl = window.location.pathname + (next ? `?${next}` : '');
+      window.history.replaceState(null, '', newUrl);
+    }
+    return flag;
+  });
+
   const [selectedSimId, setSelectedSimId] = useState<string>('');
   const [isExpanded, setIsExpanded] = useState(false);
+
   const [isRechargeModalOpen, setIsRechargeModalOpen] = useState(false);
   const [isInstallModalOpen, setIsInstallModalOpen] = useState(false);
   const [isSyncing, setIsSyncing] = useState(false);
@@ -129,42 +148,77 @@ const MySimsView: React.FC<MySimsViewProps> = ({ activeSims, onNavigate, filterT
   }, [onUpdateSim]);
 
   useEffect(() => {
-    if (filteredSims.length > 0 && (!selectedSimId || !filteredSims.find(s => s.id === selectedSimId))) {
+    if (filteredSims.length === 0) return;
+
+    // Honour `?iccid=` from the URL — ActivatePage and TopUpPage both
+    // bounce the user to /app/my-sims?iccid=... after a successful
+    // bind/charge, so we should auto-select that SIM rather than
+    // whichever happens to be first in the list. We only consume the
+    // param once, then strip it so a hard refresh doesn't keep
+    // re-selecting it (and so the URL stays clean for sharing).
+    if (typeof window !== 'undefined' && !selectedSimId) {
+      const params = new URLSearchParams(window.location.search);
+      const wantedIccid = params.get('iccid');
+      if (wantedIccid) {
+        const cleaned = wantedIccid.replace(/[^0-9A-Za-z]/g, '');
+        const match = filteredSims.find(s => resolveIccid(s) === cleaned);
+        if (match) {
+          setSelectedSimId(match.id);
+          params.delete('iccid');
+          const next = params.toString();
+          const newUrl = window.location.pathname + (next ? `?${next}` : '');
+          window.history.replaceState(null, '', newUrl);
+          return;
+        }
+      }
+    }
+
+    if (!selectedSimId || !filteredSims.find(s => s.id === selectedSimId)) {
         setSelectedSimId(filteredSims[0].id);
     }
   }, [filteredSims, selectedSimId]);
 
+  // Refetch the recharge catalogue when the *current SIM* changes — not
+  // just when the modal opens. The previous version short-circuited on
+  // `topUpPackages.length === 0`, so a user who opened the modal for
+  // SIM A then swiped the carousel to SIM B would keep seeing SIM A's
+  // plans (plus, worse, charge under SIM A's ICCID if they tapped
+  // through). Keying the effect on `currentSim?.iccid` clears + refetches.
+  const currentIccid = currentSim ? resolveIccid(currentSim) : null;
   useEffect(() => {
-    if (isRechargeModalOpen && topUpPackages.length === 0 && !topUpLoading && currentSim) {
-      setTopUpLoading(true);
-      const iccid = resolveIccid(currentSim);
-      const fallbackLocation = currentSim.locationCode || currentSim.country.countryCode;
-      const locationFallback = () => fetchPackages({ locationCode: fallbackLocation });
-      // Recharge catalogue resolution by SIM type:
-      //
-      //   • ESIM        → EsimAccess / Red Tea top-up templates keyed to
-      //                   the ICCID; fall back to the general location
-      //                   catalogue if none returned.
-      //   • PHYSICAL    → PCCW recharge templates for this ICCID. Pass
-      //                   `'pccw'` explicitly — the backend defaults to
-      //                   `esimaccess` and would otherwise return zero
-      //                   matches. If PCCW has no offers for this SIM
-      //                   (e.g. an ICCID not yet on any whitelist) we
-      //                   fall through to the general catalogue so the
-      //                   user still sees something actionable.
-      const pkgPromise = currentSim.type === 'ESIM'
-        ? fetchTopUpPackages(iccid)
-            .then(pkgs => pkgs.length > 0 ? pkgs : locationFallback())
-            .catch(locationFallback)
-        : fetchTopUpPackages(iccid, 'pccw')
-            .then(pkgs => pkgs.length > 0 ? pkgs : locationFallback())
-            .catch(locationFallback);
-      pkgPromise
-        .then(setTopUpPackages)
-        .catch(() => {})
-        .finally(() => setTopUpLoading(false));
-    }
-  }, [isRechargeModalOpen, currentSim]);
+    if (!isRechargeModalOpen || !currentSim || !currentIccid) return;
+    let cancelled = false;
+    setTopUpLoading(true);
+    setTopUpPackages([]);
+    setSelectedTopUp(null);
+    const fallbackLocation = currentSim.locationCode || currentSim.country.countryCode;
+    const locationFallback = () => fetchPackages({ locationCode: fallbackLocation });
+    // Recharge catalogue resolution by SIM type:
+    //
+    //   • ESIM        → EsimAccess / Red Tea top-up templates keyed to
+    //                   the ICCID; fall back to the general location
+    //                   catalogue if none returned.
+    //   • PHYSICAL    → PCCW recharge templates for this ICCID. Pass
+    //                   `'pccw'` explicitly — the backend defaults to
+    //                   `esimaccess` and would otherwise return zero
+    //                   matches. If PCCW has no offers for this SIM
+    //                   (e.g. an ICCID not yet on any whitelist) we
+    //                   fall through to the general catalogue so the
+    //                   user still sees something actionable.
+    const pkgPromise = currentSim.type === 'ESIM'
+      ? fetchTopUpPackages(currentIccid)
+          .then(pkgs => pkgs.length > 0 ? pkgs : locationFallback())
+          .catch(locationFallback)
+      : fetchTopUpPackages(currentIccid, 'pccw')
+          .then(pkgs => pkgs.length > 0 ? pkgs : locationFallback())
+          .catch(locationFallback);
+    pkgPromise
+      .then(pkgs => { if (!cancelled) setTopUpPackages(pkgs); })
+      .catch(() => {})
+      .finally(() => { if (!cancelled) setTopUpLoading(false); });
+    return () => { cancelled = true; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- currentSim is identified by iccid + type
+  }, [isRechargeModalOpen, currentIccid, currentSim?.type]);
 
   // Top-bar sync button on the ring-gauge card. `checkDataUsage` routes
   // to the right supplier (EsimAccess / PCCW) backend-side, so the same
@@ -441,6 +495,48 @@ const MySimsView: React.FC<MySimsViewProps> = ({ activeSims, onNavigate, filterT
              )}
           </div>
       </div>
+
+      {/* Phase 4: post-activation celebration + top-up cross-sell.
+          Shown once when ActivatePage redirects in with `?just_activated=1`.
+          Dismissible — and we already scrubbed the query param on mount,
+          so a refresh won't re-show it. */}
+      {showActivationBanner && currentSim && (
+        <div className="mx-4 mt-4 rounded-2xl overflow-hidden bg-gradient-to-br from-orange-500 via-orange-400 to-amber-400 text-white shadow-lg shadow-orange-500/20 relative">
+          <button
+            type="button"
+            onClick={() => setShowActivationBanner(false)}
+            className="absolute top-2 right-2 w-8 h-8 rounded-full bg-white/20 hover:bg-white/30 flex items-center justify-center transition-colors"
+            aria-label="Dismiss"
+          >
+            <X size={16} />
+          </button>
+          <div className="px-4 py-4">
+            <div className="flex items-center gap-2 mb-1">
+              <PartyPopper size={18} />
+              <span className="text-sm font-bold uppercase tracking-wide">
+                {t('my_sims.activation_celebration_title', { defaultValue: 'You’re activated!' })}
+              </span>
+            </div>
+            <p className="text-sm leading-relaxed text-white/95 mb-3 pr-6">
+              {t('my_sims.activation_celebration_body', {
+                defaultValue:
+                  "Your SIM is live. Heading on a longer trip? Top up now and save vs buying at the airport.",
+              })}
+            </p>
+            <button
+              type="button"
+              onClick={() => {
+                const iccid = resolveIccid(currentSim);
+                window.location.href = `/top-up?iccid=${encodeURIComponent(iccid)}`;
+              }}
+              className="inline-flex items-center gap-2 bg-white text-orange-600 font-bold text-sm px-4 py-2 rounded-full active:scale-95 transition-transform"
+            >
+              <Sparkles size={14} />
+              {t('my_sims.activation_celebration_cta', { defaultValue: 'See top-up plans' })}
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* SIM cards — stacked or expanded flat list */}
       <div className="px-4 mt-4 mb-6">
@@ -850,6 +946,24 @@ const MySimsView: React.FC<MySimsViewProps> = ({ activeSims, onNavigate, filterT
                   </div>
                   <span className="text-sm font-bold text-slate-500">{currentSim.country.name}</span>
               </div>
+
+              {/*
+                * Auto-renew row — only shown for SIMs we've successfully bound
+                * to a backend record (have an iccid). Mock SIMs and SIMs in
+                * demo mode lack a server-side SimAsset, so the toggle's
+                * GET /v1/app/sims/{iccid} call would 404 and the row would
+                * just render an error spinner.
+                */}
+              {currentSim.iccid && (
+                <AutoRenewToggle
+                    iccid={currentSim.iccid}
+                    eligible={
+                        currentSim.status === 'ACTIVE' ||
+                        currentSim.status === 'IN_USE' ||
+                        currentSim.status === 'ONBOARD'
+                    }
+                />
+              )}
 
               {currentSim.type === 'ESIM' && (
                   <button 

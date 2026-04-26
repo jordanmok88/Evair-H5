@@ -563,10 +563,14 @@ export async function checkDataUsage(iccid: string): Promise<DataUsageResult> {
 export async function topUp(req: TopUpRequest): Promise<TopUpResult> {
   if (DEMO_MODE) {
     await delay(1000);
+    // Demo path doesn't have real eSIM provisioning, so we synthesize a
+    // minimal result and double-cast through `unknown` (the demo result
+    // intentionally omits expiredTime / totalVolume / etc. — the calling
+    // UI guards against missing fields in DEMO_MODE).
     return {
       orderNo: `DEMO-TOPUP-${Date.now().toString(36).toUpperCase()}`,
       transactionId: req.transactionId,
-    } as TopUpResult;
+    } as unknown as TopUpResult;
   }
 
   const resp = await call<TopUpResult>('/esim/topup', {

@@ -1,0 +1,263 @@
+/**
+ * DeviceLandingPage — Phase 2 SEO acquisition surface.
+ *
+ * Single component renders all three device-category landing pages
+ * (`/sim/phone`, `/sim/camera`, `/sim/iot`). Content is driven from
+ * `data/deviceLandings.ts`, this file is presentation only.
+ *
+ * Audience: Google searchers (e.g. "best SIM card for SPYPOINT
+ * camera"). The page must:
+ *   - Render the speed cap and throttle behaviour above the fold
+ *     (Jordan's brand principle: honest pricing → fewer refunds).
+ *   - Be readable when JS is slow / fonts haven't loaded — no
+ *     animation gating, no API calls.
+ *   - Funnel into `/app` for the actual purchase. We don't try to
+ *     close the sale on the SEO page itself.
+ *
+ * Sections:
+ *   1. Header (apex Evair logo + back to marketing site)
+ *   2. Hero (title + subtitle + speed badge + CTA)
+ *   3. Compatible devices
+ *   4. Three pillars
+ *   5. Plan tiers
+ *   6. FAQ
+ *   7. Final CTA
+ *   8. Footer (shared with MarketingPage in spirit)
+ *
+ * @see data/deviceLandings.ts
+ * @see docs/EVAIRSIM_ROADMAP_ZH.md §四 — Phase 2
+ */
+
+import React, { useEffect } from 'react';
+import { ArrowRight, CheckCircle2, Gauge } from 'lucide-react';
+import { DEVICE_CONTENT } from '../data/deviceLandings';
+import type { DeviceCategory } from '../utils/routing';
+import SiteHeader from '../components/marketing/SiteHeader';
+import SiteFooter from '../components/marketing/SiteFooter';
+
+interface DeviceLandingPageProps {
+    category: DeviceCategory;
+}
+
+const DeviceLandingPage: React.FC<DeviceLandingPageProps> = ({ category }) => {
+    const content = DEVICE_CONTENT[category];
+
+    // Set tab title + meta description from JS for now. When we move to
+    // a real SSR/SSG setup these become server-rendered <head> tags;
+    // until then JS-set values are still indexed by Google after
+    // hydration (Bing too, since 2024).
+    useEffect(() => {
+        document.title = `${content.heroTitle} — Evair`;
+        const descTag = document.querySelector('meta[name="description"]');
+        if (descTag) {
+            descTag.setAttribute('content', content.heroSubtitle);
+        } else {
+            const m = document.createElement('meta');
+            m.name = 'description';
+            m.content = content.heroSubtitle;
+            document.head.appendChild(m);
+        }
+    }, [content]);
+
+    return (
+        <div className="min-h-screen bg-white text-slate-900">
+            <SiteHeader active={category} />
+
+            {/* Hero */}
+            <section className="px-4 md:px-8 py-12 md:py-20 max-w-6xl mx-auto">
+                <div className="grid md:grid-cols-2 gap-10 items-center">
+                    <div>
+                        <div className="inline-flex items-center gap-2 bg-slate-100 text-slate-700 text-xs font-bold uppercase tracking-wider px-3 py-1 rounded-full mb-4">
+                            <Gauge size={12} /> {content.speedHeadline}
+                        </div>
+                        <h1 className="text-4xl md:text-5xl font-extrabold leading-tight tracking-tight mb-5">
+                            {content.heroTitle}
+                        </h1>
+                        <p className="text-lg text-slate-600 mb-6 max-w-xl leading-relaxed">
+                            {content.heroSubtitle}
+                        </p>
+                        <p className="text-sm text-slate-500 mb-8 max-w-xl leading-relaxed bg-slate-50 border border-slate-200 rounded-xl p-3">
+                            <strong className="text-slate-700">Speed honesty:</strong>{' '}
+                            {content.throttleNote}
+                        </p>
+                        <div className="flex flex-wrap gap-3">
+                            <a
+                                href={content.ctaHref}
+                                className="inline-flex items-center justify-center gap-2 bg-orange-500 text-white font-bold px-5 py-3 rounded-xl shadow-lg shadow-orange-500/20 active:scale-[0.98] transition-transform"
+                            >
+                                {content.ctaLabel} <ArrowRight size={18} />
+                            </a>
+                            <a
+                                href="/welcome"
+                                className="inline-flex items-center justify-center gap-2 bg-white text-slate-900 font-semibold px-5 py-3 rounded-xl border border-slate-300"
+                            >
+                                Compare all plans
+                            </a>
+                        </div>
+                        <div className="flex items-center gap-2 mt-6 text-xs text-slate-500">
+                            <CheckCircle2 size={14} className="text-emerald-500" />
+                            No contract.
+                            <CheckCircle2 size={14} className="text-emerald-500 ml-2" />
+                            No hidden fees.
+                            <CheckCircle2 size={14} className="text-emerald-500 ml-2" />
+                            US support.
+                        </div>
+                    </div>
+
+                    {/* Decorative device mosaic — purely visual */}
+                    <div className="hidden md:block">
+                        <div className="grid grid-cols-3 gap-3">
+                            {content.devices.slice(0, 9).map((d, i) => (
+                                <div
+                                    key={`${d.label}-${i}`}
+                                    className={`aspect-square rounded-2xl flex flex-col items-center justify-center gap-2 text-slate-600 ${
+                                        i === 4
+                                            ? 'bg-orange-500 text-white shadow-xl shadow-orange-500/20'
+                                            : 'bg-slate-50 border border-slate-200'
+                                    }`}
+                                >
+                                    <d.icon size={26} />
+                                    <span className="text-[11px] font-semibold text-center px-1">
+                                        {d.label}
+                                    </span>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            {/* Compatible devices strip — mobile shows the same data the
+                hero mosaic shows on desktop, so nothing is hidden */}
+            <section className="md:hidden px-4 py-8 bg-slate-50">
+                <h2 className="text-sm font-bold uppercase tracking-wider text-slate-500 mb-3">
+                    Built for
+                </h2>
+                <div className="grid grid-cols-2 gap-2">
+                    {content.devices.map(d => (
+                        <div
+                            key={d.label}
+                            className="flex items-center gap-2 bg-white border border-slate-200 rounded-xl px-3 py-2"
+                        >
+                            <d.icon size={16} className="text-slate-500" />
+                            <span className="text-sm text-slate-700">{d.label}</span>
+                        </div>
+                    ))}
+                </div>
+            </section>
+
+            {/* Pillars */}
+            <section className="px-4 md:px-8 py-12 md:py-16 max-w-6xl mx-auto">
+                <div className="grid md:grid-cols-3 gap-4">
+                    {content.pillars.map(p => (
+                        <div
+                            key={p.title}
+                            className="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm"
+                        >
+                            <div className="w-12 h-12 rounded-xl bg-slate-50 flex items-center justify-center mb-3">
+                                <p.icon size={22} className="text-orange-500" />
+                            </div>
+                            <h3 className="font-bold text-lg mb-1">{p.title}</h3>
+                            <p className="text-slate-600 text-sm leading-relaxed">{p.body}</p>
+                        </div>
+                    ))}
+                </div>
+            </section>
+
+            {/* Plans */}
+            <section className="px-4 md:px-8 py-12 max-w-6xl mx-auto">
+                <h2 className="text-3xl md:text-4xl font-extrabold text-center mb-2">
+                    Pick a plan
+                </h2>
+                <p className="text-center text-slate-600 mb-8">
+                    All plans renew monthly. Cancel any time, no fees.
+                </p>
+                <div className="grid md:grid-cols-3 gap-4">
+                    {content.plans.map(plan => (
+                        <div
+                            key={plan.name}
+                            className={`rounded-2xl p-6 border-2 ${
+                                plan.highlight
+                                    ? 'border-orange-500 bg-orange-50/40 shadow-xl shadow-orange-500/10'
+                                    : 'border-slate-200 bg-white'
+                            }`}
+                        >
+                            <div className="flex items-baseline gap-2 mb-2">
+                                <span className="text-2xl font-bold">{plan.name}</span>
+                                {plan.highlight && (
+                                    <span className="text-[10px] font-bold uppercase tracking-wider bg-orange-500 text-white px-2 py-0.5 rounded">
+                                        Most popular
+                                    </span>
+                                )}
+                            </div>
+                            <div className="flex items-end gap-1 mb-3">
+                                <span className="text-4xl font-extrabold">${plan.priceUsd}</span>
+                                <span className="text-slate-500 mb-1 text-sm">/ month</span>
+                            </div>
+                            <p className="text-slate-600 text-sm mb-5 leading-relaxed">
+                                {plan.summary}
+                            </p>
+                            <a
+                                href={content.ctaHref}
+                                className={`block text-center font-bold py-2.5 rounded-xl ${
+                                    plan.highlight
+                                        ? 'bg-orange-500 text-white'
+                                        : 'bg-slate-900 text-white'
+                                }`}
+                            >
+                                Get {plan.name}
+                            </a>
+                        </div>
+                    ))}
+                </div>
+            </section>
+
+            {/* FAQ */}
+            <section className="px-4 md:px-8 py-12 md:py-16 bg-slate-50">
+                <div className="max-w-3xl mx-auto">
+                    <h2 className="text-3xl md:text-4xl font-extrabold text-center mb-8">
+                        Common questions
+                    </h2>
+                    <div className="space-y-3">
+                        {content.faq.map(item => (
+                            <details
+                                key={item.q}
+                                className="bg-white rounded-xl border border-slate-200 overflow-hidden group"
+                            >
+                                <summary className="cursor-pointer list-none px-5 py-4 font-semibold text-slate-900 flex items-center justify-between">
+                                    {item.q}
+                                    <span className="text-slate-400 group-open:rotate-180 transition-transform">
+                                        ▾
+                                    </span>
+                                </summary>
+                                <div className="px-5 pb-4 text-sm text-slate-600 leading-relaxed">
+                                    {item.a}
+                                </div>
+                            </details>
+                        ))}
+                    </div>
+                </div>
+            </section>
+
+            {/* Final CTA */}
+            <section className="px-4 md:px-8 py-12 md:py-16 max-w-3xl mx-auto text-center">
+                <h2 className="text-3xl md:text-4xl font-extrabold mb-3">
+                    Ready when you are.
+                </h2>
+                <p className="text-slate-600 mb-6">
+                    Activate in minutes. No contract, no hidden fees.
+                </p>
+                <a
+                    href={content.ctaHref}
+                    className="inline-flex items-center justify-center gap-2 bg-orange-500 text-white font-bold px-6 py-4 rounded-xl shadow-lg shadow-orange-500/20"
+                >
+                    {content.ctaLabel} <ArrowRight size={18} />
+                </a>
+            </section>
+
+            <SiteFooter />
+        </div>
+    );
+};
+
+export default DeviceLandingPage;

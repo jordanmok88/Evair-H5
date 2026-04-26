@@ -1,5 +1,12 @@
 User-agent: *
 Allow: /
-Disallow: /#admin
 
-Sitemap: https://evair-h5.netlify.app/sitemap.xml
+# Internal/admin surfaces — not customer-facing, no SEO value.
+Disallow: /#admin
+Disallow: /#api-test
+
+# Sitemap is generated at build time by vite-plugins/sitemap.ts.
+# Canonical host is evairdigital.com; staging at evair-h5.netlify.app
+# also serves a copy of this file but search engines should follow
+# the production URL.
+Sitemap: https://evairdigital.com/sitemap.xml

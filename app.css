@@ -20,11 +20,44 @@ body {
   overscroll-behavior: none;
 }
 
-/* Phone frame: contained layout for tablet/desktop */
+/* Phone frame: contained layout for tablet/desktop. Opt-in via the
+   `app-shell` class on <html> — set by App.tsx only when rendering
+   the customer-app phone frame. Marketing / help / blog / legal /
+   device-landing / travel / activate / top-up pages need normal
+   page-level scrolling, so they leave the class off and the body
+   scrolls naturally. */
 @media (min-width: 640px) {
-  html, body, #root {
+  html.app-shell,
+  html.app-shell body,
+  html.app-shell #root {
     height: 100%;
     overflow: hidden;
+  }
+}
+
+/* Desktop phone preview. Reference dimensions are 430 × 880 px (iPhone
+   15 Pro Max-ish, ratio ≈ 0.489).
+
+   Two failed attempts to keep this in sync with a shorter viewport:
+   1. Cap `height` only → width stays at 430 px → "fat ugly phone"
+      because the rendered ratio became e.g. 430:700 ≈ 0.61.
+   2. Cap `height` + `aspect-ratio` + `width: auto` → Tailwind's
+      `w-full` (width: 100%) cascade kept stretching the frame to
+      its container width, so the phone bled past the bezel.
+
+   The reliable fix: compute BOTH width and height explicitly from
+   the same `min(880px, viewport-padding)` expression so the rendered
+   element is always exactly 430:880 regardless of cascade order or
+   `width: auto` resolution quirks. Use `!important` to beat any
+   utility class that targets width/height at this breakpoint. */
+@media (min-width: 1024px) {
+  .phone-frame-fit {
+    /* Single source of truth for the phone's height. */
+    --phone-h: min(880px, calc(100dvh - 4rem));
+    height: var(--phone-h) !important;
+    width: calc(var(--phone-h) * 430 / 880) !important;
+    max-width: 430px;
+    max-height: 880px;
   }
 }
 

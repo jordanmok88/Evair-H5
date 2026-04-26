@@ -4,12 +4,21 @@ import { Zap } from 'lucide-react';
 import BottomNav from './components/BottomNav';
 import SupportFab from './components/SupportFab';
 import ProductTab from './views/ProductTab';
+import { parseAppTravelEsimCountry } from './utils/appTravelPath';
 import ProfileView from './views/ProfileView';
 import LoginModal from './views/LoginModal';
 import DialerView from './views/DialerView';
 import ContactUsView from './views/ContactUsView';
 import InboxView from './views/InboxView';
 import ApiTestPage from './views/ApiTestPage';
+import ActivatePage from './views/ActivatePage';
+import TopUpPage from './views/TopUpPage';
+import MarketingPage from './views/MarketingPage';
+import DeviceLandingPage from './views/DeviceLandingPage';
+import TravelEsimPage from './views/TravelEsimPage';
+import HelpCenterPage from './views/HelpCenterPage';
+import BlogPage from './views/BlogPage';
+import LegalPage from './views/LegalPage';
 import { Tab, ActiveSim, SimType, User, AppNotification, EsimProfileResult } from './types';
 import { Lock } from 'lucide-react';
 import { MOCK_COUNTRIES, MOCK_PLANS_US, MOCK_ACTIVE_SIMS, MOCK_NOTIFICATIONS, CARRIER_MAP } from './constants';
@@ -18,47 +27,80 @@ import { supabaseConfigured, fetchNotifications, logSimActivation } from './serv
 import { authService, userService, type UserDto } from './services/api';
 import { initPush, unregisterPush } from './services/pushService';
 import { computeTestModeEnabled, dismissTestModeForSession, isAppPath, isAppPreviewHash, stripTestModeFromUrl } from './utils/testMode';
+import { getRoute, type Route } from './utils/routing';
 
 function App() {
 
-  // API Test mode: detected via URL hash
-  const [isApiTest, setIsApiTest] = useState(() => window.location.hash.includes('api-test'));
+  // Top-level route detection. Falls back to <CustomerApp/> for any path
+  // we don't explicitly handle, so existing app surfaces are unaffected.
+  const [route, setRoute] = useState<Route>(() => getRoute());
 
   useEffect(() => {
-    const onHash = () => {
-      setIsApiTest(window.location.hash.includes('api-test'));
+    const sync = () => setRoute(getRoute());
+    window.addEventListener('hashchange', sync);
+    window.addEventListener('popstate', sync);
+    return () => {
+      window.removeEventListener('hashchange', sync);
+      window.removeEventListener('popstate', sync);
     };
-    window.addEventListener('hashchange', onHash);
-    return () => window.removeEventListener('hashchange', onHash);
   }, []);
 
-  // Tab title override. Two modes flip the document title to "Evair APP":
-  //   1. Desktop dev: the `#app-preview` hash opened by
-  //      start-all-previews.sh simulates the native shell for QA.
-  //   2. Production path-based: any URL under `/app` (Phase 0 of the
-  //      marketing/app split on 2026-04-24). This is what Flutter's
-  //      WebView actually loads, and what browser visitors see after
-  //      clicking through from marketing.
-  // Both branches run in production because they're cheap and the title
-  // is legitimately different for the two surfaces — marketing vs. app.
+  // Phone-frame scroll lock is owned by <CustomerApp/> (see its
+  // own useEffect on `activeTab`). We deliberately do NOT toggle
+  // `html.app-shell` here because the rule depends on the customer
+  // app's *current tab*: the eSIM tab needs to render full-width
+  // with normal page scrolling on desktop (it's a real store, not
+  // a mock-phone screen), while every other tab keeps the iPhone
+  // contained layout. Centralising the toggle in CustomerApp also
+  // means the class is added only after CustomerApp mounts and
+  // removed on unmount — so the public surfaces (marketing, device,
+  // travel, help, blog, legal, activate, top-up, apiTest) stay
+  // free-scrolling without any opt-out lists to maintain.
+
+  // Tab title override. Three surfaces own the document title:
+  //   1. /activate(*)    → "Activate your Evair SIM"
+  //   2. /app(*) or
+  //      desktop dev-only `#app-preview` hash → "Evair APP"
+  //      (the latter is what start-all-previews.sh opens for QA).
+  //   3. anything else   → "Evair H5"
   useEffect(() => {
     const applyTitle = () => {
-      if (isAppPreviewHash() || isAppPath()) {
+      if (route.kind === 'activate') {
+        document.title = 'Activate your Evair SIM';
+      } else if (route.kind === 'topup') {
+        document.title = 'Top up your Evair SIM';
+      } else if (route.kind === 'marketing') {
+        document.title = 'Evair — Mobile data, simplified';
+      } else if (route.kind === 'device' || route.kind === 'travel') {
+        // Device + travel landing pages set their own <title> after
+        // hydration (so the country / category appears in the tab),
+        // but we set a sensible default in case content loads slow.
+        document.title = 'Evair — Mobile data, simplified';
+      } else if (route.kind === 'help' || route.kind === 'blog') {
+        // Same pattern as device/travel — pages own their own title
+        // once hydrated; this is a fallback for the brief flash before
+        // React mounts.
+        document.title = route.kind === 'help' ? 'Help center — Evair' : 'Evair Blog';
+      } else if (route.kind === 'legal') {
+        document.title = 'Legal — Evair';
+      } else if (isAppPreviewHash() || isAppPath()) {
         document.title = 'Evair APP';
       } else if (document.title === 'Evair APP') {
         document.title = 'Evair H5';
       }
     };
     applyTitle();
-    window.addEventListener('hashchange', applyTitle);
-    window.addEventListener('popstate', applyTitle);
-    return () => {
-      window.removeEventListener('hashchange', applyTitle);
-      window.removeEventListener('popstate', applyTitle);
-    };
-  }, []);
+  }, [route]);
 
-  if (isApiTest) return <ApiTestPage />;
+  if (route.kind === 'apiTest') return <ApiTestPage />;
+  if (route.kind === 'activate') return <ActivatePage iccid={route.iccid} />;
+  if (route.kind === 'topup') return <TopUpPage iccid={route.iccid} />;
+  if (route.kind === 'marketing') return <MarketingPage />;
+  if (route.kind === 'device') return <DeviceLandingPage category={route.category} />;
+  if (route.kind === 'travel') return <TravelEsimPage countryCode={route.countryCode} />;
+  if (route.kind === 'help') return <HelpCenterPage slug={route.slug} />;
+  if (route.kind === 'blog') return <BlogPage slug={route.slug} />;
+  if (route.kind === 'legal') return <LegalPage slug={route.slug} />;
 
   return <CustomerApp />;
 }
@@ -111,10 +153,136 @@ function CustomerApp() {
   }, []);
 
 
-  const [activeTab, setActiveTab] = useState<Tab>(
-    () => (sessionStorage.getItem('evair-activeTab') as Tab) || Tab.SIM_CARD
-  );
+  // Resolve the initial tab from URL hash first, then sessionStorage,
+  // then fall back to SIM_CARD. Reading the hash here (rather than
+  // letting the hash-change effect override after first paint) avoids
+  // a one-frame flash where the customer sees the SIM-Card view even
+  // though they came in through `/app#esim` from the marketing CTA.
+  // The hash table here intentionally mirrors the one in the
+  // hashchange effect below — keep them in lock-step.
+  const [activeTab, setActiveTab] = useState<Tab>(() => {
+    if (typeof window !== 'undefined') {
+      // `/app/travel-esim/jp` — travel SEO / marketing funnel; must win
+      // over sessionStorage so the eSIM store opens on first paint.
+      if (parseAppTravelEsimCountry(window.location.pathname)) {
+        return Tab.ESIM;
+      }
+      const HASH_TO_TAB: Record<string, Tab> = {
+        '#contact': Tab.DIALER,
+        '#inbox': Tab.INBOX,
+        '#profile': Tab.PROFILE,
+        '#sim-card': Tab.SIM_CARD,
+        '#esim': Tab.ESIM,
+        '#shop': Tab.ESIM,
+      };
+      const fromHash = HASH_TO_TAB[window.location.hash.toLowerCase()];
+      if (fromHash) return fromHash;
+    }
+    return (sessionStorage.getItem('evair-activeTab') as Tab) || Tab.SIM_CARD;
+  });
   const previousTab = useRef<Tab>(Tab.SIM_CARD);
+
+  /** ISO-2 from `/app/travel-esim/{xx}` — passed to ShopView once, then cleared. */
+  const [travelEsimOpenCode, setTravelEsimOpenCode] = useState<string | null>(() =>
+    typeof window !== 'undefined' ? parseAppTravelEsimCountry(window.location.pathname) : null,
+  );
+
+  const handleTravelEsimDeepLinkConsumed = useCallback(() => {
+    setTravelEsimOpenCode(null);
+    if (typeof window !== 'undefined' && parseAppTravelEsimCountry(window.location.pathname)) {
+      window.history.replaceState(null, '', '/app#esim');
+    }
+  }, []);
+
+  // Phone-frame scroll lock — opt-in via `html.app-shell`. The CSS
+  // rule in app.css scopes `overflow: hidden` behind that class so
+  // the iPhone-style contained layout is the only scroll container.
+  //
+  // The eSIM tab is a public-facing store on desktop (no phone-mock
+  // chrome — see `showStoreLayout` below) so it needs normal page
+  // scrolling; we keep the class OFF for that tab. Every other tab
+  // is a customer-account screen and keeps the contained layout, so
+  // the class stays ON. The cleanup function strips the class on
+  // unmount, which is what restores normal scrolling when the user
+  // navigates from /app to a marketing/device/travel surface.
+  useEffect(() => {
+    const root = document.documentElement;
+    if (activeTab === Tab.ESIM) {
+      root.classList.remove('app-shell');
+    } else {
+      root.classList.add('app-shell');
+    }
+    return () => { root.classList.remove('app-shell'); };
+  }, [activeTab]);
+
+  // Desktop layout switch. The customer-app phone-mock is a useful
+  // brand showcase for the account/dashboard tabs (My SIMs, Profile,
+  // etc.), but it actively gets in the way of the eSIM store: a
+  // desktop visitor coming from the marketing CTA expects a real
+  // wide-format catalogue, not a tiny iPhone-shaped panel centred
+  // on a grey page. When the eSIM tab is active we drop the entire
+  // phone-mock styling (border, rounded corners, fixed height and
+  // width, status-bar mock) and let `<main>` use the full page.
+  const showStoreLayout = activeTab === Tab.ESIM;
+  // Mirror activeTab into a ref so the hashchange listener (which we
+  // wire once on mount) reads the *current* tab when remembering the
+  // previous one — without this the listener captured the initial
+  // activeTab and "back" jumped to the wrong place after the user had
+  // navigated tabs in-app.
+  const activeTabRef = useRef<Tab>(activeTab);
+  useEffect(() => {
+    activeTabRef.current = activeTab;
+  }, [activeTab]);
+
+  // Hash deep-links: external surfaces (help articles, marketing
+  // page, third-party emails) can land users on a specific tab via
+  // `/app#contact`, `/app#inbox`, etc. We honour the hash on mount
+  // and on subsequent hashchange events. The hash is preserved (not
+  // cleared) so the back button feels right.
+  //
+  // Mapping intentionally narrow — only the tabs we publish externally:
+  //   #contact  → DIALER    (Contact Us / chat)
+  //   #inbox    → INBOX     (notifications)
+  //   #profile  → PROFILE
+  //   #sim-card → SIM_CARD  (physical SIM landing — used by the
+  //               marketing homepage "Buy SIM card" / "Activate
+  //               my SIM" follow-up flows)
+  //   #esim, #shop → ESIM   (digital eSIM catalogue — used by the
+  //               marketing homepage "Travel eSIM" CTA)
+  //
+  // Important: the SIM_CARD / ESIM tabs are both rendered by
+  // <ProductTab/>, which switches its content via a SEPARATE state
+  // (`currentSimType`, sessionStorage-backed, default 'PHYSICAL').
+  // Setting `activeTab` alone is not enough — if `currentSimType`
+  // is still 'PHYSICAL' from a previous visit the customer lands
+  // on the physical-SIM view despite `#esim` in the URL. We mirror
+  // the hash into `currentSimType` so deep-links land on the
+  // intended product every time.
+  useEffect(() => {
+    const HASH_TO_TAB: Record<string, Tab> = {
+      '#contact': Tab.DIALER,
+      '#inbox': Tab.INBOX,
+      '#profile': Tab.PROFILE,
+      '#sim-card': Tab.SIM_CARD,
+      '#esim': Tab.ESIM,
+      '#shop': Tab.ESIM,
+    };
+    const apply = () => {
+      const tab = HASH_TO_TAB[window.location.hash.toLowerCase()];
+      if (tab) {
+        previousTab.current = activeTabRef.current;
+        setActiveTab(tab);
+        if (tab === Tab.ESIM) {
+          setCurrentSimType('ESIM');
+        } else if (tab === Tab.SIM_CARD) {
+          setCurrentSimType('PHYSICAL');
+        }
+      }
+    };
+    apply(); // honour initial hash on mount
+    window.addEventListener('hashchange', apply);
+    return () => window.removeEventListener('hashchange', apply);
+  }, []);
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
   const [loginModalMode, setLoginModalMode] = useState<'LOGIN' | 'REGISTER'>('LOGIN');
   
@@ -330,14 +498,23 @@ function CustomerApp() {
     if (notifFetched.current || !supabaseConfigured) return;
     notifFetched.current = true;
     const lang = localStorage.getItem('evair-lang') || 'en';
-    fetchNotifications(lang).then(serverNotifs => {
-      if (serverNotifs.length > 0) {
-        setNotifications(prev => {
-          const localOnly = prev.filter(n => n.id.startsWith('auto-') || n.id.startsWith('N-'));
-          return [...serverNotifs, ...localOnly.filter(n => n.id.startsWith('auto-'))];
-        });
-      }
-    });
+    fetchNotifications(lang)
+      .then(serverNotifs => {
+        if (serverNotifs.length > 0) {
+          setNotifications(prev => {
+            const localOnly = prev.filter(n => n.id.startsWith('auto-') || n.id.startsWith('N-'));
+            return [...serverNotifs, ...localOnly.filter(n => n.id.startsWith('auto-'))];
+          });
+        }
+      })
+      .catch(err => {
+        // Notifications are best-effort — Supabase being temporarily
+        // unreachable shouldn't surface as an unhandled rejection in
+        // production logs. Reset the latch so a later retry (e.g. via
+        // user re-login) can try again.
+        console.warn('[notifications] fetch failed', err);
+        notifFetched.current = false;
+      });
   }, []);
 
   const addNotification = useCallback((notif: AppNotification) => {
@@ -667,9 +844,21 @@ function CustomerApp() {
     </div>
   );
 
-  const [currentSimType, setCurrentSimType] = useState<SimType>(
-    () => (sessionStorage.getItem('evair-simType') as SimType) || 'PHYSICAL'
-  );
+  // Resolve initial SimType from URL hash first, then sessionStorage.
+  // Same rationale as activeTab above — without this a customer
+  // landing on `/app#esim` would briefly see the PHYSICAL view (the
+  // SIM-Card landing) before the hash effect rewrote currentSimType.
+  // `#sim-card` and `#esim` are the only hashes that map onto a
+  // SimType; every other hash leaves the previous selection alone.
+  const [currentSimType, setCurrentSimType] = useState<SimType>(() => {
+    if (typeof window !== 'undefined') {
+      if (parseAppTravelEsimCountry(window.location.pathname)) return 'ESIM';
+      const hash = window.location.hash.toLowerCase();
+      if (hash === '#esim' || hash === '#shop') return 'ESIM';
+      if (hash === '#sim-card') return 'PHYSICAL';
+    }
+    return (sessionStorage.getItem('evair-simType') as SimType) || 'PHYSICAL';
+  });
 
   useEffect(() => {
     sessionStorage.setItem('evair-activeTab', activeTab);
@@ -706,6 +895,8 @@ function CustomerApp() {
                 onSwitchSimType={handleSwitchSimType}
                 notifications={notifications}
                 testMode={testMode}
+                initialEsimLocationCode={travelEsimOpenCode}
+                onInitialEsimDeepLinkConsumed={handleTravelEsimDeepLinkConsumed}
             />
         );
       case Tab.INBOX:
@@ -733,25 +924,63 @@ function CustomerApp() {
   };
 
   return (
-    <div className="lg:bg-[#E5E5E5] lg:h-full lg:min-h-screen lg:flex lg:items-center lg:justify-center lg:p-8 font-sans antialiased selection:bg-orange-100">
-      
-      <div ref={phoneRef} className="w-full lg:max-w-[430px] lg:h-[880px] bg-[#F2F4F7] lg:rounded-[3.5rem] lg:overflow-hidden lg:shadow-[0_50px_100px_-20px_rgba(0,0,0,0.25)] relative lg:border-[8px] lg:border-slate-900 lg:ring-1 lg:ring-black/50">
-        
-        {/* Generic status bar — only visible in desktop phone frame */}
-        <div className="hidden lg:block relative z-50 shrink-0 bg-[#F2F4F7]">
-          <div className="relative h-[54px]">
-            <div className="absolute top-[10px] left-1/2 -translate-x-1/2 w-[126px] h-[37px] bg-black rounded-[24px] z-10" />
-            <span className="absolute left-5 top-4 text-[15px] font-semibold text-[#1a1a1a]" style={{ fontFamily: 'system-ui, sans-serif' }}>12:18</span>
-            <div className="absolute right-5 top-[18px] flex items-center gap-[6px]">
-              <svg width="16" height="12" viewBox="0 0 16 12" fill="none"><rect x="0" y="5" width="3" height="7" rx="1" fill="#1a1a1a"/><rect x="4.5" y="3" width="3" height="9" rx="1" fill="#1a1a1a"/><rect x="9" y="1" width="3" height="11" rx="1" fill="#1a1a1a"/><rect x="13" y="0" width="3" height="12" rx="1" fill="#1a1a1a" opacity="0.3"/></svg>
-              <svg width="16" height="12" viewBox="0 0 16 12" fill="none"><path d="M8 2.5C5.5 2.5 3.3 3.5 1.7 5.1L0.3 3.7C2.3 1.7 4.9 0.5 8 0.5s5.7 1.2 7.7 3.2L14.3 5.1C12.7 3.5 10.5 2.5 8 2.5z" fill="#1a1a1a" opacity="0.3"/><path d="M8 6.5c-1.7 0-3.2.7-4.3 1.8L2.3 6.9C3.8 5.4 5.8 4.5 8 4.5s4.2.9 5.7 2.4L12.3 8.3C11.2 7.2 9.7 6.5 8 6.5z" fill="#1a1a1a"/><circle cx="8" cy="11" r="1.5" fill="#1a1a1a"/></svg>
-              <svg width="25" height="12" viewBox="0 0 25 12" fill="none"><rect x="0" y="0.5" width="21" height="11" rx="2.5" stroke="#1a1a1a" strokeWidth="1"/><rect x="1.5" y="2" width="16" height="8" rx="1.5" fill="#1a1a1a"/><rect x="22" y="3.5" width="2.5" height="5" rx="1" fill="#1a1a1a" opacity="0.4"/></svg>
+    <div
+      className={
+        showStoreLayout
+          ? 'min-h-screen bg-white font-sans antialiased selection:bg-orange-100'
+          : 'lg:bg-[#E5E5E5] lg:h-full lg:min-h-screen lg:flex lg:items-center lg:justify-center lg:p-8 font-sans antialiased selection:bg-orange-100'
+      }
+    >
+
+      {/* Phone preview frame.
+          When `showStoreLayout` is on (eSIM tab) we render full-width
+          with no border / no rounded corners / no shadow / no fixed
+          height — the eSIM catalogue and checkout become a real
+          desktop store. Tab switching from eSIM into any account
+          tab (My SIMs, Profile, etc.) flips the layout back to the
+          contained iPhone-style mock by toggling these classes on
+          the same node, so the H5 still works as a brand showcase
+          for the customer-facing tabs. */}
+      <div
+        ref={phoneRef}
+        className={
+          showStoreLayout
+            ? 'w-full bg-white relative'
+            : 'phone-frame-fit w-full bg-[#F2F4F7] lg:rounded-[3.5rem] lg:overflow-hidden lg:shadow-[0_50px_100px_-20px_rgba(0,0,0,0.25)] relative lg:border-[8px] lg:border-slate-900 lg:ring-1 lg:ring-black/50'
+        }
+      >
+
+        {/* Generic status bar — only visible in desktop phone frame.
+            Hidden entirely in store layout because there is no
+            phone frame to put a status bar inside of. */}
+        {!showStoreLayout && (
+          <div className="hidden lg:block relative z-50 shrink-0 bg-[#F2F4F7]">
+            <div className="relative h-[54px]">
+              <div className="absolute top-[10px] left-1/2 -translate-x-1/2 w-[126px] h-[37px] bg-black rounded-[24px] z-10" />
+              <span className="absolute left-5 top-4 text-[15px] font-semibold text-[#1a1a1a]" style={{ fontFamily: 'system-ui, sans-serif' }}>12:18</span>
+              <div className="absolute right-5 top-[18px] flex items-center gap-[6px]">
+                <svg width="16" height="12" viewBox="0 0 16 12" fill="none"><rect x="0" y="5" width="3" height="7" rx="1" fill="#1a1a1a"/><rect x="4.5" y="3" width="3" height="9" rx="1" fill="#1a1a1a"/><rect x="9" y="1" width="3" height="11" rx="1" fill="#1a1a1a"/><rect x="13" y="0" width="3" height="12" rx="1" fill="#1a1a1a" opacity="0.3"/></svg>
+                <svg width="16" height="12" viewBox="0 0 16 12" fill="none"><path d="M8 2.5C5.5 2.5 3.3 3.5 1.7 5.1L0.3 3.7C2.3 1.7 4.9 0.5 8 0.5s5.7 1.2 7.7 3.2L14.3 5.1C12.7 3.5 10.5 2.5 8 2.5z" fill="#1a1a1a" opacity="0.3"/><path d="M8 6.5c-1.7 0-3.2.7-4.3 1.8L2.3 6.9C3.8 5.4 5.8 4.5 8 4.5s4.2.9 5.7 2.4L12.3 8.3C11.2 7.2 9.7 6.5 8 6.5z" fill="#1a1a1a"/><circle cx="8" cy="11" r="1.5" fill="#1a1a1a"/></svg>
+                <svg width="25" height="12" viewBox="0 0 25 12" fill="none"><rect x="0" y="0.5" width="21" height="11" rx="2.5" stroke="#1a1a1a" strokeWidth="1"/><rect x="1.5" y="2" width="16" height="8" rx="1.5" fill="#1a1a1a"/><rect x="22" y="3.5" width="2.5" height="5" rx="1" fill="#1a1a1a" opacity="0.4"/></svg>
+              </div>
             </div>
           </div>
-        </div>
+        )}
 
-        {/* Main Content Area */}
-        <main className="w-full relative lg:overflow-hidden flex flex-col" style={{ height: 'calc(100% - 54px)' }}>
+        {/* Main Content Area.
+            In phone-mock mode we subtract the 54-px status bar from
+            the parent's height so the inner scroll fits exactly.
+            In store mode there is no status bar, so we let the page
+            grow naturally (`min-h-screen`) and rely on the body's
+            normal scroll. */}
+        <main
+          className={
+            showStoreLayout
+              ? 'w-full relative flex flex-col min-h-screen'
+              : 'w-full relative lg:overflow-hidden flex flex-col'
+          }
+          style={showStoreLayout ? undefined : { height: 'calc(100% - 54px)' }}
+        >
           {testMode ? (
             <div className="shrink-0 bg-amber-400 text-amber-950 px-3 py-2 z-50 border-b border-amber-500/30 flex flex-wrap items-center justify-center gap-x-2 gap-y-1 text-center">
               <span className="inline-flex items-center gap-1.5 text-xs font-bold tracking-wide">
@@ -781,7 +1010,15 @@ function CustomerApp() {
               aria-hidden
             />
           )}
-          <div className="flex-1 min-h-0 overflow-hidden">{renderContent()}</div>
+          {/* Inner content wrapper.
+              Phone-mock: `min-h-0 overflow-hidden` so the inner view
+              owns its own scroll inside the fixed-height phone frame.
+              Store layout: drop the height/overflow constraints so
+              the eSIM catalogue can grow freely and the body
+              provides the page-level scroll. */}
+          <div className={showStoreLayout ? 'flex-1' : 'flex-1 min-h-0 overflow-hidden'}>
+            {renderContent()}
+          </div>
         </main>
 
         {/* 浮动客服入口：仅在主功能 Tab 出现，不打扰其它流程 */}

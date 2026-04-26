@@ -1,6 +1,7 @@
 import React, { useState, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
-import { ChevronRight, Share, ChevronLeft, Search, Lock, Bell, Download, Trash2, Check, Plus, Package, HelpCircle, FileText, Globe, Info, Coins, ShieldCheck, CreditCard, ShoppingBag, Briefcase, Phone, Settings, AlertCircle, Play, Smartphone, Loader2, X, Star } from 'lucide-react';
+import { ChevronRight, Share, ChevronLeft, Search, Lock, Bell, Download, Trash2, Check, Plus, Package, HelpCircle, FileText, Globe, Info, Coins, ShieldCheck, CreditCard, ShoppingBag, Briefcase, Phone, Settings, AlertCircle, Play, Smartphone, Loader2, X, Star, Gift } from 'lucide-react';
+import ReferralView from './ReferralView';
 import { AppNotification } from '../types';
 import { useSwipeBack } from '../hooks/useSwipeBack';
 import { useEdgeSwipeBack } from '../hooks/useEdgeSwipeBack';
@@ -20,7 +21,7 @@ interface ProfileViewProps {
   onUserUpdate?: (user: { name: string; role: string; email: string }) => void;
 }
 
-type ProfileScreen = 'MAIN' | 'ACCOUNT' | 'INBOX' | 'ORDERS' | 'CURRENCY' | 'HELP' | 'INFO' | 'LANGUAGES' | 'REFUND' | 'TERMS' | 'ABOUT' | 'PRIVACY' | 'ACCEPTABLE' | 'COOKIE';
+type ProfileScreen = 'MAIN' | 'ACCOUNT' | 'INBOX' | 'ORDERS' | 'CURRENCY' | 'HELP' | 'INFO' | 'LANGUAGES' | 'REFUND' | 'TERMS' | 'ABOUT' | 'PRIVACY' | 'ACCEPTABLE' | 'COOKIE' | 'REFERRAL';
 
 // --- Shared Components ---
 
@@ -1239,6 +1240,7 @@ const ProfileView: React.FC<ProfileViewProps> = ({ isLoggedIn, user, onLogin, on
   if (currentView === 'ACCEPTABLE') return <AcceptableUsePolicyView onBack={() => setCurrentView('INFO')} />;
   if (currentView === 'COOKIE') return <CookiePolicyView onBack={() => setCurrentView('INFO')} />;
   if (currentView === 'HELP') return <HelpCenterView onBack={() => setCurrentView('MAIN')} />;
+  if (currentView === 'REFERRAL') return <ReferralView onBack={() => setCurrentView('MAIN')} />;
 
   // Main Profile Menu
   return (
@@ -1300,6 +1302,25 @@ const ProfileView: React.FC<ProfileViewProps> = ({ isLoggedIn, user, onLogin, on
                             <p className="text-slate-500 text-sm font-medium">{user.role}</p>
                         </div>
                     </div>
+
+                    {/* Phase 5 referrals — show before the ordinary account
+                        menu so it's the most visible loyalty hook. */}
+                    <MenuGroup>
+                        <MenuItem
+                            label={t('profile.refer_and_earn')}
+                            onClick={() => setCurrentView('REFERRAL')}
+                            isLast
+                            rightElement={
+                                <span className="flex items-center gap-1.5">
+                                    <span className="bg-orange-100 text-orange-700 text-[10px] font-bold uppercase tracking-wide px-2 py-0.5 rounded-full">
+                                        New
+                                    </span>
+                                    <Gift size={16} className="text-orange-500" />
+                                    <ChevronRight size={18} className="text-slate-300" />
+                                </span>
+                            }
+                        />
+                    </MenuGroup>
 
                     <MenuGroup>
                         <MenuItem label={t('profile.account_info')} onClick={() => setCurrentView('ACCOUNT')} />

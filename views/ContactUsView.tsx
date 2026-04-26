@@ -1,8 +1,9 @@
 import React, { useState, useRef, useEffect, useMemo, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
-import { ChevronLeft, Send, Paperclip, CheckCheck, Bot, Sparkles, AlertCircle, ArrowDown, Wifi, WifiOff } from 'lucide-react';
+import { ChevronLeft, Send, Paperclip, CheckCheck, Bot, Sparkles, AlertCircle, ArrowDown, Wifi, WifiOff, Headphones } from 'lucide-react';
 import { getMultilingualResponse } from '../ai/evairAssistant';
 import { useEdgeSwipeBack } from '../hooks/useEdgeSwipeBack';
+import LiveChatView from './LiveChatView';
 import {
   acquireSharedChatProvider,
   createChatProvider,
@@ -12,6 +13,7 @@ import {
   type ConnectionState,
   type UnifiedChatMessage,
 } from '../services/chat';
+
 
 interface ContactUsViewProps {
   onBack: () => void;
@@ -89,6 +91,8 @@ const ContactUsView: React.FC<ContactUsViewProps> = ({ onBack, userName = 'Jorda
   const [connection, setConnection] = useState<ConnectionState>('idle');
   const [showJumpToLatest, setShowJumpToLatest] = useState(false);
   const [lightboxUrl, setLightboxUrl] = useState<string | null>(null);
+  /** 转人工：全屏 LiveChatView（useChat + Echo），返回后仍保留上方 AI 会话 */
+  const [showLiveChat, setShowLiveChat] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
@@ -292,6 +296,8 @@ const ContactUsView: React.FC<ContactUsViewProps> = ({ onBack, userName = 'Jorda
 
     if (HUMAN_KEYWORDS.test(text)) {
       provider.markNeedsHuman().catch(() => { /* noop */ });
+      setShowLiveChat(true);
+      return;
     }
 
     if (!opts?.skipAi) {
@@ -393,6 +399,10 @@ const ContactUsView: React.FC<ContactUsViewProps> = ({ onBack, userName = 'Jorda
     }
   })();
 
+  if (showLiveChat) {
+    return <LiveChatView onBack={() => setShowLiveChat(false)} />;
+  }
+
   return (
     <div className="lg:h-full min-h-screen lg:min-h-0 flex flex-col bg-[#F2F4F7] relative">
       {/* Header */}
@@ -408,6 +418,14 @@ const ContactUsView: React.FC<ContactUsViewProps> = ({ onBack, userName = 'Jorda
               <span className="text-sm text-white/85 font-medium">{t('contact.online_status')}</span>
             </div>
           </div>
+          <button
+            onClick={() => setShowLiveChat(true)}
+            className="w-9 h-9 rounded-full bg-white/20 flex items-center justify-center active:bg-white/30 transition-colors"
+            aria-label={t('contact.talk_to_human', { defaultValue: 'Talk to a human' })}
+            title={t('contact.talk_to_human', { defaultValue: 'Talk to a human' })}
+          >
+            <Headphones size={18} color="#fff" strokeWidth={2.5} />
+          </button>
         </div>
         <div className="flex items-center gap-3 ml-12">
           <div className="relative">

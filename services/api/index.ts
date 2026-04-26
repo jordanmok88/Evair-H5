@@ -22,6 +22,7 @@ export {
   get,
   post,
   put,
+  patch,
   del,
 
   // 拦截器
@@ -31,6 +32,7 @@ export {
 
   // 错误类
   ApiError,
+  isSuccessApiCode,
 
   // 命名转换工具
   toSnakeCase,
@@ -46,6 +48,26 @@ export { userService } from './user';
 export { orderService } from './order';
 export { packageService, esimService } from './esim';
 export { paymentService } from './payment';
+export { activationService } from './activation';
+export { appSimService } from './simApp';
+export type {
+  AppSimDetail,
+  UpdateAutoRenewRequest,
+  UpdateAutoRenewEnableRequest,
+  UpdateAutoRenewDisableRequest,
+} from './simApp';
+export type {
+  ClaimState,
+  ActivationPreviewData,
+  ActivationPreviewPackage,
+  PreviewResult,
+  BindSimRequest as ActivationBindSimRequest,
+  BindSimResponse as ActivationBindSimResponse,
+} from './activation';
+export type {
+  SetupIntentSession,
+  CreateSetupIntentRequest,
+} from './payment';
 
 // 导入服务用于默认导出
 import { authService } from './auth';
@@ -53,6 +75,8 @@ import { userService } from './user';
 import { orderService } from './order';
 import { packageService, esimService } from './esim';
 import { paymentService } from './payment';
+import { activationService } from './activation';
+import { appSimService } from './simApp';
 
 // 默认导出所有服务
 export default {
@@ -62,4 +86,6 @@ export default {
   package: packageService,
   esim: esimService,
   payment: paymentService,
+  activation: activationService,
+  appSim: appSimService,
 };

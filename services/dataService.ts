@@ -79,9 +79,22 @@ function backendPkgToEsimPackage(dto: PackageDto): EsimPackage {
   return {
     packageCode: dto.packageCode,
     name: dto.name,
-    // Backend price is in cents, supplier is micro-cents.
-    // Normalize to micro-cents (the format the rest of the app expects).
-    price: dto.price * 100,
+    // Backend H5/PackageResource emits `price` as a USD float (e.g.
+    // 19.99). The rest of the app speaks "supplier units" where 10000
+    // = $1.00 (micro-cents), so multiply by 10000. We also stamp
+    // `priceIsRetail: true` because the backend already stores the
+    // team's chosen retail price — without this flag,
+    // `packagePriceUsd()` would re-apply the legacy 2× wholesale-to-
+    // retail markup and quote double the right number to users.
+    //
+    // Earlier comment claimed `dto.price` was cents and used `* 100`
+    // — that produced cents instead of micro-cents, and combined with
+    // the missing `priceIsRetail` flag the displayed USD was off by
+    // 200×. The combined fix is exact when the flag is both flipped
+    // (`USE_BACKEND_API=true`) and the product is reached through
+    // this normalisation path.
+    price: dto.price * 10000,
+    priceIsRetail: true,
     currencyCode: dto.currency || 'USD',
     volume: dto.volume,
     duration: dto.duration,

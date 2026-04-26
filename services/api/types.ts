@@ -5,8 +5,20 @@
 
 // ─── 通用响应类型 ───────────────────────────────────────────────────────
 
+/**
+ * The Laravel backend uses two response-code conventions on the same wire:
+ *   - Legacy `/h5/*` endpoints: numeric `code` (0 = success, non-zero = error).
+ *   - Newer `/v1/app/*` endpoints + chat + admin: string `code`
+ *     (`'200'` / `'201'` = success, `'AUTH_001'` / `'BUSINESS_001'` /
+ *     `'NOT_FOUND_001'` / etc. = error).
+ *
+ * `code` is widened to `number | string` so consumers can carry both
+ * shapes through the type system. Use {@link isSuccessApiCode} from
+ * `services/api/client` to test for success without hard-coding either
+ * convention.
+ */
 export interface ApiResponse<T = unknown> {
-  code: number;
+  code: number | string;
   msg: string;
   data: T;
 }
