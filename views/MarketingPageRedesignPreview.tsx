@@ -4,7 +4,7 @@
  */
 
 import React, { useEffect } from 'react';
-import { ArrowRight, CheckCircle2, Star } from 'lucide-react';
+import { ArrowRight, CheckCircle2, ChevronRight, Star } from 'lucide-react';
 import { applyPageSeo } from '../utils/seoHead';
 import { isMobileDevice } from '../utils/device';
 
@@ -166,19 +166,16 @@ const MarketingPageRedesignPreview: React.FC = () => {
                             Activate my SIM
                         </a>
                     </div>
-                    <div className="mt-8 flex max-w-md flex-col items-center gap-2.5 text-xs text-gray-500 sm:mt-10 sm:max-w-none sm:flex-row sm:flex-wrap sm:justify-center sm:gap-x-5 sm:gap-y-1 sm:text-sm">
-                        <span className="inline-flex items-center gap-1.5">
-                            <CheckCircle2 className="h-3.5 w-3.5 shrink-0 text-emerald-500 sm:h-[18px] sm:w-[18px]" />
-                            No contracts.
-                        </span>
-                        <span className="inline-flex items-center gap-1.5">
-                            <CheckCircle2 className="h-3.5 w-3.5 shrink-0 text-emerald-500 sm:h-[18px] sm:w-[18px]" />
-                            No hidden fees.
-                        </span>
-                        <span className="inline-flex items-center gap-1.5">
-                            <CheckCircle2 className="h-3.5 w-3.5 shrink-0 text-emerald-500 sm:h-[18px] sm:w-[18px]" />
-                            24/7 support.
-                        </span>
+                    <div className="mt-7 flex w-full min-w-0 justify-center px-0.5 sm:mt-9 sm:px-0">
+                        <p className="flex max-w-full items-center gap-1.5 text-[clamp(0.62rem,2.7vw,0.875rem)] font-medium leading-tight text-gray-500 sm:text-sm">
+                            <CheckCircle2
+                                className="h-3 w-3 shrink-0 text-emerald-500 sm:h-[18px] sm:w-[18px]"
+                                aria-hidden
+                            />
+                            <span className="min-w-0 whitespace-nowrap">
+                                No contracts · No hidden fees · 24/7 support
+                            </span>
+                        </p>
                     </div>
                 </div>
             </section>
@@ -280,7 +277,7 @@ const MarketingPageRedesignPreview: React.FC = () => {
                                 key={c.title}
                                 href={c.href}
                                 onClick={c.onClick}
-                                className="group relative flex min-h-[7.5rem] min-w-0 flex-col overflow-hidden rounded-2xl bg-white p-4 shadow-sm ring-1 ring-gray-200/80 transition hover:shadow-md hover:ring-[#F27420]/35 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2563eb] min-[400px]:min-h-[9.5rem] sm:p-5 md:min-h-0"
+                                className="group relative flex min-w-0 flex-col overflow-hidden rounded-2xl bg-white p-3.5 shadow-sm ring-1 ring-gray-200/80 transition active:scale-[0.99] hover:shadow-md hover:ring-[#F27420]/40 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2563eb] min-[400px]:min-h-[8.5rem] min-[400px]:p-4 sm:p-5 md:min-h-0"
                             >
                                 <div
                                     className={`absolute left-0 top-0 h-1 w-full bg-gradient-to-r ${c.gradient}`}
@@ -289,15 +286,18 @@ const MarketingPageRedesignPreview: React.FC = () => {
                                 <p className="text-[9px] font-bold uppercase tracking-[0.18em] text-gray-400 md:text-[10px]">
                                     {c.tag}
                                 </p>
-                                <h3 className="mt-2 text-sm font-bold leading-tight text-gray-900 sm:text-base md:text-lg">
+                                <h3 className="mt-1.5 text-sm font-bold leading-tight text-gray-900 sm:mt-2 sm:text-base md:text-lg">
                                     {c.title}
                                 </h3>
-                                <p className="mt-2 line-clamp-3 text-xs leading-relaxed text-gray-600 sm:text-sm">
+                                <p className="mt-1.5 line-clamp-3 text-xs leading-relaxed text-gray-600 sm:mt-2 sm:text-sm">
                                     {c.body}
                                 </p>
-                                <span className="mt-3 inline-flex items-center gap-0.5 text-[10px] font-semibold text-[#F27420] sm:text-xs">
-                                    Tap to open <ArrowRight size={12} className="shrink-0" />
-                                </span>
+                                <div
+                                    className="mt-3 flex items-center justify-end text-[#F27420] transition group-hover:translate-x-0.5 sm:mt-4"
+                                    aria-hidden
+                                >
+                                    <ChevronRight className="h-5 w-5" strokeWidth={2.5} />
+                                </div>
                             </a>
                         ))}
                     </div>
@@ -316,7 +316,8 @@ const MarketingPageRedesignPreview: React.FC = () => {
                         anytime in the app.
                     </p>
 
-                    <div className="mt-5 flex snap-x snap-mandatory items-stretch gap-3 overflow-x-auto overscroll-x-contain pb-2 [-webkit-overflow-scrolling:touch] sm:mt-6 md:mt-6 md:grid md:max-w-none md:grid-cols-3 md:gap-4 md:overflow-visible md:pb-0">
+                    {/* Mobile: compact vertical stack (all 3 plans in one screenful). md+: 3-col grid. */}
+                    <div className="mt-5 flex flex-col gap-2.5 sm:mt-6 sm:gap-3 md:mt-6 md:grid md:grid-cols-3 md:gap-4 md:items-stretch">
                         {[
                             {
                                 name: 'Starter',
@@ -342,31 +343,31 @@ const MarketingPageRedesignPreview: React.FC = () => {
                         ].map((p) => (
                             <div
                                 key={p.name}
-                                className={`flex h-full min-h-[17.5rem] w-[min(90vw,20rem)] min-w-0 shrink-0 snap-center flex-col rounded-2xl border bg-white p-4 shadow-sm min-[400px]:w-[18.5rem] sm:max-w-sm sm:min-h-[18rem] sm:p-5 md:min-h-[19rem] md:w-auto ${
+                                className={`flex h-full w-full min-w-0 flex-col rounded-xl border bg-white p-3.5 shadow-sm sm:p-4 md:min-h-[19rem] md:rounded-2xl md:p-5 ${
                                     p.popular
                                         ? 'border-[#F27420] ring-2 ring-[#F27420]/30 bg-orange-50/40'
                                         : 'border-gray-200'
                                 }`}
                             >
-                                <div className="flex min-w-0 flex-wrap items-center gap-2">
-                                    <h3 className="text-base font-bold text-[#0A1128] sm:text-lg">{p.name}</h3>
+                                <div className="flex min-w-0 flex-wrap items-center gap-1.5 sm:gap-2">
+                                    <h3 className="text-sm font-bold text-[#0A1128] sm:text-base md:text-lg">{p.name}</h3>
                                     {p.popular && (
-                                        <span className="shrink-0 rounded-full bg-[#F27420] px-2 py-0.5 text-[8px] font-bold uppercase tracking-wide text-white sm:text-[9px]">
+                                        <span className="shrink-0 rounded-full bg-[#F27420] px-1.5 py-0.5 text-[7px] font-bold uppercase tracking-wide text-white sm:px-2 sm:text-[9px]">
                                             Most popular
                                         </span>
                                     )}
                                 </div>
-                                <p className="mt-2 text-xl font-extrabold text-[#0A1128] sm:mt-3 sm:text-2xl sm:leading-tight">
+                                <p className="mt-1.5 text-lg font-extrabold leading-tight text-[#0A1128] sm:mt-2 sm:text-xl md:mt-3 md:text-2xl">
                                     {p.price}
-                                    <span className="text-xs font-semibold text-gray-500 sm:text-sm"> / month</span>
+                                    <span className="text-xs font-semibold text-gray-500 sm:text-sm"> / mo</span>
                                 </p>
-                                <p className="mt-2 text-[0.8125rem] leading-snug text-gray-600 sm:text-sm">{p.blurb}</p>
-                                <p className="mt-1.5 text-[9px] font-medium uppercase tracking-wide text-slate-500 sm:text-[10px]">
+                                <p className="mt-1 text-[0.8125rem] leading-snug text-gray-600 sm:mt-2 sm:text-sm">{p.blurb}</p>
+                                <p className="mt-0.5 text-[8px] font-medium uppercase tracking-wide text-slate-500 sm:mt-1.5 sm:text-[10px]">
                                     AT&amp;T &amp; Verizon
                                 </p>
                                 <a
                                     href={`${APP_PATH}#sim-card`}
-                                    className={`mt-auto inline-flex min-h-11 w-full items-center justify-center rounded-xl px-3 py-2.5 text-sm font-bold transition sm:min-h-12 sm:py-3 ${
+                                    className={`mt-3 inline-flex min-h-10 w-full items-center justify-center rounded-lg px-3 py-2 text-xs font-bold transition sm:min-h-11 sm:rounded-xl sm:py-2.5 sm:text-sm md:mt-auto md:min-h-12 md:py-3 ${
                                         p.popular
                                             ? 'bg-[#F27420] text-white hover:brightness-105'
                                             : 'bg-[#0A1128] text-white hover:bg-[#121f45]'
