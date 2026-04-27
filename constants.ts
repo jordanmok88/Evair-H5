@@ -65,17 +65,13 @@ export const SIM_CARD_PRODUCTS: SimCardProduct[] = [
 ];
 
 /**
- * Where we point customers who want to buy a physical SIM. Per the
- * 2026-04 pivot, physical SIMs are no longer sold through the H5
- * checkout — this URL takes the customer to the EvairSIM storefront
- * on Amazon. Jordan to paste the final URL in once the Amazon listing
- * is live; the placeholder below renders a reasonable CTA but warns
- * in the console if clicked before the real link is wired.
+ * Physical SIM purchase: points to Amazon (storefront URL or search).
+ * Set `VITE_AMAZON_SIM_STOREFRONT_URL` when a flagship store is live;
+ * default is Amazon.com search for “Evair”.
  */
-/** Fallback until a live Amazon Store page URL is set in Netlify env. */
 export const AMAZON_SIM_STOREFRONT_URL =
   (import.meta.env.VITE_AMAZON_SIM_STOREFRONT_URL as string | undefined) ||
-  'https://www.amazon.com/s?k=EvairSIM';
+  'https://www.amazon.com/s?k=Evair';
 
 export const MOCK_PLANS_US: Plan[] = MOCK_COUNTRIES.find(c => c.countryCode === 'US')?.plans ?? [];
 

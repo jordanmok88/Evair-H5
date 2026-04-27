@@ -9,6 +9,7 @@ import { ArrowRight, CheckCircle2, ChevronRight, Star } from 'lucide-react';
 import { applyPageSeo } from '../utils/seoHead';
 import { isMobileDevice } from '../utils/device';
 import { FooterWordmarkLink } from '../components/marketing/FooterWordmarkLink';
+import { AMAZON_SIM_STOREFRONT_URL } from '../constants';
 
 const APP_PATH = '/app';
 const ACTIVATE_PATH = '/activate';
@@ -155,7 +156,9 @@ const MarketingPageRedesignPreview: React.FC = () => {
                             Travel eSIM
                         </a>
                         <a
-                            href={`${APP_PATH}#sim-card`}
+                            href={AMAZON_SIM_STOREFRONT_URL}
+                            target="_blank"
+                            rel="noopener noreferrer"
                             className="inline-flex min-h-12 items-center justify-center rounded-xl bg-[#0A1128] px-5 py-3.5 text-center text-sm font-bold text-white shadow-lg shadow-slate-900/30 transition hover:bg-[#121f45] active:scale-[0.99] sm:min-h-14 sm:px-6 sm:text-base"
                         >
                             Buy SIM card

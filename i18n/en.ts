@@ -121,7 +121,7 @@ const en = {
     trust_support: '24/7 support.',
     trust_one_line: 'No contracts · No hidden fees · 24/7 support',
     buy_sim_card: 'Buy SIM card',
-    buy_sim_card_aria: 'Open the app to choose a SIM plan and buy on Amazon',
+    buy_sim_card_aria: 'Open Amazon.com in a new tab with Evair in search',
     home_badge: 'Mobile data, simplified',
     home_hero_stay: 'Stay connected',
     home_hero_anywhere: 'anywhere.',

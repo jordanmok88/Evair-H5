@@ -12,6 +12,7 @@ import { isMobileDevice } from '../utils/device';
 import { useMobileSignInGate } from '../hooks/useMobileSignInGate';
 import MobileOnlyNotice from '../components/marketing/MobileOnlyNotice';
 import { FooterWordmarkLink } from '../components/marketing/FooterWordmarkLink';
+import { AMAZON_SIM_STOREFRONT_URL } from '../constants';
 
 const APP_PATH = '/app';
 const ACTIVATE_PATH = '/activate';
@@ -225,7 +226,9 @@ const MarketingPage: React.FC = () => {
                         </a>
                         <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2">
                             <a
-                                href={`${APP_PATH}#sim-card`}
+                                href={AMAZON_SIM_STOREFRONT_URL}
+                                target="_blank"
+                                rel="noopener noreferrer"
                                 className="flex min-h-12 items-center justify-center gap-2 rounded-xl bg-slate-900 px-4 py-3 text-sm font-bold text-white shadow-lg shadow-slate-900/20 transition active:scale-[0.98] sm:min-h-14 sm:text-base"
                                 aria-label={t('marketing.buy_sim_card_aria')}
                             >
