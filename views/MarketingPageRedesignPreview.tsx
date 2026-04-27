@@ -1,6 +1,7 @@
 /**
- * Homepage layout redesign — PREVIEW ONLY at `/welcome-preview`.
- * Does not replace `MarketingPage` (`/` or `/welcome`) until approved.
+ * Homepage layout sandbox — `/welcome-preview`.
+ * The approved design now ships on `MarketingPage` (`/` and `/welcome`).
+ * This route remains for A/B or QA comparisons.
  */
 
 import React, { useEffect } from 'react';
