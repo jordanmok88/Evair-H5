@@ -1,5 +1,5 @@
 /**
- * Modal shown to desktop visitors who tap "Mobile Sign in →" on the
+ * Modal shown to desktop visitors who tap "OPEN APP" on the
  * marketing site.
  *
  * IMPORTANT: this modal is **never rendered for mobile visitors**.

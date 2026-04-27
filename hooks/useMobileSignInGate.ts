@@ -1,7 +1,7 @@
 /**
- * Click gate for the marketing-site "Mobile Sign in" CTA.
+ * Click gate for the marketing-site "OPEN APP" CTA.
  *
- * The "Mobile Sign in" link points at `/app`. On mobile devices that's
+ * The link points at `/app`. On mobile devices that's
  * a great destination — the H5 customer app renders fullscreen. On
  * desktop the same URL renders inside a 430×880 phone-mock, which is a
  * brand showcase for browsing the dashboard but a frustrating
@@ -54,7 +54,7 @@ function writeAck(): void {
 export interface MobileSignInGate {
     /** Whether the modal is currently open. */
     open: boolean;
-    /** Bind to the Mobile Sign in <a onClick>. */
+    /** Bind to the OPEN APP <a onClick>. */
     gateClick: (e: React.MouseEvent<HTMLAnchorElement>) => void;
     /** Dismiss without proceeding. Wire to modal's "Got it" / X / backdrop. */
     onClose: () => void;
@@ -66,7 +66,7 @@ export interface MobileSignInGate {
 }
 
 /**
- * @param appPath The destination href for the Mobile Sign in link.
+ * @param appPath Destination href for the OPEN APP link.
  *                Defaults to `/app` so call sites usually omit it.
  */
 export function useMobileSignInGate(appPath: string = '/app'): MobileSignInGate {

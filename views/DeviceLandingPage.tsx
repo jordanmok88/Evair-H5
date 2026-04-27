@@ -15,9 +15,9 @@
  *     close the sale on the SEO page itself.
  *
  * Sections:
- *   1. Header (apex Evair logo + back to marketing site)
- *   2. Hero (title + subtitle + speed badge + CTA)
- *   3. Compatible devices
+ *   1. Header (apex Evair logo)
+ *   2. Hero (title + subtitle + speed badge + check row; no hero CTA on phone)
+ *   3. Compatible devices (camera / IoT; omitted on phone)
  *   4. Three pillars
  *   5. Plan tiers
  *   6. FAQ
@@ -42,7 +42,6 @@ interface DeviceLandingPageProps {
 
 const DeviceLandingPage: React.FC<DeviceLandingPageProps> = ({ category }) => {
     const content = DEVICE_CONTENT[category];
-    const compareHref = content.carrierComparison ? `#${content.carrierComparison.sectionId}` : '/welcome';
 
     // Set tab title + meta description from JS for now. When we move to
     // a real SSR/SSG setup these become server-rendered <head> tags;
@@ -63,7 +62,13 @@ const DeviceLandingPage: React.FC<DeviceLandingPageProps> = ({ category }) => {
 
             {/* Hero */}
             <section className="px-4 md:px-8 py-12 md:py-20 max-w-6xl mx-auto">
-                <div className="grid md:grid-cols-2 gap-10 items-center">
+                <div
+                    className={
+                        category === 'phone'
+                            ? 'grid gap-10'
+                            : 'grid md:grid-cols-2 gap-10 items-center'
+                    }
+                >
                     <div>
                         <div className="inline-flex items-center gap-2 bg-slate-100 text-slate-700 text-xs font-bold uppercase tracking-wider px-3 py-1 rounded-full mb-4">
                             <Gauge size={12} /> {content.speedHeadline}
@@ -78,21 +83,7 @@ const DeviceLandingPage: React.FC<DeviceLandingPageProps> = ({ category }) => {
                             <strong className="text-slate-700">Speed honesty:</strong>{' '}
                             {content.throttleNote}
                         </p>
-                        <div className="flex flex-wrap gap-3">
-                            <a
-                                href={content.ctaHref}
-                                className="inline-flex items-center justify-center gap-2 bg-orange-500 text-white font-bold px-5 py-3 rounded-xl shadow-lg shadow-orange-500/20 active:scale-[0.98] transition-transform"
-                            >
-                                {content.ctaLabel} <ArrowRight size={18} />
-                            </a>
-                            <a
-                                href={compareHref}
-                                className="inline-flex items-center justify-center gap-2 bg-white text-slate-900 font-semibold px-5 py-3 rounded-xl border border-slate-300"
-                            >
-                                {content.carrierComparison ? 'See price vs. big 3' : 'Compare all plans'}
-                            </a>
-                        </div>
-                        <div className="flex items-center gap-2 mt-6 text-xs text-slate-500">
+                        <div className="flex items-center gap-2 mt-2 text-xs text-slate-500">
                             <CheckCircle2 size={14} className="text-emerald-500" />
                             No contract.
                             <CheckCircle2 size={14} className="text-emerald-500 ml-2" />
@@ -102,26 +93,28 @@ const DeviceLandingPage: React.FC<DeviceLandingPageProps> = ({ category }) => {
                         </div>
                     </div>
 
-                    {/* Decorative device mosaic — purely visual */}
-                    <div className="hidden md:block">
-                        <div className="grid grid-cols-3 gap-3">
-                            {content.devices.slice(0, 9).map((d, i) => (
-                                <div
-                                    key={`${d.label}-${i}`}
-                                    className={`aspect-square rounded-2xl flex flex-col items-center justify-center gap-2 text-slate-600 ${
-                                        i === 4
-                                            ? 'bg-orange-500 text-white shadow-xl shadow-orange-500/20'
-                                            : 'bg-slate-50 border border-slate-200'
-                                    }`}
-                                >
-                                    <d.icon size={26} />
-                                    <span className="text-[11px] font-semibold text-center px-1">
-                                        {d.label}
-                                    </span>
-                                </div>
-                            ))}
+                    {/* Decorative device mosaic — phone page omits (headline + pillars cover it). */}
+                    {category !== 'phone' && (
+                        <div className="hidden md:block">
+                            <div className="grid grid-cols-3 gap-3">
+                                {content.devices.slice(0, 9).map((d, i) => (
+                                    <div
+                                        key={`${d.label}-${i}`}
+                                        className={`aspect-square rounded-2xl flex flex-col items-center justify-center gap-2 text-slate-600 ${
+                                            i === 4
+                                                ? 'bg-orange-500 text-white shadow-xl shadow-orange-500/20'
+                                                : 'bg-slate-50 border border-slate-200'
+                                        }`}
+                                    >
+                                        <d.icon size={26} />
+                                        <span className="text-[11px] font-semibold text-center px-1">
+                                            {d.label}
+                                        </span>
+                                    </div>
+                                ))}
+                            </div>
                         </div>
-                    </div>
+                    )}
                 </div>
             </section>
 
@@ -222,24 +215,25 @@ const DeviceLandingPage: React.FC<DeviceLandingPageProps> = ({ category }) => {
                 </section>
             )}
 
-            {/* Compatible devices strip — mobile shows the same data the
-                hero mosaic shows on desktop, so nothing is hidden */}
-            <section className="md:hidden px-4 py-8 bg-slate-50">
-                <h2 className="text-sm font-bold uppercase tracking-wider text-slate-500 mb-3">
-                    Built for
-                </h2>
-                <div className="grid grid-cols-2 gap-2">
-                    {content.devices.map(d => (
-                        <div
-                            key={d.label}
-                            className="flex items-center gap-2 bg-white border border-slate-200 rounded-xl px-3 py-2"
-                        >
-                            <d.icon size={16} className="text-slate-500" />
-                            <span className="text-sm text-slate-700">{d.label}</span>
-                        </div>
-                    ))}
-                </div>
-            </section>
+            {/* Compatible devices strip (camera / IoT). Phone page: headline is enough. */}
+            {category !== 'phone' && (
+                <section className="md:hidden px-4 py-8 bg-slate-50">
+                    <h2 className="text-sm font-bold uppercase tracking-wider text-slate-500 mb-3">
+                        Built for
+                    </h2>
+                    <div className="grid grid-cols-2 gap-2">
+                        {content.devices.map(d => (
+                            <div
+                                key={d.label}
+                                className="flex items-center gap-2 bg-white border border-slate-200 rounded-xl px-3 py-2"
+                            >
+                                <d.icon size={16} className="text-slate-500" />
+                                <span className="text-sm text-slate-700">{d.label}</span>
+                            </div>
+                        ))}
+                    </div>
+                </section>
+            )}
 
             {/* Pillars — phone: gradient rail + inline icon; others: original cards */}
             <section className="px-4 md:px-8 py-12 md:py-16 max-w-6xl mx-auto">

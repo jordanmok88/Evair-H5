@@ -127,7 +127,7 @@ export const DEVICE_CONTENT: Record<DeviceCategory, DeviceContent> = {
         },
         heroTitle: 'US 5G data for your phone, tablet, or hotspot',
         heroSubtitle:
-            'Real 5G on AT&T and Verizon. Bring your iPhone, Android, iPad, or pocket Wi-Fi — plug-and-use in minutes, no contract. Data-only.',
+            'Real 5G on AT&T and Verizon. Plug-and-use in minutes, no contract. Data-only.',
         speedHeadline: '5G, up to 200 Mbps',
         throttleNote:
             'You get a set amount of 5G/LTE at full speed, then unlimited data at 256 Kbps for the rest of the cycle — we never hard-cut you off. Exact GB per plan is in the app.',

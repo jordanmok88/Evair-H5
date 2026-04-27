@@ -13,6 +13,7 @@
  */
 
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import { useMobileSignInGate } from '../../hooks/useMobileSignInGate';
 import MobileOnlyNotice from './MobileOnlyNotice';
 
@@ -40,6 +41,7 @@ const NAV_ITEMS: { key: Exclude<SiteSection, null>; label: string; href: string 
 ];
 
 const SiteHeader: React.FC<SiteHeaderProps> = ({ active = null }) => {
+    const { t } = useTranslation();
     const signInGate = useMobileSignInGate('/app');
     return (
         <header className="sticky top-0 bg-white/90 backdrop-blur-md z-30 border-b border-slate-100">
@@ -74,23 +76,13 @@ const SiteHeader: React.FC<SiteHeaderProps> = ({ active = null }) => {
                         </a>
                     ))}
                 </nav>
-                {/* Sign-in CTA.
-                    Labelled "Mobile Sign in" so desktop visitors aren't
-                    surprised when the destination is a mobile-shaped UI.
-                    On desktop the click is intercepted by useMobileSignInGate
-                    which opens MobileOnlyNotice (QR + "use your phone" copy)
-                    instead of dropping the customer into the phone-mock —
-                    a sign-in surface needs to actually feel like one. The
-                    href stays `/app` so SEO bots, mobile clients, and
-                    desktop visitors who already opted into the phone-mock
-                    (`evair_desktop_signin_acked.v1` localStorage flag) all
-                    resolve to the right URL. */}
+                {/* Open app: mobile goes to `/app`; desktop uses the gate (QR / continue). */}
                 <a
                     href="/app"
                     onClick={signInGate.gateClick}
                     className="text-sm font-semibold text-orange-600 hover:text-orange-700"
                 >
-                    Mobile Sign in →
+                    {t('marketing.home_open_app')}
                 </a>
             </div>
 
