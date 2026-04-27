@@ -123,6 +123,10 @@ const es = {
     buy_sim_card: 'Comprar tarjeta SIM',
     buy_sim_card_aria: 'Abre la app para elegir un plan y comprar en Amazon',
     home_badge: 'Datos móviles, más simples',
+    home_hero_stay: 'Mantente conectado',
+    home_hero_anywhere: 'en cualquier lugar.',
+    home_hero_sub:
+      'eSIM de viaje para estancias cortas. Datos 5G en EE. UU. para largas. Solo datos, sin contrato, activación al instante.',
     home_title: 'Conéctate desde cualquier lugar.',
     home_sub:
       'eSIM de viaje para estancias cortas. 5G en EE. UU. para largas. Solo datos, sin contratos, activación al instante.',

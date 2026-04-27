@@ -1,12 +1,12 @@
 /**
  * Marketing landing page — apex `evairdigital.com` and `/welcome`.
- * Redesign merged from `MarketingPageRedesignPreview` (approved). Data-only
- * service: no US phone number, no carrier voice/SMS — see product rules.
+ * Hero uses classic headline (“Stay connected” + gradient “anywhere.”) + icon
+ * CTAs; sections below match the main redesign. Data-only product — no voice/SMS.
  */
 
 import React, { useEffect, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
-import { ArrowRight, CheckCircle2, ChevronRight, Star } from 'lucide-react';
+import { ArrowRight, BadgeCheck, CheckCircle2, ChevronRight, Globe, ShoppingCart, Star } from 'lucide-react';
 import { applyPageSeo } from '../utils/seoHead';
 import { isMobileDevice } from '../utils/device';
 import { useMobileSignInGate } from '../hooks/useMobileSignInGate';
@@ -199,43 +199,61 @@ const MarketingPage: React.FC = () => {
 
             <section className="bg-white px-4 py-12 sm:px-5 sm:py-16 md:px-6 md:py-20 lg:py-24">
                 <div className="mx-auto flex w-full min-w-0 max-w-4xl flex-col items-center text-center">
-                    <div className="mb-3 inline-flex max-w-[95%] items-center gap-1.5 rounded-full bg-orange-50 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-[#c45a10] sm:mb-4 sm:gap-2 sm:px-3 sm:text-xs">
-                        <Star className="h-2.5 w-2.5 shrink-0 sm:h-3 sm:w-3" fill="currentColor" /> {t('marketing.home_badge')}
+                    <div className="mb-3 inline-flex items-center gap-2 rounded-full bg-orange-50 px-3 py-1 text-xs font-bold uppercase tracking-wider text-orange-700 sm:mb-4">
+                        <Star className="h-3 w-3 shrink-0" fill="currentColor" />
+                        {t('marketing.home_badge')}
                     </div>
-                    <h1 className="text-[1.7rem] font-extrabold leading-[1.12] tracking-tight text-gray-900 min-[400px]:text-3xl sm:text-4xl sm:leading-tight md:text-5xl lg:text-6xl">
-                        {t('marketing.home_title')}
+                    <h1 className="text-4xl font-extrabold leading-tight tracking-tight text-slate-900 sm:text-5xl md:text-6xl">
+                        {t('marketing.home_hero_stay')}
+                        <br />
+                        <span className="bg-gradient-to-r from-orange-500 to-amber-400 bg-clip-text text-transparent">
+                            {t('marketing.home_hero_anywhere')}
+                        </span>
                     </h1>
-                    <p className="mt-4 max-w-2xl px-1 text-base leading-relaxed text-gray-600 sm:mt-6 sm:text-lg">
-                        {t('marketing.home_sub')}
+                    <p className="mt-4 max-w-md px-1 text-base leading-relaxed text-slate-600 sm:mt-6 sm:text-lg">
+                        {t('marketing.home_hero_sub')}
                     </p>
-                    <div className="mt-8 flex w-full min-w-0 max-w-xl flex-col items-stretch gap-2.5 sm:mt-10 sm:gap-3 md:flex-row md:justify-center md:gap-3">
+                    <div className="mt-8 w-full max-w-md sm:mt-10">
                         <a
                             href={TRAVEL_ESIM_LANDING}
                             onClick={goTravelEsimCta}
-                            className="inline-flex min-h-12 items-center justify-center rounded-xl bg-[#F27420] px-5 py-3.5 text-center text-sm font-bold text-white shadow-lg shadow-orange-500/25 transition hover:brightness-105 active:scale-[0.99] sm:min-h-14 sm:px-6 sm:text-base"
+                            className="flex w-full min-h-12 items-center justify-center gap-2 rounded-xl bg-orange-500 px-5 py-3 text-sm font-bold text-white shadow-lg shadow-orange-500/20 transition active:scale-[0.98] sm:min-h-14 sm:text-base"
                         >
+                            <Globe className="h-[18px] w-[18px] shrink-0" />
                             {t('marketing.home_travel_esim')}
                         </a>
-                        <a
-                            href={`${APP_PATH}#sim-card`}
-                            className="inline-flex min-h-12 items-center justify-center rounded-xl bg-[#0A1128] px-5 py-3.5 text-center text-sm font-bold text-white shadow-lg shadow-slate-900/30 transition hover:bg-[#121f45] active:scale-[0.99] sm:min-h-14 sm:px-6 sm:text-base"
-                            aria-label={t('marketing.buy_sim_card_aria')}
-                        >
-                            {t('marketing.buy_sim_card')}
-                        </a>
-                        <a
-                            href={ACTIVATE_PATH}
-                            onClick={goActivateCta}
-                            className="inline-flex min-h-12 items-center justify-center rounded-xl border border-gray-300 bg-white px-5 py-3.5 text-center text-sm font-bold text-gray-800 shadow-sm transition hover:bg-gray-50 active:scale-[0.99] sm:min-h-14 sm:px-6 sm:text-base"
-                        >
-                            {t('marketing.home_activate')}
-                        </a>
+                        <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2">
+                            <a
+                                href={`${APP_PATH}#sim-card`}
+                                className="flex min-h-12 items-center justify-center gap-2 rounded-xl bg-slate-900 px-4 py-3 text-sm font-bold text-white shadow-lg shadow-slate-900/20 transition active:scale-[0.98] sm:min-h-14 sm:text-base"
+                                aria-label={t('marketing.buy_sim_card_aria')}
+                            >
+                                <ShoppingCart className="h-[18px] w-[18px] shrink-0" />
+                                {t('marketing.buy_sim_card')}
+                            </a>
+                            <a
+                                href={ACTIVATE_PATH}
+                                onClick={goActivateCta}
+                                className="flex min-h-12 items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm font-bold text-slate-900 shadow-sm transition active:scale-[0.98] sm:min-h-14 sm:text-base"
+                            >
+                                <BadgeCheck className="h-[18px] w-[18px] shrink-0" />
+                                {t('marketing.home_activate')}
+                            </a>
+                        </div>
                     </div>
-                    <div className="mt-7 flex w-full min-w-0 justify-center px-0.5 sm:mt-9 sm:px-0">
-                        <p className="flex max-w-full items-center gap-1.5 text-[clamp(0.62rem,2.7vw,0.875rem)] font-medium leading-tight text-gray-500 sm:text-sm">
-                            <CheckCircle2 className="h-3 w-3 shrink-0 text-emerald-500 sm:h-[18px] sm:w-[18px]" aria-hidden />
-                            <span className="min-w-0 whitespace-nowrap">{t('marketing.trust_one_line')}</span>
-                        </p>
+                    <div className="mt-6 flex w-full min-w-0 max-w-full flex-wrap items-center justify-center gap-x-2 gap-y-1.5 px-1 text-[clamp(0.65rem,2.2vw,0.875rem)] text-slate-500 sm:mt-8 sm:gap-x-3 sm:gap-y-0 sm:text-sm">
+                        <span className="inline-flex items-center gap-1">
+                            <CheckCircle2 className="h-3.5 w-3.5 shrink-0 text-emerald-500" aria-hidden />
+                            {t('marketing.trust_no_contracts')}
+                        </span>
+                        <span className="inline-flex items-center gap-1 sm:ml-1">
+                            <CheckCircle2 className="h-3.5 w-3.5 shrink-0 text-emerald-500" aria-hidden />
+                            {t('marketing.trust_no_hidden_fees')}
+                        </span>
+                        <span className="inline-flex items-center gap-1 sm:ml-1">
+                            <CheckCircle2 className="h-3.5 w-3.5 shrink-0 text-emerald-500" aria-hidden />
+                            {t('marketing.trust_support')}
+                        </span>
                     </div>
                 </div>
             </section>
