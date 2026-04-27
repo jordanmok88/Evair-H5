@@ -190,7 +190,7 @@ const MarketingPage: React.FC = () => {
                     <a
                         href={APP_PATH}
                         onClick={signInGate.gateClick}
-                        className="inline-flex min-h-11 min-w-[5.5rem] shrink-0 items-center justify-center rounded-full bg-[#2563eb] px-3.5 py-2 text-[10px] font-bold uppercase tracking-wide text-white shadow-sm transition hover:bg-[#1d4ed8] active:scale-[0.98] sm:min-h-0 sm:px-5 sm:py-2.5 sm:text-xs"
+                        className="inline-flex h-7 shrink-0 items-center justify-center rounded-full bg-[#2563eb] px-2.5 text-[8px] font-bold uppercase leading-none tracking-wide text-white shadow-sm transition hover:bg-[#1d4ed8] active:scale-[0.98] sm:h-8 sm:px-3.5 sm:text-[10px] md:h-9 md:px-4 md:text-xs"
                     >
                         {t('marketing.home_open_app')}
                     </a>
