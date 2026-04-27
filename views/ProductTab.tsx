@@ -4,6 +4,23 @@ import ShopView from './ShopView';
 import MySimsView from './MySimsView';
 import PhysicalSimSetupView from './PhysicalSimSetupView';
 import { ActivationPreviewData } from '../services/api/activation';
+
+const VIEW_MODE_KEY_PHYSICAL = 'evair-viewMode-physical';
+const VIEW_MODE_KEY_ESIM = 'evair-viewMode-esim';
+
+/** Read persisted tab view; eSIM ignores legacy `SETUP` (physical bind wizard). */
+function readStoredViewMode(simType: SimType): string | null {
+  const key = simType === 'PHYSICAL' ? VIEW_MODE_KEY_PHYSICAL : VIEW_MODE_KEY_ESIM;
+  const v = sessionStorage.getItem(key);
+  if (v) return v;
+  const legacy = sessionStorage.getItem('evair-viewMode');
+  if (!legacy) return null;
+  if (simType === 'ESIM') {
+    return legacy === 'SHOP' || legacy === 'MINE' ? legacy : null;
+  }
+  return legacy === 'SHOP' || legacy === 'MINE' || legacy === 'SETUP' ? legacy : null;
+}
+
 interface ProductTabProps {
   type: SimType;
   testMode?: boolean;
@@ -49,10 +66,20 @@ const ProductTab: React.FC<ProductTabProps> = ({
   const mySims = activeSims.filter(s => s.type === type);
   const bindDeepLinkConsumedRef = useRef(false);
 
+  const viewModeStorageKey = type === 'PHYSICAL' ? VIEW_MODE_KEY_PHYSICAL : VIEW_MODE_KEY_ESIM;
+
   const [viewMode, setViewMode] = useState<'SHOP' | 'MINE' | 'SETUP'>(() => {
     if (initialBindSimDeepLink && type === 'PHYSICAL') return 'SETUP';
-    const saved = sessionStorage.getItem('evair-viewMode');
-    if (saved === 'MINE' || saved === 'SHOP' || saved === 'SETUP') return saved;
+    const saved = readStoredViewMode(type);
+    if (saved === 'MINE' || saved === 'SHOP') return saved;
+    // Physical SETUP only when explicitly binding — not when "Buy SIM" (#sim-card).
+    if (type === 'PHYSICAL' && saved === 'SETUP') {
+      const hash =
+        typeof window !== 'undefined' ? window.location.hash.toLowerCase() : '';
+      if (hash === '#bind-sim' || initialBindSimDeepLink) return 'SETUP';
+      if (hash === '#sim-card') return 'SHOP';
+      return mySims.length > 0 ? 'MINE' : 'SHOP';
+    }
     return mySims.length > 0 ? 'MINE' : 'SHOP';
   });
   const [setupEntryPoint, setSetupEntryPoint] = useState<'SHOP' | 'MINE'>('SHOP');
@@ -74,8 +101,8 @@ const ProductTab: React.FC<ProductTabProps> = ({
   }, [initialBindSimDeepLink, type, consumeBindDeepLink]);
 
   useEffect(() => {
-    sessionStorage.setItem('evair-viewMode', viewMode);
-  }, [viewMode]);
+    sessionStorage.setItem(viewModeStorageKey, viewMode);
+  }, [viewMode, viewModeStorageKey]);
 
   // `/app/travel-esim/jp` must land in the eSIM shop, not "My SIMs"
   // (sessionStorage can restore viewMode === 'MINE' from a prior visit).
