@@ -7,16 +7,22 @@
  *   1. Confirms the plan + price.
  *   2. Captures / pre-fills delivery email (defaults to the logged-in
  *      user's email — login is enforced one layer up).
- *   3. POSTs `/api/stripe-checkout` with EXPLICIT `successUrl` /
+ *   3. POSTs `/h5/orders/esim` to create a PENDING Laravel order (so
+ *      Stripe's `checkout.session.completed` webhook can match the
+ *      payment back via `payment_intent_data.metadata.order_id`).
+ *   4. POSTs `/api/stripe-checkout` with EXPLICIT `successUrl` /
  *      `cancelUrl` so Stripe redirects back to this same desktop page
- *      (not the H5 root). The success URL is consumed by
- *      `useEsimCheckoutFlow` mounted on `TravelEsimPage`.
- *   4. Stamps `pending_esim_order` in localStorage in the same shape as
- *      mobile `ShopView` so the existing post-payment pipeline (verify
- *      → orderEsim → email) keeps working unchanged.
+ *      (not the H5 root), plus the order id/no for webhook linkage.
+ *      The success URL is consumed by `useEsimCheckoutFlow` mounted on
+ *      `TravelEsimPage`.
+ *   5. Stamps `pending_esim_order` (orderNo + email + packageName) in
+ *      localStorage so `useEsimCheckoutFlow` can poll the order on
+ *      return without re-deriving anything from URL params.
  *
- * The drawer never calls `orderEsim` itself — provisioning happens
- * after Stripe redirects back, in the parent's `useEsimCheckoutFlow`.
+ * Provisioning happens server-side via the Stripe webhook; the drawer
+ * never calls supplier APIs. The parent's `useEsimCheckoutFlow` polls
+ * `/h5/orders/{order_no}` until `OrderProvisioningService` writes the
+ * SimAsset and the response exposes the `esim` block.
  */
 
 import React, { useEffect, useState } from 'react';

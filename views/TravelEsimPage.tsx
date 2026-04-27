@@ -22,7 +22,9 @@
  *      `successUrl` pointing back to this same page.
  *   4. After payment → Stripe redirects back here with
  *      `?stripe_status=success&session_id=…` → `useEsimCheckoutFlow`
- *      verifies the session, calls `orderEsim`, fires off the
+ *      polls `/h5/orders/{order_no}` until the
+ *      `checkout.session.completed` webhook has run
+ *      `OrderProvisioningService` (esim block populated), fires off the
  *      Resend email, and we render `<DesktopEsimSuccess>` in place
  *      of the marketing content.
  *
