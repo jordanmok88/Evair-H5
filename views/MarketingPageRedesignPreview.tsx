@@ -4,17 +4,7 @@
  */
 
 import React, { useEffect } from 'react';
-import {
-    ArrowRight,
-    BadgeCheck,
-    CheckCircle2,
-    DollarSign,
-    Globe,
-    Headphones,
-    Zap,
-    ShoppingCart,
-    Star,
-} from 'lucide-react';
+import { ArrowRight, CheckCircle2, Star } from 'lucide-react';
 import { applyPageSeo } from '../utils/seoHead';
 import { isMobileDevice } from '../utils/device';
 import { useMobileSignInGate } from '../hooks/useMobileSignInGate';
@@ -39,14 +29,40 @@ const goActivateCta = (e: React.MouseEvent<HTMLAnchorElement>) => {
     }
 };
 
-/** Placeholder photography — swap for licensed brand shots when approved. */
-const CAROUSEL_IMAGES = {
-    traveler:
-        'https://images.unsplash.com/photo-1569154941061-e231b4725ef1?auto=format&fit=crop&w=800&q=80',
-    iot: 'https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?auto=format&fit=crop&w=800&q=80',
-    longStay:
-        'https://images.unsplash.com/photo-1523240795612-9a054b0db644?auto=format&fit=crop&w=800&q=80',
-} as const;
+/** Placeholder photography — replace with brand / licensed assets before merge to `/welcome`. */
+const HAPPY_HERO_IMAGE =
+    'https://images.unsplash.com/photo-1529156069898-49963e39b3ac?auto=format&fit=crop&w=1600&q=82';
+
+const HAPPY_STORIES = [
+    {
+        img: 'https://images.unsplash.com/photo-1527631746610-bca00a040d60?auto=format&fit=crop&w=720&q=80',
+        alt: 'Travelers exploring a city together',
+        quote: 'Landed at JFK and had 5G before we reached baggage claim.',
+        who: 'Alex & Sam · NYC',
+    },
+    {
+        img: 'https://images.unsplash.com/photo-1553877522-43269d4ea984?auto=format&fit=crop&w=720&q=80',
+        alt: 'Remote team collaborating outdoors',
+        quote: 'Plug-and-play for our trail cams — no APN drama, just data.',
+        who: 'Morgan · Colorado',
+    },
+    {
+        img: 'https://images.unsplash.com/photo-1523240795612-9a054b0db644?auto=format&fit=crop&w=720&q=80',
+        alt: 'Friends at a cafe with a laptop',
+        quote: "Cheaper than local carriers — no SSN, no twelve-page form.",
+        who: 'Priya · Austin',
+    },
+] as const;
+
+function StarRow() {
+    return (
+        <div className="flex gap-0.5 text-amber-400" aria-hidden>
+            {Array.from({ length: 5 }, (_, i) => (
+                <Star key={i} size={14} className="fill-current" strokeWidth={0} />
+            ))}
+        </div>
+    );
+}
 
 const MarketingPageRedesignPreview: React.FC = () => {
     const signInGate = useMobileSignInGate(APP_PATH);
@@ -69,10 +85,34 @@ const MarketingPageRedesignPreview: React.FC = () => {
                 unchanged until you approve a merge.
             </div>
 
-            {/* ── Nav (match live: logo + links + sign-in) ───────────────── */}
+            {/* Airalo-style app strip: squircle + two-line copy + OPEN pill */}
+            <div className="border-b border-stone-200/80 bg-[#f3f1ec] px-3 py-2.5 sm:px-4">
+                <div className="mx-auto flex max-w-6xl items-center gap-3">
+                    <img
+                        src="/evairsim-logo.png"
+                        alt=""
+                        className="h-11 w-11 shrink-0 rounded-2xl border border-white/90 bg-white object-contain p-1 shadow-sm"
+                    />
+                    <div className="min-w-0 flex-1">
+                        <p className="truncate text-sm font-semibold text-gray-900">
+                            EvairSIM — Travel eSIM &amp; US data
+                        </p>
+                        <p className="truncate text-xs text-gray-500">Open in the Evair app</p>
+                    </div>
+                    <a
+                        href={APP_PATH}
+                        onClick={signInGate.gateClick}
+                        className="shrink-0 rounded-full bg-[#2563eb] px-5 py-2 text-xs font-bold uppercase tracking-wide text-white shadow-sm transition hover:bg-[#1d4ed8] active:scale-[0.98]"
+                    >
+                        Open
+                    </a>
+                </div>
+            </div>
+
+            {/* ── Nav (OPEN lives in strip above; compact App chip on small screens) ── */}
             <header className="sticky top-0 z-30 border-b border-gray-100 bg-white/95 backdrop-blur-md">
-                <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-4 md:px-8">
-                    <a href="/" className="flex items-center" aria-label="EvairSIM home">
+                <div className="mx-auto flex h-16 max-w-6xl items-center justify-between gap-3 px-4 md:px-8">
+                    <a href="/" className="flex min-w-0 items-center" aria-label="EvairSIM home">
                         <img
                             src="/evairsim-wordmark.png"
                             alt="EvairSIM"
@@ -104,9 +144,9 @@ const MarketingPageRedesignPreview: React.FC = () => {
                     <a
                         href={APP_PATH}
                         onClick={signInGate.gateClick}
-                        className="text-sm font-semibold text-[#F27420] transition hover:text-orange-700"
+                        className="shrink-0 rounded-full border border-gray-200 bg-white px-3 py-1.5 text-xs font-semibold text-gray-800 shadow-sm transition hover:border-gray-300 md:hidden"
                     >
-                        Mobile Sign in →
+                        App
                     </a>
                 </div>
             </header>
@@ -128,22 +168,22 @@ const MarketingPageRedesignPreview: React.FC = () => {
                         <a
                             href={TRAVEL_ESIM_LANDING}
                             onClick={goTravelEsimCta}
-                            className="inline-flex items-center justify-center gap-2 rounded-xl bg-[#F27420] px-6 py-4 text-center text-base font-bold text-white shadow-lg shadow-orange-500/25 transition hover:brightness-105 active:scale-[0.98]"
+                            className="inline-flex items-center justify-center rounded-xl bg-[#F27420] px-6 py-4 text-center text-base font-bold text-white shadow-lg shadow-orange-500/25 transition hover:brightness-105 active:scale-[0.98]"
                         >
-                            <Globe size={18} /> Travel eSIM
+                            Travel eSIM
                         </a>
                         <a
                             href={`${APP_PATH}#sim-card`}
-                            className="inline-flex items-center justify-center gap-2 rounded-xl bg-[#0A1128] px-6 py-4 text-center text-base font-bold text-white shadow-lg shadow-slate-900/30 transition hover:bg-[#121f45] active:scale-[0.98]"
+                            className="inline-flex items-center justify-center rounded-xl bg-[#0A1128] px-6 py-4 text-center text-base font-bold text-white shadow-lg shadow-slate-900/30 transition hover:bg-[#121f45] active:scale-[0.98]"
                         >
-                            <ShoppingCart size={18} /> Buy SIM card
+                            Buy SIM card
                         </a>
                         <a
                             href={ACTIVATE_PATH}
                             onClick={goActivateCta}
-                            className="inline-flex items-center justify-center gap-2 rounded-xl border border-gray-300 bg-white px-6 py-4 text-center text-base font-bold text-gray-800 shadow-sm transition hover:bg-gray-50 active:scale-[0.98]"
+                            className="inline-flex items-center justify-center rounded-xl border border-gray-300 bg-white px-6 py-4 text-center text-base font-bold text-gray-800 shadow-sm transition hover:bg-gray-50 active:scale-[0.98]"
                         >
-                            <BadgeCheck size={18} /> Activate my SIM
+                            Activate my SIM
                         </a>
                     </div>
                     <div className="mt-10 flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-sm text-gray-500">
@@ -163,54 +203,56 @@ const MarketingPageRedesignPreview: React.FC = () => {
                 </div>
             </section>
 
-            {/* ── 2. Customer carousel ─────────────────────────────────── */}
-            <section className="border-t border-gray-100 bg-white px-4 py-14 md:px-8">
+            {/* ── 2. Happy customers (hero + stories — warmer than snap-carousel) ── */}
+            <section
+                id="stories"
+                className="border-t border-stone-200/70 bg-[#faf8f5] px-4 py-16 md:px-8 md:py-20"
+            >
                 <div className="mx-auto max-w-6xl">
-                    <h2 className="mb-8 text-left text-2xl font-extrabold text-gray-900 md:text-3xl">
-                        Trusted by travelers and builders.
+                    <p className="text-center text-[11px] font-bold uppercase tracking-[0.28em] text-[#a85a12]">
+                        Real stories
+                    </p>
+                    <h2 className="mt-3 text-center text-3xl font-extrabold tracking-tight text-gray-900 md:text-4xl">
+                        Real people staying connected
                     </h2>
-                    <div className="-mx-4 flex snap-x snap-mandatory gap-6 overflow-x-auto px-4 pb-2 md:mx-0 md:px-0">
-                        {[
-                            {
-                                img: CAROUSEL_IMAGES.traveler,
-                                alt: 'Traveler using phone in a busy airport',
-                                quote:
-                                    'Landed at JFK and had 5G before I even reached baggage claim.',
-                            },
-                            {
-                                img: CAROUSEL_IMAGES.iot,
-                                alt: 'Hands setting up outdoor or IoT hardware',
-                                quote:
-                                    'The perfect plug-and-play solution for my remote security setup.',
-                            },
-                            {
-                                img: CAROUSEL_IMAGES.longStay,
-                                alt: 'Person on a video call with a tablet in a sunny cafe',
-                                quote:
-                                    "Cheaper than local carriers and I didn't need an SSN to get started.",
-                            },
-                        ].map((card, i) => (
+                    <p className="mx-auto mt-3 max-w-2xl text-center text-base leading-relaxed text-gray-600 md:text-lg">
+                        From airport layovers to backyard cameras — EvairSIM fits the way you move.
+                    </p>
+
+                    <div className="mt-10 overflow-hidden rounded-[1.75rem] shadow-xl ring-1 ring-black/[0.06]">
+                        <img
+                            src={HAPPY_HERO_IMAGE}
+                            alt="Friends outdoors, phones in hand"
+                            className="aspect-[4/3] w-full object-cover sm:aspect-[21/9]"
+                            loading="lazy"
+                        />
+                    </div>
+
+                    <div className="mt-12 grid gap-8 md:grid-cols-3">
+                        {HAPPY_STORIES.map((s) => (
                             <article
-                                key={i}
-                                className="w-[min(100%,320px)] shrink-0 snap-center overflow-hidden rounded-xl border border-gray-100 bg-white shadow-md md:w-[300px]"
+                                key={s.who}
+                                className="group flex flex-col overflow-hidden rounded-2xl bg-white shadow-sm ring-1 ring-stone-200/80 transition hover:shadow-md hover:ring-stone-300/80"
                             >
-                                <div className="h-48 w-full overflow-hidden bg-gray-100">
+                                <div className="aspect-[4/3] w-full overflow-hidden bg-stone-100">
                                     <img
-                                        src={card.img}
-                                        alt={card.alt}
-                                        className="h-full w-full object-cover"
+                                        src={s.img}
+                                        alt={s.alt}
+                                        className="h-full w-full object-cover transition duration-500 group-hover:scale-[1.02]"
                                         loading="lazy"
                                     />
                                 </div>
-                                <div className="p-5">
-                                    <p className="text-sm font-medium leading-relaxed text-gray-700">
-                                        &ldquo;{card.quote}&rdquo;
+                                <div className="flex flex-1 flex-col p-6">
+                                    <StarRow />
+                                    <p className="mt-3 text-base font-medium leading-relaxed text-gray-800">
+                                        &ldquo;{s.quote}&rdquo;
                                     </p>
+                                    <p className="mt-4 text-sm font-semibold text-gray-500">{s.who}</p>
                                     <a
                                         href="/blog"
-                                        className="mt-4 inline-flex items-center gap-1 text-sm font-bold text-[#F27420] hover:underline"
+                                        className="mt-auto inline-flex items-center gap-1 pt-5 text-sm font-bold text-[#F27420] transition hover:underline"
                                     >
-                                        Read Story <ArrowRight size={14} />
+                                        Read story <ArrowRight size={14} />
                                     </a>
                                 </div>
                             </article>
@@ -219,8 +261,8 @@ const MarketingPageRedesignPreview: React.FC = () => {
                 </div>
             </section>
 
-            {/* ── 3. Why Evair ─────────────────────────────────────────── */}
-            <section className="border-t border-gray-100 bg-gray-50 px-4 py-16 md:px-8">
+            {/* ── 3. Why Evair (premium cards — gradient rail, no tiny icon tiles) ── */}
+            <section id="why" className="border-t border-gray-100 bg-gray-50 px-4 py-16 md:px-8">
                 <div className="mx-auto max-w-5xl">
                     <h2 className="text-center text-2xl font-extrabold text-gray-900 md:text-3xl">
                         Built for the way you actually move.
@@ -228,43 +270,53 @@ const MarketingPageRedesignPreview: React.FC = () => {
                     <div className="mt-10 grid grid-cols-1 gap-6 md:grid-cols-2">
                         {[
                             {
-                                icon: <Globe className="text-orange-500" size={24} />,
+                                gradient: 'from-orange-500 via-amber-400 to-yellow-300',
+                                tag: 'Coverage',
                                 title: 'Global coverage.',
                                 body: '200+ countries with tier-1 carriers, plus ultra-stable US 5G for residents and long stays.',
                             },
                             {
-                                icon: <DollarSign className="text-emerald-500" size={24} />,
+                                gradient: 'from-emerald-500 via-teal-400 to-cyan-300',
+                                tag: 'Pricing',
                                 title: 'Honest pricing.',
                                 body: `Travel data from $4.50. US plans from $${STAY_PRICE_USD}/mo. Zero taxes-on-top surprises.`,
                             },
                             {
-                                icon: <Headphones className="text-blue-500" size={24} />,
+                                gradient: 'from-sky-500 via-blue-500 to-indigo-400',
+                                tag: 'Support',
                                 title: 'Real human support.',
                                 body: 'In-app live chat in English, Spanish, and Mandarin. We usually answer in under 5 minutes.',
                             },
                             {
-                                icon: <Zap className="text-amber-500" size={24} />,
+                                gradient: 'from-amber-500 via-orange-400 to-rose-400',
+                                tag: 'Speed',
                                 title: 'Instant activation.',
                                 body: 'No SIM swaps, no airport queues, no roaming shock.',
                             },
                         ].map((c) => (
-                            <div
+                            <article
                                 key={c.title}
-                                className="rounded-xl bg-white p-6 shadow-sm transition-shadow hover:shadow-md"
+                                className="group relative overflow-hidden rounded-2xl bg-white p-8 shadow-sm ring-1 ring-gray-100/90 transition hover:shadow-lg hover:ring-gray-200"
                             >
-                                <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-xl bg-gray-50">
-                                    {c.icon}
-                                </div>
-                                <h3 className="text-lg font-bold text-gray-900">{c.title}</h3>
-                                <p className="mt-2 text-sm leading-relaxed text-gray-600">{c.body}</p>
-                            </div>
+                                <div
+                                    className={`absolute left-0 top-0 h-1.5 w-full bg-gradient-to-r ${c.gradient}`}
+                                    aria-hidden
+                                />
+                                <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-gray-400">
+                                    {c.tag}
+                                </p>
+                                <h3 className="mt-3 text-xl font-bold tracking-tight text-gray-900 md:text-2xl">
+                                    {c.title}
+                                </h3>
+                                <p className="mt-4 text-base leading-relaxed text-gray-600">{c.body}</p>
+                            </article>
                         ))}
                     </div>
                 </div>
             </section>
 
             {/* ── 4. Product deep dives ─────────────────────────────────── */}
-            <section className="border-t border-gray-100">
+            <section id="compare" className="border-t border-gray-100">
                 <div className="bg-orange-50 px-6 py-16">
                     <div className="mx-auto max-w-3xl">
                         <p className="text-xs font-bold uppercase tracking-[0.2em] text-orange-800">
