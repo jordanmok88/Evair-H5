@@ -133,6 +133,7 @@ const en = {
     home_travel_esim: 'Travel eSIM',
     home_activate: 'Activate my SIM',
     home_open_app: 'OPEN APP',
+    home_open_app_aria: 'Open the Evair customer app',
     home_stories_title: 'Our Happy Customers',
     home_stories_sub: 'Real people staying connected — swipe for more stories.',
     home_stories_cta: 'See stories',

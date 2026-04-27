@@ -131,6 +131,7 @@ const zh = {
     home_travel_esim: '旅游 eSIM',
     home_activate: '激活我的 SIM',
     home_open_app: '打开应用',
+    home_open_app_aria: '打开 Evair 客户应用',
     home_stories_title: '我们的用户',
     home_stories_sub: '真实用户，真实连接 — 滑动查看更多故事。',
     home_stories_cta: '看看故事',

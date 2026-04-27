@@ -11,6 +11,7 @@ import { applyPageSeo } from '../utils/seoHead';
 import { isMobileDevice } from '../utils/device';
 import { useMobileSignInGate } from '../hooks/useMobileSignInGate';
 import MobileOnlyNotice from '../components/marketing/MobileOnlyNotice';
+import { OpenAppHeaderButton } from '../components/marketing/OpenAppHeaderButton';
 import { FooterWordmarkLink } from '../components/marketing/FooterWordmarkLink';
 import { AMAZON_SIM_STOREFRONT_URL } from '../constants';
 
@@ -189,13 +190,7 @@ const MarketingPage: React.FC = () => {
                             Blog
                         </a>
                     </nav>
-                    <a
-                        href={APP_PATH}
-                        onClick={signInGate.gateClick}
-                        className="inline-flex h-7 shrink-0 items-center justify-center rounded-full bg-[#2563eb] px-2.5 text-[8px] font-bold uppercase leading-none tracking-wide text-white shadow-sm transition hover:bg-[#1d4ed8] active:scale-[0.98] sm:h-8 sm:px-3.5 sm:text-[10px] md:h-9 md:px-4 md:text-xs"
-                    >
-                        {t('marketing.home_open_app')}
-                    </a>
+                    <OpenAppHeaderButton href={APP_PATH} onClick={signInGate.gateClick} />
                 </div>
             </header>
 

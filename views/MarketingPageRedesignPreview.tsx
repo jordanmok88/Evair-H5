@@ -9,6 +9,9 @@ import { ArrowRight, CheckCircle2, ChevronRight, Star } from 'lucide-react';
 import { applyPageSeo } from '../utils/seoHead';
 import { isMobileDevice } from '../utils/device';
 import { FooterWordmarkLink } from '../components/marketing/FooterWordmarkLink';
+import { OpenAppHeaderButton } from '../components/marketing/OpenAppHeaderButton';
+import MobileOnlyNotice from '../components/marketing/MobileOnlyNotice';
+import { useMobileSignInGate } from '../hooks/useMobileSignInGate';
 import { AMAZON_SIM_STOREFRONT_URL } from '../constants';
 
 const APP_PATH = '/app';
@@ -75,6 +78,7 @@ function StarRow({ compact }: { compact?: boolean }) {
 }
 
 const MarketingPageRedesignPreview: React.FC = () => {
+    const signInGate = useMobileSignInGate(APP_PATH);
     useEffect(() => {
         applyPageSeo({
             path: '/welcome-preview',
@@ -93,7 +97,7 @@ const MarketingPageRedesignPreview: React.FC = () => {
                 unchanged until you approve a merge.
             </div>
 
-            {/* ── Nav: OPEN APP → H5 customer shell at /app (no strip, no gate) ── */}
+            {/* ── Nav: OPEN APP (same CTA as production marketing home) ── */}
             <header className="sticky top-0 z-30 border-b border-gray-100 bg-white/95 backdrop-blur-md supports-[backdrop-filter]:bg-white/90">
                 <div className="mx-auto flex h-14 min-h-14 max-w-6xl items-center justify-between gap-2 px-3 sm:h-16 sm:min-h-16 sm:gap-3 sm:px-4 md:px-8">
                     <a href="/" className="flex min-w-0 max-w-[min(200px,52vw)] shrink items-center" aria-label="EvairSIM home">
@@ -125,12 +129,7 @@ const MarketingPageRedesignPreview: React.FC = () => {
                             Blog
                         </a>
                     </nav>
-                    <a
-                        href={APP_PATH}
-                        className="inline-flex h-7 shrink-0 items-center justify-center rounded-full bg-[#2563eb] px-2.5 text-[8px] font-bold uppercase leading-none tracking-wide text-white shadow-sm transition hover:bg-[#1d4ed8] active:scale-[0.98] sm:h-8 sm:px-3.5 sm:text-[10px] md:h-9 md:px-4 md:text-xs"
-                    >
-                        OPEN APP
-                    </a>
+                    <OpenAppHeaderButton href={APP_PATH} onClick={signInGate.gateClick} />
                 </div>
             </header>
 
@@ -462,6 +461,11 @@ const MarketingPageRedesignPreview: React.FC = () => {
                     </div>
                 </footer>
             </section>
+            <MobileOnlyNotice
+                open={signInGate.open}
+                onClose={signInGate.onClose}
+                onContinueAnyway={signInGate.onContinueAnyway}
+            />
         </div>
     );
 };
