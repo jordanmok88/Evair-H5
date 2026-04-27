@@ -1,0 +1,31 @@
+---
+description: Logic-first changes, flag nonsensical outcomes, avoid careless regressions
+alwaysApply: true
+---
+
+# Agent quality — logic, pushback, regressions
+
+Jordan expects **sound reasoning**, not just compliant typing.
+
+## Before shipping a change
+
+1. **Trace the full user path** — entry URL/hash, `sessionStorage` / `localStorage` keys, tab switches, and **both** SIM types (eSIM vs physical) if `ProductTab` or shared state is touched.
+2. **Ask “what breaks?”** — e.g. shared keys, Strict Mode double mount, marketing mobile vs desktop handlers, hash vs `replaceState`.
+3. If something feels **off or risky**, **say so in the reply** before or with the diff: *“This could cause X because Y — here’s a safer variant unless you want Z.”*
+
+## When Jordan’s direction conflicts with locked rules or obvious bugs
+
+He is **not always right** (his words). **Politely flag it** when:
+
+- A request contradicts `.cursor/rules/product-decisions.mdc` or other locked project rules, or
+- It would clearly regress UX, security, or cross-repo contracts.
+
+Offer a concrete alternative; don’t silently ship something that “doesn’t make sense.”
+
+## After mistakes
+
+Own regressions briefly, fix root cause (not symptoms only), and **add a regression note** in code or tests when cheap (e.g. comment on the shared-state hazard, or a small test).
+
+## Tone
+
+No snark. Direct, technical, respectful.

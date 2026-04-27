@@ -12,6 +12,7 @@ should treat them as preloaded context:
 - `.cursor/rules/product-decisions.mdc` — locked-in product decisions.
   Do not re-debate.
 - `.cursor/rules/auto-save-workflow.mdc` — how to save work across all mirrors.
+- `.cursor/rules/agent-quality.mdc` — logic-first edits, flag bad outcomes, respectful pushback when direction conflicts with rules or obvious regressions.
 
 On-demand reference (load when the topic comes up):
 
