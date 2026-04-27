@@ -8,6 +8,7 @@ import React, { useEffect } from 'react';
 import { ArrowRight, CheckCircle2, ChevronRight, Star } from 'lucide-react';
 import { applyPageSeo } from '../utils/seoHead';
 import { isMobileDevice } from '../utils/device';
+import { FooterWordmarkLink } from '../components/marketing/FooterWordmarkLink';
 
 const APP_PATH = '/app';
 const ACTIVATE_PATH = '/activate';
@@ -410,13 +411,7 @@ const MarketingPageRedesignPreview: React.FC = () => {
                 <footer className="border-t border-gray-700 px-4 py-8 pb-safe-bottom sm:px-6 md:px-8 md:py-10">
                     <div className="mx-auto grid max-w-6xl grid-cols-1 gap-8 text-sm text-gray-300 min-[480px]:grid-cols-2 md:grid-cols-5">
                         <div className="min-w-0 min-[480px]:col-span-2 md:col-span-1">
-                            <img
-                                src="/evairsim-wordmark.png"
-                                alt="EvairSIM"
-                                width={896}
-                                height={228}
-                                className="mb-3 h-8 w-auto max-w-[200px] brightness-0 invert sm:h-9 md:max-w-none"
-                            />
+                            <FooterWordmarkLink />
                             <p className="text-sm text-gray-400 sm:text-sm">
                                 Connectivity for travelers, residents, and the people in between.
                             </p>
