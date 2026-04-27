@@ -11,7 +11,6 @@ import { isMobileDevice } from '../utils/device';
 const APP_PATH = '/app';
 const ACTIVATE_PATH = '/activate';
 const TRAVEL_ESIM_LANDING = '/travel-esim';
-const STAY_PRICE_USD = '9.99';
 
 const goTravelEsimCta = (e: React.MouseEvent<HTMLAnchorElement>) => {
     if (isMobileDevice()) {
@@ -47,6 +46,18 @@ const HAPPY_STORIES = [
         quote: "Cheaper than local carriers — no SSN, no twelve-page form.",
         who: 'Priya · Austin',
     },
+    {
+        img: 'https://images.unsplash.com/photo-1436491865332-7a61a109cc05?auto=format&fit=crop&w=720&q=80',
+        alt: 'Airport departure gate with travelers',
+        quote: 'Paris layover, one tap — data worked before wheels touched the tarmac.',
+        who: 'Chris · Seattle',
+    },
+    {
+        img: 'https://images.unsplash.com/photo-1511895426328-dc8714191300?auto=format&fit=crop&w=720&q=80',
+        alt: 'Family on the beach',
+        quote: 'Kids streamed maps in the rental van; we never hunted for Wi‑Fi again.',
+        who: 'The Okoye family · Atlanta',
+    },
 ] as const;
 
 function StarRow({ compact }: { compact?: boolean }) {
@@ -79,7 +90,7 @@ const MarketingPageRedesignPreview: React.FC = () => {
                 unchanged until you approve a merge.
             </div>
 
-            {/* ── Nav: single “Open” → H5 customer shell at /app (no app strip, no gate) ── */}
+            {/* ── Nav: OPEN APP → H5 customer shell at /app (no strip, no gate) ── */}
             <header className="sticky top-0 z-30 border-b border-gray-100 bg-white/95 backdrop-blur-md">
                 <div className="mx-auto flex h-16 max-w-6xl items-center justify-between gap-3 px-4 md:px-8">
                     <a href="/" className="flex min-w-0 items-center" aria-label="EvairSIM home">
@@ -113,9 +124,9 @@ const MarketingPageRedesignPreview: React.FC = () => {
                     </nav>
                     <a
                         href={APP_PATH}
-                        className="shrink-0 rounded-full bg-[#2563eb] px-5 py-2 text-xs font-bold uppercase tracking-wide text-white shadow-sm transition hover:bg-[#1d4ed8] active:scale-[0.98]"
+                        className="shrink-0 rounded-full bg-[#2563eb] px-3.5 py-2 text-[10px] font-bold uppercase tracking-wide text-white shadow-sm transition hover:bg-[#1d4ed8] active:scale-[0.98] sm:px-5 sm:text-xs"
                     >
-                        Open
+                        OPEN APP
                     </a>
                 </div>
             </header>
@@ -176,19 +187,19 @@ const MarketingPageRedesignPreview: React.FC = () => {
             <section id="stories" className="border-t border-gray-100 bg-white px-4 py-12 md:px-8 md:py-14">
                 <div className="mx-auto max-w-6xl">
                     <h2 className="text-left text-xl font-extrabold text-gray-900 md:text-2xl">
-                        Our happy customers
+                        Our Happy Customers
                     </h2>
                     <p className="mt-2 max-w-xl text-sm leading-relaxed text-gray-600 md:text-base">
                         Real people staying connected — swipe for more stories.
                     </p>
 
-                    <div className="-mx-4 mt-8 flex snap-x snap-mandatory gap-4 overflow-x-auto px-4 pb-2 md:mx-0 md:gap-5 md:px-0">
+                    <div className="-mx-4 mt-8 flex snap-x snap-mandatory items-stretch gap-4 overflow-x-auto px-4 pb-2 md:mx-0 md:gap-5 md:px-0">
                         {HAPPY_STORIES.map((s) => (
                             <article
                                 key={s.who}
                                 className="group flex w-[min(78vw,260px)] shrink-0 snap-center flex-col overflow-hidden rounded-xl border border-gray-100 bg-white shadow-md md:w-[240px]"
                             >
-                                <div className="h-36 w-full overflow-hidden bg-gray-100 sm:h-40">
+                                <div className="h-36 w-full shrink-0 overflow-hidden bg-gray-100 sm:h-40">
                                     <img
                                         src={s.img}
                                         alt={s.alt}
@@ -204,7 +215,7 @@ const MarketingPageRedesignPreview: React.FC = () => {
                                     <p className="mt-2 text-xs font-medium text-gray-500">{s.who}</p>
                                     <a
                                         href="/blog"
-                                        className="mt-3 inline-flex w-full items-center justify-center rounded-lg border border-gray-900 bg-white py-2 text-xs font-bold text-gray-900 transition hover:bg-gray-50"
+                                        className="mt-auto inline-flex w-full items-center justify-center rounded-lg border border-gray-900 bg-white py-2 text-xs font-bold text-gray-900 transition hover:bg-gray-50"
                                     >
                                         See stories
                                     </a>
@@ -215,128 +226,142 @@ const MarketingPageRedesignPreview: React.FC = () => {
                 </div>
             </section>
 
-            {/* ── 3. Why Evair (premium cards — gradient rail, no tiny icon tiles) ── */}
-            <section id="why" className="border-t border-gray-100 bg-gray-50 px-4 py-16 md:px-8">
-                <div className="mx-auto max-w-5xl">
-                    <h2 className="text-center text-2xl font-extrabold text-gray-900 md:text-3xl">
+            {/* ── 3. Why Evair — compact 2×2, each card is a tap target ───────── */}
+            <section id="why" className="border-t border-gray-100 bg-gray-50 px-4 py-10 md:px-8 md:py-12">
+                <div className="mx-auto max-w-3xl">
+                    <h2 className="text-center text-lg font-extrabold tracking-tight text-gray-900 md:text-xl">
                         Built for the way you actually move.
                     </h2>
-                    <div className="mt-10 grid grid-cols-1 gap-6 md:grid-cols-2">
+                    <div className="mt-6 grid grid-cols-2 gap-3">
                         {[
                             {
                                 gradient: 'from-orange-500 via-amber-400 to-yellow-300',
                                 tag: 'Coverage',
                                 title: 'Global coverage.',
-                                body: '200+ countries with tier-1 carriers, plus ultra-stable US 5G for residents and long stays.',
+                                body: '200+ countries, tier-1 carriers, plus stable US 5G for long stays.',
+                                href: TRAVEL_ESIM_LANDING,
+                                onClick: goTravelEsimCta,
                             },
                             {
                                 gradient: 'from-emerald-500 via-teal-400 to-cyan-300',
                                 tag: 'Pricing',
                                 title: 'Honest pricing.',
-                                body: `Travel data from $4.50. US plans from $${STAY_PRICE_USD}/mo. Zero taxes-on-top surprises.`,
+                                body: 'How our data prices compare to AT&T, Verizon & T-Mobile.',
+                                href: '/sim/phone',
                             },
                             {
                                 gradient: 'from-sky-500 via-blue-500 to-indigo-400',
                                 tag: 'Support',
                                 title: 'Real human support.',
-                                body: 'In-app live chat in English, Spanish, and Mandarin. We usually answer in under 5 minutes.',
+                                body: 'Live chat in English, Spanish & Mandarin — fast replies.',
+                                href: `${APP_PATH}#contact`,
                             },
                             {
                                 gradient: 'from-amber-500 via-orange-400 to-rose-400',
                                 tag: 'Speed',
                                 title: 'Instant activation.',
                                 body: 'No SIM swaps, no airport queues, no roaming shock.',
+                                href: ACTIVATE_PATH,
+                                onClick: goActivateCta,
                             },
                         ].map((c) => (
-                            <article
+                            <a
                                 key={c.title}
-                                className="group relative overflow-hidden rounded-2xl bg-white p-8 shadow-sm ring-1 ring-gray-100/90 transition hover:shadow-lg hover:ring-gray-200"
+                                href={c.href}
+                                onClick={c.onClick}
+                                className="group relative flex min-h-0 flex-col overflow-hidden rounded-xl bg-white p-3.5 shadow-sm ring-1 ring-gray-100/90 transition hover:shadow-md hover:ring-[#F27420]/35 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2563eb] md:p-4"
                             >
                                 <div
-                                    className={`absolute left-0 top-0 h-1.5 w-full bg-gradient-to-r ${c.gradient}`}
+                                    className={`absolute left-0 top-0 h-1 w-full bg-gradient-to-r ${c.gradient}`}
                                     aria-hidden
                                 />
-                                <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-gray-400">
+                                <p className="text-[9px] font-bold uppercase tracking-[0.18em] text-gray-400 md:text-[10px]">
                                     {c.tag}
                                 </p>
-                                <h3 className="mt-3 text-xl font-bold tracking-tight text-gray-900 md:text-2xl">
+                                <h3 className="mt-1.5 text-sm font-bold leading-tight text-gray-900 md:text-base">
                                     {c.title}
                                 </h3>
-                                <p className="mt-4 text-base leading-relaxed text-gray-600">{c.body}</p>
-                            </article>
+                                <p className="mt-1.5 line-clamp-3 text-[11px] leading-snug text-gray-600 md:text-xs">
+                                    {c.body}
+                                </p>
+                                <span className="mt-2 inline-flex items-center gap-0.5 text-[10px] font-semibold text-[#F27420] md:text-xs">
+                                    Tap to open <ArrowRight size={12} className="shrink-0" />
+                                </span>
+                            </a>
                         ))}
                     </div>
                 </div>
             </section>
 
-            {/* ── 4. Product deep dives ─────────────────────────────────── */}
-            <section id="compare" className="border-t border-gray-100">
-                <div className="bg-orange-50 px-6 py-16">
-                    <div className="mx-auto max-w-3xl">
-                        <p className="text-xs font-bold uppercase tracking-[0.2em] text-orange-800">
-                            For travelers
-                        </p>
-                        <h2 className="mt-2 text-3xl font-extrabold text-gray-900 md:text-4xl">
-                            eSIMs in 200+ countries
-                        </h2>
-                        <p className="mt-4 text-lg text-gray-700">
-                            Land, scan a QR code, and you&apos;re online. Pay-as-you-go.
-                        </p>
-                        <ul className="mt-6 space-y-3 text-gray-800">
-                            <li className="flex items-start gap-2">
-                                <CheckCircle2 className="mt-0.5 shrink-0 text-emerald-600" size={18} />
-                                <span>Plans from 1GB to Unlimited</span>
-                            </li>
-                            <li className="flex items-start gap-2">
-                                <CheckCircle2 className="mt-0.5 shrink-0 text-emerald-600" size={18} />
-                                <span>Top up anytime</span>
-                            </li>
-                            <li className="flex items-start gap-2">
-                                <CheckCircle2 className="mt-0.5 shrink-0 text-emerald-600" size={18} />
-                                <span>4G/5G on tier-1 carriers</span>
-                            </li>
-                        </ul>
-                        <a
-                            href={TRAVEL_ESIM_LANDING}
-                            onClick={goTravelEsimCta}
-                            className="mt-8 inline-flex items-center gap-2 rounded-xl bg-[#F27420] px-6 py-3.5 text-sm font-bold text-white shadow-md transition hover:brightness-105"
-                        >
-                            Browse plans <ArrowRight size={16} />
-                        </a>
-                    </div>
-                </div>
-                <div className="bg-slate-50 px-6 py-16">
-                    <div className="mx-auto max-w-3xl">
-                        <p className="text-xs font-bold uppercase tracking-widest text-slate-600">
-                            For long-stay, IoT &amp; new arrivals
-                        </p>
-                        <h2 className="mt-2 text-3xl font-extrabold text-gray-900 md:text-4xl">
-                            US 5G Data — ${STAY_PRICE_USD}/month
-                        </h2>
-                        <p className="mt-4 text-lg text-gray-700">
-                            Real US 5G on AT&amp;T, Verizon, and T-Mobile. Plug-and-use in any unlocked phone,
-                            tablet, portable router, or smart device.
-                        </p>
-                        <ul className="mt-6 space-y-3 text-gray-800">
-                            <li className="flex items-start gap-2">
-                                <CheckCircle2 className="mt-0.5 shrink-0 text-emerald-600" size={18} />
-                                <span>No SSN or credit check</span>
-                            </li>
-                            <li className="flex items-start gap-2">
-                                <CheckCircle2 className="mt-0.5 shrink-0 text-emerald-600" size={18} />
-                                <span>Broad US coverage</span>
-                            </li>
-                            <li className="flex items-start gap-2">
-                                <CheckCircle2 className="mt-0.5 shrink-0 text-emerald-600" size={18} />
-                                <span>Auto-renew or pay monthly</span>
-                            </li>
-                        </ul>
-                        <a
-                            href={`${APP_PATH}#sim-card`}
-                            className="mt-8 inline-flex items-center gap-2 rounded-xl bg-[#0A1128] px-6 py-3.5 text-sm font-bold text-white shadow-md transition hover:bg-[#121f45]"
-                        >
-                            Buy physical SIM <ArrowRight size={16} />
-                        </a>
+            {/* ── 4. Long-stay / IoT — three plan cards (duplicate “For travelers” block removed) ── */}
+            <section id="compare" className="border-t border-gray-100 bg-slate-50 px-4 py-10 md:px-8 md:py-12">
+                <div className="mx-auto max-w-5xl">
+                    <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-600 md:text-xs">
+                        For long-stay, IoT &amp; new arrivals
+                    </p>
+                    <h2 className="mt-1 text-xl font-extrabold text-gray-900 md:text-2xl">US 5G data plans</h2>
+                    <p className="mt-2 max-w-2xl text-sm text-gray-600">
+                        Real US 5G on AT&amp;T, Verizon &amp; T-Mobile. Pick a monthly bucket — top up anytime in the
+                        app.
+                    </p>
+
+                    <div className="mt-6 flex snap-x snap-mandatory gap-3 overflow-x-auto pb-2 md:grid md:grid-cols-3 md:gap-4 md:overflow-visible md:pb-0">
+                        {[
+                            {
+                                name: 'Starter',
+                                price: '$9.99',
+                                blurb: '3 GB high-speed + unlimited 10 Mbps',
+                                cta: 'Get Starter',
+                                popular: false,
+                            },
+                            {
+                                name: 'Everyday',
+                                price: '$19.99',
+                                blurb: '9 GB high-speed + unlimited 10 Mbps',
+                                cta: 'Get Everyday',
+                                popular: true,
+                            },
+                            {
+                                name: 'Power',
+                                price: '$29.99',
+                                blurb: '20 GB high-speed + unlimited 10 Mbps',
+                                cta: 'Get Power',
+                                popular: false,
+                            },
+                        ].map((p) => (
+                            <div
+                                key={p.name}
+                                className={`flex w-[min(88vw,280px)] shrink-0 snap-center flex-col rounded-2xl border bg-white p-5 shadow-sm md:w-auto ${
+                                    p.popular
+                                        ? 'border-[#F27420] ring-2 ring-[#F27420]/30 bg-orange-50/40'
+                                        : 'border-gray-200'
+                                }`}
+                            >
+                                <div className="flex items-center gap-2">
+                                    <h3 className="text-lg font-bold text-[#0A1128]">{p.name}</h3>
+                                    {p.popular && (
+                                        <span className="rounded-full bg-[#F27420] px-2 py-0.5 text-[9px] font-bold uppercase tracking-wide text-white">
+                                            Most popular
+                                        </span>
+                                    )}
+                                </div>
+                                <p className="mt-3 text-2xl font-extrabold text-[#0A1128]">
+                                    {p.price}
+                                    <span className="text-sm font-semibold text-gray-500"> / month</span>
+                                </p>
+                                <p className="mt-2 text-xs leading-relaxed text-gray-600">{p.blurb}</p>
+                                <a
+                                    href={`${APP_PATH}#sim-card`}
+                                    className={`mt-5 inline-flex w-full items-center justify-center rounded-xl py-3 text-sm font-bold transition ${
+                                        p.popular
+                                            ? 'bg-[#F27420] text-white hover:brightness-105'
+                                            : 'bg-[#0A1128] text-white hover:bg-[#121f45]'
+                                    }`}
+                                >
+                                    {p.cta}
+                                </a>
+                            </div>
+                        ))}
                     </div>
                 </div>
             </section>
