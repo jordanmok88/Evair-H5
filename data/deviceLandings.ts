@@ -48,8 +48,25 @@ export interface DeviceFAQ {
     a: string;
 }
 
+/**
+ * US carrier price comparison (phone page only; estimates + disclaimers).
+ * Keep ranges conservative — legal prefers footnotes to exact competitor quotes.
+ */
+export interface PhoneCarrierComparison {
+    sectionId: string;
+    headline: string;
+    subhead: string;
+    asOf: string;
+    tableCaption: string;
+    rows: { label: string; evair: string; att: string; verizon: string; tMobile: string }[];
+    takeaways: string[];
+    methodNote: string;
+}
+
 export interface DeviceContent {
     category: DeviceCategory;
+    /** Phone only: table comparing Evair to major US carriers (est.). */
+    carrierComparison?: PhoneCarrierComparison;
     /** Bold hero verb-noun ("Mobile data for your phone"). */
     heroTitle: string;
     /** One-sentence subhead — keep under 120 chars for above-the-fold. */
@@ -75,6 +92,51 @@ export interface DeviceContent {
 export const DEVICE_CONTENT: Record<DeviceCategory, DeviceContent> = {
     phone: {
         category: 'phone',
+        carrierComparison: {
+            sectionId: 'carrier-comparison',
+            headline: 'What you pay vs. AT&T, Verizon & T‑Mobile',
+            subhead:
+                'We are not a full-service phone line — we sell data you can use in any unlocked device. ' +
+                'When you do not need another U.S. mobile number, our monthly outlay is usually well below a big-carrier single line.',
+            asOf: 'Updated April 2026 · Estimates for a single line before taxes, fees, and device charges.',
+            tableCaption: 'Feature comparison (Evair vs. big three — illustrative)',
+            rows: [
+                {
+                    label: 'Typical monthly outlay, 1 line (est.)',
+                    evair: '$9.99–$29.99 · data only',
+                    att: '≈ $50–$75 (smartphone; talk + data)',
+                    verizon: '≈ $55–$80 (smartphone; talk + data)',
+                    tMobile: '≈ $45–$70 (smartphone; talk + data)',
+                },
+                {
+                    label: 'Voice & text + US phone #',
+                    evair: 'Not included — use data + Wi‑Fi / VoIP apps',
+                    att: 'Included on smartphone plans',
+                    verizon: 'Included on smartphone plans',
+                    tMobile: 'Included on smartphone plans',
+                },
+                {
+                    label: 'High-speed data (how to read it)',
+                    evair: '3–20 GB / mo 5G, then ~10 Mbps (printed in app)',
+                    att: '“Unlimited” with depri after heavy use; see carrier FUP',
+                    verizon: '“Unlimited” with depri after heavy use; see carrier FUP',
+                    tMobile: '“Unlimited” with depri after heavy use; see carrier FUP',
+                },
+                {
+                    label: 'Contract / credit / SSN',
+                    evair: 'No contract · no SSN',
+                    att: 'Varies; prepaid often no hard credit check',
+                    verizon: 'Varies; prepaid often no hard credit check',
+                    tMobile: 'Varies; prepaid often no hard credit check',
+                },
+            ],
+            takeaways: [
+                'Evair is built for data-only: travelers, second devices, and hotspot users. If you need a U.S. mobile number, keep a small carrier or VoIP line — or keep your existing number on Wi‑Fi calling.',
+                'Carrier “unlimited” is not a GB-for-GB match to a fixed high-speed bucket. We publish GB and speeds up front; compare total monthly outlay, not a synthetic “$/GB on unlimited”.',
+            ],
+            methodNote:
+                'The AT&T / Verizon / T‑Mobile column shows **market-typical published ranges** for a single line on smartphone plans (not tablet-only or IoT), collated from carrier sites and CNET/Wirecutter class roundups. Promos, Autopay, and paperless discounts move real checkout prices. Always compare checkout totals on the carrier’s site. Evair’s prices are the retail tiers we list in-app.',
+        },
         heroTitle: 'US 5G data for your phone, tablet, or hotspot',
         heroSubtitle:
             'Real 5G on AT&T, Verizon, and T-Mobile. Bring your iPhone, Android, iPad, or pocket Wi-Fi — plug-and-use in minutes, no contract. Data-only.',

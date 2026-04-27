@@ -29,7 +29,7 @@
  */
 
 import React, { useEffect } from 'react';
-import { ArrowRight, CheckCircle2, Gauge } from 'lucide-react';
+import { ArrowRight, CheckCircle2, Gauge, Info } from 'lucide-react';
 import { DEVICE_CONTENT } from '../data/deviceLandings';
 import type { DeviceCategory } from '../utils/routing';
 import SiteHeader from '../components/marketing/SiteHeader';
@@ -42,6 +42,7 @@ interface DeviceLandingPageProps {
 
 const DeviceLandingPage: React.FC<DeviceLandingPageProps> = ({ category }) => {
     const content = DEVICE_CONTENT[category];
+    const compareHref = content.carrierComparison ? `#${content.carrierComparison.sectionId}` : '/welcome';
 
     // Set tab title + meta description from JS for now. When we move to
     // a real SSR/SSG setup these become server-rendered <head> tags;
@@ -85,10 +86,10 @@ const DeviceLandingPage: React.FC<DeviceLandingPageProps> = ({ category }) => {
                                 {content.ctaLabel} <ArrowRight size={18} />
                             </a>
                             <a
-                                href="/welcome"
+                                href={compareHref}
                                 className="inline-flex items-center justify-center gap-2 bg-white text-slate-900 font-semibold px-5 py-3 rounded-xl border border-slate-300"
                             >
-                                Compare all plans
+                                {content.carrierComparison ? 'See price vs. big 3' : 'Compare all plans'}
                             </a>
                         </div>
                         <div className="flex items-center gap-2 mt-6 text-xs text-slate-500">
@@ -124,6 +125,101 @@ const DeviceLandingPage: React.FC<DeviceLandingPageProps> = ({ category }) => {
                 </div>
             </section>
 
+            {/* Phone only: Evair vs AT&T / Verizon / T‑Mobile (estimates + disclaimers) */}
+            {content.carrierComparison && (
+                <section
+                    id={content.carrierComparison.sectionId}
+                    className="scroll-mt-24 border-y border-slate-200 bg-slate-50 px-4 py-12 md:px-8 md:py-16"
+                >
+                    <div className="mx-auto max-w-6xl">
+                        <p className="text-center text-xs font-semibold uppercase tracking-widest text-slate-500">
+                            {content.carrierComparison.asOf}
+                        </p>
+                        <h2 className="mt-3 text-center text-2xl font-extrabold tracking-tight text-slate-900 md:text-3xl">
+                            {content.carrierComparison.headline}
+                        </h2>
+                        <p className="mx-auto mt-3 max-w-3xl text-center text-sm leading-relaxed text-slate-600 md:text-base">
+                            {content.carrierComparison.subhead}
+                        </p>
+
+                        <div className="mt-8 overflow-x-auto rounded-2xl border border-slate-200 bg-white shadow-sm">
+                            <table className="w-full min-w-[640px] border-collapse text-left text-xs md:min-w-0 md:text-sm">
+                                <caption className="border-b border-slate-100 px-4 py-3 text-left text-xs font-semibold text-slate-600 md:px-6">
+                                    {content.carrierComparison.tableCaption}
+                                </caption>
+                                <thead>
+                                    <tr className="border-b border-slate-200 bg-slate-100/80">
+                                        <th
+                                            scope="col"
+                                            className="w-[18%] px-3 py-3 font-semibold text-slate-800 md:px-4"
+                                        >
+                                            Feature
+                                        </th>
+                                        <th
+                                            scope="col"
+                                            className="w-[20.5%] bg-orange-50 px-2 py-3 font-bold text-[#c2410c] md:px-3"
+                                        >
+                                            Evair
+                                        </th>
+                                        <th scope="col" className="w-[20.5%] px-2 py-3 font-semibold text-slate-800 md:px-3">
+                                            AT&amp;T <span className="block text-[10px] font-normal text-slate-500">(est.)</span>
+                                        </th>
+                                        <th scope="col" className="w-[20.5%] px-2 py-3 font-semibold text-slate-800 md:px-3">
+                                            Verizon <span className="block text-[10px] font-normal text-slate-500">(est.)</span>
+                                        </th>
+                                        <th scope="col" className="w-[20.5%] px-2 py-3 font-semibold text-slate-800 md:px-3">
+                                            T‑Mobile <span className="block text-[10px] font-normal text-slate-500">(est.)</span>
+                                        </th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {content.carrierComparison.rows.map((row) => (
+                                        <tr
+                                            key={row.label}
+                                            className="border-b border-slate-100 last:border-b-0"
+                                        >
+                                            <th
+                                                scope="row"
+                                                className="px-3 py-3 align-top font-medium text-slate-800 md:px-4"
+                                            >
+                                                {row.label}
+                                            </th>
+                                            <td className="bg-orange-50/50 px-2 py-3 align-top text-slate-700 md:px-3">
+                                                {row.evair}
+                                            </td>
+                                            <td className="px-2 py-3 align-top text-slate-600 md:px-3">{row.att}</td>
+                                            <td className="px-2 py-3 align-top text-slate-600 md:px-3">
+                                                {row.verizon}
+                                            </td>
+                                            <td className="px-2 py-3 align-top text-slate-600 md:px-3">
+                                                {row.tMobile}
+                                            </td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <ul className="mt-6 space-y-2 text-sm leading-relaxed text-slate-700">
+                            {content.carrierComparison.takeaways.map((t, i) => (
+                                <li key={`takeaway-${i}`} className="flex gap-2">
+                                    <CheckCircle2
+                                        className="mt-0.5 h-4 w-4 shrink-0 text-emerald-600"
+                                        aria-hidden
+                                    />
+                                    <span>{t}</span>
+                                </li>
+                            ))}
+                        </ul>
+
+                        <div className="mt-6 flex gap-2 rounded-xl border border-slate-200 bg-white p-4 text-xs leading-relaxed text-slate-600 shadow-sm">
+                            <Info className="mt-0.5 h-4 w-4 shrink-0 text-slate-400" aria-hidden />
+                            <p>{content.carrierComparison.methodNote}</p>
+                        </div>
+                    </div>
+                </section>
+            )}
+
             {/* Compatible devices strip — mobile shows the same data the
                 hero mosaic shows on desktop, so nothing is hidden */}
             <section className="md:hidden px-4 py-8 bg-slate-50">
@@ -143,21 +239,38 @@ const DeviceLandingPage: React.FC<DeviceLandingPageProps> = ({ category }) => {
                 </div>
             </section>
 
-            {/* Pillars */}
+            {/* Pillars — phone: gradient rail + inline icon; others: original cards */}
             <section className="px-4 md:px-8 py-12 md:py-16 max-w-6xl mx-auto">
                 <div className="grid md:grid-cols-3 gap-4">
-                    {content.pillars.map(p => (
-                        <div
-                            key={p.title}
-                            className="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm"
-                        >
-                            <div className="w-12 h-12 rounded-xl bg-slate-50 flex items-center justify-center mb-3">
-                                <p.icon size={22} className="text-orange-500" />
+                    {content.pillars.map(p =>
+                        category === 'phone' ? (
+                            <div
+                                key={p.title}
+                                className="relative overflow-hidden rounded-2xl border border-slate-200 bg-white p-5 shadow-sm"
+                            >
+                                <div
+                                    className="absolute left-0 right-0 top-0 h-1 bg-gradient-to-r from-orange-500 via-amber-400 to-yellow-300"
+                                    aria-hidden
+                                />
+                                <h3 className="mb-1.5 flex items-center gap-2 pt-0.5 text-lg font-bold text-slate-900">
+                                    <p.icon size={20} className="shrink-0 text-[#F27420]" />
+                                    {p.title}
+                                </h3>
+                                <p className="text-sm leading-relaxed text-slate-600">{p.body}</p>
                             </div>
-                            <h3 className="font-bold text-lg mb-1">{p.title}</h3>
-                            <p className="text-slate-600 text-sm leading-relaxed">{p.body}</p>
-                        </div>
-                    ))}
+                        ) : (
+                            <div
+                                key={p.title}
+                                className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm"
+                            >
+                                <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-xl bg-slate-50">
+                                    <p.icon size={22} className="text-orange-500" />
+                                </div>
+                                <h3 className="mb-1 text-lg font-bold">{p.title}</h3>
+                                <p className="text-sm leading-relaxed text-slate-600">{p.body}</p>
+                            </div>
+                        ),
+                    )}
                 </div>
             </section>
 
