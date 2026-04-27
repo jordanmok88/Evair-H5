@@ -34,6 +34,7 @@ export type Route =
     | { kind: 'activate'; iccid: string | null }       // /activate, /activate?iccid=...
     | { kind: 'topup'; iccid: string | null }          // /top-up, /top-up?iccid=...
     | { kind: 'marketing' }                            // /welcome (Phase 3 apex landing page)
+    | { kind: 'marketingPreview' }                   // /welcome-preview — layout redesign draft (not live)
     | { kind: 'device'; category: DeviceCategory }     // /sim/phone, /sim/camera, /sim/iot (Phase 2 SEO)
     | { kind: 'travel'; countryCode: string | null }   // /travel-esim, /travel-esim/jp (Phase 2 SEO)
     | { kind: 'help'; slug: string | null }            // /help, /help/install-esim (Phase 4)
@@ -81,6 +82,10 @@ export function getRoute(): Route {
 
     if (path === '/top-up' || path.startsWith('/top-up/')) {
         return { kind: 'topup', iccid: extractIccidFromQuery() };
+    }
+
+    if (path === '/welcome-preview') {
+        return { kind: 'marketingPreview' };
     }
 
     if (path === '/welcome' || path === '/marketing') {

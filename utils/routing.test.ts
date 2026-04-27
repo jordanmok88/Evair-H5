@@ -48,6 +48,11 @@ describe('getRoute', () => {
         expect(getRoute()).toEqual({ kind: 'travel', countryCode: null });
     });
 
+    it('returns marketingPreview for /welcome-preview', () => {
+        mockLocation({ pathname: '/welcome-preview' });
+        expect(getRoute()).toEqual({ kind: 'marketingPreview' });
+    });
+
     it('returns marketing for /welcome', () => {
         mockLocation({ pathname: '/welcome' });
         expect(getRoute()).toEqual({ kind: 'marketing' });

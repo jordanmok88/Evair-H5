@@ -14,6 +14,7 @@ import ApiTestPage from './views/ApiTestPage';
 import ActivatePage from './views/ActivatePage';
 import TopUpPage from './views/TopUpPage';
 import MarketingPage from './views/MarketingPage';
+import MarketingPageRedesignPreview from './views/MarketingPageRedesignPreview';
 import DeviceLandingPage from './views/DeviceLandingPage';
 import TravelEsimPage from './views/TravelEsimPage';
 import HelpCenterPage from './views/HelpCenterPage';
@@ -69,6 +70,8 @@ function App() {
         document.title = 'Activate your Evair SIM';
       } else if (route.kind === 'topup') {
         document.title = 'Top up your Evair SIM';
+      } else if (route.kind === 'marketingPreview') {
+        document.title = 'Evair — Homepage preview (draft)';
       } else if (route.kind === 'marketing') {
         document.title = 'Evair — Mobile data, simplified';
       } else if (route.kind === 'device' || route.kind === 'travel') {
@@ -95,6 +98,7 @@ function App() {
   if (route.kind === 'apiTest') return <ApiTestPage />;
   if (route.kind === 'activate') return <ActivatePage iccid={route.iccid} />;
   if (route.kind === 'topup') return <TopUpPage iccid={route.iccid} />;
+  if (route.kind === 'marketingPreview') return <MarketingPageRedesignPreview />;
   if (route.kind === 'marketing') return <MarketingPage />;
   if (route.kind === 'device') return <DeviceLandingPage category={route.category} />;
   if (route.kind === 'travel') return <TravelEsimPage countryCode={route.countryCode} />;
