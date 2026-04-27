@@ -68,6 +68,7 @@ import LoginModal from './LoginModal';
 import { useEsimCheckoutFlow } from '../hooks/useEsimCheckoutFlow';
 import { authService } from '../services/api';
 import { isMobileDevice } from '../utils/device';
+import { applyPageSeo } from '../utils/seoHead';
 import type { EsimPackage } from '../types';
 import type { UserDto } from '../services/api/types';
 
@@ -81,13 +82,18 @@ const TravelEsimPage: React.FC<TravelEsimPageProps> = ({ countryCode }) => {
 
     useEffect(() => {
         if (country) {
-            document.title = `${country.name} eSIM from $${country.priceFromUsd} — Evair`;
-            setMetaDescription(country.blurb);
+            applyPageSeo({
+                path: `/travel-esim/${country.code}`,
+                title: `${country.name} eSIM from $${country.priceFromUsd} — Evair`,
+                description: country.blurb,
+            });
         } else {
-            document.title = 'Travel eSIM in 200+ countries — Evair';
-            setMetaDescription(
-                'Buy a travel eSIM for your phone. Instant QR delivery, no SIM swap, works in 200+ countries.',
-            );
+            applyPageSeo({
+                path: '/travel-esim',
+                title: 'Travel eSIM in 200+ countries — Evair',
+                description:
+                    'Buy a travel eSIM for your phone. Instant QR delivery, no SIM swap, works in 200+ countries.',
+            });
         }
     }, [country]);
 
@@ -650,17 +656,5 @@ const Trust: React.FC<{ label: string; value: string }> = ({ label, value }) => 
         <div className="font-bold text-slate-900">{value}</div>
     </div>
 );
-
-function setMetaDescription(content: string): void {
-    const tag = document.querySelector('meta[name="description"]');
-    if (tag) {
-        tag.setAttribute('content', content);
-    } else {
-        const m = document.createElement('meta');
-        m.name = 'description';
-        m.content = content;
-        document.head.appendChild(m);
-    }
-}
 
 export default TravelEsimPage;

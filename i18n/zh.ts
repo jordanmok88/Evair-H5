@@ -85,6 +85,42 @@ const zh = {
     continent_africa: '非洲',
     continent_oceania: '大洋洲',
     no_results: '该地区暂无套餐。',
+    buy_on_amazon: '在亚马逊购买',
+    buy_on_amazon_sub:
+      '在亚马逊订购 EvairSIM 实体卡 — 物流快，支持 Prime，套餐与后台目录一致。',
+    amazon_prime: 'Prime 配送',
+    amazon_secure: '安全结账',
+    open_amazon_storefront: '打开亚马逊店铺',
+    amazon_leave_notice: '将离开 EvairSIM，前往 amazon.com',
+    amazon_picker_intro:
+      '先选择与设备匹配的卡类型（与库存表分组一致），再打开对应流量档位的亚马逊商品。',
+    amazon_family_group_label: '实体 SIM 分类',
+  },
+  amazonSim: {
+    plan_line: '{{gb}} GB · {{days}} 天',
+    from_price: '约 ${{price}} 起',
+    view_on_amazon: '前往亚马逊',
+    family: {
+      phone_tablet: {
+        title: '手机、平板与热点',
+        subtitle: '美国月付流量 — 可续订套餐',
+      },
+      trail_camera: {
+        title: '狩猎 / 安防相机',
+        subtitle: '长周期套餐，适合户外与监控设备',
+      },
+      iot_light: {
+        title: '物联网与轻量使用',
+        subtitle: '小流量档，适合定位器、POS、备用机等',
+      },
+    },
+  },
+  marketing: {
+    trust_no_contracts: '无合约。',
+    trust_no_hidden_fees: '无隐藏费用。',
+    trust_support: '7×24 客服。',
+    buy_sim_card: '购买 SIM 卡',
+    buy_sim_card_aria: '打开应用，选择套餐并在亚马逊完成购买',
   },
   my_sims: {
     title_esims: '我的eSIM',
@@ -119,6 +155,9 @@ const zh = {
     install_esim_desc: '扫描二维码或在手机设置中手动输入',
     days: '天',
     plan_details: '套餐详情',
+    carriers: '运营商网络',
+    top_up_success_title: '充值成功！',
+    top_up_success_hint: '流量余额将很快更新。如有异常请联系客服。',
     top_up_data: '充值流量',
     add_data: '添加流量',
     contact_us: '联系我们',

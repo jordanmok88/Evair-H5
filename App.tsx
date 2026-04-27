@@ -172,6 +172,7 @@ function CustomerApp() {
         '#inbox': Tab.INBOX,
         '#profile': Tab.PROFILE,
         '#sim-card': Tab.SIM_CARD,
+        '#bind-sim': Tab.SIM_CARD,
         '#esim': Tab.ESIM,
         '#shop': Tab.ESIM,
       };
@@ -186,6 +187,22 @@ function CustomerApp() {
   const [travelEsimOpenCode, setTravelEsimOpenCode] = useState<string | null>(() =>
     typeof window !== 'undefined' ? parseAppTravelEsimCountry(window.location.pathname) : null,
   );
+
+  /**
+   * `/app#bind-sim` — marketing "Activate my SIM" lands here so we open
+   * the bind wizard directly instead of the Amazon storefront (`#sim-card`).
+   */
+  const [pendingBindSimDeepLink, setPendingBindSimDeepLink] = useState(() =>
+    typeof window !== 'undefined' && window.location.hash.toLowerCase() === '#bind-sim',
+  );
+
+  const clearBindSimDeepLink = useCallback(() => {
+    setPendingBindSimDeepLink(false);
+    if (typeof window !== 'undefined' && window.location.hash.toLowerCase() === '#bind-sim') {
+      const { pathname, search } = window.location;
+      window.history.replaceState(null, '', pathname + (search || ''));
+    }
+  }, []);
 
   const handleTravelEsimDeepLinkConsumed = useCallback(() => {
     setTravelEsimOpenCode(null);
@@ -244,9 +261,8 @@ function CustomerApp() {
   //   #contact  → DIALER    (Contact Us / chat)
   //   #inbox    → INBOX     (notifications)
   //   #profile  → PROFILE
-  //   #sim-card → SIM_CARD  (physical SIM landing — used by the
-  //               marketing homepage "Buy SIM card" / "Activate
-  //               my SIM" follow-up flows)
+  //   #sim-card → SIM_CARD  (physical SIM shop — "Buy SIM card" → Amazon)
+  //   #bind-sim → SIM_CARD  + open Add SIM wizard ("Activate my SIM" bind-only)
   //   #esim, #shop → ESIM   (digital eSIM catalogue — used by the
   //               marketing homepage "Travel eSIM" CTA)
   //
@@ -264,11 +280,16 @@ function CustomerApp() {
       '#inbox': Tab.INBOX,
       '#profile': Tab.PROFILE,
       '#sim-card': Tab.SIM_CARD,
+      '#bind-sim': Tab.SIM_CARD,
       '#esim': Tab.ESIM,
       '#shop': Tab.ESIM,
     };
     const apply = () => {
-      const tab = HASH_TO_TAB[window.location.hash.toLowerCase()];
+      const rawHash = window.location.hash.toLowerCase();
+      if (rawHash === '#bind-sim') {
+        setPendingBindSimDeepLink(true);
+      }
+      const tab = HASH_TO_TAB[rawHash];
       if (tab) {
         previousTab.current = activeTabRef.current;
         setActiveTab(tab);
@@ -850,17 +871,23 @@ function CustomerApp() {
   // Same rationale as activeTab above — without this a customer
   // landing on `/app#esim` would briefly see the PHYSICAL view (the
   // SIM-Card landing) before the hash effect rewrote currentSimType.
-  // `#sim-card` and `#esim` are the only hashes that map onto a
-  // SimType; every other hash leaves the previous selection alone.
+  // `#sim-card`, `#bind-sim`, and `#esim` map onto SimType; other hashes
+  // leave the previous selection alone.
   const [currentSimType, setCurrentSimType] = useState<SimType>(() => {
     if (typeof window !== 'undefined') {
       if (parseAppTravelEsimCountry(window.location.pathname)) return 'ESIM';
       const hash = window.location.hash.toLowerCase();
       if (hash === '#esim' || hash === '#shop') return 'ESIM';
-      if (hash === '#sim-card') return 'PHYSICAL';
+      if (hash === '#sim-card' || hash === '#bind-sim') return 'PHYSICAL';
     }
     return (sessionStorage.getItem('evair-simType') as SimType) || 'PHYSICAL';
   });
+
+  useEffect(() => {
+    if (currentSimType === 'ESIM') {
+      setPendingBindSimDeepLink(false);
+    }
+  }, [currentSimType]);
 
   useEffect(() => {
     sessionStorage.setItem('evair-activeTab', activeTab);
@@ -899,6 +926,8 @@ function CustomerApp() {
                 testMode={testMode}
                 initialEsimLocationCode={travelEsimOpenCode}
                 onInitialEsimDeepLinkConsumed={handleTravelEsimDeepLinkConsumed}
+                initialBindSimDeepLink={pendingBindSimDeepLink && currentSimType === 'PHYSICAL'}
+                onBindSimDeepLinkConsumed={clearBindSimDeepLink}
             />
         );
       case Tab.INBOX:

@@ -25,6 +25,7 @@ import React from 'react';
 import SiteHeader from '../components/marketing/SiteHeader';
 import SiteFooter from '../components/marketing/SiteFooter';
 import type { LegalSlug } from '../utils/routing';
+import { applyPageSeo } from '../utils/seoHead';
 
 const LAST_UPDATED = 'April 25, 2026';
 const SUPPORT_EMAIL = 'support@evairdigital.com';
@@ -37,8 +38,12 @@ const LegalPage: React.FC<LegalPageProps> = ({ slug }) => {
     const meta = META[slug];
 
     React.useEffect(() => {
-        document.title = `${meta.title} — Evair`;
-    }, [meta.title]);
+        applyPageSeo({
+            path: `/legal/${slug}`,
+            title: `${meta.title} — Evair`,
+            description: meta.description,
+        });
+    }, [meta.description, meta.title, slug]);
 
     return (
         <div className="min-h-screen bg-white text-slate-800">
@@ -78,10 +83,19 @@ const LegalPage: React.FC<LegalPageProps> = ({ slug }) => {
     );
 };
 
-const META: Record<LegalSlug, { title: string }> = {
-    terms: { title: 'Terms of Service' },
-    privacy: { title: 'Privacy Policy' },
-    refund: { title: 'Refund Policy' },
+const META: Record<LegalSlug, { title: string; description: string }> = {
+    terms: {
+        title: 'Terms of Service',
+        description: 'Terms governing EvairSIM eSIM and US physical SIM data services, accounts, billing, and acceptable use.',
+    },
+    privacy: {
+        title: 'Privacy Policy',
+        description: 'How Evair Digital collects, uses, and protects personal data when you use evairdigital.com and the Evair app.',
+    },
+    refund: {
+        title: 'Refund Policy',
+        description: 'Summary of refund eligibility for EvairSIM purchases, with a link to the detailed help-centre policy.',
+    },
 };
 
 // ─────────────────────────────────────────────────────────────────────

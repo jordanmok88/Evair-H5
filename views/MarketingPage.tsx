@@ -30,7 +30,9 @@
  * @see docs/ACTIVATION_FUNNEL.md §6 — Marketing/landing page
  */
 
-import React from 'react';
+import React, { useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
+import { applyPageSeo } from '../utils/seoHead';
 import {
     Globe,
     Smartphone,
@@ -57,17 +59,6 @@ const ACTIVATE_PATH = '/activate';
 const TRAVEL_ESIM_LANDING = '/travel-esim';
 
 /**
- * Public Amazon storefront for EvairSIM physical SIM cards.
- *
- * TODO(jordan): paste the real Amazon URL here. Until then we route
- * the "Buy SIM card" CTAs to the Amazon search results page for our
- * brand so clicks don't 404. When the storefront link is finalised,
- * just swap this constant — no other code changes needed.
- */
-const AMAZON_STOREFRONT_URL =
-    'https://www.amazon.com/s?k=EvairSIM';
-
-/**
  * Travel eSIM CTAs: desktop → `/travel-esim` (marketing landing +
  * country catalogue), mobile → `/app#esim` (full-screen H5 store).
  *
@@ -83,30 +74,35 @@ const goTravelEsimCta = (e: React.MouseEvent<HTMLAnchorElement>) => {
 };
 
 /**
- * Activate-my-SIM CTAs: desktop → `/activate` (standalone Amazon-insert
- * landing where customers type/scan their ICCID on a wide-format page),
- * mobile → `/app#sim-card` (in-app phone-mock SIM_CARD tab whose hero
- * exposes a prominent "Bind your SIM" CTA that opens the in-app
- * PhysicalSimSetupView).
+ * Activate-my-SIM CTAs: desktop → `/activate` (wide-format ICCID page),
+ * mobile → `/app#bind-sim` (SIM_CARD tab + Add SIM / bind wizard).
+ * Physical SIMs ship pre-active; this flow is account binding only.
+ * "Buy SIM card" stays on `#sim-card` (Amazon storefront).
  *
- * Mobile customers expect to land in the H5 customer app — same UX as
- * the Travel eSIM CTA above. Desktop customers want a real form-shaped
- * page they can paste their ICCID into without being squeezed into a
- * 430-px iPhone mock. The `<a href>` stays `/activate` so crawlers and
- * no-JS clients still resolve to a sensible destination.
- *
- * @see App.tsx HASH_TO_TAB — `#sim-card` is the documented mobile
- *      landing for both "Buy SIM card" and "Activate my SIM" flows.
+ * @see App.tsx HASH_TO_TAB — `#bind-sim` opens PhysicalSimSetupView.
  */
 const goActivateCta = (e: React.MouseEvent<HTMLAnchorElement>) => {
     if (isMobileDevice()) {
         e.preventDefault();
-        window.location.assign(`${APP_PATH}#sim-card`);
+        window.location.assign(`${APP_PATH}#bind-sim`);
     }
 };
 
 const MarketingPage: React.FC = () => {
+    const { t } = useTranslation();
     const signInGate = useMobileSignInGate(APP_PATH);
+
+    useEffect(() => {
+        const path = typeof window !== 'undefined' ? window.location.pathname : '/';
+        const canonicalPath = path === '' ? '/' : path;
+        applyPageSeo({
+            path: canonicalPath,
+            title: 'Evair — Mobile data, simplified',
+            description:
+                'Travel eSIMs for short trips and US 5G data for long stays. Data-only plans, no contract, instant activation on evairdigital.com.',
+        });
+    }, []);
+
     return (
         <div className="min-h-screen bg-white text-slate-900">
             {/* Top nav */}
@@ -195,12 +191,11 @@ const MarketingPage: React.FC = () => {
                             </a>
                             <div className="grid sm:grid-cols-2 gap-3 mt-3">
                                 <a
-                                    href={AMAZON_STOREFRONT_URL}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
+                                    href={`${APP_PATH}#sim-card`}
                                     className="flex items-center justify-center gap-2 bg-slate-900 text-white font-bold px-5 py-3 rounded-xl shadow-lg shadow-slate-900/20 active:scale-[0.98] transition-transform"
+                                    aria-label={t('marketing.buy_sim_card_aria')}
                                 >
-                                    <ShoppingCart size={18} /> Buy SIM card
+                                    <ShoppingCart size={18} /> {t('marketing.buy_sim_card')}
                                 </a>
                                 <a
                                     href={ACTIVATE_PATH}
@@ -213,11 +208,11 @@ const MarketingPage: React.FC = () => {
                         </div>
                         <div className="flex items-center gap-2 mt-6 text-xs text-slate-500">
                             <CheckCircle2 size={14} className="text-emerald-500" />
-                            No contracts.
+                            {t('marketing.trust_no_contracts')}
                             <CheckCircle2 size={14} className="text-emerald-500 ml-2" />
-                            No hidden fees.
+                            {t('marketing.trust_no_hidden_fees')}
                             <CheckCircle2 size={14} className="text-emerald-500 ml-2" />
-                            24/7 support.
+                            {t('marketing.trust_support')}
                         </div>
 
                         {/* Mobile-only product photo. Sits beneath the
@@ -309,12 +304,11 @@ const MarketingPage: React.FC = () => {
                             existing mental model. */}
                         <div className="mt-auto grid sm:grid-cols-2 gap-3">
                             <a
-                                href={AMAZON_STOREFRONT_URL}
-                                target="_blank"
-                                rel="noopener noreferrer"
+                                href={`${APP_PATH}#sim-card`}
                                 className="inline-flex items-center justify-center gap-2 bg-slate-900 text-white font-bold px-5 py-3 rounded-xl"
+                                aria-label={t('marketing.buy_sim_card_aria')}
                             >
-                                <ShoppingCart size={16} /> Buy SIM card
+                                <ShoppingCart size={16} /> {t('marketing.buy_sim_card')}
                             </a>
                             <a
                                 href={ACTIVATE_PATH}
@@ -432,10 +426,7 @@ const MarketingPage: React.FC = () => {
                             { label: 'Phone & tablet', href: '/sim/phone' },
                             { label: 'Security & trail cameras', href: '/sim/camera' },
                             { label: 'IoT & smart devices', href: '/sim/iot' },
-                            // Mirrors the hero "Activate my SIM" CTA — mobile
-                            // visitors land in the H5 phone-mock SIM_CARD tab
-                            // (where the bind flow lives), desktop visitors get
-                            // the wide-format /activate landing.
+                            // Mobile → `/app#bind-sim` (bind wizard); desktop → /activate.
                             { label: 'Activate a SIM', href: ACTIVATE_PATH, onClick: goActivateCta },
                         ]}
                     />

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useLayoutEffect, useRef } from 'react';
+import React, { useState, useEffect, useLayoutEffect, useRef, useCallback } from 'react';
 import { SimType, ActiveSim, Tab, User, AppNotification, EsimProfileResult } from '../types';
 import ShopView from './ShopView';
 import MySimsView from './MySimsView';
@@ -22,6 +22,9 @@ interface ProductTabProps {
   initialEsimLocationCode?: string | null;
   /** Called after the deep-link country is applied (or load finished with no match). */
   onInitialEsimDeepLinkConsumed?: () => void;
+  /** `/app#bind-sim` — open Add SIM / bind wizard once (marketing "Activate my SIM"). */
+  initialBindSimDeepLink?: boolean;
+  onBindSimDeepLinkConsumed?: () => void;
 }
 
 const ProductTab: React.FC<ProductTabProps> = ({
@@ -40,15 +43,35 @@ const ProductTab: React.FC<ProductTabProps> = ({
   notifications,
   initialEsimLocationCode = null,
   onInitialEsimDeepLinkConsumed,
+  initialBindSimDeepLink = false,
+  onBindSimDeepLinkConsumed,
 }) => {
   const mySims = activeSims.filter(s => s.type === type);
-  
+  const bindDeepLinkConsumedRef = useRef(false);
+
   const [viewMode, setViewMode] = useState<'SHOP' | 'MINE' | 'SETUP'>(() => {
+    if (initialBindSimDeepLink && type === 'PHYSICAL') return 'SETUP';
     const saved = sessionStorage.getItem('evair-viewMode');
-    if (saved === 'MINE' || saved === 'SHOP') return saved;
+    if (saved === 'MINE' || saved === 'SHOP' || saved === 'SETUP') return saved;
     return mySims.length > 0 ? 'MINE' : 'SHOP';
   });
   const [setupEntryPoint, setSetupEntryPoint] = useState<'SHOP' | 'MINE'>('SHOP');
+
+  const consumeBindDeepLink = useCallback(() => {
+    onBindSimDeepLinkConsumed?.();
+  }, [onBindSimDeepLinkConsumed]);
+
+  useLayoutEffect(() => {
+    if (!initialBindSimDeepLink || type !== 'PHYSICAL') {
+      if (!initialBindSimDeepLink) bindDeepLinkConsumedRef.current = false;
+      return;
+    }
+    if (bindDeepLinkConsumedRef.current) return;
+    bindDeepLinkConsumedRef.current = true;
+    setSetupEntryPoint('SHOP');
+    setViewMode('SETUP');
+    consumeBindDeepLink();
+  }, [initialBindSimDeepLink, type, consumeBindDeepLink]);
 
   useEffect(() => {
     sessionStorage.setItem('evair-viewMode', viewMode);

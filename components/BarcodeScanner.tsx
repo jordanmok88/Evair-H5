@@ -1,11 +1,23 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { Html5Qrcode } from 'html5-qrcode';
+import { Html5Qrcode, Html5QrcodeSupportedFormats } from 'html5-qrcode';
 import { X, Camera, SwitchCamera } from 'lucide-react';
 
 interface BarcodeScannerProps {
   open: boolean;
   onClose: () => void;
   onDetected: (value: string) => void;
+}
+
+/** Pull a 12–22 digit ICCID / EID substring from QR text or noisy barcode reads. */
+function extractIccidFromScan(raw: string): string | null {
+  const digits = raw.replace(/\D/g, '');
+  for (let len = 22; len >= 12; len--) {
+    for (let i = 0; i + len <= digits.length; i++) {
+      const slice = digits.slice(i, i + len);
+      if (slice.length === len) return slice;
+    }
+  }
+  return null;
 }
 
 const BarcodeScanner: React.FC<BarcodeScannerProps> = ({ open, onClose, onDetected }) => {
@@ -24,28 +36,28 @@ const BarcodeScanner: React.FC<BarcodeScannerProps> = ({ open, onClose, onDetect
     scanner
       .start(
         { facingMode },
-        // `formatsToSupport` IS honoured by html5-qrcode at runtime but
-        // its TypeScript types are out of date. Cast through `unknown`
-        // so we still get strong typing for the documented fields.
         {
-          fps: 15,
-          qrbox: { width: 320, height: 160 },
-          aspectRatio: 1.0,
+          fps: 10,
+          qrbox: (viewfinderWidth, viewfinderHeight) => {
+            const w = Math.min(Math.floor(viewfinderWidth * 0.92), 360);
+            const h = Math.min(Math.floor(viewfinderHeight * 0.38), 240);
+            return { width: w, height: Math.max(120, h) };
+          },
+          aspectRatio: 1.777778,
           formatsToSupport: [
-            0,  // QR_CODE
-            2,  // CODE_128
-            10, // ITF
-            4,  // CODE_39
-            1,  // AZTEC
-            11, // EAN_13
-            6,  // EAN_8
+            Html5QrcodeSupportedFormats.CODE_128,
+            Html5QrcodeSupportedFormats.QR_CODE,
+            Html5QrcodeSupportedFormats.CODE_39,
+            Html5QrcodeSupportedFormats.PDF_417,
+            Html5QrcodeSupportedFormats.DATA_MATRIX,
+            Html5QrcodeSupportedFormats.ITF,
           ],
-        } as unknown as Parameters<Html5Qrcode['start']>[1],
+        },
         (decodedText) => {
           if (cancelled) return;
-          const digits = decodedText.replace(/\D/g, '');
-          if (digits.length >= 15 && digits.length <= 22) {
-            onDetected(digits);
+          const iccid = extractIccidFromScan(decodedText);
+          if (iccid) {
+            onDetected(iccid);
             onClose();
           }
         },

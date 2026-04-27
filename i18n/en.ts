@@ -85,6 +85,42 @@ const en = {
     continent_africa: 'Africa',
     continent_oceania: 'Oceania',
     no_results: 'No plans found for this region.',
+    buy_on_amazon: 'Buy on Amazon',
+    buy_on_amazon_sub:
+      'Order your EvairSIM physical SIM card on Amazon — fast shipping, Prime-eligible listings, same product range as our catalogue.',
+    amazon_prime: 'Prime Shipping',
+    amazon_secure: 'Secure Checkout',
+    open_amazon_storefront: 'Open Amazon Storefront',
+    amazon_leave_notice: 'You will leave EvairSIM and continue on amazon.com',
+    amazon_picker_intro:
+      'Pick the card category that matches your device (same groupings as our stock sheet), then tap Amazon for the plan size you want.',
+    amazon_family_group_label: 'Physical SIM categories',
+  },
+  amazonSim: {
+    plan_line: '{{gb}} GB · {{days}} days',
+    from_price: 'From ${{price}}',
+    view_on_amazon: 'View on Amazon',
+    family: {
+      phone_tablet: {
+        title: 'Phone, tablet & hotspot',
+        subtitle: 'Monthly US data — reloadable plans',
+      },
+      trail_camera: {
+        title: 'Trail & security camera',
+        subtitle: 'Long-cycle plans for cameras & field gear',
+      },
+      iot_light: {
+        title: 'IoT & light use',
+        subtitle: 'Small buckets for trackers, POS, backup devices',
+      },
+    },
+  },
+  marketing: {
+    trust_no_contracts: 'No contracts.',
+    trust_no_hidden_fees: 'No hidden fees.',
+    trust_support: '24/7 support.',
+    buy_sim_card: 'Buy SIM card',
+    buy_sim_card_aria: 'Open the app to choose a SIM plan and buy on Amazon',
   },
   my_sims: {
     title_esims: 'My eSIMs',
@@ -119,6 +155,10 @@ const en = {
     install_esim_desc: 'Scan the QR code or enter details in your phone settings',
     days: 'Days',
     plan_details: 'Plan Details',
+    carriers: 'Networks',
+    top_up_success_title: 'Top-up successful!',
+    top_up_success_hint:
+      'Your data balance will refresh shortly. If anything looks off, contact support.',
     top_up_data: 'Top Up Data',
     add_data: 'Add Data',
     contact_us: 'Contact Us',

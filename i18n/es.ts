@@ -85,6 +85,42 @@ const es = {
     continent_africa: 'África',
     continent_oceania: 'Oceanía',
     no_results: 'No se encontraron planes para esta región.',
+    buy_on_amazon: 'Comprar en Amazon',
+    buy_on_amazon_sub:
+      'Pide tu SIM física EvairSIM en Amazon: envío rápido, envíos Prime y la misma gama de planes que nuestro catálogo.',
+    amazon_prime: 'Envío Prime',
+    amazon_secure: 'Pago seguro',
+    open_amazon_storefront: 'Abrir tienda en Amazon',
+    amazon_leave_notice: 'Saldrás de EvairSIM y continuarás en amazon.com',
+    amazon_picker_intro:
+      'Elige la categoría de tarjeta que coincide con tu dispositivo (mismos grupos que nuestra hoja de stock) y abre el listado de Amazon del tamaño de plan que quieras.',
+    amazon_family_group_label: 'Categorías de SIM física',
+  },
+  amazonSim: {
+    plan_line: '{{gb}} GB · {{days}} días',
+    from_price: 'Desde ${{price}}',
+    view_on_amazon: 'Ver en Amazon',
+    family: {
+      phone_tablet: {
+        title: 'Teléfono, tablet y hotspot',
+        subtitle: 'Datos mensuales en EE. UU. — planes recargables',
+      },
+      trail_camera: {
+        title: 'Cámara de caza y seguridad',
+        subtitle: 'Planes de ciclo largo para cámaras y equipos de campo',
+      },
+      iot_light: {
+        title: 'IoT y uso ligero',
+        subtitle: 'Paquetes pequeños para rastreadores, TPV y dispositivos de respaldo',
+      },
+    },
+  },
+  marketing: {
+    trust_no_contracts: 'Sin contratos.',
+    trust_no_hidden_fees: 'Sin cargos ocultos.',
+    trust_support: 'Soporte 24/7.',
+    buy_sim_card: 'Comprar tarjeta SIM',
+    buy_sim_card_aria: 'Abre la app para elegir un plan y comprar en Amazon',
   },
   my_sims: {
     title_esims: 'Mis eSIMs',
@@ -119,6 +155,10 @@ const es = {
     install_esim_desc: 'Escanea el código QR o ingresa los datos en la configuración de tu teléfono',
     days: 'Días',
     plan_details: 'Detalles del Plan',
+    carriers: 'Redes',
+    top_up_success_title: '¡Recarga exitosa!',
+    top_up_success_hint:
+      'Tu saldo de datos se actualizará en breve. Si algo no cuadra, contacta a soporte.',
     top_up_data: 'Recargar Datos',
     add_data: 'Añadir Datos',
     contact_us: 'Contáctanos',

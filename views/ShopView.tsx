@@ -1,8 +1,9 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Search, ChevronRight, ArrowLeft, Globe, Star, X, MapPin, Loader2, Smartphone, Truck, CheckCircle, Calendar, Wifi, Signal, Info, CreditCard, ArrowDown, ShoppingBag, QrCode, Copy, Check, RefreshCw, Zap, Clock, Shield, Mail, ExternalLink } from 'lucide-react';
+import { Search, ChevronRight, ArrowLeft, Globe, Star, X, MapPin, Loader2, Smartphone, CheckCircle, Calendar, Wifi, Signal, Info, CreditCard, ArrowDown, QrCode, Copy, Check, RefreshCw, Zap, Clock, Shield, Mail } from 'lucide-react';
 import { Country, Plan, SimType, User, SimCardProduct, EsimPackage, EsimCountryGroup, EsimOrderResult, ActiveSim } from '../types';
-import { MOCK_COUNTRIES, AMAZON_SIM_STOREFRONT_URL } from '../constants';
+import { MOCK_COUNTRIES } from '../constants';
+import AmazonPhysicalSimPicker from '../components/AmazonPhysicalSimPicker';
 import FlagIcon from '../components/FlagIcon';
 import { fetchPackages, prefetchPackages, groupPackagesByLocation, formatVolume, formatPrice, retailPrice, packagePriceUsd, orderEsim, CONTINENT_TABS, type ContinentTab, formatGB, POPULAR_COUNTRY_CODES, fetchMultiCountryRegionNames } from '../services/dataService';
 import { orderService } from '../services/api';
@@ -1404,68 +1405,9 @@ const ShopView: React.FC<ShopViewProps> = ({
             <>
               <h3 className="text-lg font-bold text-slate-900 mb-3 tracking-tight">{t('shop.purchase_sim_cards')}</h3>
 
-              {/* Amazon storefront CTA — replaces the in-app plan grid.
-                  Note: the standalone "United States · AT&T · Verizon ·
-                  T-Mobile · 3G/4G/5G" country card used to live here but
-                  was removed on 2026-04-24 — all physical SIMs are USA-only
-                  right now, so a single-country banner added no filtering
-                  value and just took up prime screen real estate. If we
-                  later add physical SIMs for additional countries, bring
-                  back a list/picker instead of a single hard-coded card. */}
-              <a
-                href={AMAZON_SIM_STOREFRONT_URL}
-                target="_blank"
-                rel="noopener noreferrer"
-                onClick={(e) => {
-                  // In the native WebView shell, route through the
-                  // bridge so Amazon opens in Safari / system browser
-                  // instead of trying to load inside the WebView
-                  // (Amazon blocks embedded frames and it looks awful).
-                  const evair = (window as unknown as { evair?: { isNative?: boolean; openExternal?: (url: string) => Promise<void> } }).evair;
-                  if (evair?.isNative && typeof evair.openExternal === 'function') {
-                    e.preventDefault();
-                    void evair.openExternal(AMAZON_SIM_STOREFRONT_URL);
-                  }
-                }}
-                className="relative block rounded-2xl overflow-hidden shadow-sm mb-5 border border-slate-200 bg-white active:scale-[0.99] transition-transform"
-              >
-                <div className="p-5">
-                  <div className="flex items-start gap-4">
-                    <div
-                      className="w-12 h-12 rounded-xl flex items-center justify-center shrink-0 mt-0.5"
-                      style={{ background: 'linear-gradient(135deg, #FF9900 0%, #FFB84D 100%)' }}
-                    >
-                      <ShoppingBag size={22} className="text-white" />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <h2 className="text-lg font-bold text-slate-900 tracking-tight">{t('shop.buy_on_amazon', 'Buy on Amazon')}</h2>
-                      <p className="text-sm text-slate-500 mt-1 leading-snug">
-                        {t(
-                          'shop.buy_on_amazon_sub',
-                          'Order your EvairSIM physical SIM card directly from our Amazon storefront — fast shipping, Prime-eligible, same product range.',
-                        )}
-                      </p>
-                      <div className="flex items-center gap-3 mt-3 flex-wrap">
-                        <span className="flex items-center gap-1.5 text-xs font-medium text-slate-600"><Truck size={14} className="text-amber-500" /> {t('shop.amazon_prime', 'Prime Shipping')}</span>
-                        <span className="flex items-center gap-1.5 text-xs font-medium text-slate-600"><Shield size={14} className="text-amber-500" /> {t('shop.amazon_secure', 'Secure Checkout')}</span>
-                      </div>
-                    </div>
-                  </div>
-                  <div
-                    className="w-full mt-4 py-3 rounded-xl font-bold text-sm flex items-center justify-center gap-1.5 text-white"
-                    style={{
-                      background: 'linear-gradient(135deg, #FF9900 0%, #FFB84D 100%)',
-                      boxShadow: '0 4px 12px rgba(255,153,0,0.3)',
-                    }}
-                  >
-                    {t('shop.open_amazon_storefront', 'Open Amazon Storefront')}
-                    <ExternalLink size={14} />
-                  </div>
-                  <p className="text-[11px] text-slate-400 text-center mt-2">
-                    {t('shop.amazon_leave_notice', 'You will leave EvairSIM and continue on amazon.com')}
-                  </p>
-                </div>
-              </a>
+              {/* Amazon — category picker + per-SKU search links (see
+                  `data/amazonPhysicalSimCatalog.ts`, rows mirror admin catalogue). */}
+              <AmazonPhysicalSimPicker />
             </>
         )}
 

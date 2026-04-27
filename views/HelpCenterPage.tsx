@@ -41,6 +41,7 @@ import {
 import ArticleBlocks from '../components/article/ArticleBlocks';
 import SiteHeader from '../components/marketing/SiteHeader';
 import SiteFooter from '../components/marketing/SiteFooter';
+import { applyPageSeo } from '../utils/seoHead';
 
 interface HelpCenterPageProps {
     slug: string | null;
@@ -51,13 +52,19 @@ const HelpCenterPage: React.FC<HelpCenterPageProps> = ({ slug }) => {
 
     useEffect(() => {
         if (article) {
-            document.title = `${article.title} — Evair Help`;
-            setMeta(article.summary);
+            applyPageSeo({
+                path: `/help/${article.slug}`,
+                title: `${article.title} — Evair Help`,
+                description: article.summary,
+                ogType: 'article',
+            });
         } else {
-            document.title = 'Help center — Evair';
-            setMeta(
-                'Setup guides, troubleshooting, billing, and refunds. Find an answer or open a chat with us.',
-            );
+            applyPageSeo({
+                path: '/help',
+                title: 'Help center — Evair',
+                description:
+                    'Setup guides, troubleshooting, billing, and refunds. Find an answer or open a chat with us.',
+            });
         }
     }, [article]);
 
@@ -304,18 +311,6 @@ const NotFound: React.FC<{ slug: string }> = ({ slug }) => (
 );
 
 // ─── helpers ────────────────────────────────────────────────────────
-
-function setMeta(content: string): void {
-    const tag = document.querySelector('meta[name="description"]');
-    if (tag) {
-        tag.setAttribute('content', content);
-    } else {
-        const m = document.createElement('meta');
-        m.name = 'description';
-        m.content = content;
-        document.head.appendChild(m);
-    }
-}
 
 function formatDate(iso: string): string {
     try {

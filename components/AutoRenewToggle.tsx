@@ -37,6 +37,7 @@ import {
     activationService,
     appSimService,
     type AppSimDetail,
+    ApiError,
 } from '../services/api';
 import SetupIntentCardForm from './SetupIntentCardForm';
 
@@ -91,8 +92,20 @@ const AutoRenewToggle: React.FC<AutoRenewToggleProps> = ({ iccid, eligible = tru
             })
             .catch((err) => {
                 if (cancelled) return;
-                const message =
-                    err instanceof Error ? err.message : 'Could not load auto-renew status.';
+                let message = 'Could not load auto-renew status.';
+                if (err instanceof ApiError) {
+                    if (err.isNetworkError()) {
+                        message =
+                            'Connection failed. Check your internet and try again.';
+                    } else if (err.httpStatus === 404) {
+                        message =
+                            'We could not find this SIM on your account yet. Try again after it finishes syncing.';
+                    } else {
+                        message = err.message || message;
+                    }
+                } else if (err instanceof Error) {
+                    message = err.message;
+                }
                 setPhase({ kind: 'error', message });
             });
 

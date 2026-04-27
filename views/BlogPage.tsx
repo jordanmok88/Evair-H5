@@ -29,6 +29,7 @@ import {
 import ArticleBlocks from '../components/article/ArticleBlocks';
 import SiteHeader from '../components/marketing/SiteHeader';
 import SiteFooter from '../components/marketing/SiteFooter';
+import { applyPageSeo } from '../utils/seoHead';
 
 interface BlogPageProps {
     slug: string | null;
@@ -39,13 +40,19 @@ const BlogPage: React.FC<BlogPageProps> = ({ slug }) => {
 
     useEffect(() => {
         if (post) {
-            document.title = `${post.title} — Evair Blog`;
-            setMeta(post.summary);
+            applyPageSeo({
+                path: `/blog/${post.slug}`,
+                title: `${post.title} — Evair Blog`,
+                description: post.summary,
+                ogType: 'article',
+            });
         } else {
-            document.title = 'Evair Blog — Travel eSIMs, US SIMs, IoT';
-            setMeta(
-                'Honest guides on travel eSIMs, US SIMs, IoT data plans, and how to actually save money on mobile data.',
-            );
+            applyPageSeo({
+                path: '/blog',
+                title: 'Evair Blog — Travel eSIMs, US SIMs, IoT',
+                description:
+                    'Honest guides on travel eSIMs, US SIMs, IoT data plans, and how to actually save money on mobile data.',
+            });
         }
     }, [post]);
 
@@ -288,18 +295,6 @@ const NotFound: React.FC<{ slug: string }> = ({ slug }) => (
 );
 
 // ─── helpers ────────────────────────────────────────────────────────
-
-function setMeta(content: string): void {
-    const tag = document.querySelector('meta[name="description"]');
-    if (tag) {
-        tag.setAttribute('content', content);
-    } else {
-        const m = document.createElement('meta');
-        m.name = 'description';
-        m.content = content;
-        document.head.appendChild(m);
-    }
-}
 
 function formatDate(iso: string): string {
     try {

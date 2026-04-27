@@ -34,6 +34,7 @@ import { DEVICE_CONTENT } from '../data/deviceLandings';
 import type { DeviceCategory } from '../utils/routing';
 import SiteHeader from '../components/marketing/SiteHeader';
 import SiteFooter from '../components/marketing/SiteFooter';
+import { applyPageSeo } from '../utils/seoHead';
 
 interface DeviceLandingPageProps {
     category: DeviceCategory;
@@ -47,17 +48,13 @@ const DeviceLandingPage: React.FC<DeviceLandingPageProps> = ({ category }) => {
     // until then JS-set values are still indexed by Google after
     // hydration (Bing too, since 2024).
     useEffect(() => {
-        document.title = `${content.heroTitle} — Evair`;
-        const descTag = document.querySelector('meta[name="description"]');
-        if (descTag) {
-            descTag.setAttribute('content', content.heroSubtitle);
-        } else {
-            const m = document.createElement('meta');
-            m.name = 'description';
-            m.content = content.heroSubtitle;
-            document.head.appendChild(m);
-        }
-    }, [content]);
+        const path = `/sim/${category}`;
+        applyPageSeo({
+            path,
+            title: `${content.heroTitle} — Evair`,
+            description: content.heroSubtitle,
+        });
+    }, [category, content]);
 
     return (
         <div className="min-h-screen bg-white text-slate-900">

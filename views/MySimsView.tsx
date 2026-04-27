@@ -333,6 +333,11 @@ const MySimsView: React.FC<MySimsViewProps> = ({ activeSims, onNavigate, filterT
   if (dataRemaining <= 0) usedSegs = totalSegs;
   const remainingSegs = totalSegs - usedSegs;
 
+  const detailCarrierInfo = CARRIER_MAP[currentSim.country.countryCode] ?? { carrier: '—', network: '' };
+  const planDisplayLabel =
+    (currentSim.plan?.name && String(currentSim.plan.name).trim()) ||
+    `${formatGB(currentSim.dataTotalGB)} · ${currentSim.plan.days} ${t('my_sims.days')}`;
+
   const handleCopy = (text: string, field: 'smdp' | 'activation' | 'qr') => {
     navigator.clipboard.writeText(text).then(() => {
       setCopiedField(field);
@@ -904,7 +909,24 @@ const MySimsView: React.FC<MySimsViewProps> = ({ activeSims, onNavigate, filterT
                       </div>
                       <span className="text-sm font-bold text-slate-900">{t('my_sims.plan_type')}</span>
                   </div>
-                  <span className="text-sm font-bold text-slate-500">{currentSim.plan.name}</span>
+                  <span className="text-sm font-bold text-slate-500 text-right max-w-[58%]">{planDisplayLabel}</span>
+              </div>
+
+              <div className="flex justify-between items-center">
+                  <div className="flex items-center gap-3">
+                      <div className="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-slate-500">
+                          <Wifi size={16} />
+                      </div>
+                      <span className="text-sm font-bold text-slate-900">{t('my_sims.carriers')}</span>
+                  </div>
+                  <span className="text-sm font-bold text-slate-500 text-right max-w-[58%]">
+                      {detailCarrierInfo.carrier}
+                      {detailCarrierInfo.network ? (
+                          <span className="text-[10px] font-bold text-slate-400 border border-slate-200 rounded px-1 py-0.5 ml-1.5 whitespace-nowrap align-middle">
+                              {detailCarrierInfo.network}
+                          </span>
+                      ) : null}
+                  </span>
               </div>
 
               <div className="flex justify-between items-center">
@@ -1101,11 +1123,21 @@ const MySimsView: React.FC<MySimsViewProps> = ({ activeSims, onNavigate, filterT
               </div>
 
               {topUpSuccess ? (
-                <div className="flex-1 flex flex-col items-center justify-center">
-                  <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mb-3">
+                <div className="flex-1 min-h-[240px] flex flex-col items-center justify-center px-6 py-10 pb-[max(2.5rem,env(safe-area-inset-bottom,0px))]">
+                  <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mb-4">
                     <CheckCircle2 size={32} className="text-[#34C759]" />
                   </div>
-                  <p className="font-bold text-slate-900">Top-up successful!</p>
+                  <p className="font-bold text-slate-900 text-center">{t('my_sims.top_up_success_title')}</p>
+                  <p className="text-xs text-slate-500 text-center max-w-xs mt-2 mb-8 leading-relaxed">
+                    {t('my_sims.top_up_success_hint')}
+                  </p>
+                  <button
+                    type="button"
+                    onClick={closeModal}
+                    className="w-full max-w-[280px] py-3.5 rounded-xl font-bold text-sm text-white bg-brand-orange shadow-md active:scale-[0.98] transition-transform"
+                  >
+                    {t('my_sims.done')}
+                  </button>
                 </div>
               ) : (
                 <>
