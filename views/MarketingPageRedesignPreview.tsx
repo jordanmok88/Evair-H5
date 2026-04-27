@@ -7,8 +7,6 @@ import React, { useEffect } from 'react';
 import { ArrowRight, CheckCircle2, Star } from 'lucide-react';
 import { applyPageSeo } from '../utils/seoHead';
 import { isMobileDevice } from '../utils/device';
-import { useMobileSignInGate } from '../hooks/useMobileSignInGate';
-import MobileOnlyNotice from '../components/marketing/MobileOnlyNotice';
 
 const APP_PATH = '/app';
 const ACTIVATE_PATH = '/activate';
@@ -30,9 +28,6 @@ const goActivateCta = (e: React.MouseEvent<HTMLAnchorElement>) => {
 };
 
 /** Placeholder photography — replace with brand / licensed assets before merge to `/welcome`. */
-const HAPPY_HERO_IMAGE =
-    'https://images.unsplash.com/photo-1529156069898-49963e39b3ac?auto=format&fit=crop&w=1600&q=82';
-
 const HAPPY_STORIES = [
     {
         img: 'https://images.unsplash.com/photo-1527631746610-bca00a040d60?auto=format&fit=crop&w=720&q=80',
@@ -54,19 +49,18 @@ const HAPPY_STORIES = [
     },
 ] as const;
 
-function StarRow() {
+function StarRow({ compact }: { compact?: boolean }) {
+    const size = compact ? 11 : 14;
     return (
         <div className="flex gap-0.5 text-amber-400" aria-hidden>
             {Array.from({ length: 5 }, (_, i) => (
-                <Star key={i} size={14} className="fill-current" strokeWidth={0} />
+                <Star key={i} size={size} className="fill-current" strokeWidth={0} />
             ))}
         </div>
     );
 }
 
 const MarketingPageRedesignPreview: React.FC = () => {
-    const signInGate = useMobileSignInGate(APP_PATH);
-
     useEffect(() => {
         applyPageSeo({
             path: '/welcome-preview',
@@ -85,31 +79,7 @@ const MarketingPageRedesignPreview: React.FC = () => {
                 unchanged until you approve a merge.
             </div>
 
-            {/* Airalo-style app strip: squircle + two-line copy + OPEN pill */}
-            <div className="border-b border-stone-200/80 bg-[#f3f1ec] px-3 py-2.5 sm:px-4">
-                <div className="mx-auto flex max-w-6xl items-center gap-3">
-                    <img
-                        src="/evairsim-logo.png"
-                        alt=""
-                        className="h-11 w-11 shrink-0 rounded-2xl border border-white/90 bg-white object-contain p-1 shadow-sm"
-                    />
-                    <div className="min-w-0 flex-1">
-                        <p className="truncate text-sm font-semibold text-gray-900">
-                            EvairSIM — Travel eSIM &amp; US data
-                        </p>
-                        <p className="truncate text-xs text-gray-500">Open in the Evair app</p>
-                    </div>
-                    <a
-                        href={APP_PATH}
-                        onClick={signInGate.gateClick}
-                        className="shrink-0 rounded-full bg-[#2563eb] px-5 py-2 text-xs font-bold uppercase tracking-wide text-white shadow-sm transition hover:bg-[#1d4ed8] active:scale-[0.98]"
-                    >
-                        Open
-                    </a>
-                </div>
-            </div>
-
-            {/* ── Nav (OPEN lives in strip above; compact App chip on small screens) ── */}
+            {/* ── Nav: single “Open” → H5 customer shell at /app (no app strip, no gate) ── */}
             <header className="sticky top-0 z-30 border-b border-gray-100 bg-white/95 backdrop-blur-md">
                 <div className="mx-auto flex h-16 max-w-6xl items-center justify-between gap-3 px-4 md:px-8">
                     <a href="/" className="flex min-w-0 items-center" aria-label="EvairSIM home">
@@ -143,10 +113,9 @@ const MarketingPageRedesignPreview: React.FC = () => {
                     </nav>
                     <a
                         href={APP_PATH}
-                        onClick={signInGate.gateClick}
-                        className="shrink-0 rounded-full border border-gray-200 bg-white px-3 py-1.5 text-xs font-semibold text-gray-800 shadow-sm transition hover:border-gray-300 md:hidden"
+                        className="shrink-0 rounded-full bg-[#2563eb] px-5 py-2 text-xs font-bold uppercase tracking-wide text-white shadow-sm transition hover:bg-[#1d4ed8] active:scale-[0.98]"
                     >
-                        App
+                        Open
                     </a>
                 </div>
             </header>
@@ -203,56 +172,41 @@ const MarketingPageRedesignPreview: React.FC = () => {
                 </div>
             </section>
 
-            {/* ── 2. Happy customers (hero + stories — warmer than snap-carousel) ── */}
-            <section
-                id="stories"
-                className="border-t border-stone-200/70 bg-[#faf8f5] px-4 py-16 md:px-8 md:py-20"
-            >
+            {/* ── 2. Happy customers — compact horizontal carousel (reference: tighter cards) ── */}
+            <section id="stories" className="border-t border-gray-100 bg-white px-4 py-12 md:px-8 md:py-14">
                 <div className="mx-auto max-w-6xl">
-                    <p className="text-center text-[11px] font-bold uppercase tracking-[0.28em] text-[#a85a12]">
-                        Real stories
-                    </p>
-                    <h2 className="mt-3 text-center text-3xl font-extrabold tracking-tight text-gray-900 md:text-4xl">
-                        Real people staying connected
+                    <h2 className="text-left text-xl font-extrabold text-gray-900 md:text-2xl">
+                        Our happy customers
                     </h2>
-                    <p className="mx-auto mt-3 max-w-2xl text-center text-base leading-relaxed text-gray-600 md:text-lg">
-                        From airport layovers to backyard cameras — EvairSIM fits the way you move.
+                    <p className="mt-2 max-w-xl text-sm leading-relaxed text-gray-600 md:text-base">
+                        Real people staying connected — swipe for more stories.
                     </p>
 
-                    <div className="mt-10 overflow-hidden rounded-[1.75rem] shadow-xl ring-1 ring-black/[0.06]">
-                        <img
-                            src={HAPPY_HERO_IMAGE}
-                            alt="Friends outdoors, phones in hand"
-                            className="aspect-[4/3] w-full object-cover sm:aspect-[21/9]"
-                            loading="lazy"
-                        />
-                    </div>
-
-                    <div className="mt-12 grid gap-8 md:grid-cols-3">
+                    <div className="-mx-4 mt-8 flex snap-x snap-mandatory gap-4 overflow-x-auto px-4 pb-2 md:mx-0 md:gap-5 md:px-0">
                         {HAPPY_STORIES.map((s) => (
                             <article
                                 key={s.who}
-                                className="group flex flex-col overflow-hidden rounded-2xl bg-white shadow-sm ring-1 ring-stone-200/80 transition hover:shadow-md hover:ring-stone-300/80"
+                                className="group flex w-[min(78vw,260px)] shrink-0 snap-center flex-col overflow-hidden rounded-xl border border-gray-100 bg-white shadow-md md:w-[240px]"
                             >
-                                <div className="aspect-[4/3] w-full overflow-hidden bg-stone-100">
+                                <div className="h-36 w-full overflow-hidden bg-gray-100 sm:h-40">
                                     <img
                                         src={s.img}
                                         alt={s.alt}
-                                        className="h-full w-full object-cover transition duration-500 group-hover:scale-[1.02]"
+                                        className="h-full w-full object-cover transition duration-500 group-hover:scale-[1.03]"
                                         loading="lazy"
                                     />
                                 </div>
-                                <div className="flex flex-1 flex-col p-6">
-                                    <StarRow />
-                                    <p className="mt-3 text-base font-medium leading-relaxed text-gray-800">
+                                <div className="flex flex-1 flex-col p-4">
+                                    <StarRow compact />
+                                    <p className="mt-2 text-sm font-semibold leading-snug text-gray-800">
                                         &ldquo;{s.quote}&rdquo;
                                     </p>
-                                    <p className="mt-4 text-sm font-semibold text-gray-500">{s.who}</p>
+                                    <p className="mt-2 text-xs font-medium text-gray-500">{s.who}</p>
                                     <a
                                         href="/blog"
-                                        className="mt-auto inline-flex items-center gap-1 pt-5 text-sm font-bold text-[#F27420] transition hover:underline"
+                                        className="mt-3 inline-flex w-full items-center justify-center rounded-lg border border-gray-900 bg-white py-2 text-xs font-bold text-gray-900 transition hover:bg-gray-50"
                                     >
-                                        Read story <ArrowRight size={14} />
+                                        See stories
                                     </a>
                                 </div>
                             </article>
@@ -467,12 +421,6 @@ const MarketingPageRedesignPreview: React.FC = () => {
                     </div>
                 </footer>
             </section>
-
-            <MobileOnlyNotice
-                open={signInGate.open}
-                onClose={signInGate.onClose}
-                onContinueAnyway={signInGate.onContinueAnyway}
-            />
         </div>
     );
 };
