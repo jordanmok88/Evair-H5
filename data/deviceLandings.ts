@@ -58,7 +58,9 @@ export interface PhoneCarrierComparison {
     subhead: string;
     asOf: string;
     tableCaption: string;
-    rows: { label: string; evair: string; att: string; verizon: string; tMobile: string }[];
+    /** Evair + AT&T + Verizon only (no T‑Mobile column). */
+    rows: { label: string; evair: string; att: string; verizon: string }[];
+    /** Optional short follow-ups; keep empty for a minimal block. */
     takeaways: string[];
     methodNote: string;
 }
@@ -94,60 +96,46 @@ export const DEVICE_CONTENT: Record<DeviceCategory, DeviceContent> = {
         category: 'phone',
         carrierComparison: {
             sectionId: 'carrier-comparison',
-            headline: 'What you pay vs. AT&T, Verizon & T‑Mobile',
+            headline: 'Honest pricing vs. full-service carriers',
             subhead:
-                'We are not a full-service phone line — we sell data you can use in any unlocked device. ' +
-                'When you do not need another U.S. mobile number, our monthly outlay is usually well below a big-carrier single line.',
-            asOf: 'Updated April 2026 · Estimates for a single line before taxes, fees, and device charges.',
-            tableCaption: 'Feature comparison (Evair vs. big three — illustrative)',
+                'US phone and tablet data on AT&T and Verizon only. Data layer only — no talk, text, or U.S. number — lower monthly outlay than a typical full-service line.',
+            asOf: 'April 2026 · Before taxes & fees',
+            tableCaption: 'Quick read — Evair (data) vs. retail plans (illustrative est.)',
             rows: [
                 {
-                    label: 'Typical monthly outlay, 1 line (est.)',
-                    evair: '$9.99–$29.99 · data only',
-                    att: '≈ $50–$75 (smartphone; talk + data)',
-                    verizon: '≈ $55–$80 (smartphone; talk + data)',
-                    tMobile: '≈ $45–$70 (smartphone; talk + data)',
+                    label: 'Typical monthly, 1 line (est.)',
+                    evair: '$16.99–$49.99 data-only (see plan cards below)',
+                    att: '≈ $50–$75 (talk + data)',
+                    verizon: '≈ $55–$80 (talk + data)',
                 },
                 {
-                    label: 'Voice & text + US phone #',
-                    evair: 'Not included — use data + Wi‑Fi / VoIP apps',
-                    att: 'Included on smartphone plans',
-                    verizon: 'Included on smartphone plans',
-                    tMobile: 'Included on smartphone plans',
+                    label: 'US mobile number, talk & text',
+                    evair: 'Not included (VoIP & Wi‑Fi calling OK)',
+                    att: 'Included on smartphone lines',
+                    verizon: 'Included on smartphone lines',
                 },
                 {
-                    label: 'High-speed data (how to read it)',
-                    evair: '3–20 GB / mo 5G, then ~10 Mbps (printed in app)',
-                    att: '“Unlimited” with depri after heavy use; see carrier FUP',
-                    verizon: '“Unlimited” with depri after heavy use; see carrier FUP',
-                    tMobile: '“Unlimited” with depri after heavy use; see carrier FUP',
-                },
-                {
-                    label: 'Contract / credit / SSN',
-                    evair: 'No contract · no SSN',
-                    att: 'Varies; prepaid often no hard credit check',
-                    verizon: 'Varies; prepaid often no hard credit check',
-                    tMobile: 'Varies; prepaid often no hard credit check',
+                    label: 'After your high-speed GB',
+                    evair: 'Unlimited at 256 Kbps (stated in app)',
+                    att: 'Varies; “unlimited” + deprioritization per plan',
+                    verizon: 'Varies; “unlimited” + deprioritization per plan',
                 },
             ],
-            takeaways: [
-                'Evair is built for data-only: travelers, second devices, and hotspot users. If you need a U.S. mobile number, keep a small carrier or VoIP line — or keep your existing number on Wi‑Fi calling.',
-                'Carrier “unlimited” is not a GB-for-GB match to a fixed high-speed bucket. We publish GB and speeds up front; compare total monthly outlay, not a synthetic “$/GB on unlimited”.',
-            ],
+            takeaways: [],
             methodNote:
-                'The AT&T / Verizon / T‑Mobile column shows **market-typical published ranges** for a single line on smartphone plans (not tablet-only or IoT), collated from carrier sites and CNET/Wirecutter class roundups. Promos, Autopay, and paperless discounts move real checkout prices. Always compare checkout totals on the carrier’s site. Evair’s prices are the retail tiers we list in-app.',
+                'AT&T and Verizon est. = typical published smartphone-line ranges before add-ons; your checkout may differ. Confirm on att.com and verizon.com. Evair prices match the tiers in the app.',
         },
         heroTitle: 'US 5G data for your phone, tablet, or hotspot',
         heroSubtitle:
-            'Real 5G on AT&T, Verizon, and T-Mobile. Bring your iPhone, Android, iPad, or pocket Wi-Fi — plug-and-use in minutes, no contract. Data-only.',
+            'Real 5G on AT&T and Verizon. Bring your iPhone, Android, iPad, or pocket Wi-Fi — plug-and-use in minutes, no contract. Data-only.',
         speedHeadline: '5G, up to 200 Mbps',
         throttleNote:
-            'First 5 GB at top 5G speeds. After that you stay connected at lower speed for the remainder of the cycle — fast enough for maps, messaging, and standard-def video. We never cut you off.',
+            'You get a set amount of 5G/LTE at full speed, then unlimited data at 256 Kbps for the rest of the cycle — we never hard-cut you off. Exact GB per plan is in the app.',
         pillars: [
             {
                 icon: Wifi,
                 title: 'Real 5G coverage',
-                body: 'AT&T, Verizon, and T-Mobile via PCCW. Same towers as the big carriers, no APN workaround.',
+                body: 'AT&T and Verizon via PCCW — same air interface as the big brands, with auto-APN. No T-Mobile profile on this product line.',
             },
             {
                 icon: Smartphone,
@@ -168,33 +156,33 @@ export const DEVICE_CONTENT: Record<DeviceCategory, DeviceContent> = {
         plans: [
             {
                 name: 'Starter',
-                priceUsd: '9.99',
-                summary: '3 GB high-speed + unlimited 10 Mbps',
+                priceUsd: '16.99',
+                summary: '5 GB high-speed + unlimited 256 Kbps (AT&T & Verizon)',
             },
             {
                 name: 'Everyday',
-                priceUsd: '19.99',
-                summary: '9 GB high-speed + unlimited 10 Mbps',
+                priceUsd: '29.99',
+                summary: '10 GB high-speed + unlimited 256 Kbps (AT&T & Verizon)',
                 highlight: true,
             },
             {
                 name: 'Power',
-                priceUsd: '29.99',
-                summary: '20 GB high-speed + unlimited 10 Mbps',
+                priceUsd: '49.99',
+                summary: '20 GB high-speed + unlimited 256 Kbps (AT&T & Verizon)',
             },
         ],
         faq: [
             {
                 q: 'Will my iPhone or Android work?',
-                a: 'Yes — any unlocked phone from the last 5 years that supports US 5G/LTE bands (AT&T, Verizon, T-Mobile). Carrier-locked phones need to be unlocked first.',
+                a: 'Yes — on unlocked phones with AT&T- or Verizon-compatible US bands. Carrier-locked phones need to be unlocked first.',
             },
             {
                 q: 'Does this include voice, SMS, or a US phone number?',
-                a: 'No. EvairSIM is a data-only service — there is no US phone number, no voice calls, and no SMS over the cellular network. For calls and messaging, use WhatsApp, FaceTime, iMessage, Google Voice, or any other VoIP app over data or Wi-Fi. This is what keeps the price at $9.99/mo.',
+                a: 'No. This is a data-only service. Use Wi‑Fi calling, FaceTime, WhatsApp, Google Voice, and other apps over the data connection. No US cellular number is included — that is why monthly prices stay low.',
             },
             {
                 q: 'What happens after I use my high-speed data?',
-                a: 'You stay online — speeds drop for the rest of the cycle but you can still load maps, send messages, and stream standard-def video. We never cut you off.',
+                a: 'You keep unlimited data at 256 Kbps until the next billing cycle — enough for light maps and messaging, not for HD video. We do not hard-cut you off.',
             },
             {
                 q: 'Can I use my phone as a hotspot?',

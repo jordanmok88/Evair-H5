@@ -125,50 +125,53 @@ const DeviceLandingPage: React.FC<DeviceLandingPageProps> = ({ category }) => {
                 </div>
             </section>
 
-            {/* Phone only: Evair vs AT&T / Verizon / T‑Mobile (estimates + disclaimers) */}
+            {/* Phone only: Evair vs AT&T / Verizon (concise est.) */}
             {content.carrierComparison && (
                 <section
                     id={content.carrierComparison.sectionId}
-                    className="scroll-mt-24 border-y border-slate-200 bg-slate-50 px-4 py-12 md:px-8 md:py-16"
+                    className="scroll-mt-24 border-y border-slate-200 bg-slate-50 px-4 py-10 md:px-8 md:py-12"
                 >
                     <div className="mx-auto max-w-6xl">
-                        <p className="text-center text-xs font-semibold uppercase tracking-widest text-slate-500">
+                        <p className="text-center text-[10px] font-semibold uppercase tracking-widest text-slate-500 md:text-xs">
                             {content.carrierComparison.asOf}
                         </p>
-                        <h2 className="mt-3 text-center text-2xl font-extrabold tracking-tight text-slate-900 md:text-3xl">
+                        <h2 className="mt-2 text-center text-xl font-extrabold tracking-tight text-slate-900 md:text-2xl">
                             {content.carrierComparison.headline}
                         </h2>
-                        <p className="mx-auto mt-3 max-w-3xl text-center text-sm leading-relaxed text-slate-600 md:text-base">
+                        <p className="mx-auto mt-2 max-w-xl text-center text-sm leading-snug text-slate-600">
                             {content.carrierComparison.subhead}
                         </p>
 
-                        <div className="mt-8 overflow-x-auto rounded-2xl border border-slate-200 bg-white shadow-sm">
-                            <table className="w-full min-w-[640px] border-collapse text-left text-xs md:min-w-0 md:text-sm">
-                                <caption className="border-b border-slate-100 px-4 py-3 text-left text-xs font-semibold text-slate-600 md:px-6">
+                        <div className="mt-6 overflow-x-auto rounded-2xl border border-slate-200 bg-white shadow-sm">
+                            <table className="w-full min-w-[520px] border-collapse text-left text-xs md:min-w-0 md:text-sm">
+                                <caption className="border-b border-slate-100 px-4 py-2.5 text-left text-xs font-medium text-slate-500 md:px-5">
                                     {content.carrierComparison.tableCaption}
                                 </caption>
                                 <thead>
                                     <tr className="border-b border-slate-200 bg-slate-100/80">
                                         <th
                                             scope="col"
-                                            className="w-[18%] px-3 py-3 font-semibold text-slate-800 md:px-4"
+                                            className="w-[24%] px-3 py-2.5 font-semibold text-slate-800 md:px-4"
                                         >
-                                            Feature
+                                            &nbsp;
                                         </th>
                                         <th
                                             scope="col"
-                                            className="w-[20.5%] bg-orange-50 px-2 py-3 font-bold text-[#c2410c] md:px-3"
+                                            className="w-[25%] bg-orange-50 px-2 py-2.5 font-bold text-[#c2410c] md:px-3"
                                         >
                                             Evair
                                         </th>
-                                        <th scope="col" className="w-[20.5%] px-2 py-3 font-semibold text-slate-800 md:px-3">
+                                        <th
+                                            scope="col"
+                                            className="w-[25%] px-2 py-2.5 font-semibold text-slate-800 md:px-3"
+                                        >
                                             AT&amp;T <span className="block text-[10px] font-normal text-slate-500">(est.)</span>
                                         </th>
-                                        <th scope="col" className="w-[20.5%] px-2 py-3 font-semibold text-slate-800 md:px-3">
+                                        <th
+                                            scope="col"
+                                            className="w-[26%] px-2 py-2.5 font-semibold text-slate-800 md:px-3"
+                                        >
                                             Verizon <span className="block text-[10px] font-normal text-slate-500">(est.)</span>
-                                        </th>
-                                        <th scope="col" className="w-[20.5%] px-2 py-3 font-semibold text-slate-800 md:px-3">
-                                            T‑Mobile <span className="block text-[10px] font-normal text-slate-500">(est.)</span>
                                         </th>
                                     </tr>
                                 </thead>
@@ -180,19 +183,16 @@ const DeviceLandingPage: React.FC<DeviceLandingPageProps> = ({ category }) => {
                                         >
                                             <th
                                                 scope="row"
-                                                className="px-3 py-3 align-top font-medium text-slate-800 md:px-4"
+                                                className="px-3 py-2.5 align-top text-xs font-medium text-slate-800 md:px-4 md:text-sm"
                                             >
                                                 {row.label}
                                             </th>
-                                            <td className="bg-orange-50/50 px-2 py-3 align-top text-slate-700 md:px-3">
+                                            <td className="bg-orange-50/50 px-2 py-2.5 align-top text-slate-700 md:px-3">
                                                 {row.evair}
                                             </td>
-                                            <td className="px-2 py-3 align-top text-slate-600 md:px-3">{row.att}</td>
-                                            <td className="px-2 py-3 align-top text-slate-600 md:px-3">
+                                            <td className="px-2 py-2.5 align-top text-slate-600 md:px-3">{row.att}</td>
+                                            <td className="px-2 py-2.5 align-top text-slate-600 md:px-3">
                                                 {row.verizon}
-                                            </td>
-                                            <td className="px-2 py-3 align-top text-slate-600 md:px-3">
-                                                {row.tMobile}
                                             </td>
                                         </tr>
                                     ))}
@@ -200,22 +200,24 @@ const DeviceLandingPage: React.FC<DeviceLandingPageProps> = ({ category }) => {
                             </table>
                         </div>
 
-                        <ul className="mt-6 space-y-2 text-sm leading-relaxed text-slate-700">
-                            {content.carrierComparison.takeaways.map((t, i) => (
-                                <li key={`takeaway-${i}`} className="flex gap-2">
-                                    <CheckCircle2
-                                        className="mt-0.5 h-4 w-4 shrink-0 text-emerald-600"
-                                        aria-hidden
-                                    />
-                                    <span>{t}</span>
-                                </li>
-                            ))}
-                        </ul>
+                        {content.carrierComparison.takeaways.length > 0 && (
+                            <ul className="mt-5 space-y-2 text-sm leading-relaxed text-slate-700">
+                                {content.carrierComparison.takeaways.map((t, i) => (
+                                    <li key={`takeaway-${i}`} className="flex gap-2">
+                                        <CheckCircle2
+                                            className="mt-0.5 h-4 w-4 shrink-0 text-emerald-600"
+                                            aria-hidden
+                                        />
+                                        <span>{t}</span>
+                                    </li>
+                                ))}
+                            </ul>
+                        )}
 
-                        <div className="mt-6 flex gap-2 rounded-xl border border-slate-200 bg-white p-4 text-xs leading-relaxed text-slate-600 shadow-sm">
-                            <Info className="mt-0.5 h-4 w-4 shrink-0 text-slate-400" aria-hidden />
-                            <p>{content.carrierComparison.methodNote}</p>
-                        </div>
+                        <p className="mt-4 flex gap-2 text-xs leading-relaxed text-slate-500">
+                            <Info className="mt-0.5 h-3.5 w-3.5 shrink-0 text-slate-400" aria-hidden />
+                            {content.carrierComparison.methodNote}
+                        </p>
                     </div>
                 </section>
             )}

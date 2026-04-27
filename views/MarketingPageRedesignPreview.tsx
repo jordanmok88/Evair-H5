@@ -246,7 +246,7 @@ const MarketingPageRedesignPreview: React.FC = () => {
                                 gradient: 'from-emerald-500 via-teal-400 to-cyan-300',
                                 tag: 'Pricing',
                                 title: 'Honest pricing.',
-                                body: 'How our data prices compare to AT&T, Verizon & T-Mobile.',
+                                body: 'US data vs. AT&T & Verizon — no fluff.',
                                 href: '/sim/phone',
                             },
                             {
@@ -301,30 +301,30 @@ const MarketingPageRedesignPreview: React.FC = () => {
                     </p>
                     <h2 className="mt-1 text-xl font-extrabold text-gray-900 md:text-2xl">US 5G data plans</h2>
                     <p className="mt-2 max-w-2xl text-sm text-gray-600">
-                        Real US 5G on AT&amp;T, Verizon &amp; T-Mobile. Pick a monthly bucket — top up anytime in the
-                        app.
+                        Real US 5G on AT&amp;T &amp; Verizon. High-speed bucket, then unlimited at 256 Kbps — top up
+                        anytime in the app.
                     </p>
 
                     <div className="mt-6 flex snap-x snap-mandatory gap-3 overflow-x-auto pb-2 md:grid md:grid-cols-3 md:gap-4 md:overflow-visible md:pb-0">
                         {[
                             {
                                 name: 'Starter',
-                                price: '$9.99',
-                                blurb: '3 GB high-speed + unlimited 10 Mbps',
+                                price: '$16.99',
+                                blurb: '5 GB high-speed + unlimited 256 Kbps',
                                 cta: 'Get Starter',
                                 popular: false,
                             },
                             {
                                 name: 'Everyday',
-                                price: '$19.99',
-                                blurb: '9 GB high-speed + unlimited 10 Mbps',
+                                price: '$29.99',
+                                blurb: '10 GB high-speed + unlimited 256 Kbps',
                                 cta: 'Get Everyday',
                                 popular: true,
                             },
                             {
                                 name: 'Power',
-                                price: '$29.99',
-                                blurb: '20 GB high-speed + unlimited 10 Mbps',
+                                price: '$49.99',
+                                blurb: '20 GB high-speed + unlimited 256 Kbps',
                                 cta: 'Get Power',
                                 popular: false,
                             },
@@ -350,9 +350,12 @@ const MarketingPageRedesignPreview: React.FC = () => {
                                     <span className="text-sm font-semibold text-gray-500"> / month</span>
                                 </p>
                                 <p className="mt-2 text-xs leading-relaxed text-gray-600">{p.blurb}</p>
+                                <p className="mt-1.5 text-[10px] font-medium uppercase tracking-wide text-slate-500">
+                                    AT&amp;T &amp; Verizon
+                                </p>
                                 <a
                                     href={`${APP_PATH}#sim-card`}
-                                    className={`mt-5 inline-flex w-full items-center justify-center rounded-xl py-3 text-sm font-bold transition ${
+                                    className={`mt-4 inline-flex w-full items-center justify-center rounded-xl py-3 text-sm font-bold transition ${
                                         p.popular
                                             ? 'bg-[#F27420] text-white hover:brightness-105'
                                             : 'bg-[#0A1128] text-white hover:bg-[#121f45]'
