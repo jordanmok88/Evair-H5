@@ -233,13 +233,17 @@ const MarketingPageRedesignPreview: React.FC = () => {
                 </div>
             </section>
 
-            {/* ── 3. Why Evair — 1 col on narrow phones, 2 from ~sm ─────────── */}
+            {/* ── 3. Why Evair — same max width as pricing + stories (max-w-6xl) ─ */}
             <section id="why" className="border-t border-gray-100 bg-gray-50 px-4 py-10 sm:px-5 md:px-8 md:py-12">
-                <div className="mx-auto max-w-3xl min-w-0">
-                    <h2 className="text-center text-base font-extrabold tracking-tight text-gray-900 sm:text-lg md:text-xl">
+                <div className="mx-auto w-full min-w-0 max-w-6xl">
+                    <h2 className="text-left text-lg font-extrabold text-gray-900 sm:text-xl md:text-2xl">
                         Built for the way you actually move.
                     </h2>
-                    <div className="mt-5 grid grid-cols-1 gap-3 min-[400px]:grid-cols-2 sm:mt-6 sm:gap-3 md:gap-4">
+                    <p className="mt-2 max-w-2xl text-sm leading-relaxed text-gray-600 sm:text-base">
+                        Global trips, long-stay US data, and support in three languages — without the fine print
+                        runaround.
+                    </p>
+                    <div className="mt-6 grid grid-cols-1 gap-4 min-[400px]:grid-cols-2 min-[400px]:gap-4 sm:mt-7 md:mt-8 md:gap-5">
                         {[
                             {
                                 gradient: 'from-orange-500 via-amber-400 to-yellow-300',
@@ -276,7 +280,7 @@ const MarketingPageRedesignPreview: React.FC = () => {
                                 key={c.title}
                                 href={c.href}
                                 onClick={c.onClick}
-                                className="group relative flex min-h-[7.5rem] min-w-0 flex-col overflow-hidden rounded-xl bg-white p-3.5 shadow-sm ring-1 ring-gray-100/90 transition hover:shadow-md hover:ring-[#F27420]/35 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2563eb] min-[400px]:min-h-0 sm:p-4"
+                                className="group relative flex min-h-[7.5rem] min-w-0 flex-col overflow-hidden rounded-2xl bg-white p-4 shadow-sm ring-1 ring-gray-200/80 transition hover:shadow-md hover:ring-[#F27420]/35 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2563eb] min-[400px]:min-h-[9.5rem] sm:p-5 md:min-h-0"
                             >
                                 <div
                                     className={`absolute left-0 top-0 h-1 w-full bg-gradient-to-r ${c.gradient}`}
@@ -285,13 +289,13 @@ const MarketingPageRedesignPreview: React.FC = () => {
                                 <p className="text-[9px] font-bold uppercase tracking-[0.18em] text-gray-400 md:text-[10px]">
                                     {c.tag}
                                 </p>
-                                <h3 className="mt-1.5 text-sm font-bold leading-tight text-gray-900 md:text-base">
+                                <h3 className="mt-2 text-sm font-bold leading-tight text-gray-900 sm:text-base md:text-lg">
                                     {c.title}
                                 </h3>
-                                <p className="mt-1.5 line-clamp-3 text-[11px] leading-snug text-gray-600 md:text-xs">
+                                <p className="mt-2 line-clamp-3 text-xs leading-relaxed text-gray-600 sm:text-sm">
                                     {c.body}
                                 </p>
-                                <span className="mt-2 inline-flex items-center gap-0.5 text-[10px] font-semibold text-[#F27420] md:text-xs">
+                                <span className="mt-3 inline-flex items-center gap-0.5 text-[10px] font-semibold text-[#F27420] sm:text-xs">
                                     Tap to open <ArrowRight size={12} className="shrink-0" />
                                 </span>
                             </a>
@@ -300,9 +304,9 @@ const MarketingPageRedesignPreview: React.FC = () => {
                 </div>
             </section>
 
-            {/* ── 4. Long-stay / IoT — plan cards: horizontal scroll on small, grid on md+ ── */}
+            {/* ── 4. Long-stay / IoT — same content width as section 3 (max-w-6xl) ── */}
             <section id="compare" className="border-t border-gray-100 bg-slate-50 px-4 py-10 sm:px-5 md:px-8 md:py-12">
-                <div className="mx-auto max-w-5xl min-w-0">
+                <div className="mx-auto w-full min-w-0 max-w-6xl">
                     <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-600 sm:text-xs">
                         For long-stay, IoT &amp; new arrivals
                     </p>
