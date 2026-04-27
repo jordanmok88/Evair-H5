@@ -67,11 +67,11 @@ export const SIM_CARD_PRODUCTS: SimCardProduct[] = [
 /**
  * Physical SIM purchase: points to Amazon (storefront URL or search).
  * Set `VITE_AMAZON_SIM_STOREFRONT_URL` when a flagship store is live;
- * default is Amazon.com search for “Evair”.
+ * default is Amazon.com search for “EvairSIM”.
  */
 export const AMAZON_SIM_STOREFRONT_URL =
   (import.meta.env.VITE_AMAZON_SIM_STOREFRONT_URL as string | undefined) ||
-  'https://www.amazon.com/s?k=Evair';
+  'https://www.amazon.com/s?k=EvairSIM';
 
 export const MOCK_PLANS_US: Plan[] = MOCK_COUNTRIES.find(c => c.countryCode === 'US')?.plans ?? [];
 

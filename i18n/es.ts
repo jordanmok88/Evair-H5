@@ -121,7 +121,7 @@ const es = {
     trust_support: 'Soporte 24/7.',
     trust_one_line: 'Sin contratos · Sin cargos ocultos · Soporte 24/7',
     buy_sim_card: 'Comprar tarjeta SIM',
-    buy_sim_card_aria: 'Abre Amazon.com en una pestaña nueva con la búsqueda Evair',
+    buy_sim_card_aria: 'Abre Amazon.com en una pestaña nueva con la búsqueda EvairSIM',
     home_badge: 'Datos móviles, más simples',
     home_hero_stay: 'Mantente conectado',
     home_hero_anywhere: 'en cualquier lugar.',

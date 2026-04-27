@@ -121,7 +121,7 @@ const zh = {
     trust_support: '7×24 客服。',
     trust_one_line: '无合约 · 无隐藏费用 · 7×24 支持',
     buy_sim_card: '购买 SIM 卡',
-    buy_sim_card_aria: '在新标签页打开亚马逊，并搜索 Evair',
+    buy_sim_card_aria: '在新标签页打开亚马逊，并搜索 EvairSIM',
     home_badge: '移动数据，更简单',
     home_hero_stay: '随时保持连接',
     home_hero_anywhere: '无处不在。',
