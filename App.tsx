@@ -30,6 +30,16 @@ import { initPush, unregisterPush } from './services/pushService';
 import { computeTestModeEnabled, dismissTestModeForSession, isAppPath, isAppPreviewHash, stripTestModeFromUrl } from './utils/testMode';
 import { getRoute, type Route } from './utils/routing';
 
+function navigateToAppSupport() {
+  if (typeof window === 'undefined') return;
+  window.location.assign(`${window.location.origin}/app#contact`);
+}
+
+function showGlobalSupportFabForRoute(kind: Route['kind']): boolean {
+  /** 与 `CustomerApp` 互斥：`app` 路由内用内嵌 FAB；其余（含 apiTest / 营销 / activate 等）用全屏 fixed FAB */
+  return kind !== 'app';
+}
+
 function App() {
 
   // Top-level route detection. Falls back to <CustomerApp/> for any path
@@ -95,18 +105,28 @@ function App() {
     applyTitle();
   }, [route]);
 
-  if (route.kind === 'apiTest') return <ApiTestPage />;
-  if (route.kind === 'activate') return <ActivatePage iccid={route.iccid} />;
-  if (route.kind === 'topup') return <TopUpPage iccid={route.iccid} />;
-  if (route.kind === 'marketingPreview') return <MarketingPageRedesignPreview />;
-  if (route.kind === 'marketing') return <MarketingPage />;
-  if (route.kind === 'device') return <DeviceLandingPage category={route.category} />;
-  if (route.kind === 'travel') return <TravelEsimPage countryCode={route.countryCode} />;
-  if (route.kind === 'help') return <HelpCenterPage slug={route.slug} />;
-  if (route.kind === 'blog') return <BlogPage slug={route.slug} />;
-  if (route.kind === 'legal') return <LegalPage slug={route.slug} />;
+  const appBody = useMemo(() => {
+    if (route.kind === 'apiTest') return <ApiTestPage />;
+    if (route.kind === 'activate') return <ActivatePage iccid={route.iccid} />;
+    if (route.kind === 'topup') return <TopUpPage iccid={route.iccid} />;
+    if (route.kind === 'marketingPreview') return <MarketingPageRedesignPreview />;
+    if (route.kind === 'marketing') return <MarketingPage />;
+    if (route.kind === 'device') return <DeviceLandingPage category={route.category} />;
+    if (route.kind === 'travel') return <TravelEsimPage countryCode={route.countryCode} />;
+    if (route.kind === 'help') return <HelpCenterPage slug={route.slug} />;
+    if (route.kind === 'blog') return <BlogPage slug={route.slug} />;
+    if (route.kind === 'legal') return <LegalPage slug={route.slug} />;
+    return <CustomerApp />;
+  }, [route]);
 
-  return <CustomerApp />;
+  return (
+    <>
+      {showGlobalSupportFabForRoute(route.kind) && (
+        <SupportFab layout="fixed" visible onClick={navigateToAppSupport} />
+      )}
+      {appBody}
+    </>
+  );
 }
 
 function CustomerApp() {
@@ -1056,8 +1076,9 @@ function CustomerApp() {
           </div>
         </main>
 
-        {/* 浮动客服入口：仅在主功能 Tab 出现，不打扰其它流程 */}
+        {/* 浮动客服：主功能 Tab；打开聊天 Tab 时隐藏；inset 与全站 fixed FAB 互斥 */}
         <SupportFab
+          layout="inset"
           visible={activeTab === Tab.SIM_CARD || activeTab === Tab.ESIM || activeTab === Tab.INBOX || activeTab === Tab.PROFILE}
           onClick={() => { previousTab.current = activeTab; setActiveTab(Tab.DIALER); }}
         />

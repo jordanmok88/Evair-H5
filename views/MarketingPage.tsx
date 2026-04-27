@@ -175,7 +175,7 @@ const MarketingPage: React.FC = () => {
                             Travel eSIM
                         </a>
                         <a href="/sim/phone" className="transition hover:text-gray-900">
-                            Phone
+                            {t('marketing.nav_mobile')}
                         </a>
                         <a href="/sim/camera" className="transition hover:text-gray-900">
                             Camera

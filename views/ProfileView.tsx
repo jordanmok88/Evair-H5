@@ -476,7 +476,7 @@ const AboutEvairView = ({ onBack }: { onBack: () => void }) => {
                 <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-5">
                     <h3 className="text-[15px] font-bold text-slate-900 mb-3">Our Promise</h3>
                     <p className="text-[15px] text-slate-600 leading-relaxed mb-3">
-                        At EvairSIM, we believe that staying connected should be effortless. No hunting for local SIM shops at the airport. No surprise roaming charges on your phone bill. No dropped connections during your most important moments abroad.
+                        At EvairSIM, we believe that staying connected should be effortless. No hunting for local SIM shops at the airport. No surprise roaming charges on your mobile bill. No dropped connections during your most important moments abroad.
                     </p>
                     <p className="text-[15px] text-slate-600 leading-relaxed">
                         We're a young company with a bold ambition: to become the most trusted name in travel connectivity. Every decision we make — from which carriers we partner with to how we design our app — is driven by a single question: <span className="text-slate-900 font-semibold italic">"Does this make our customers' journey better?"</span> We're just getting started, and we're grateful to have you along for the ride.

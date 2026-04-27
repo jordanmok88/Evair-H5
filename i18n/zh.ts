@@ -1,4 +1,9 @@
 const zh = {
+  support_fab: {
+    open_chat: '打开客服聊天',
+    tuck: '收起客服按钮到边缘',
+    expand: '显示客服入口',
+  },
   nav: {
     sim_card: 'SIM卡',
     esim: 'eSIM',
@@ -180,6 +185,7 @@ const zh = {
     footer_link_uk: '英国 eSIM',
     footer_link_mx: '墨西哥 eSIM',
     footer_link_topup: '充值流量',
+    nav_mobile: '手机',
     footer_link_phone: '手机与平板',
     footer_link_camera: '安防与相机',
     footer_link_iot: '物联网与智能设备',

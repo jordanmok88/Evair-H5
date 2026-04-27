@@ -5,6 +5,7 @@
  */
 
 import React, { useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { ArrowRight, CheckCircle2, ChevronRight, Star } from 'lucide-react';
 import { applyPageSeo } from '../utils/seoHead';
 import { isMobileDevice } from '../utils/device';
@@ -78,6 +79,7 @@ function StarRow({ compact }: { compact?: boolean }) {
 }
 
 const MarketingPageRedesignPreview: React.FC = () => {
+    const { t } = useTranslation();
     const signInGate = useMobileSignInGate(APP_PATH);
     useEffect(() => {
         applyPageSeo({
@@ -114,7 +116,7 @@ const MarketingPageRedesignPreview: React.FC = () => {
                             Travel eSIM
                         </a>
                         <a href="/sim/phone" className="transition hover:text-gray-900">
-                            Phone
+                            {t('marketing.nav_mobile')}
                         </a>
                         <a href="/sim/camera" className="transition hover:text-gray-900">
                             Camera
@@ -431,7 +433,7 @@ const MarketingPageRedesignPreview: React.FC = () => {
                         <FooterColumn
                             title="US SIMs"
                             links={[
-                                { label: 'Phone & tablet', href: '/sim/phone' },
+                                { label: t('marketing.footer_link_phone'), href: '/sim/phone' },
                                 { label: 'Security & trail cameras', href: '/sim/camera' },
                                 { label: 'IoT & smart devices', href: '/sim/iot' },
                                 { label: 'Activate a SIM', href: ACTIVATE_PATH, onClick: goActivateCta },

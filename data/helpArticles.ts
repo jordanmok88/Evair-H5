@@ -79,21 +79,21 @@ export const HELP_ARTICLES: HelpArticle[] = [
         slug: 'what-is-an-esim',
         title: 'What is an eSIM and how does it work?',
         summary:
-            'eSIMs are SIM cards built into your phone — no plastic card, no swap. Here is what changes (and what does not).',
+            'eSIMs are SIM cards built into your mobile — no plastic card, no swap. Here is what changes (and what does not).',
         category: 'getting-started',
         readMinutes: 3,
         updatedAt: '2026-04-25',
         body: [
             {
                 type: 'p',
-                text: 'An eSIM is a digital SIM card built into your phone, tablet, or smartwatch. Instead of inserting a physical card, you scan a QR code and your device downloads a "profile" that connects you to the carrier.',
+                text: 'An eSIM is a digital SIM card built into your mobile, tablet, or smartwatch. Instead of inserting a physical card, you scan a QR code and your device downloads a "profile" that connects you to the carrier.',
             },
             { type: 'h2', text: 'What changes' },
             {
                 type: 'ul',
                 items: [
                     'No physical SIM to lose, snap, or swap.',
-                    'You can install plans for multiple countries on the same phone and switch in Settings without rebooting.',
+                    'You can install plans for multiple countries on the same mobile and switch in Settings without rebooting.',
                     'Activation takes about a minute — install at home over Wi-Fi, connect when you land.',
                     'Your existing SIM (US line, work line) stays put and keeps receiving texts.',
                 ],
@@ -102,7 +102,7 @@ export const HELP_ARTICLES: HelpArticle[] = [
             {
                 type: 'ul',
                 items: [
-                    'Your phone needs to be unlocked — same as a physical SIM swap.',
+                    'Your mobile needs to be unlocked — same as a physical SIM swap.',
                     'You still pay for data; the eSIM just delivers the connection.',
                     'You can still call and text on your primary line while the eSIM handles data abroad.',
                 ],
@@ -110,7 +110,7 @@ export const HELP_ARTICLES: HelpArticle[] = [
             {
                 type: 'note',
                 tone: 'info',
-                text: 'Most US iPhones from XS (2018) onwards and most Pixel/Galaxy phones from 2020 onwards support eSIM. Check your phone settings under "Cellular" or "SIM manager" — if you see "Add eSIM", you are good to go.',
+                text: 'Most US iPhones from XS (2018) onwards and most Pixel/Galaxy phones from 2020 onwards support eSIM. Check your mobile settings under "Cellular" or "SIM manager" — if you see "Add eSIM", you are good to go.',
             },
         ],
     },
@@ -127,7 +127,7 @@ export const HELP_ARTICLES: HelpArticle[] = [
         body: [
             {
                 type: 'p',
-                text: 'After purchasing your Evair eSIM, you will receive a QR code in the app and by email. Install it before you travel — your phone needs Wi-Fi to download the profile, and you do not want to be standing in an airport with no signal trying to scan a QR code.',
+                text: 'After purchasing your Evair eSIM, you will receive a QR code in the app and by email. Install it before you travel — your mobile needs Wi-Fi to download the profile, and you do not want to be standing in an airport with no signal trying to scan a QR code.',
             },
             { type: 'h2', text: 'Step-by-step' },
             {
@@ -189,7 +189,7 @@ export const HELP_ARTICLES: HelpArticle[] = [
             {
                 type: 'note',
                 tone: 'warn',
-                text: 'Some carrier-locked Android phones (especially older Verizon devices) ship with eSIM disabled. If "Add eSIM" is greyed out, your phone needs to be unlocked first — contact the original carrier.',
+                text: 'Some carrier-locked Android phones (especially older Verizon devices) ship with eSIM disabled. If "Add eSIM" is greyed out, your mobile needs to be unlocked first — contact the original carrier.',
             },
         ],
     },
@@ -219,7 +219,7 @@ export const HELP_ARTICLES: HelpArticle[] = [
             },
             {
                 type: 'p',
-                text: 'You can insert the SIM card into your phone before, during, or after activation. The plan starts the first time data flows through the SIM, so a few hours of shipping or activation delay does not eat into your monthly allotment.',
+                text: 'You can insert the SIM card into your mobile before, during, or after activation. The plan starts the first time data flows through the SIM, so a few hours of shipping or activation delay does not eat into your monthly allotment.',
             },
             {
                 type: 'note',
@@ -239,7 +239,7 @@ export const HELP_ARTICLES: HelpArticle[] = [
         body: [
             {
                 type: 'p',
-                text: 'In 99% of cases you do not need to set an APN — the Evair SIM tells your phone what to use automatically. If after 5 minutes you still cannot get data, set the APN manually.',
+                text: 'In 99% of cases you do not need to set an APN — the Evair SIM tells your mobile what to use automatically. If after 5 minutes you still cannot get data, set the APN manually.',
             },
             { type: 'h2', text: 'iPhone' },
             {
@@ -248,7 +248,7 @@ export const HELP_ARTICLES: HelpArticle[] = [
                     'Settings → Cellular → Cellular Data Network.',
                     'Under "Cellular Data", set APN to fast.t-mobile.com.',
                     'Leave Username and Password blank.',
-                    'Restart your phone.',
+                    'Restart your mobile.',
                 ],
             },
             { type: 'h2', text: 'Android' },
@@ -365,12 +365,12 @@ export const HELP_ARTICLES: HelpArticle[] = [
             },
             {
                 type: 'p',
-                text: 'On phone plans you stay at 10 Mbps after the cap (HD video and maps still work). On camera plans the speed cap is the same all month at 1.5 Mbps. On IoT plans it is 500 Kbps.',
+                text: 'On mobile plans you stay at 10 Mbps after the cap (HD video and maps still work). On camera plans the speed cap is the same all month at 1.5 Mbps. On IoT plans it is 500 Kbps.',
             },
             { type: 'h2', text: '2. You are connected to the wrong network' },
             {
                 type: 'p',
-                text: 'Sometimes your phone sticks to a slower 4G tower when 5G is available, or roams onto a partner network with worse coverage. Toggle Airplane Mode for 10 seconds — your phone re-scans for the best tower.',
+                text: 'Sometimes your mobile sticks to a slower 4G tower when 5G is available, or roams onto a partner network with worse coverage. Toggle Airplane Mode for 10 seconds — your mobile re-scans for the best tower.',
             },
             { type: 'h2', text: '3. Background app eating bandwidth' },
             {
@@ -401,7 +401,7 @@ export const HELP_ARTICLES: HelpArticle[] = [
                 type: 'ol',
                 items: [
                     'Toggle Airplane Mode for 10 seconds.',
-                    'Restart the phone (not just lock and unlock).',
+                    'Restart the device (not just lock and unlock).',
                     'Check that the Evair line is selected for cellular data: Settings → Cellular → Cellular Data → pick the Evair line.',
                     'For physical SIMs: pop the SIM out, blow on the contacts, put it back.',
                     'For eSIMs: turn the line off and back on in Settings.',

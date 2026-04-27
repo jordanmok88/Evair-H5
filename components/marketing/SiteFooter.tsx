@@ -7,44 +7,51 @@
  * help articles or blog posts.
  */
 
-import React from 'react';
+import React, { useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 
-const FOOTER_LINKS: { label: string; href: string }[] = [
-    { label: 'Home', href: '/welcome' },
-    { label: 'Phone', href: '/sim/phone' },
-    { label: 'Camera', href: '/sim/camera' },
-    { label: 'IoT', href: '/sim/iot' },
-    { label: 'Travel eSIM', href: '/travel-esim' },
-    { label: 'Help', href: '/help' },
-    { label: 'Blog', href: '/blog' },
-    { label: 'Refunds', href: '/legal/refund' },
-    { label: 'Support', href: 'mailto:service@evairdigital.com' },
-];
+const SiteFooter: React.FC = () => {
+    const { t } = useTranslation();
+    const footerLinks = useMemo(
+        () => [
+            { label: 'Home', href: '/welcome' as const },
+            { label: t('marketing.nav_mobile'), href: '/sim/phone' as const },
+            { label: 'Camera', href: '/sim/camera' as const },
+            { label: 'IoT', href: '/sim/iot' as const },
+            { label: 'Travel eSIM', href: '/travel-esim' as const },
+            { label: 'Help', href: '/help' as const },
+            { label: 'Blog', href: '/blog' as const },
+            { label: 'Refunds', href: '/legal/refund' as const },
+            { label: 'Support', href: 'mailto:service@evairdigital.com' as const },
+        ],
+        [t],
+    );
 
-const SiteFooter: React.FC = () => (
-    <footer className="bg-slate-900 text-slate-400 px-4 md:px-8 py-8 text-sm">
-        <div className="max-w-6xl mx-auto flex flex-col md:flex-row items-center gap-4 justify-between">
-            <div className="flex items-center gap-3">
-                <img
-                    src="/evairsim-wordmark.png"
-                    alt="EvairSIM"
-                    width={896}
-                    height={228}
-                    className="h-7 w-auto"
-                />
-                <span className="text-slate-500">·</span>
-                <span className="font-semibold text-white">Evair Digital</span>
-                <span>© {new Date().getFullYear()}</span>
+    return (
+        <footer className="bg-slate-900 text-slate-400 px-4 md:px-8 py-8 text-sm">
+            <div className="max-w-6xl mx-auto flex flex-col md:flex-row items-center gap-4 justify-between">
+                <div className="flex items-center gap-3">
+                    <img
+                        src="/evairsim-wordmark.png"
+                        alt="EvairSIM"
+                        width={896}
+                        height={228}
+                        className="h-7 w-auto"
+                    />
+                    <span className="text-slate-500">·</span>
+                    <span className="font-semibold text-white">Evair Digital</span>
+                    <span>© {new Date().getFullYear()}</span>
+                </div>
+                <div className="flex flex-wrap items-center gap-x-5 gap-y-2 justify-center">
+                    {footerLinks.map(link => (
+                        <a key={link.href} href={link.href} className="hover:text-white">
+                            {link.label}
+                        </a>
+                    ))}
+                </div>
             </div>
-            <div className="flex flex-wrap items-center gap-x-5 gap-y-2 justify-center">
-                {FOOTER_LINKS.map(link => (
-                    <a key={link.href} href={link.href} className="hover:text-white">
-                        {link.label}
-                    </a>
-                ))}
-            </div>
-        </div>
-    </footer>
-);
+        </footer>
+    );
+};
 
 export default SiteFooter;

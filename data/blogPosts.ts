@@ -101,7 +101,7 @@ export const BLOG_POSTS: BlogPost[] = [
             {
                 type: 'note',
                 tone: 'tip',
-                text: 'Whichever you pick, install the eSIM at home over Wi-Fi before you fly. The QR code only works once — getting locked out at Narita customs because your phone cannot reach the activation server is an avoidable kind of suffering.',
+                text: 'Whichever you pick, install the eSIM at home over Wi-Fi before you fly. The QR code only works once — getting locked out at Narita customs because your mobile cannot reach the activation server is an avoidable kind of suffering.',
             },
         ],
     },
@@ -168,17 +168,17 @@ export const BLOG_POSTS: BlogPost[] = [
         body: [
             {
                 type: 'p',
-                text: 'Both connect your phone to a carrier. The difference is whether the SIM is a piece of plastic you insert, or a profile your phone downloads.',
+                text: 'Both connect your mobile to a carrier. The difference is whether the SIM is a piece of plastic you insert, or a profile your mobile downloads.',
             },
             { type: 'h2', text: 'What is a physical SIM?' },
             {
                 type: 'p',
-                text: 'A small plastic card with a chip. You insert it into the SIM tray on the side of your phone. It stores the credentials that tell the network "this phone belongs to this account". To switch carriers, you swap cards.',
+                text: 'A small plastic card with a chip. You insert it into the SIM tray on the side of your mobile. It stores the credentials that tell the network "this device belongs to this account". To switch carriers, you swap cards.',
             },
             { type: 'h2', text: 'What is an eSIM?' },
             {
                 type: 'p',
-                text: 'A SIM that lives in software. Your phone downloads a "profile" from the carrier (via QR code) and that profile does the same job as the plastic card. To switch carriers, you add a new profile in Settings.',
+                text: 'A SIM that lives in software. Your mobile downloads a "profile" from the carrier (via QR code) and that profile does the same job as the plastic card. To switch carriers, you add a new profile in Settings.',
             },
             { type: 'h2', text: 'Which should you pick?' },
             {
@@ -187,7 +187,7 @@ export const BLOG_POSTS: BlogPost[] = [
                     'Travelling internationally: eSIM. You can hold profiles for 5+ countries and switch on the fly. No SIM-tray fumbling at the airport.',
                     'Long-term US data plan: either works. Physical SIM is easier if you swap phones often (just move the card). eSIM is easier if you carry one phone for a long time.',
                     'IoT / camera / GPS device: physical SIM. Most embedded devices do not yet support eSIM.',
-                    'Older phone (pre-2018): physical SIM only — your phone almost certainly does not support eSIM.',
+                    'Older device (pre-2018): physical SIM only — your mobile almost certainly does not support eSIM.',
                 ],
             },
             {
@@ -264,8 +264,8 @@ export const BLOG_POSTS: BlogPost[] = [
             {
                 type: 'ul',
                 items: [
-                    '5 Mbps — comfortable for browsing, social, email, music, HD video on a phone screen. Most people cannot tell the difference between 5 Mbps and 50 Mbps for daily use.',
-                    '10 Mbps — adds 4K video on phone, fast app downloads, smooth video calls.',
+                    '5 Mbps — comfortable for browsing, social, email, music, HD video on a mobile screen. Most people cannot tell the difference between 5 Mbps and 50 Mbps for daily use.',
+                    '10 Mbps — adds 4K video on mobile, fast app downloads, smooth video calls.',
                     '1.5 Mbps — works for maps, messaging, and voice calls. Streaming starts to buffer above 480p. Fine for cameras and IoT, frustrating for browsing.',
                     '500 Kbps — telemetry, GPS pings, transactions. Not browsing-grade.',
                     '256 Kbps — barely usable. T-Mobile international "free" data caps here; this is the "honest" version of "unlimited free roaming".',

@@ -140,9 +140,9 @@ function resolveMeta(pathname: string): OgMeta | null {
     // can't bundle without a custom import map.
     if (pathname === '/sim/phone') {
         return {
-            title: 'Phone & tablet SIM cards — Evair',
+            title: 'Mobile & tablet SIM cards — Evair',
             description:
-                'Honest US SIM cards for phones, tablets, hotspots, and laptops. 5G up to 650 Mbps; 9 GB high-speed then 10 Mbps. Plug-and-play APN.',
+                'Honest US SIM cards for mobiles, tablets, hotspots, and laptops. 5G up to 650 Mbps; 9 GB high-speed then 10 Mbps. Plug-and-play APN.',
             type: 'website',
         };
     }

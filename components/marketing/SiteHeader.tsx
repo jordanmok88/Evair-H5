@@ -13,6 +13,7 @@
  */
 
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import { useMobileSignInGate } from '../../hooks/useMobileSignInGate';
 import MobileOnlyNotice from './MobileOnlyNotice';
 import { OpenAppHeaderButton } from './OpenAppHeaderButton';
@@ -31,16 +32,25 @@ interface SiteHeaderProps {
     active?: SiteSection;
 }
 
-const NAV_ITEMS: { key: Exclude<SiteSection, null>; label: string; href: string }[] = [
-    { key: 'phone', label: 'Phone', href: '/sim/phone' },
-    { key: 'camera', label: 'Camera', href: '/sim/camera' },
-    { key: 'iot', label: 'IoT', href: '/sim/iot' },
-    { key: 'travel', label: 'Travel eSIM', href: '/travel-esim' },
-    { key: 'help', label: 'Help', href: '/help' },
-    { key: 'blog', label: 'Blog', href: '/blog' },
+const NAV_ITEMS: { key: Exclude<SiteSection, null>; href: string }[] = [
+    { key: 'phone', href: '/sim/phone' },
+    { key: 'camera', href: '/sim/camera' },
+    { key: 'iot', href: '/sim/iot' },
+    { key: 'travel', href: '/travel-esim' },
+    { key: 'help', href: '/help' },
+    { key: 'blog', href: '/blog' },
 ];
 
+const STATIC_NAV_LABEL: Record<Exclude<SiteSection, 'phone' | null>, string> = {
+    camera: 'Camera',
+    iot: 'IoT',
+    travel: 'Travel eSIM',
+    help: 'Help',
+    blog: 'Blog',
+};
+
 const SiteHeader: React.FC<SiteHeaderProps> = ({ active = null }) => {
+    const { t } = useTranslation();
     const signInGate = useMobileSignInGate('/app');
     return (
         <header className="sticky top-0 z-30 border-b border-slate-100 bg-white/90 backdrop-blur-md supports-[backdrop-filter]:bg-white/90">
@@ -71,7 +81,7 @@ const SiteHeader: React.FC<SiteHeaderProps> = ({ active = null }) => {
                                     : 'hover:text-slate-900'
                             }
                         >
-                            {item.label}
+                            {item.key === 'phone' ? t('marketing.nav_mobile') : STATIC_NAV_LABEL[item.key]}
                         </a>
                     ))}
                 </nav>

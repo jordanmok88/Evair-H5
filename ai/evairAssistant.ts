@@ -1054,7 +1054,7 @@ export function getAgentSuggestions(customerMessages: string[]): AgentSuggestion
 
   if (/install|安装|qr|二维码|scan|扫描|delete|删除|recover|恢复/i.test(normalized)) {
     suggestions.push({ text: "A quick reminder that eSIM profiles can only be installed once. If the profile has already been removed from the device, it cannot be recovered, and a new plan would need to be purchased.", category: 'technical' });
-    suggestions.push({ text: "To install your eSIM, please open the app, go to **My eSIMs**, tap your card, then select **Install**. A QR code will appear — scan it from **Settings > Cellular > Add eSIM** on your phone.", category: 'resolve' });
+    suggestions.push({ text: "To install your eSIM, please open the app, go to **My eSIMs**, tap your card, then select **Install**. A QR code will appear — scan it from **Settings > Cellular > Add eSIM** on your mobile.", category: 'resolve' });
     suggestions.push({ text: "I completely understand, and I am sorry this happened. Since eSIM profiles can only be installed once, I will arrange a replacement for you. Allow me a moment to process this.", category: 'refund' });
   }
 

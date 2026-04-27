@@ -18,7 +18,7 @@
  *   email + password fields end up tiny, far below the fold, and floating
  *   in a sea of grey. Customers came here intending to *sign in*; we owe
  *   them either a real desktop sign-in form (which we don't have) or an
- *   honest "use your phone" prompt.
+ *   honest "use your mobile" prompt.
  *
  * Contents:
  *
@@ -142,7 +142,7 @@ const MobileOnlyNotice: React.FC<MobileOnlyNoticeProps> = ({
                         id="mobile-only-notice-title"
                         className="text-xl font-extrabold text-slate-900 mb-2 leading-tight"
                     >
-                        Sign in is on your phone
+                        Sign in is on your mobile
                     </h2>
                     <p className="text-sm text-slate-600 leading-relaxed">
                         This page automatically opens as the full EvairSIM app
@@ -156,14 +156,14 @@ const MobileOnlyNotice: React.FC<MobileOnlyNoticeProps> = ({
                     <div className="rounded-2xl border border-slate-200 bg-slate-50 px-6 py-5 flex flex-col items-center">
                         <img
                             src={QR_IMAGE_SRC}
-                            alt={`Scan with your phone to open ${QR_TARGET_URL}`}
+                            alt={`Scan with your mobile to open ${QR_TARGET_URL}`}
                             width={240}
                             height={240}
                             className="w-44 h-44 rounded-xl bg-white p-2 border border-slate-200"
                             loading="lazy"
                         />
                         <p className="text-xs text-slate-500 mt-3 text-center leading-relaxed">
-                            Point your phone&rsquo;s camera at the code &mdash;
+                            Point your mobile&rsquo;s camera at the code &mdash;
                             EvairSIM will open in full mobile view, ready to
                             sign in.
                         </p>

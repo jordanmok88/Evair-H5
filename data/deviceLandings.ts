@@ -69,7 +69,7 @@ export interface DeviceContent {
     category: DeviceCategory;
     /** Phone only: table comparing Evair to major US carriers (est.). */
     carrierComparison?: PhoneCarrierComparison;
-    /** Bold hero verb-noun ("Mobile data for your phone"). */
+    /** Bold hero verb-noun ("US 5G data for your mobile"). */
     heroTitle: string;
     /** One-sentence subhead — keep under 120 chars for above-the-fold. */
     heroSubtitle: string;
@@ -98,7 +98,7 @@ export const DEVICE_CONTENT: Record<DeviceCategory, DeviceContent> = {
             sectionId: 'carrier-comparison',
             headline: 'Honest pricing vs. full-service carriers',
             subhead:
-                'US phone and tablet data on AT&T and Verizon only. Data layer only — no talk, text, or U.S. number — lower monthly outlay than a typical full-service line.',
+                'US mobile and tablet data on AT&T and Verizon only. Data layer only — no talk, text, or U.S. number — lower monthly outlay than a typical full-service line.',
             asOf: 'April 2026 · Before taxes & fees',
             tableCaption: 'Quick read — Evair (data) vs. retail plans (illustrative est.)',
             rows: [
@@ -125,7 +125,7 @@ export const DEVICE_CONTENT: Record<DeviceCategory, DeviceContent> = {
             methodNote:
                 'AT&T and Verizon est. = typical published smartphone-line ranges before add-ons; your checkout may differ. Confirm on att.com and verizon.com. Evair prices match the tiers in the app.',
         },
-        heroTitle: 'US 5G data for your phone, tablet, or hotspot',
+        heroTitle: 'US 5G data for your mobile, tablet, or hotspot',
         heroSubtitle:
             'Real 5G on AT&T and Verizon. Plug-and-use in minutes, no contract. Data-only.',
         speedHeadline: '5G, up to 200 Mbps',
@@ -140,7 +140,7 @@ export const DEVICE_CONTENT: Record<DeviceCategory, DeviceContent> = {
             {
                 icon: Smartphone,
                 title: 'Plug & use',
-                body: 'Drop the SIM into any unlocked phone, tablet, or hotspot. APN auto-configures on first boot — no setup screens.',
+                body: 'Drop the SIM into any unlocked mobile, tablet, or hotspot. APN auto-configures on first boot — no setup screens.',
             },
             {
                 icon: Shield,
@@ -185,7 +185,7 @@ export const DEVICE_CONTENT: Record<DeviceCategory, DeviceContent> = {
                 a: 'You keep unlimited data at 256 Kbps until the next billing cycle — enough for light maps and messaging, not for HD video. We do not hard-cut you off.',
             },
             {
-                q: 'Can I use my phone as a hotspot?',
+                q: 'Can I use my mobile as a hotspot?',
                 a: 'Yes. Tethering is included on all plans, capped to your remaining high-speed allotment.',
             },
         ],

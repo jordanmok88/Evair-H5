@@ -92,7 +92,7 @@ const TravelEsimPage: React.FC<TravelEsimPageProps> = ({ countryCode }) => {
                 path: '/travel-esim',
                 title: 'Travel eSIM in 200+ countries — Evair',
                 description:
-                    'Buy a travel eSIM for your phone. Instant QR delivery, no SIM swap, works in 200+ countries.',
+                    'Buy a travel eSIM for your mobile. Instant QR delivery, no SIM swap, works in 200+ countries.',
             });
         }
     }, [country]);
@@ -341,7 +341,7 @@ const SingleCountryView: React.FC<SingleCountryViewProps> = ({
                             num={3}
                             icon={<Zap size={22} className="text-orange-500" />}
                             title="Land and connect"
-                            body={`Your phone connects to ${country.carriers[0] ?? 'a local network'} the moment you land. No setup.`}
+                            body={`Your mobile connects to ${country.carriers[0] ?? 'a local network'} the moment you land. No setup.`}
                         />
                     </div>
                 </div>

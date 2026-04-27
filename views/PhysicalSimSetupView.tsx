@@ -17,6 +17,7 @@ import {
   Info,
 } from 'lucide-react';
 import BarcodeScanner from '../components/BarcodeScanner';
+import SimCardIccidHint from '../components/SimCardIccidHint';
 import { activationService, ActivationPreviewData, ClaimState } from '../services/api/activation';
 import { useEdgeSwipeBack } from '../hooks/useEdgeSwipeBack';
 
@@ -180,9 +181,9 @@ const PhysicalSimSetupView: React.FC<PhysicalSimSetupViewProps> = ({
                 </button>
               </div>
 
-              {/* SIM card illustration — stretch to edges */}
+              {/* Simplified card-back hint: orange band + wordmark, barcode + demo ICCID */}
               <div className="-mx-5 mb-4">
-                <img src="/evairsim-card-back.png" alt="SIM Card Back" className="w-full" />
+                <SimCardIccidHint />
               </div>
 
               <button
