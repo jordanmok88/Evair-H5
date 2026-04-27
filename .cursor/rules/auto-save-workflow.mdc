@@ -8,6 +8,37 @@ alwaysApply: true
 Jordan has two projects. When he says "save" or "save my work", save BOTH.
 Do NOT ask permission — just run the commands.
 
+## Mandatory for Cursor / agents (H5)
+
+After **any** meaningful change in this repo (code, config, i18n, rules that
+ship with the app), **always** run a save in the same session **before
+handing work back**, unless Jordan explicitly asked for a local-only / no-push
+experiment:
+
+```bash
+bash "/Users/jordanmok/Desktop/iCloud Drive/Cursor Codes/Evair-H5/scripts/save.sh" "type: short imperative summary"
+```
+
+That commits and pushes to **all remotes** (`origin` + `aliyun`). **Netlify
+does not receive a separate push** — it builds when **GitHub** (`origin`)
+gets the new commit on the branch Netlify watches (production **`main`**).
+So “push to Netlify” = **push to `origin main`** (via `save.sh`).
+
+If **`git push origin` fails** (e.g. “fetch first” / non-fast-forward), fix it
+in the same session and finish the save — do not leave the user with only a
+local commit:
+
+```bash
+cd "/Users/jordanmok/Desktop/iCloud Drive/Cursor Codes/Evair-H5"
+git pull --rebase origin main
+git push origin main
+git push aliyun main   # if rejected after rebase: git push --force-with-lease aliyun main
+```
+
+Use `--force-with-lease` on **aliyun** only when `main` was rebased onto
+`origin` and Aliyun still has the pre-rebase tip (mirror drift). Never
+`--force` to `origin`.
+
 ## The two projects
 
 | # | Project | Path | Remotes | Backup |
@@ -39,15 +70,18 @@ bash "/Users/jordanmok/Desktop/iCloud Drive/Cursor Codes/Evair-H5/scripts/save.s
 ## When to auto-save
 
 Save after any of these, without asking:
-- Any code change lands (no matter how small)
+- Any code change lands (no matter how small) — **includes agent-made edits**
 - The user says "save", "save my work", "commit", "push"
 - A feature is done
 - A bug fix is verified
 - Before ending a session
 
-## Deployment
+## Deployment (Netlify)
 
-Netlify auto-deploys from a push to `main`. If you're on a feature branch, deployment only happens when that branch is merged to `main`.
+Netlify is wired to **GitHub**. Pushing `main` to **`origin`** triggers a
+deploy; there is no Netlify CLI step in normal workflow. Feature branches
+only deploy if Netlify is configured for branch deploys or after merge to
+`main`.
 
 ## Aliyun for H5 (CONFIGURED)
 

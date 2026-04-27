@@ -43,6 +43,8 @@ When he says "save" or "save my work", save BOTH:
 bash "/Users/jordanmok/Desktop/iCloud Drive/Cursor Codes/save-all.sh"
 ```
 
+**Agents:** After H5 code changes, run `npm run save` (or `bash scripts/save.sh "msg"`) in the same turn so **GitHub** updates — **Netlify deploys from that push**, not from a separate “Netlify push.” If `origin` rejects, `git pull --rebase origin main` then push again (see `.cursor/rules/auto-save-workflow.mdc`).
+
 To save just H5: `npm run save` (or `bash scripts/save.sh`). Full details in `.cursor/rules/auto-save-workflow.mdc`.
 
 ## Project Overview
