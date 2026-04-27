@@ -1,21 +1,71 @@
 /**
- * Marketing landing page — apex `evairdigital.com` and `/welcome`.
- * Redesign merged from `MarketingPageRedesignPreview` (approved). Data-only
- * service: no US phone number, no carrier voice/SMS — see product rules.
+ * Marketing landing page — apex `evairdigital.com` (and `/welcome`).
+ *
+ * Phase 3 deliverable. The audience splits into two clear pillars on first
+ * paint so customers self-segment immediately:
+ *
+ *   1. **Travelers** — eSIM in 200+ countries, instant QR delivery.
+ *   2. **Long-stay / immigrants** — physical SIM, US 5G data plan, $9.99/mo.
+ *
+ * IMPORTANT: EvairSIM is a **data-only** service. There is no US phone
+ * number, no voice, no SMS over the cellular network. Customers use
+ * WhatsApp / FaceTime / iMessage over data for calls and messaging.
+ * Do NOT add copy that promises a "US phone number" or "talk & text".
+ *
+ * This page is intentionally Airalo-clean: lots of whitespace, minimal
+ * copy, two strong CTAs above the fold. Nothing here calls authenticated
+ * APIs — it must render even when the customer is logged out and even on
+ * a brand-new device. Anything that requires the user (e.g. activation)
+ * lives behind the CTA buttons that route into `/activate`, `/travel-esim`,
+ * or `/app` depending on device and product.
+ *
+ * Sections (top → bottom):
+ *   - Hero (audience split)
+ *   - Three pillars (coverage, price, support)
+ *   - Social proof strip
+ *   - Trust strip (carriers, payment, regulatory)
+ *   - Final CTA
+ *   - Footer with legal + contact
+ *
+ * @see docs/ACTIVATION_FUNNEL.md §6 — Marketing/landing page
  */
 
-import React, { useEffect, useMemo } from 'react';
+import React, { useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
-import { ArrowRight, CheckCircle2, ChevronRight, Star } from 'lucide-react';
 import { applyPageSeo } from '../utils/seoHead';
+import {
+    Globe,
+    Smartphone,
+    Shield,
+    Headphones,
+    Wifi,
+    Zap,
+    DollarSign,
+    Star,
+    CheckCircle2,
+    ArrowRight,
+    ShoppingCart,
+    BadgeCheck,
+} from 'lucide-react';
 import { isMobileDevice } from '../utils/device';
 import { useMobileSignInGate } from '../hooks/useMobileSignInGate';
 import MobileOnlyNotice from '../components/marketing/MobileOnlyNotice';
 
+const TRAVELER_COUNTRIES = '200+';
+const STAY_PRICE_USD = '9.99';
 const APP_PATH = '/app';
 const ACTIVATE_PATH = '/activate';
+/** Desktop travel eSIM browse + SEO surface (Phase 2). */
 const TRAVEL_ESIM_LANDING = '/travel-esim';
 
+/**
+ * Travel eSIM CTAs: desktop → `/travel-esim` (marketing landing +
+ * country catalogue), mobile → `/app#esim` (full-screen H5 store).
+ *
+ * The `<a href>` is always `TRAVEL_ESIM_LANDING` so crawlers and
+ * no-JS desktop users hit the proper desktop page. On mobile we
+ * intercept the click and send the customer straight into the app.
+ */
 const goTravelEsimCta = (e: React.MouseEvent<HTMLAnchorElement>) => {
     if (isMobileDevice()) {
         e.preventDefault();
@@ -23,57 +73,20 @@ const goTravelEsimCta = (e: React.MouseEvent<HTMLAnchorElement>) => {
     }
 };
 
+/**
+ * Activate-my-SIM CTAs: desktop → `/activate` (wide-format ICCID page),
+ * mobile → `/app#bind-sim` (SIM_CARD tab + Add SIM / bind wizard).
+ * Physical SIMs ship pre-active; this flow is account binding only.
+ * "Buy SIM card" stays on `#sim-card` (Amazon storefront).
+ *
+ * @see App.tsx HASH_TO_TAB — `#bind-sim` opens PhysicalSimSetupView.
+ */
 const goActivateCta = (e: React.MouseEvent<HTMLAnchorElement>) => {
     if (isMobileDevice()) {
         e.preventDefault();
         window.location.assign(`${APP_PATH}#bind-sim`);
     }
 };
-
-/** Testimonial strip — quotes in English (US site); names/locations kept short. */
-const HAPPY_STORIES = [
-    {
-        img: 'https://images.unsplash.com/photo-1527631746610-bca00a040d60?auto=format&fit=crop&w=720&q=80',
-        alt: 'Travelers exploring a city together',
-        quote: 'Landed at JFK and had 5G before we reached baggage claim.',
-        who: 'Alex & Sam · NYC',
-    },
-    {
-        img: 'https://images.unsplash.com/photo-1553877522-43269d4ea984?auto=format&fit=crop&w=720&q=80',
-        alt: 'Remote team collaborating outdoors',
-        quote: 'Plug-and-play for our trail cams — no APN drama, just data.',
-        who: 'Morgan · Colorado',
-    },
-    {
-        img: 'https://images.unsplash.com/photo-1523240795612-9a054b0db644?auto=format&fit=crop&w=720&q=80',
-        alt: 'Friends at a cafe with a laptop',
-        quote: "Cheaper than local carriers — no SSN, no twelve-page form.",
-        who: 'Priya · Austin',
-    },
-    {
-        img: 'https://images.unsplash.com/photo-1436491865332-7a61a109cc05?auto=format&fit=crop&w=720&q=80',
-        alt: 'Airport departure gate with travelers',
-        quote: 'Paris layover, one tap — data worked before wheels touched the tarmac.',
-        who: 'Chris · Seattle',
-    },
-    {
-        img: 'https://images.unsplash.com/photo-1511895426328-dc8714191300?auto=format&fit=crop&w=720&q=80',
-        alt: 'Family on the beach',
-        quote: 'Kids streamed maps in the rental van; we never hunted for Wi‑Fi again.',
-        who: 'The Okoye family · Atlanta',
-    },
-] as const;
-
-function StarRow({ compact }: { compact?: boolean }) {
-    const size = compact ? 11 : 14;
-    return (
-        <div className="flex gap-0.5 text-amber-400" aria-hidden>
-            {Array.from({ length: 5 }, (_, i) => (
-                <Star key={i} size={size} className="fill-current" strokeWidth={0} />
-            ))}
-        </div>
-    );
-}
 
 const MarketingPage: React.FC = () => {
     const { t } = useTranslation();
@@ -90,388 +103,415 @@ const MarketingPage: React.FC = () => {
         });
     }, []);
 
-    const whyCards = useMemo(
-        () =>
-            [
-                {
-                    gradient: 'from-orange-500 via-amber-400 to-yellow-300',
-                    tag: t('marketing.home_why_coverage_tag'),
-                    title: t('marketing.home_why_coverage_h'),
-                    body: t('marketing.home_why_coverage_p'),
-                    href: TRAVEL_ESIM_LANDING,
-                    onClick: goTravelEsimCta,
-                },
-                {
-                    gradient: 'from-emerald-500 via-teal-400 to-cyan-300',
-                    tag: t('marketing.home_why_pricing_tag'),
-                    title: t('marketing.home_why_pricing_h'),
-                    body: t('marketing.home_why_pricing_p'),
-                    href: '/sim/phone',
-                },
-                {
-                    gradient: 'from-sky-500 via-blue-500 to-indigo-400',
-                    tag: t('marketing.home_why_support_tag'),
-                    title: t('marketing.home_why_support_h'),
-                    body: t('marketing.home_why_support_p'),
-                    href: `${APP_PATH}#contact`,
-                },
-                {
-                    gradient: 'from-amber-500 via-orange-400 to-rose-400',
-                    tag: t('marketing.home_why_speed_tag'),
-                    title: t('marketing.home_why_speed_h'),
-                    body: t('marketing.home_why_speed_p'),
-                    href: ACTIVATE_PATH,
-                    onClick: goActivateCta,
-                },
-            ] as const,
-        [t],
-    );
-
-    const planCards = useMemo(
-        () => [
-            {
-                name: t('marketing.home_plan_starter'),
-                price: '$16.99',
-                blurb: t('marketing.home_plan_blurb_starter'),
-                cta: t('marketing.home_plan_cta_starter'),
-                popular: false,
-            },
-            {
-                name: t('marketing.home_plan_everyday'),
-                price: '$29.99',
-                blurb: t('marketing.home_plan_blurb_everyday'),
-                cta: t('marketing.home_plan_cta_everyday'),
-                popular: true,
-            },
-            {
-                name: t('marketing.home_plan_power'),
-                price: '$49.99',
-                blurb: t('marketing.home_plan_blurb_power'),
-                cta: t('marketing.home_plan_cta_power'),
-                popular: false,
-            },
-        ],
-        [t],
-    );
-
     return (
-        <div className="min-h-screen overflow-x-hidden bg-white text-gray-900 antialiased [text-rendering:optimizeLegibility]">
-            <header className="sticky top-0 z-30 border-b border-gray-100 bg-white/95 backdrop-blur-md supports-[backdrop-filter]:bg-white/90">
-                <div className="mx-auto flex h-14 min-h-14 max-w-6xl items-center justify-between gap-2 px-3 sm:h-16 sm:min-h-16 sm:gap-3 sm:px-4 md:px-8">
-                    <a href="/" className="flex min-w-0 max-w-[min(200px,52vw)] shrink items-center" aria-label="EvairSIM home">
+        <div className="min-h-screen bg-white text-slate-900">
+            {/* Top nav */}
+            <header className="sticky top-0 bg-white/90 backdrop-blur-md z-30 border-b border-slate-100">
+                <div className="max-w-6xl mx-auto px-4 md:px-8 h-16 flex items-center justify-between">
+                    {/* Official EvairSIM wordmark. The wordmark image already
+                        contains the brand name, so we do NOT pair it with a
+                        separate "EvairSIM" text label. h-8 ≈ 32 px tall to
+                        match the rest of the 64-px nav chrome. */}
+                    <a href="/" className="flex items-center" aria-label="EvairSIM home">
                         <img
                             src="/evairsim-wordmark.png"
                             alt="EvairSIM"
                             width={896}
                             height={228}
-                            className="h-7 w-auto max-h-9 sm:h-8 sm:max-h-10 md:h-9"
+                            className="h-8 w-auto"
                         />
                     </a>
-                    <nav className="hidden min-w-0 items-center gap-4 text-sm font-medium text-gray-600 md:flex md:gap-6">
-                        <a href="/travel-esim" className="transition hover:text-gray-900">
-                            Travel eSIM
-                        </a>
-                        <a href="/sim/phone" className="transition hover:text-gray-900">
-                            Phone
-                        </a>
-                        <a href="/sim/camera" className="transition hover:text-gray-900">
-                            Camera
-                        </a>
-                        <a href="/sim/iot" className="transition hover:text-gray-900">
-                            IoT
-                        </a>
-                        <a href="/help" className="transition hover:text-gray-900">
-                            Help
-                        </a>
-                        <a href="/blog" className="transition hover:text-gray-900">
-                            Blog
-                        </a>
+                    <nav className="hidden md:flex items-center gap-6 text-sm font-medium text-slate-600">
+                        <a href="/travel-esim" className="hover:text-slate-900">Travel eSIM</a>
+                        <a href="/sim/phone" className="hover:text-slate-900">Phone</a>
+                        <a href="/sim/camera" className="hover:text-slate-900">Camera</a>
+                        <a href="/sim/iot" className="hover:text-slate-900">IoT</a>
+                        <a href="/help" className="hover:text-slate-900">Help</a>
+                        <a href="/blog" className="hover:text-slate-900">Blog</a>
                     </nav>
+                    {/* Sign-in CTA.
+                        Labelled "Mobile Sign in" so desktop visitors
+                        aren't surprised when /app still renders the
+                        phone-mock for the account/dashboard tabs.
+                        Travel eSIM shopping starts on `/travel-esim`
+                        (hero CTA above), not here. */}
                     <a
                         href={APP_PATH}
                         onClick={signInGate.gateClick}
-                        className="inline-flex min-h-11 min-w-[5.5rem] shrink-0 items-center justify-center rounded-full bg-[#2563eb] px-3.5 py-2 text-[10px] font-bold uppercase tracking-wide text-white shadow-sm transition hover:bg-[#1d4ed8] active:scale-[0.98] sm:min-h-0 sm:px-5 sm:py-2.5 sm:text-xs"
+                        className="text-sm font-semibold text-orange-600 hover:text-orange-700"
                     >
-                        {t('marketing.home_open_app')}
+                        Mobile Sign in →
                     </a>
                 </div>
             </header>
 
-            <section className="bg-white px-4 py-12 sm:px-5 sm:py-16 md:px-6 md:py-20 lg:py-24">
-                <div className="mx-auto flex w-full min-w-0 max-w-4xl flex-col items-center text-center">
-                    <div className="mb-3 inline-flex max-w-[95%] items-center gap-1.5 rounded-full bg-orange-50 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-[#c45a10] sm:mb-4 sm:gap-2 sm:px-3 sm:text-xs">
-                        <Star className="h-2.5 w-2.5 shrink-0 sm:h-3 sm:w-3" fill="currentColor" /> {t('marketing.home_badge')}
-                    </div>
-                    <h1 className="text-[1.7rem] font-extrabold leading-[1.12] tracking-tight text-gray-900 min-[400px]:text-3xl sm:text-4xl sm:leading-tight md:text-5xl lg:text-6xl">
-                        {t('marketing.home_title')}
-                    </h1>
-                    <p className="mt-4 max-w-2xl px-1 text-base leading-relaxed text-gray-600 sm:mt-6 sm:text-lg">
-                        {t('marketing.home_sub')}
-                    </p>
-                    <div className="mt-8 flex w-full min-w-0 max-w-xl flex-col items-stretch gap-2.5 sm:mt-10 sm:gap-3 md:flex-row md:justify-center md:gap-3">
-                        <a
-                            href={TRAVEL_ESIM_LANDING}
-                            onClick={goTravelEsimCta}
-                            className="inline-flex min-h-12 items-center justify-center rounded-xl bg-[#F27420] px-5 py-3.5 text-center text-sm font-bold text-white shadow-lg shadow-orange-500/25 transition hover:brightness-105 active:scale-[0.99] sm:min-h-14 sm:px-6 sm:text-base"
-                        >
-                            {t('marketing.home_travel_esim')}
-                        </a>
-                        <a
-                            href={`${APP_PATH}#sim-card`}
-                            className="inline-flex min-h-12 items-center justify-center rounded-xl bg-[#0A1128] px-5 py-3.5 text-center text-sm font-bold text-white shadow-lg shadow-slate-900/30 transition hover:bg-[#121f45] active:scale-[0.99] sm:min-h-14 sm:px-6 sm:text-base"
-                            aria-label={t('marketing.buy_sim_card_aria')}
-                        >
-                            {t('marketing.buy_sim_card')}
-                        </a>
-                        <a
-                            href={ACTIVATE_PATH}
-                            onClick={goActivateCta}
-                            className="inline-flex min-h-12 items-center justify-center rounded-xl border border-gray-300 bg-white px-5 py-3.5 text-center text-sm font-bold text-gray-800 shadow-sm transition hover:bg-gray-50 active:scale-[0.99] sm:min-h-14 sm:px-6 sm:text-base"
-                        >
-                            {t('marketing.home_activate')}
-                        </a>
-                    </div>
-                    <div className="mt-7 flex w-full min-w-0 justify-center px-0.5 sm:mt-9 sm:px-0">
-                        <p className="flex max-w-full items-center gap-1.5 text-[clamp(0.62rem,2.7vw,0.875rem)] font-medium leading-tight text-gray-500 sm:text-sm">
-                            <CheckCircle2 className="h-3 w-3 shrink-0 text-emerald-500 sm:h-[18px] sm:w-[18px]" aria-hidden />
-                            <span className="min-w-0 whitespace-nowrap">{t('marketing.trust_one_line')}</span>
+            {/* Hero — audience split.
+                The right-hand product photo shows the real EvairSIM card
+                (with brand mark + ICCID barcode + Top-up QR) so visitors
+                see the actual product on first paint. We also surface a
+                smaller version below the CTAs on mobile so phone users
+                aren't left with a text-only hero. */}
+            <section className="px-4 md:px-8 py-12 md:py-20 max-w-6xl mx-auto">
+                <div className="grid md:grid-cols-2 gap-10 items-center">
+                    <div>
+                        <div className="inline-flex items-center gap-2 bg-orange-50 text-orange-700 text-xs font-bold uppercase tracking-wider px-3 py-1 rounded-full mb-4">
+                            <Star size={12} fill="currentColor" /> Mobile data, simplified
+                        </div>
+                        <h1 className="text-4xl md:text-6xl font-extrabold leading-tight tracking-tight mb-5">
+                            Stay connected
+                            <br />
+                            <span className="bg-gradient-to-r from-orange-500 to-amber-400 bg-clip-text text-transparent">
+                                anywhere.
+                            </span>
+                        </h1>
+                        <p className="text-lg text-slate-600 mb-8 max-w-md leading-relaxed">
+                            Travel eSIMs for short trips. A US 5G data plan for long stays.
+                            Data-only, no contract, instant activation.
                         </p>
-                    </div>
-                </div>
-            </section>
-
-            <section id="stories" className="border-t border-gray-100 bg-white px-4 py-10 sm:px-5 md:px-8 md:py-14">
-                <div className="mx-auto min-w-0 max-w-6xl">
-                    <h2 className="text-left text-lg font-extrabold text-gray-900 sm:text-xl md:text-2xl">
-                        {t('marketing.home_stories_title')}
-                    </h2>
-                    <p className="mt-2 max-w-xl text-sm leading-relaxed text-gray-600 sm:text-base">
-                        {t('marketing.home_stories_sub')}
-                    </p>
-
-                    <div
-                        className="-mx-4 mt-6 flex snap-x snap-mandatory items-stretch gap-3 overflow-x-auto overflow-y-visible overscroll-x-contain px-4 pb-3 sm:mt-8 sm:gap-4 md:mx-0 md:px-0 md:pb-2"
-                        style={{ scrollPaddingInline: '1rem' }}
-                    >
-                        {HAPPY_STORIES.map((s) => (
-                            <article
-                                key={s.who}
-                                className="group flex w-[min(82vw,17.5rem)] min-w-0 shrink-0 snap-center flex-col overflow-hidden rounded-xl border border-gray-100 bg-white shadow-md sm:min-w-[15rem] sm:max-w-[17.5rem] sm:w-60 md:w-[15.5rem] lg:w-64"
-                            >
-                                <div className="aspect-[5/3] w-full shrink-0 overflow-hidden bg-gray-100">
-                                    <img
-                                        src={s.img}
-                                        alt={s.alt}
-                                        width={400}
-                                        height={240}
-                                        sizes="(max-width: 640px) 82vw, 240px"
-                                        className="h-full w-full object-cover transition duration-500 group-hover:scale-[1.03]"
-                                        loading="lazy"
-                                        decoding="async"
-                                    />
-                                </div>
-                                <div className="flex min-h-0 flex-1 flex-col p-3.5 sm:p-4">
-                                    <StarRow compact />
-                                    <p className="mt-2 min-h-[4.25rem] text-[0.8125rem] font-semibold leading-snug text-gray-800 [overflow-wrap:anywhere] sm:min-h-[4.5rem] sm:text-sm">
-                                        &ldquo;{s.quote}&rdquo;
-                                    </p>
-                                    <p className="mt-1.5 text-[11px] font-medium text-gray-500 sm:text-xs">{s.who}</p>
-                                    <a
-                                        href="/blog"
-                                        className="mt-auto inline-flex min-h-10 w-full items-center justify-center rounded-lg border border-gray-900 bg-white py-2 text-xs font-bold text-gray-900 transition hover:bg-gray-50"
-                                    >
-                                        {t('marketing.home_stories_cta')}
-                                    </a>
-                                </div>
-                            </article>
-                        ))}
-                    </div>
-                </div>
-            </section>
-
-            <section id="why" className="border-t border-gray-100 bg-gray-50 px-4 py-10 sm:px-5 md:px-8 md:py-12">
-                <div className="mx-auto w-full min-w-0 max-w-6xl">
-                    <h2 className="text-left text-lg font-extrabold text-gray-900 sm:text-xl md:text-2xl">
-                        {t('marketing.home_why_title')}
-                    </h2>
-                    <p className="mt-2 max-w-2xl text-sm leading-relaxed text-gray-600 sm:text-base">
-                        {t('marketing.home_why_sub')}
-                    </p>
-                    <div className="mt-6 grid grid-cols-1 gap-4 min-[400px]:grid-cols-2 min-[400px]:gap-4 sm:mt-7 md:mt-8 md:gap-5">
-                        {whyCards.map((c) => (
+                        {/* Hero CTAs.
+                            ┌───────────────────────────────────────────────┐
+                            │   Travel eSIM (primary, full-width)           │
+                            ├──────────────────────┬────────────────────────┤
+                            │  Buy SIM card  (Amz) │   Activate my SIM      │
+                            └──────────────────────┴────────────────────────┘
+                            The long-stay product splits into two distinct
+                            jobs-to-be-done: customers who don't own a SIM
+                            yet (Amazon) and customers who already have one
+                            in hand (the /activate page). Lumping both into
+                            a single "US SIM" button forced confused users
+                            into a phone-mock that they couldn't actually
+                            shop in. */}
+                        <div className="max-w-md">
                             <a
-                                key={c.title}
-                                href={c.href}
-                                onClick={c.onClick}
-                                className="group relative flex min-w-0 flex-col overflow-hidden rounded-2xl bg-white p-3.5 shadow-sm ring-1 ring-gray-200/80 transition hover:shadow-md hover:ring-[#F27420]/40 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2563eb] active:scale-[0.99] min-[400px]:min-h-[8.5rem] min-[400px]:p-4 sm:p-5 md:min-h-0"
+                                href={TRAVEL_ESIM_LANDING}
+                                onClick={goTravelEsimCta}
+                                className="flex items-center justify-center gap-2 bg-orange-500 text-white font-bold px-5 py-3 rounded-xl shadow-lg shadow-orange-500/20 active:scale-[0.98] transition-transform w-full"
                             >
-                                <div className={`absolute left-0 top-0 h-1 w-full bg-gradient-to-r ${c.gradient}`} aria-hidden />
-                                <p className="text-[9px] font-bold uppercase tracking-[0.18em] text-gray-400 md:text-[10px]">{c.tag}</p>
-                                <h3 className="mt-1.5 text-sm font-bold leading-tight text-gray-900 sm:mt-2 sm:text-base md:text-lg">
-                                    {c.title}
-                                </h3>
-                                <p className="mt-1.5 line-clamp-3 text-xs leading-relaxed text-gray-600 sm:mt-2 sm:text-sm">
-                                    {c.body}
-                                </p>
-                                <div className="mt-3 flex items-center justify-end text-[#F27420] transition group-hover:translate-x-0.5 sm:mt-4" aria-hidden>
-                                    <ChevronRight className="h-5 w-5" strokeWidth={2.5} />
-                                </div>
+                                <Globe size={18} /> Travel eSIM
                             </a>
-                        ))}
-                    </div>
-                </div>
-            </section>
-
-            <section id="compare" className="border-t border-gray-100 bg-slate-50 px-4 py-10 sm:px-5 md:px-8 md:py-12">
-                <div className="mx-auto w-full min-w-0 max-w-6xl">
-                    <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-600 sm:text-xs">
-                        {t('marketing.home_plans_eyebrow')}
-                    </p>
-                    <h2 className="mt-1 text-lg font-extrabold text-gray-900 sm:text-xl md:text-2xl">
-                        {t('marketing.home_plans_title')}
-                    </h2>
-                    <p className="mt-2 max-w-2xl text-sm leading-relaxed text-gray-600 sm:text-base">
-                        {t('marketing.home_plans_sub')}
-                    </p>
-
-                    <div className="mt-5 flex flex-col gap-2.5 sm:mt-6 sm:gap-3 md:mt-6 md:grid md:grid-cols-3 md:gap-4 md:items-stretch">
-                        {planCards.map((p) => (
-                            <div
-                                key={p.name}
-                                className={`flex h-full w-full min-w-0 flex-col rounded-xl border bg-white p-3.5 shadow-sm sm:p-4 md:min-h-[19rem] md:rounded-2xl md:p-5 ${
-                                    p.popular
-                                        ? 'border-[#F27420] ring-2 ring-[#F27420]/30 bg-orange-50/40'
-                                        : 'border-gray-200'
-                                }`}
-                            >
-                                <div className="flex min-w-0 flex-wrap items-center gap-1.5 sm:gap-2">
-                                    <h3 className="text-sm font-bold text-[#0A1128] sm:text-base md:text-lg">{p.name}</h3>
-                                    {p.popular && (
-                                        <span className="shrink-0 rounded-full bg-[#F27420] px-1.5 py-0.5 text-[7px] font-bold uppercase tracking-wide text-white sm:px-2 sm:text-[9px]">
-                                            {t('marketing.home_plan_popular')}
-                                        </span>
-                                    )}
-                                </div>
-                                <p className="mt-1.5 text-lg font-extrabold leading-tight text-[#0A1128] sm:mt-2 sm:text-xl md:mt-3 md:text-2xl">
-                                    {p.price}
-                                    <span className="text-xs font-semibold text-gray-500 sm:text-sm"> {t('marketing.home_plan_suffix')}</span>
-                                </p>
-                                <p className="mt-1 text-[0.8125rem] leading-snug text-gray-600 sm:mt-2 sm:text-sm">{p.blurb}</p>
-                                <p className="mt-0.5 text-[8px] font-medium uppercase tracking-wide text-slate-500 sm:mt-1.5 sm:text-[10px]">
-                                    {t('marketing.home_plan_carriers')}
-                                </p>
+                            <div className="grid sm:grid-cols-2 gap-3 mt-3">
                                 <a
                                     href={`${APP_PATH}#sim-card`}
-                                    className={`mt-3 inline-flex min-h-10 w-full items-center justify-center rounded-lg px-3 py-2 text-xs font-bold transition sm:min-h-11 sm:rounded-xl sm:py-2.5 sm:text-sm md:mt-auto md:min-h-12 md:py-3 ${
-                                        p.popular
-                                            ? 'bg-[#F27420] text-white hover:brightness-105'
-                                            : 'bg-[#0A1128] text-white hover:bg-[#121f45]'
-                                    }`}
+                                    className="flex items-center justify-center gap-2 bg-slate-900 text-white font-bold px-5 py-3 rounded-xl shadow-lg shadow-slate-900/20 active:scale-[0.98] transition-transform"
+                                    aria-label={t('marketing.buy_sim_card_aria')}
                                 >
-                                    {p.cta}
+                                    <ShoppingCart size={18} /> {t('marketing.buy_sim_card')}
+                                </a>
+                                <a
+                                    href={ACTIVATE_PATH}
+                                    onClick={goActivateCta}
+                                    className="flex items-center justify-center gap-2 bg-white text-slate-900 font-bold px-5 py-3 rounded-xl border border-slate-200 shadow-sm active:scale-[0.98] transition-transform"
+                                >
+                                    <BadgeCheck size={18} /> Activate my SIM
                                 </a>
                             </div>
-                        ))}
+                        </div>
+                        <div className="flex items-center gap-2 mt-6 text-xs text-slate-500">
+                            <CheckCircle2 size={14} className="text-emerald-500" />
+                            {t('marketing.trust_no_contracts')}
+                            <CheckCircle2 size={14} className="text-emerald-500 ml-2" />
+                            {t('marketing.trust_no_hidden_fees')}
+                            <CheckCircle2 size={14} className="text-emerald-500 ml-2" />
+                            {t('marketing.trust_support')}
+                        </div>
+
+                        {/* Mobile-only product photo. Sits beneath the
+                            CTAs so they remain above the fold on phones,
+                            while still giving mobile users a credible
+                            visual of the actual SIM card. */}
+                        <div className="md:hidden mt-10">
+                            <div className="relative max-w-sm mx-auto">
+                                <div className="absolute -inset-6 bg-gradient-to-br from-orange-500/15 to-amber-400/15 rounded-3xl blur-2xl" />
+                                <img
+                                    src="/evairsim-card-front.png"
+                                    alt="EvairSIM US 5G data SIM card — AT&T, Verizon, T-Mobile, plug & use, data only"
+                                    width={1024}
+                                    height={644}
+                                    className="relative w-full h-auto drop-shadow-xl"
+                                    loading="eager"
+                                />
+                            </div>
+                        </div>
+                    </div>
+
+                    <div className="hidden md:block">
+                        <div className="relative">
+                            <div className="absolute -inset-8 bg-gradient-to-br from-orange-500/20 to-amber-400/20 rounded-3xl blur-2xl" />
+                            <img
+                                src="/evairsim-card-front.png"
+                                alt="EvairSIM US 5G data SIM card — AT&T, Verizon, T-Mobile, plug & use, data only"
+                                width={1024}
+                                height={644}
+                                className="relative w-full h-auto drop-shadow-2xl"
+                                loading="eager"
+                            />
+                        </div>
                     </div>
                 </div>
             </section>
 
-            <section className="bg-[#0A1128] text-white">
-                <div className="mx-auto max-w-3xl px-4 py-12 text-center sm:px-6 sm:py-16">
-                    <h2 className="text-2xl font-extrabold leading-tight sm:text-3xl md:text-4xl">{t('marketing.home_ready_title')}</h2>
-                    <p className="mx-auto mt-3 max-w-lg px-1 text-base text-gray-300 sm:mt-4 sm:text-lg">
-                        {t('marketing.home_ready_sub')}
-                    </p>
-                    <div className="mt-6 flex w-full min-w-0 flex-col items-stretch justify-center gap-3 sm:mt-8 sm:flex-row sm:items-center sm:gap-4">
+            {/* Audience pillars (split). Two stacked cards — one for each
+                product. Each repeats the relevant CTA so the customer
+                doesn't have to scroll back up. */}
+            <section className="px-4 md:px-8 py-12 max-w-6xl mx-auto" id="travelers">
+                <div className="grid md:grid-cols-2 gap-6">
+                    <div className="rounded-3xl bg-gradient-to-br from-orange-50 to-amber-50 border border-orange-100 p-8 flex flex-col">
+                        <div className="w-12 h-12 rounded-2xl bg-white shadow-sm flex items-center justify-center mb-4">
+                            <Globe className="text-orange-500" size={22} />
+                        </div>
+                        <div className="text-xs font-bold uppercase tracking-wide text-orange-600 mb-1">
+                            For travelers
+                        </div>
+                        <h2 className="text-2xl font-bold mb-2">eSIM in {TRAVELER_COUNTRIES} countries</h2>
+                        <p className="text-slate-600 text-sm leading-relaxed mb-5">
+                            Land, scan a QR, and you're online. Pay-as-you-go from $4.50.
+                            No SIM swaps, no airport queues, no roaming bills.
+                        </p>
+                        <ul className="text-sm text-slate-700 space-y-2 mb-6">
+                            <li className="flex items-center gap-2"><CheckCircle2 size={16} className="text-emerald-500" /> Plans from 1 GB to unlimited</li>
+                            <li className="flex items-center gap-2"><CheckCircle2 size={16} className="text-emerald-500" /> Top up any time, no contract</li>
+                            <li className="flex items-center gap-2"><CheckCircle2 size={16} className="text-emerald-500" /> 4G/5G on tier-1 carriers</li>
+                        </ul>
                         <a
                             href={TRAVEL_ESIM_LANDING}
                             onClick={goTravelEsimCta}
-                            className="inline-flex min-h-12 items-center justify-center gap-2 rounded-xl bg-[#F27420] px-6 py-3.5 text-sm font-bold text-white transition hover:brightness-105 sm:min-h-14 sm:px-8 sm:py-4 sm:text-base"
+                            className="mt-auto inline-flex items-center justify-center gap-2 bg-orange-500 text-white font-bold px-5 py-3 rounded-xl"
                         >
-                            {t('marketing.home_ready_get_started')} <ArrowRight className="h-4 w-4 sm:h-[18px] sm:w-[18px]" />
-                        </a>
-                        <a
-                            href="mailto:service@evairdigital.com"
-                            className="inline-flex min-h-12 items-center justify-center gap-2 rounded-xl border-2 border-white bg-transparent px-6 py-3.5 text-sm font-bold text-white transition hover:bg-white/10 sm:min-h-14 sm:px-8 sm:py-4 sm:text-base"
-                        >
-                            {t('marketing.home_ready_talk')}
+                            Browse plans <ArrowRight size={16} />
                         </a>
                     </div>
+
+                    <div className="rounded-3xl bg-gradient-to-br from-slate-50 to-slate-100 border border-slate-200 p-8 flex flex-col" id="stay">
+                        <div className="w-12 h-12 rounded-2xl bg-white shadow-sm flex items-center justify-center mb-4">
+                            <Smartphone className="text-slate-700" size={22} />
+                        </div>
+                        <div className="text-xs font-bold uppercase tracking-wide text-slate-600 mb-1">
+                            For long-stay & new arrivals
+                        </div>
+                        <h2 className="text-2xl font-bold mb-2">US 5G data — ${STAY_PRICE_USD}/month</h2>
+                        <p className="text-slate-600 text-sm leading-relaxed mb-5">
+                            Real US 5G on AT&amp;T, Verizon, and T-Mobile. Plug-and-use in any
+                            unlocked phone, tablet, or hotspot. Data-only — pair with WhatsApp,
+                            FaceTime or iMessage for calls and messaging.
+                        </p>
+                        <ul className="text-sm text-slate-700 space-y-2 mb-6">
+                            <li className="flex items-center gap-2"><CheckCircle2 size={16} className="text-emerald-500" /> No SSN, no credit check</li>
+                            <li className="flex items-center gap-2"><CheckCircle2 size={16} className="text-emerald-500" /> AT&amp;T &middot; Verizon &middot; T-Mobile coverage</li>
+                            <li className="flex items-center gap-2"><CheckCircle2 size={16} className="text-emerald-500" /> Auto-renew or pay monthly</li>
+                        </ul>
+                        {/* Mirror the hero's two-button split so the
+                            second-scroll CTA matches the customer's
+                            existing mental model. */}
+                        <div className="mt-auto grid sm:grid-cols-2 gap-3">
+                            <a
+                                href={`${APP_PATH}#sim-card`}
+                                className="inline-flex items-center justify-center gap-2 bg-slate-900 text-white font-bold px-5 py-3 rounded-xl"
+                                aria-label={t('marketing.buy_sim_card_aria')}
+                            >
+                                <ShoppingCart size={16} /> {t('marketing.buy_sim_card')}
+                            </a>
+                            <a
+                                href={ACTIVATE_PATH}
+                                onClick={goActivateCta}
+                                className="inline-flex items-center justify-center gap-2 bg-white text-slate-900 font-bold px-5 py-3 rounded-xl border border-slate-300"
+                            >
+                                <BadgeCheck size={16} /> Activate my SIM
+                            </a>
+                        </div>
+                    </div>
                 </div>
-                <footer className="border-t border-gray-700 px-4 py-8 pb-safe-bottom sm:px-6 md:px-8 md:py-10">
-                    <div className="mx-auto grid max-w-6xl grid-cols-1 gap-8 text-sm text-gray-300 min-[480px]:grid-cols-2 md:grid-cols-5">
-                        <div className="min-w-0 min-[480px]:col-span-2 md:col-span-1">
+            </section>
+
+            {/* Three pillars: coverage, price, support. */}
+            <section className="bg-slate-50 px-4 md:px-8 py-16" id="why">
+                <div className="max-w-6xl mx-auto">
+                    <h2 className="text-3xl md:text-4xl font-extrabold text-center mb-2">
+                        Why Evair
+                    </h2>
+                    <p className="text-center text-slate-600 mb-10">
+                        Built for the way people actually move today.
+                    </p>
+                    <div className="grid md:grid-cols-3 gap-6">
+                        <Pillar
+                            icon={<Globe className="text-orange-500" size={24} />}
+                            title="Global coverage"
+                            body="200+ countries with tier-1 carriers, plus a stable US 5G data plan for residents and long-stay customers."
+                        />
+                        <Pillar
+                            icon={<DollarSign className="text-emerald-500" size={24} />}
+                            title="Honest pricing"
+                            body={`Travel data from $4.50. US plans from $${STAY_PRICE_USD}/mo. No taxes-on-top surprises, no contract.`}
+                        />
+                        <Pillar
+                            icon={<Headphones className="text-blue-500" size={24} />}
+                            title="Real support"
+                            body="In-app live chat staffed by humans. We answer in English, Spanish, and Mandarin — usually inside 5 minutes."
+                        />
+                    </div>
+                </div>
+            </section>
+
+            {/* Trust strip */}
+            <section className="px-4 md:px-8 py-12 max-w-6xl mx-auto" id="support">
+                <div className="grid md:grid-cols-4 gap-6 text-center">
+                    <TrustItem icon={<Zap size={18} />} label="Instant activation" />
+                    <TrustItem icon={<Shield size={18} />} label="PCI-compliant payments" />
+                    <TrustItem icon={<Wifi size={18} />} label="4G / 5G everywhere" />
+                    <TrustItem icon={<Headphones size={18} />} label="24/7 chat support" />
+                </div>
+            </section>
+
+            {/* Final CTA */}
+            <section className="px-4 md:px-8 py-16 max-w-3xl mx-auto text-center">
+                <h2 className="text-3xl md:text-5xl font-extrabold mb-4">
+                    Ready in two taps.
+                </h2>
+                <p className="text-slate-600 text-lg mb-8">
+                    Pick your trip or your stay. We'll handle the rest.
+                </p>
+                <div className="flex flex-col sm:flex-row gap-3 justify-center">
+                    {/* "Get started" routes into the eSIM store on both
+                        device classes — most apex traffic is travel-
+                        intent, and desktop users get the full-width
+                        store layout (App.tsx `showStoreLayout`). */}
+                    <a
+                        href={TRAVEL_ESIM_LANDING}
+                        onClick={goTravelEsimCta}
+                        className="inline-flex items-center justify-center gap-2 bg-orange-500 text-white font-bold px-6 py-4 rounded-xl shadow-lg shadow-orange-500/20"
+                    >
+                        Get started <ArrowRight size={18} />
+                    </a>
+                    <a
+                        href="mailto:service@evairdigital.com"
+                        className="inline-flex items-center justify-center gap-2 bg-white text-slate-900 font-bold px-6 py-4 rounded-xl border border-slate-200"
+                    >
+                        Talk to sales
+                    </a>
+                </div>
+            </section>
+
+            {/* Footer */}
+            <footer className="bg-slate-900 text-slate-300 px-4 md:px-8 py-10">
+                <div className="max-w-6xl mx-auto grid md:grid-cols-5 gap-8 text-sm">
+                    <div className="md:col-span-1">
+                        <div className="mb-3">
                             <img
                                 src="/evairsim-wordmark.png"
                                 alt="EvairSIM"
                                 width={896}
                                 height={228}
-                                className="mb-3 h-8 w-auto max-w-[200px] brightness-0 invert sm:h-9 md:max-w-none"
+                                className="h-9 w-auto"
                             />
-                            <p className="text-sm text-gray-400 sm:text-sm">{t('marketing.home_footer_tagline')}</p>
                         </div>
-                        <FooterColumn
-                            title={t('marketing.footer_col_travel')}
-                            links={[
-                                { label: t('marketing.footer_link_travel_esim'), href: '/travel-esim', onClick: goTravelEsimCta },
-                                { label: t('marketing.footer_link_jp'), href: '/travel-esim/jp' },
-                                { label: t('marketing.footer_link_uk'), href: '/travel-esim/gb' },
-                                { label: t('marketing.footer_link_mx'), href: '/travel-esim/mx' },
-                                { label: t('marketing.footer_link_topup'), href: '/top-up' },
-                            ]}
-                        />
-                        <FooterColumn
-                            title={t('marketing.footer_col_us')}
-                            links={[
-                                { label: t('marketing.footer_link_phone'), href: '/sim/phone' },
-                                { label: t('marketing.footer_link_camera'), href: '/sim/camera' },
-                                { label: t('marketing.footer_link_iot'), href: '/sim/iot' },
-                                { label: t('marketing.footer_link_activate'), href: ACTIVATE_PATH, onClick: goActivateCta },
-                            ]}
-                        />
-                        <FooterColumn
-                            title={t('marketing.footer_col_resources')}
-                            links={[
-                                { label: t('marketing.footer_link_help'), href: '/help' },
-                                { label: t('marketing.footer_link_install'), href: '/help/install-esim-iphone' },
-                                { label: t('marketing.footer_link_refund_policy'), href: '/help/refund-policy' },
-                                { label: t('marketing.footer_link_blog'), href: '/blog' },
-                            ]}
-                        />
-                        <FooterColumn
-                            title={t('marketing.footer_col_legal')}
-                            links={[
-                                { label: t('marketing.footer_link_terms'), href: '/legal/terms' },
-                                { label: t('marketing.footer_link_privacy'), href: '/legal/privacy' },
-                                { label: t('marketing.footer_link_refund'), href: '/legal/refund' },
-                            ]}
-                        />
+                        <p className="text-slate-400 leading-relaxed">
+                            Connectivity for travelers, residents, and the people in between.
+                        </p>
                     </div>
-                    <div className="mx-auto mt-6 flex max-w-6xl flex-col justify-between gap-2 border-t border-gray-700 pt-6 text-[11px] text-gray-500 sm:mt-8 sm:gap-3 sm:text-xs md:flex-row md:items-center">
-                        <span>{t('marketing.home_footer_copyright', { year: new Date().getFullYear() })}</span>
-                        <span>{t('marketing.home_footer_made')}</span>
-                    </div>
-                </footer>
-            </section>
+                    <FooterColumn
+                        title="Travel"
+                        links={[
+                            // Same device-aware split as the hero CTA — mobile
+                            // visitors are expected to land in the H5 store, not
+                            // on the desktop catalogue index.
+                            { label: 'Travel eSIM', href: '/travel-esim', onClick: goTravelEsimCta },
+                            { label: 'Japan eSIM', href: '/travel-esim/jp' },
+                            { label: 'UK eSIM', href: '/travel-esim/gb' },
+                            { label: 'Mexico eSIM', href: '/travel-esim/mx' },
+                            { label: 'Top up data', href: '/top-up' },
+                        ]}
+                    />
+                    <FooterColumn
+                        title="US SIMs"
+                        links={[
+                            { label: 'Phone & tablet', href: '/sim/phone' },
+                            { label: 'Security & trail cameras', href: '/sim/camera' },
+                            { label: 'IoT & smart devices', href: '/sim/iot' },
+                            // Mobile → `/app#bind-sim` (bind wizard); desktop → /activate.
+                            { label: 'Activate a SIM', href: ACTIVATE_PATH, onClick: goActivateCta },
+                        ]}
+                    />
+                    <FooterColumn
+                        title="Resources"
+                        links={[
+                            { label: 'Help center', href: '/help' },
+                            { label: 'Install your eSIM', href: '/help/install-esim-iphone' },
+                            { label: 'Refund policy', href: '/help/refund-policy' },
+                            { label: 'Blog', href: '/blog' },
+                        ]}
+                    />
+                    <FooterColumn
+                        title="Legal"
+                        links={[
+                            { label: 'Terms of Service', href: '/legal/terms' },
+                            { label: 'Privacy Policy', href: '/legal/privacy' },
+                            { label: 'Refund Policy', href: '/legal/refund' },
+                        ]}
+                    />
+                </div>
+                <div className="max-w-6xl mx-auto mt-8 pt-6 border-t border-slate-800 text-xs text-slate-500 flex flex-col md:flex-row justify-between gap-3">
+                    <span>© {new Date().getFullYear()} Evair Digital. All rights reserved.</span>
+                    <span>Made for travelers and the people who stay.</span>
+                </div>
+            </footer>
 
-            <MobileOnlyNotice open={signInGate.open} onClose={signInGate.onClose} onContinueAnyway={signInGate.onContinueAnyway} />
+            <MobileOnlyNotice
+                open={signInGate.open}
+                onClose={signInGate.onClose}
+                onContinueAnyway={signInGate.onContinueAnyway}
+            />
         </div>
     );
 };
 
+// ─── Internal cells ──────────────────────────────────────────────────
+
+const Pillar: React.FC<{ icon: React.ReactNode; title: string; body: string }> = ({
+    icon,
+    title,
+    body,
+}) => (
+    <div className="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm">
+        <div className="w-12 h-12 rounded-xl bg-slate-50 flex items-center justify-center mb-3">
+            {icon}
+        </div>
+        <h3 className="font-bold text-lg mb-1">{title}</h3>
+        <p className="text-slate-600 text-sm leading-relaxed">{body}</p>
+    </div>
+);
+
+const TrustItem: React.FC<{ icon: React.ReactNode; label: string }> = ({ icon, label }) => (
+    <div className="flex items-center justify-center gap-2 text-sm font-medium text-slate-600">
+        <span className="text-slate-400">{icon}</span>
+        {label}
+    </div>
+);
+
 interface FooterLink {
     label: string;
     href: string;
+    /**
+     * Optional click interceptor — used by device-aware CTAs ("Travel eSIM",
+     * "Activate a SIM") to redirect mobile visitors into the H5 customer
+     * app at click time while keeping the rendered href pointed at the
+     * desktop landing for crawlers and no-JS clients.
+     */
     onClick?: (e: React.MouseEvent<HTMLAnchorElement>) => void;
 }
 
-const FooterColumn: React.FC<{ title: string; links: FooterLink[] }> = ({ title, links }) => (
+const FooterColumn: React.FC<{ title: string; links: FooterLink[] }> = ({
+    title,
+    links,
+}) => (
     <div>
-        <div className="mb-3 font-semibold text-white">{title}</div>
+        <div className="text-white font-semibold mb-3">{title}</div>
         <ul className="space-y-2">
-            {links.map((l, idx) => (
-                <li key={`${title}-${l.label}-${idx}`}>
-                    <a href={l.href} onClick={l.onClick} className="text-gray-300 transition hover:text-white">
+            {links.map(l => (
+                <li key={l.href}>
+                    <a
+                        href={l.href}
+                        onClick={l.onClick}
+                        className="hover:text-white transition-colors"
+                    >
                         {l.label}
                     </a>
                 </li>

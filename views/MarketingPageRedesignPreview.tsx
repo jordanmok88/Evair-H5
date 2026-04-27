@@ -1,7 +1,6 @@
 /**
- * Homepage layout sandbox — `/welcome-preview`.
- * The approved design now ships on `MarketingPage` (`/` and `/welcome`).
- * This route remains for A/B or QA comparisons.
+ * Alternative homepage layout — `/welcome-preview` only.
+ * Production (`/` and `/welcome`) uses `MarketingPage.tsx` (classic hero + two pillars).
  */
 
 import React, { useEffect } from 'react';
