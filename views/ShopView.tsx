@@ -1450,57 +1450,44 @@ const ShopView: React.FC<ShopViewProps> = ({
                   />
                 </div>
 
-                {/* ── Browse Mode Toggle: Single Country / Multi-Country ── */}
+                {/* ── Location pills: continents + Multi-Country (same row, one theme) ── */}
                 {!searchQuery && (
-                  <div className="flex gap-2 mb-5">
+                  <div className="flex gap-2 overflow-x-auto no-scrollbar pb-3 -mx-4 px-4 md:mx-0 md:px-0 md:flex-wrap lg:-mx-4 lg:px-4 lg:flex-nowrap lg:overflow-x-auto mb-4">
+                    {CONTINENT_TABS.filter(tab => tab !== 'Multi-Region').map((tab) => {
+                      const isActive = browseMode === 'country' && continentTab === tab;
+                      return (
+                        <button
+                          key={tab}
+                          type="button"
+                          onClick={() => {
+                            setBrowseMode('country');
+                            setContinentTab(tab);
+                            setShowAllCountries(false);
+                          }}
+                          className={`flex-shrink-0 px-4 py-2 rounded-full text-xs font-bold transition-all active:scale-[0.97] ${
+                            isActive
+                              ? 'bg-brand-orange text-white shadow-sm shadow-orange-200'
+                              : 'bg-white text-slate-500 border border-slate-200 hover:bg-slate-50'
+                          }`}
+                        >
+                          {tab === 'All' ? t('shop.all') : t(`shop.continent_${tab.toLowerCase()}`)}
+                        </button>
+                      );
+                    })}
                     <button
-                      onClick={() => { setBrowseMode('country'); setShowAllCountries(false); }}
-                      className={`flex-1 flex flex-col items-center justify-center gap-0.5 py-3.5 rounded-xl border transition-all duration-200 ${
-                        browseMode === 'country'
-                          ? 'bg-orange-50 border-orange-200 shadow-sm shadow-orange-100'
-                          : 'bg-white border-slate-200 hover:border-slate-300'
-                      }`}
-                    >
-                      <div className="flex items-center gap-1.5">
-                        <MapPin size={14} strokeWidth={2.5} className={browseMode === 'country' ? 'text-brand-orange' : 'text-slate-400'} />
-                        <span className={`text-[13px] font-bold tracking-wide ${browseMode === 'country' ? 'text-orange-800' : 'text-slate-400'}`}>{t('shop.single_country')}</span>
-                      </div>
-                      <span className={`text-[10px] font-medium ${browseMode === 'country' ? 'text-orange-500/70' : 'text-slate-300'}`}>{t('shop.single_country_sub')}</span>
-                    </button>
-                    <button
-                      onClick={() => { setBrowseMode('region'); setShowAllCountries(false); }}
-                      className={`flex-1 flex flex-col items-center justify-center gap-0.5 py-3.5 rounded-xl border transition-all duration-200 ${
+                      type="button"
+                      onClick={() => {
+                        setBrowseMode('region');
+                        setShowAllCountries(false);
+                      }}
+                      className={`flex-shrink-0 px-4 py-2 rounded-full text-xs font-bold transition-all active:scale-[0.97] ${
                         browseMode === 'region'
-                          ? 'bg-blue-50 border-blue-200 shadow-sm shadow-blue-100'
-                          : 'bg-white border-slate-200 hover:border-slate-300'
+                          ? 'bg-brand-orange text-white shadow-sm shadow-orange-200'
+                          : 'bg-white text-slate-500 border border-slate-200 hover:bg-slate-50'
                       }`}
                     >
-                      <div className="flex items-center gap-1.5">
-                        <Globe size={14} strokeWidth={2.5} className={browseMode === 'region' ? 'text-blue-600' : 'text-slate-400'} />
-                        <span className={`text-[13px] font-bold tracking-wide ${browseMode === 'region' ? 'text-blue-800' : 'text-slate-400'}`}>{t('shop.multi_country')}</span>
-                      </div>
-                      <span className={`text-[10px] font-medium ${browseMode === 'region' ? 'text-blue-500/70' : 'text-slate-300'}`}>{t('shop.multi_country_sub')}</span>
+                      {t('shop.multi_country')}
                     </button>
-                  </div>
-                )}
-
-                {/* ── Continent Filter Tabs (only in country mode) ── */}
-                {!searchQuery && browseMode === 'country' && (
-                  <div className="flex gap-2 overflow-x-auto no-scrollbar pb-3 -mx-4 px-4 md:mx-0 md:px-0 md:flex-wrap lg:-mx-4 lg:px-4 lg:flex-nowrap lg:overflow-x-auto mb-3">
-                    {CONTINENT_TABS.filter(tab => tab !== 'Multi-Region').map((tab) => (
-                      <button
-                        key={tab}
-                        onClick={() => { setContinentTab(tab); setShowAllCountries(false); }}
-                        className={`flex-shrink-0 px-4 py-2 rounded-full text-xs font-bold transition-all active:scale-[0.97] ${
-                          continentTab === tab
-                            ? 'bg-brand-orange text-white shadow-sm shadow-orange-200'
-                            : 'bg-white text-slate-500 border border-slate-200 hover:bg-slate-50'
-                        }`}
-                      >
-                        {tab === 'All' ? t('shop.all')
-                          : t(`shop.continent_${tab.toLowerCase()}`)}
-                      </button>
-                    ))}
                   </div>
                 )}
 
