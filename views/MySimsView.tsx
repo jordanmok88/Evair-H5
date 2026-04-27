@@ -101,10 +101,9 @@ const MySimsView: React.FC<MySimsViewProps> = ({ activeSims, onNavigate, filterT
   const currentSim = filteredSims.find(s => s.id === selectedSimId) || filteredSims[0];
 
   // Per-SIM refresh button. Hits `/h5/esim/{iccid}/usage` via
-  // `checkDataUsage` — that endpoint dispatches to EsimAccess for digital
-  // eSIMs and to PCCW for physical SIMs, so the same call works for both
-  // SIM types. The legacy path used `queryProfile` (Red Tea only), which
-  // silently returned stale/default data for PCCW cards.
+  // `checkDataUsage` — that endpoint dispatches to the right provider for
+  // eSIM vs. physical, so the same call works for both. The legacy path used
+  // `queryProfile` (eSIM only), which returned stale data for physical cards.
   const handleRefreshStatus = useCallback(async (sim: ActiveSim) => {
     if (!onUpdateSim) return;
     const iccid = resolveIccid(sim);
@@ -124,11 +123,11 @@ const MySimsView: React.FC<MySimsViewProps> = ({ activeSims, onNavigate, filterT
       if (usage.expiredTime) {
         updates.expiryDate = usage.expiredTime;
       }
-      // eSIM status still comes from the Red Tea profile query since the
+      // eSIM status still comes from the profile query since the
       // usage endpoint doesn't carry lifecycle state. For physical SIMs
-      // the PCCW status is already surfaced on the bound-list endpoint,
-      // so skip the profile call there to avoid a useless Red Tea hit
-      // that always returns "not found" for PCCW ICCIDs.
+      // status is already on the bound-list endpoint, so skip the profile
+      // call there to avoid a useless eSIM lookup that returns "not found"
+      // for physical ICCIDs.
       if (sim.type === 'ESIM') {
         try {
           const profile = await queryProfile(iccid);
@@ -198,10 +197,10 @@ const MySimsView: React.FC<MySimsViewProps> = ({ activeSims, onNavigate, filterT
     //   • ESIM        → EsimAccess / Red Tea top-up templates keyed to
     //                   the ICCID; fall back to the general location
     //                   catalogue if none returned.
-    //   • PHYSICAL    → PCCW recharge templates for this ICCID. Pass
+    //   • PHYSICAL    → physical-SIM recharge templates. Pass
     //                   `'pccw'` explicitly — the backend defaults to
     //                   `esimaccess` and would otherwise return zero
-    //                   matches. If PCCW has no offers for this SIM
+    //                   matches. If the pool has no offers for this SIM
     //                   (e.g. an ICCID not yet on any whitelist) we
     //                   fall through to the general catalogue so the
     //                   user still sees something actionable.
@@ -221,7 +220,7 @@ const MySimsView: React.FC<MySimsViewProps> = ({ activeSims, onNavigate, filterT
   }, [isRechargeModalOpen, currentIccid, currentSim?.type]);
 
   // Top-bar sync button on the ring-gauge card. `checkDataUsage` routes
-  // to the right supplier (EsimAccess / PCCW) backend-side, so the same
+  // to the right supplier backend-side, so the same
   // call works for both ESIM and PHYSICAL SIMs. We also piggy-back
   // `handleRefreshStatus` so the store reflects the freshly fetched
   // volume — otherwise the sync spinner finishes but the UI keeps the
@@ -261,7 +260,7 @@ const MySimsView: React.FC<MySimsViewProps> = ({ activeSims, onNavigate, filterT
 
   // EMPTY STATE
   if (!currentSim) {
-      // For plastic PCCW SIMs we don't sell them from Shop any more —
+      // For plastic US SIMs we don't sell them from Shop any more —
       // customers receive them from Amazon/Temu, so the primary CTA
       // should jump straight into the bind/setup flow. eSIMs still
       // go through Shop (plan picker -> checkout -> auto-bind).
@@ -1022,10 +1021,9 @@ const MySimsView: React.FC<MySimsViewProps> = ({ activeSims, onNavigate, filterT
                 packageCode: selectedTopUp.packageCode,
                 transactionId: txnId,
                 amount: selectedTopUp.price,
-                // Physical SIMs ride on PCCW's recharge pipeline; eSIMs
-                // stay on EsimAccess. Tagging the call-site keeps the
-                // backend `RechargeTemplateService` from falling back to
-                // the default supplier and rejecting valid PCCW tops-ups.
+                // Physical SIMs use the physical recharge pipeline; eSIMs
+                // use the eSIM path. Tagging the call-site keeps the
+                // backend from using the wrong default supplier.
                 supplierType: currentSim.type === 'PHYSICAL' ? 'pccw' : 'esimaccess',
               });
 

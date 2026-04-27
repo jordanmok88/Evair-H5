@@ -451,14 +451,14 @@ function CustomerApp() {
   // 从后端获取用户 SIM 卡列表 + 实时用量
   //
   // `/h5/user/sims` returns the bound-SIM list with the cached
-  // `traffic_limit` / `traffic_usage` columns from our DB — which for PCCW
+  // `traffic_limit` / `traffic_usage` columns from our DB — which for
   // physical SIMs is usually the purchased-plan total with `used=0`, so the
   // UI would show "3 GB / 3 GB remaining, 0 used" even when the card has
   // actually consumed data.
   //
   // For live usage we hit `/h5/esim/{iccid}/usage` per SIM — that endpoint
-  // dispatches to the right supplier provider (EsimAccess for eSIMs, PCCW
-  // for physical SIMs) and returns the real volume/usage from upstream.
+  // dispatches to the right supplier provider (eSIM vs. physical) and
+  // returns the real volume/usage from upstream.
   // We fan this out in parallel after getSims() and merge the result in.
   const fetchUserSims = useCallback(async () => {
     if (!authService.isLoggedIn()) {
@@ -470,7 +470,7 @@ function CustomerApp() {
       const convertedSims = response.list.map(convertUserSimToActiveSim);
       setServerSims(convertedSims);
 
-      // Fan-out live usage refresh (PCCW / EsimAccess) — best-effort; on
+      // Fan-out live usage refresh (per-SIM supplier) — best-effort; on
       // any single-SIM failure we keep the cached DB values rather than
       // blanking the card.
       const usageResults = await Promise.all(

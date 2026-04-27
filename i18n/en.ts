@@ -283,13 +283,13 @@ const en = {
     activate_sim_card: 'Activate SIM Card',
     activating: 'Activating...',
     // "No activation needed" banner + post-bind benefits. EvairSIM
-    // physical SIMs ship preloaded through PCCW, so we don't walk
+    // Physical SIMs ship pre-provisioned, so we don't walk
     // users through APN setup — we reassure them the card already
     // works and highlight what the account binding unlocks.
     no_activation_note: 'Your SIM is already active and connected to data. Register it here to view usage and top up later.',
     what_you_unlocked: "What you've unlocked",
     benefit_usage_title: 'Track Data Usage',
-    benefit_usage_desc: 'See live remaining data and daily usage straight from PCCW — no more guessing.',
+    benefit_usage_desc: 'See live remaining data and daily usage in the app — no more guessing.',
     benefit_topup_title: 'Top Up Anytime',
     benefit_topup_desc: 'Out of data? Buy a top-up in seconds right from the app and it applies instantly.',
     benefit_coverage_title: '190+ Countries',
@@ -315,7 +315,7 @@ const en = {
     validity_label: 'Validity',
     profile_status: 'Status',
     status_ready: 'Ready to Use',
-    bind_info: 'Your SIM card is already active and delivering data. Tap below to link it to your account so you can monitor usage and purchase top-ups on PCCW when you run low.',
+    bind_info: 'Your SIM card is already active and delivering data. Tap below to link it to your account so you can monitor usage and buy top-ups in the app when you run low.',
     bind_to_account: 'Add to My Account',
     binding: 'Adding...',
     sign_in_to_bind: 'Sign In to Add SIM',

@@ -238,7 +238,7 @@
 <ul>
   <li><strong>双门 hero 区</strong>：清晰区分两条产品线
     <ul>
-      <li>美国本地用户 → 物理 SIM（PCCW 供应商）</li>
+      <li>美国本地用户 → 物理 SIM（合作运营商）</li>
       <li>美国出境游客 → 旅行 eSIM（Red Tea 供应商）</li>
     </ul>
   </li>
@@ -246,7 +246,7 @@
     <ol>
       <li><strong>速度</strong> — "5G up to 650 Mbps"（前 9GB 高速，之后限速 10 Mbps）</li>
       <li><strong>美国 IP</strong> — "Your US apps just work"（Netflix / Venmo / 银行 App 在海外照常工作，这是 Airalo 不具备的护城河）</li>
-      <li><strong>自动 APN</strong> — "Plug and play, no APN setup"（PCCW 自动配置 APN，解决 Amazon 评论里大量竞品吐槽的痛点）</li>
+      <li><strong>自动 APN</strong> — "Plug and play, no APN setup"（卡端自动配置 APN，解决 Amazon 评论里大量竞品吐槽的痛点）</li>
     </ol>
   </li>
   <li>Airalo 视觉语言（克制配色、大量留白、人性化文案）</li>
@@ -287,7 +287,7 @@
 <ol>
   <li><strong>不能跳阶段。</strong>Phase 1 的充值漏斗收益是 Phase 2-5 的资金来源，跳过 = 后面没钱做。</li>
   <li><strong>美国市场单一聚焦。</strong>不要重新讨论加新国家的物理 SIM。</li>
-  <li><strong>所有供应商 API（Red Tea / PCCW）必须走 Laravel 后端</strong>，H5 和 APP 不能直接调供应商 — 防止凭据泄漏 + 让 Admin 端集中管控价格和可见性。</li>
+  <li><strong>所有供应商 API 必须走 Laravel 后端</strong>，H5 和 APP 不能直接调供应商 — 防止凭据泄漏 + 让 Admin 端集中管控价格和可见性。</li>
   <li><strong>i18n 三语：</strong>英文（主）、中文、西语。任何用户可见文案必须走 <code>t()</code> key。</li>
   <li><strong>Flutter APP 永远是 WebView 壳子</strong>，不要提议做原生页面，所有功能先上 H5。</li>
   <li><strong>保存工作流：</strong>每次有意义的改动跑 <code>save-all.sh</code> — 同时同步到 GitHub / Aliyun / iCloud 三个备份。</li>

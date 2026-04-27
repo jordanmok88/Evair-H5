@@ -124,7 +124,7 @@ function backendPkgToEsimPackage(dto: PackageDto): EsimPackage {
 //      (services/esimApi.ts ~line 674).
 //
 // The VITE_USE_BACKEND_API flag was introduced for profile / top-up /
-// PCCW bind flows (see .env.local comment); routing the shop catalogue
+// Physical-SIM / profile bind flows (see .env.local comment); routing the shop catalogue
 // through it was overreach.
 
 export async function fetchPackages(params: FetchPackagesParams = {}): Promise<EsimPackage[]> {
@@ -137,10 +137,9 @@ export function prefetchPackages(): Promise<EsimPackage[]> {
 
 /**
  * Fetch the top-up catalogue for a given SIM. Pass `supplierType='pccw'`
- * for physical SIMs (PCCW IoT-M) — those SIMs use a different recharge
- * template pool than our eSIM catalogue and omitting the hint returns
- * an empty list. For eSIMs (Red Tea / EsimAccess) the parameter can be
- * omitted and defaults to `'esimaccess'` backend-side.
+ * for US physical SIMs — a different recharge template pool than eSIM; omitting
+ * the hint returns an empty list. For eSIMs the parameter can be omitted
+ * and defaults to `'esimaccess'` backend-side.
  */
 export async function fetchTopUpPackages(
   iccid: string,
@@ -218,10 +217,10 @@ export async function checkDataUsage(iccid: string): Promise<DataUsageResult> {
 /**
  * Look up an ICCID's preloaded plan before the user binds it to their
  * EvairSIM account. Pass `supplierType` to choose the provider:
- *   - `'pccw'`  — physical SIM (PCCW IoT-M). Use this from the "Bind your
+ *   - `'pccw'`  — physical US SIM. Use this from the "Bind your
  *                 SIM Card" flow — cards arrive preloaded and must be
- *                 verified against PCCW's registry.
- *   - `'esimaccess'` — digital eSIM (EsimAccess / Red Tea). Used from
+ *                 verified against the carrier registry.
+ *   - `'esimaccess'` — digital eSIM. Used from
  *                 the install / post-purchase flow.
  *   - omitted — backend default (esimaccess) for backwards compat.
  *

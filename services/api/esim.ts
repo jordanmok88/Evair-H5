@@ -75,11 +75,10 @@ export const packageService = {
    * Fetch the top-up / recharge catalogue for an existing SIM.
    *
    * Backend accepts `supplier_type`:
-   *   - `'esimaccess'` (default) — digital eSIMs (Red Tea templates)
-   *   - `'pccw'` — physical SIMs (PCCW recharge templates, respects
-   *               per-ICCID whitelists)
-   * Pass the matching supplier when the SIM was provisioned by PCCW,
-   * otherwise the backend will return an empty / mismatched list.
+   *   - `'esimaccess'` (default) — digital eSIM recharge templates
+   *   - `'pccw'` — physical US SIM recharge templates (per-ICCID whitelists)
+   * Pass the matching value for physical vs. eSIM, otherwise the backend may
+   * return an empty / mismatched list.
    */
   async getRechargePackages(
     iccid: string,
@@ -135,13 +134,9 @@ export const esimService = {
    * Fetch the public SIM preview (used during bind / registration).
    *
    * `supplierType` controls which provider backs the lookup:
-   *   - `'esimaccess'` (default) — Red Tea / EsimAccess, i.e. our digital
-   *     eSIM catalogue; used on the eSIM install flow.
-   *   - `'pccw'` — PCCW IoT-M, our physical SIM supplier. Physical SIMs
-   *     ship preloaded with data, so the H5 "Bind your SIM" screen should
-   *     always pass `'pccw'` to hit the correct backend service
-   *     (`PccwPreviewService`) and surface the preloaded plan + carrier
-   *     balance for top-up purposes.
+   *   - `'esimaccess'` (default) — digital eSIM; used on the eSIM install flow.
+   *   - `'pccw'` — US physical SIM. Cards ship preloaded, so the "Bind your SIM"
+   *     flow should pass this to load the preloaded plan + balance for top-up.
    *
    * GET /h5/esim/preview/{iccid}?supplier_type={esimaccess|pccw}
    */

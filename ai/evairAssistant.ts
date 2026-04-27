@@ -11,8 +11,8 @@
  *   • Concrete next step in every reply: either an action the customer can
  *     take themselves, or the specific piece of information we need from
  *     them to move forward.
- *   • Supplier-aware vocabulary. eSIMs (Red Tea / EsimAccess) and physical
- *     SIMs (PCCW, currently US-only, fulfilled by Amazon FBA) have
+ *   • Supplier-aware vocabulary. eSIMs (travel) and physical US SIMs (Amazon
+ *     retail) have
  *     different setup and tracking journeys — the knowledge base reflects
  *     that so customers get accurate instructions for what they actually
  *     bought.

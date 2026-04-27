@@ -135,7 +135,7 @@ export const DEVICE_CONTENT: Record<DeviceCategory, DeviceContent> = {
             {
                 icon: Wifi,
                 title: 'Real 5G coverage',
-                body: 'AT&T and Verizon via PCCW — same air interface as the big brands, with auto-APN. No T-Mobile profile on this product line.',
+                body: 'AT&T and Verizon on our US network — same air interface as the big brands, with auto-APN. No T-Mobile profile on this product line.',
             },
             {
                 icon: Smartphone,
@@ -244,7 +244,7 @@ export const DEVICE_CONTENT: Record<DeviceCategory, DeviceContent> = {
         faq: [
             {
                 q: 'Will it work with my SPYPOINT / Reolink / Tactacam camera?',
-                a: 'Yes. We verify each camera model on the T-Mobile bands. Pop the SIM in, the camera connects, no APN setup — our PCCW SIMs auto-configure.',
+                a: 'Yes. We verify each camera model on the T-Mobile bands. Pop the SIM in, the camera connects, no APN setup — Evair SIMs auto-configure.',
             },
             {
                 q: 'Why is the speed capped at 1.5 Mbps?',
@@ -285,7 +285,7 @@ export const DEVICE_CONTENT: Record<DeviceCategory, DeviceContent> = {
             {
                 icon: Shield,
                 title: 'US coverage, no APN',
-                body: 'PCCW MVNO on T-Mobile towers. Auto-APN means most devices connect on first boot.',
+                body: 'US coverage on major T-Mobile towers. Auto-APN means most devices connect on first boot.',
             },
         ],
         devices: [

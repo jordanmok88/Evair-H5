@@ -282,14 +282,14 @@ const es = {
     add_another: 'Agregar Otra SIM',
     activate_sim_card: 'Activar Tarjeta SIM',
     activating: 'Activando...',
-    // Las SIM físicas de PCCW llegan preactivadas y funcionan
+    // Las SIM físicas llegan preactivadas y funcionan
     // inmediatamente, por lo que ya no mostramos instrucciones APN.
     // En su lugar destacamos lo que desbloquea el vincular la SIM
     // a la cuenta (uso, recargas, compartir).
     no_activation_note: 'Tu SIM ya está activa y conectada a datos. Regístrala aquí para ver el consumo y recargar más adelante.',
     what_you_unlocked: 'Lo que has desbloqueado',
     benefit_usage_title: 'Consumo en Tiempo Real',
-    benefit_usage_desc: 'Consulta directamente desde PCCW los datos restantes y el uso diario — sin adivinanzas.',
+    benefit_usage_desc: 'Consulta en la app los datos restantes y el uso diario — sin adivinanzas.',
     benefit_topup_title: 'Recarga Cuando Quieras',
     benefit_topup_desc: '¿Sin datos? Compra una recarga en segundos desde la app y se aplica al instante.',
     benefit_coverage_title: '190+ Países',
@@ -312,7 +312,7 @@ const es = {
     validity_label: 'Validez',
     profile_status: 'Estado',
     status_ready: 'Lista para Usar',
-    bind_info: 'Tu tarjeta SIM ya está activa y funcionando con datos. Toca abajo para vincularla a tu cuenta y así poder ver el consumo y comprar recargas en PCCW cuando se agote.',
+    bind_info: 'Tu tarjeta SIM ya está activa y funcionando con datos. Toca abajo para vincularla a tu cuenta y así ver el consumo y comprar recargas en la app cuando se agote.',
     bind_to_account: 'Agregar a Mi Cuenta',
     binding: 'Agregando...',
     sign_in_to_bind: 'Iniciar Sesión para Agregar SIM',

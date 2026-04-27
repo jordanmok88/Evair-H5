@@ -21,14 +21,12 @@ import { activationService, ActivationPreviewData, ClaimState } from '../service
 import { useEdgeSwipeBack } from '../hooks/useEdgeSwipeBack';
 
 /**
- * Physical SIM registration wizard (PCCW IoT-M).
+ * Physical SIM registration wizard (US data SIMs).
  *
  * Business model after the 2026-04 pivot
  * --------------------------------------
- *  - SIMs are provisioned end-to-end by PCCW (our physical-SIM
- *    supplier). Jordan receives the ICCID/IMSI batch from PCCW,
- *    attaches a data plan via the Admin panel (which calls
- *    `PccwAdapter::createPackage`), and ships the inventory to
+ *  - SIMs are provisioned by our network partner. Jordan receives the ICCID/IMSI batch,
+ *    attaches a data plan via the Admin panel, and ships the inventory to
  *    Amazon FBA / Temu.
  *  - Amazon / Temu handle logistics end-to-end. The customer receives
  *    a SIM that is *already loaded with data* and works the moment
@@ -36,11 +34,11 @@ import { useEdgeSwipeBack } from '../hooks/useEdgeSwipeBack';
  *    activation step is required.
  *  - This screen therefore is not an "activation" flow: it's a
  *    registration / binding flow. The user scans the ICCID off the
- *    back of the card, we validate it against PCCW's registry via
+ *    back of the card, we validate it against the carrier registry via
  *    `GET /h5/esim/preview/{iccid}?supplier_type=pccw` and tie the
  *    SIM to their EvairSIM account. That binding unlocks:
- *      · real-time data-usage readouts (via PCCW CDRs),
- *      · top-up purchases (PCCW recharge templates, managed via
+ *      · real-time data-usage readouts,
+ *      · top-up purchases (recharge templates, managed via
  *        Admin → Package Management),
  *      · multi-device sharing / management.
  *
@@ -79,7 +77,7 @@ const PhysicalSimSetupView: React.FC<PhysicalSimSetupViewProps> = ({
   const { t } = useTranslation();
 
   // "What's next" tips shown on the DONE screen. The SIM is already
-  // active on PCCW's network (cards are sold preloaded), so instead of
+  // active on the carrier network (cards are sold preloaded), so instead of
   // APN / activation instructions we surface what the account binding
   // *unlocks*: usage tracking, top-ups, and global coverage.
   const postBindBenefits = [

@@ -120,9 +120,8 @@ const TopUpPage: React.FC<TopUpPageProps> = ({ iccid: initialIccid }) => {
         // for two sequential round-trips.
         Promise.all([
             activationService.previewByIccid(iccid),
-            // Try without supplier_type first (works for esimaccess); fall back
-            // to PCCW if the catalogue comes back empty. This keeps the
-            // public flow generic — no need to leak supplier identity in URLs.
+            // Try without supplier_type first (works for eSIM); fall back
+            // to physical-SIM templates if the catalogue comes back empty.
             packageService.getRechargePackages(iccid).catch(() => ({ packages: [] })),
         ])
             .then(async ([previewResult, firstAttempt]) => {

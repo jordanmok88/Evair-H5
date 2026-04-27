@@ -277,12 +277,12 @@ const zh = {
     add_another: '添加另一张SIM卡',
     activate_sim_card: '激活SIM卡',
     activating: '激活中...',
-    // PCCW 物理卡预装数据，插卡即用，此处不再展示 APN 设置指引；
+    // 物理卡预装数据，插卡即用，此处不再展示 APN 设置指引；
     // 改为绑定账户后所解锁的功能（流量查询、充值、共享等）。
     no_activation_note: '您的SIM卡已激活并连接数据。在此绑定账户即可查看用量、随时充值。',
     what_you_unlocked: '已为您解锁',
     benefit_usage_title: '实时流量查询',
-    benefit_usage_desc: '直接从 PCCW 获取剩余流量和每日用量，无需再猜。',
+    benefit_usage_desc: '在应用内查看剩余流量和每日用量，无需再猜。',
     benefit_topup_title: '随时充值',
     benefit_topup_desc: '流量不够？应用内几秒完成充值，立即到账生效。',
     benefit_coverage_title: '覆盖 190+ 国家',
@@ -305,7 +305,7 @@ const zh = {
     validity_label: '有效期',
     profile_status: '状态',
     status_ready: '可以使用',
-    bind_info: '您的SIM卡已激活并可正常上网。点击下方按钮将其绑定到账户，即可查看流量用量，并在流量不足时通过 PCCW 进行充值。',
+    bind_info: '您的SIM卡已激活并可正常上网。点击下方按钮将其绑定到账户，即可查看流量用量，并在流量不足时在应用内充值。',
     bind_to_account: '添加到我的账户',
     binding: '添加中...',
     sign_in_to_bind: '登录以添加SIM卡',
