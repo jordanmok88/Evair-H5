@@ -151,6 +151,13 @@ export interface EsimPackage {
    * /v1/h5/packages/locations (which the APP consumes directly).
    */
   supplierRegionCode?: string;
+
+  /**
+   * Friendly name for the multi-country region, e.g. "Europe (30+ countries)".
+   * Populated by the backend (supplier_regions table), so the frontend no
+   * longer needs a separate /packages/locations request for region names.
+   */
+  supplierRegionName?: string;
 }
 
 export interface EsimApiResponse<T> {

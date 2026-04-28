@@ -19,37 +19,36 @@ import type {
 
 // ─── API 端点 ────────────────────────────────────────────────────────────
 //
-// 【重要】这些端点走的是 H5 旧接口路径（`services/api/client.ts`，基于 `VITE_API_BASE_URL`），
-// 仅在 `VITE_USE_BACKEND_API=true` 时由 `dataService.ts` 调用。
-// 商店列表（eSIM 套餐浏览）不走这里，而是走 `esimApi.ts` 的 `fetchPackagesFromBackstage`。
+// 所有端点走 App tier（`services/api/client.ts`，基于 `VITE_API_BASE_URL`）。
+// 后端已预计算 `supplierRegionCode` / `supplierRegionName`，前端直接使用。
 //
 // 端点说明：
-//   - /h5/packages          → 套餐列表（有 size=20 默认限制，不适合全量商店列表）
-//   - /h5/packages/hot       → 热门套餐（Admin 后台排序，少量精选）
-//   - /h5/packages/recharge  → 充值/Top-up 套餐列表（按 ICCID 或 supplier_type 筛选）
-//   - /h5/packages/locations → 国家/地区列表（multi_countries 用于多国分组名称）
-//   - /h5/esim/preview/{iccid}→ eSIM 预览（旧的 H5 端接口，绑定 SIM 卡已改用
+//   - /app/packages          → 套餐列表（前端传 size=5000 拉全量目录）
+//   - /app/packages/hot       → 热门套餐
+//   - /app/packages/recharge  → 充值/Top-up 套餐列表
+//   - /app/packages/locations → 国家/地区列表
+//   - /h5/esim/preview/{iccid}→ eSIM 预览（已弃用，绑定 SIM 改用
 //                               activationService.previewByIccid 即 /app/sims/preview）
 //
 const ENDPOINTS = {
   // 套餐
-  PACKAGES: '/h5/packages',
-  HOT_PACKAGES: '/h5/packages/hot',
-  RECHARGE_PACKAGES: '/h5/packages/recharge',
-  PACKAGE_LOCATIONS: '/h5/packages/locations',
+  PACKAGES: '/app/packages',
+  HOT_PACKAGES: '/app/packages/hot',
+  RECHARGE_PACKAGES: '/app/packages/recharge',
+  PACKAGE_LOCATIONS: '/app/packages/locations',
 
   // eSIM
-  ESIM_BY_ICCID: (iccid: string) => `/h5/esim/${iccid}`,
+  ESIM_BY_ICCID: (iccid: string) => `/app/sims/${iccid}`,
   ESIM_PREVIEW: (iccid: string) => `/h5/esim/preview/${iccid}`,
-  ESIM_USAGE: (iccid: string) => `/h5/esim/${iccid}/usage`,
-  ESIM_ENABLE: (iccid: string) => `/h5/esim/${iccid}/enable`,
+  ESIM_USAGE: (iccid: string) => `/app/sims/${iccid}/usage`,
+  ESIM_ENABLE: (iccid: string) => `/app/esim/${iccid}/enable`,
 
   // 充值订单
-  TOPUP_ORDERS: '/h5/orders/topup',
+  TOPUP_ORDERS: '/app/recharge',
 
   // 充值支付
-  RECHARGE_PAY: (rechargeId: number) => `/h5/recharge/${rechargeId}/pay`,
-  RECHARGE_DETAIL: (rechargeId: number) => `/h5/recharge/${rechargeId}`,
+  RECHARGE_PAY: (rechargeId: number) => `/app/recharge/${rechargeId}/pay`,
+  RECHARGE_DETAIL: (rechargeId: number) => `/app/recharge/${rechargeId}`,
 } as const;
 
 // ─── 套餐服务 ────────────────────────────────────────────────────────────
@@ -178,8 +177,8 @@ export const esimService = {
 
   /**
    * 创建充值订单
-   * POST /h5/orders/topup
-   * @param data 充值参数
+   * POST /app/recharge (RechargeController@store)
+   * @param data 充值参数（supplierType 必填）
    */
   async topup(data: TopupRequest): Promise<TopupResponse> {
     return post<TopupResponse>(ENDPOINTS.TOPUP_ORDERS, data);
@@ -187,9 +186,9 @@ export const esimService = {
 
   /**
    * 创建充值支付会话
-   * POST /h5/recharge/{recharge_id}/pay
+   * POST /app/recharge/{recharge_id}/pay → PaymentController::createRechargePayment
    * @param rechargeId 充值记录 ID
-   * @param data 支付参数
+   * @param data 支付参数（可选，method 默认 stripe）
    */
   async createRechargePayment(rechargeId: number, data?: CreatePaymentSessionRequest): Promise<CreatePaymentSessionResponse> {
     return post<CreatePaymentSessionResponse>(ENDPOINTS.RECHARGE_PAY(rechargeId), data || {});
@@ -197,7 +196,7 @@ export const esimService = {
 
   /**
    * 查询充值记录详情
-   * GET /h5/recharge/{recharge_id}
+   * GET /app/recharge/{recharge_id} → RechargeController@show
    * @param rechargeId 充值记录 ID
    */
   async getRechargeDetail(rechargeId: number): Promise<RechargeRecordDetailResponse> {
@@ -209,7 +208,7 @@ export const esimService = {
    * 后端调用 CSM SM-DP+ 平台远程启用 profile
    * @param iccid eSIM ICCID
    */
-  async enableProfile(iccid: string): Promise<{ status: string }> {
+  async enableProfile(iccid: string): Promise<{ status: string; iccid: string }> {
     return post<{ status: string }>(ENDPOINTS.ESIM_ENABLE(iccid), {});
   },
 

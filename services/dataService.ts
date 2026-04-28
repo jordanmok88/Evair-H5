@@ -1,10 +1,8 @@
 /**
  * Unified Data Service (统一数据服务层)
  *
- * Abstracts the data source so all views import from here instead of
- * directly from esimApi (supplier) or services/api (backend).
- *
- * USE_BACKEND_API is read from .env.local VITE_USE_BACKEND_API.
+ * 所有数据请求统一通过 Backend API client (`services/api/`) 走 App tier 端点。
+ * 不再有 supplier 直连路径和 `USE_BACKEND_API` 双路径切换。
  */
 
 import type {
@@ -21,12 +19,9 @@ import type {
 
 import type { PackageDto } from './api/types';
 
-// ─── Supplier API (current) ──────────────────────────────────────────
+// ─── Supplier API (order + topup via Netlify proxy) ─────────────────
 
 import {
-  fetchPackages as supplierFetchPackages,
-  prefetchPackages as supplierPrefetch,
-  fetchTopUpPackages as supplierFetchTopUp,
   orderEsim as supplierOrderEsim,
   topUp as supplierTopUp,
   checkDataUsage as supplierCheckUsage,
@@ -42,32 +37,27 @@ import {
   formatGB,
   mapRedTeaStatus,
   DEMO_MODE,
-  fetchMultiCountryRegionNames,
   type FetchPackagesParams,
   type ContinentTab,
   type ActiveSimStatus,
 } from './esimApi';
 
-// ─── Backend API (future) ────────────────────────────────────────────
+// ─── Backend API ────────────────────────────────────────────────────
 
 import { packageService, esimService } from './api';
 
-// =====================================================================
-// SWITCH FLAG: reads from .env.local VITE_USE_BACKEND_API
-// Defaults to false, set to true when backend has all packages synced
-// =====================================================================
-export const USE_BACKEND_API = import.meta.env.VITE_USE_BACKEND_API === 'true';
-
 // ─── Data normalization: backend PackageDto → supplier EsimPackage ───
+//
+// `dto.price` is a USD float from the backend (already retail).
+// The rest of the app speaks "micro-cents" (10000 = $1.00), so we multiply
+// by 10000 and stamp `priceIsRetail: true` so `packagePriceUsd()` skips the
+// legacy 2× wholesale-→-retail markup.
+//
+// `dto.locations` is a pure ISO-2 list (backend filters out region codes
+// like "NA-3" in PackageResource). `dto.supplierRegionCode` /
+// `dto.supplierRegionName` carry the multi-country grouping info.
 
 function backendPkgToEsimPackage(dto: PackageDto): EsimPackage {
-  // groupPackagesByLocation (esimApi.ts) treats `location` as a CSV and uses
-  // a "contains comma" check to flag multi-country / regional plans.
-  // The backend emits a single primary ISO in `location` plus the full list
-  // in `locations` / `is_multi_country`, so we re-hydrate a CSV here when
-  // the plan spans multiple countries — otherwise the client groups every
-  // backend-sourced plan as single-country and the "Multi-Country" view is
-  // silently empty.
   const coverage = Array.isArray(dto.locations) && dto.locations.length > 0
     ? dto.locations
     : dto.location
@@ -79,20 +69,6 @@ function backendPkgToEsimPackage(dto: PackageDto): EsimPackage {
   return {
     packageCode: dto.packageCode,
     name: dto.name,
-    // Backend H5/PackageResource emits `price` as a USD float (e.g.
-    // 19.99). The rest of the app speaks "supplier units" where 10000
-    // = $1.00 (micro-cents), so multiply by 10000. We also stamp
-    // `priceIsRetail: true` because the backend already stores the
-    // team's chosen retail price — without this flag,
-    // `packagePriceUsd()` would re-apply the legacy 2× wholesale-to-
-    // retail markup and quote double the right number to users.
-    //
-    // Earlier comment claimed `dto.price` was cents and used `* 100`
-    // — that produced cents instead of micro-cents, and combined with
-    // the missing `priceIsRetail` flag the displayed USD was off by
-    // 200×. The combined fix is exact when the flag is both flipped
-    // (`USE_BACKEND_API=true`) and the product is reached through
-    // this normalisation path.
     price: dto.price * 10000,
     priceIsRetail: true,
     currencyCode: dto.currency || 'USD',
@@ -103,36 +79,88 @@ function backendPkgToEsimPackage(dto: PackageDto): EsimPackage {
     description: dto.description || dto.name,
     unusedValidTime: dto.duration,
     activeType: 1,
+    coverageCodes: coverage,
+    supplierRegionCode: dto.supplierRegionCode,
+    supplierRegionName: dto.supplierRegionName,
   };
 }
 
 // ─── Package listing ─────────────────────────────────────────────────
 //
-// The shop catalogue ALWAYS goes through the supplier path
-// (`fetchPackagesFromBackstage` in esimApi.ts), even when
-// VITE_USE_BACKEND_API=true. Both paths ultimately hit the same
-// Laravel endpoint (`/v1/h5/packages`, proxied via `/laravel-api` in
-// dev), but the supplier path does two things the backend path
-// does not:
-//   1. Pulls the full catalogue (`size=5000`) — `packageService.getPackages`
-//      omits `size`, so Laravel defaults to `size=20` and most users see
-//      "No plans found" because the first page is dominated by
-//      multi-country SKUs.
-//   2. Extracts the supplier region code (`NA-3`, `AS-7`, `GL-139`, …)
-//      embedded in the `locations` array. Without it,
-//      `groupPackagesByLocation` drops every multi-country plan
-//      (services/esimApi.ts ~line 674).
-//
-// The VITE_USE_BACKEND_API flag was introduced for profile / top-up /
-// Physical-SIM / profile bind flows (see .env.local comment); routing the shop catalogue
-// through it was overreach.
+// All package queries go through the App tier API client.
+// size=5000 pulls the full catalogue in one shot, matching Flutter APP's
+// `shop_providers.dart` (`perPage: 5000`). The backend now pre-computes
+// `supplierRegionCode` and `supplierRegionName` so the frontend no longer
+// needs a separate /packages/locations request or regex extraction.
+
+const CACHE_KEY = 'evair_esim_packages_v6';
+const CACHE_TTL_MS = 30 * 60 * 1000; // 30 minutes
+
+interface PackageCache {
+  ts: number;
+  data: EsimPackage[];
+}
+
+function getCachedPackages(): EsimPackage[] | null {
+  try {
+    const raw = localStorage.getItem(CACHE_KEY);
+    if (!raw) return null;
+    const cache: PackageCache = JSON.parse(raw);
+    if (Date.now() - cache.ts > CACHE_TTL_MS) {
+      localStorage.removeItem(CACHE_KEY);
+      return null;
+    }
+    return cache.data;
+  } catch {
+    return null;
+  }
+}
+
+function setCachedPackages(data: EsimPackage[]) {
+  try {
+    const cache: PackageCache = { ts: Date.now(), data };
+    localStorage.setItem(CACHE_KEY, JSON.stringify(cache));
+  } catch { /* storage full — ignore */ }
+}
+
+let _prefetchPromise: Promise<EsimPackage[]> | null = null;
+let _prefetchTimestamp = 0;
 
 export async function fetchPackages(params: FetchPackagesParams = {}): Promise<EsimPackage[]> {
-  return supplierFetchPackages(params);
+  const isFullList = !params.locationCode && !params.type && !params.packageCode && !params.iccid;
+
+  if (isFullList) {
+    const cached = getCachedPackages();
+    if (cached) return cached;
+  }
+
+  const resp = await packageService.getPackages({
+    locationCode: params.locationCode,
+    type: params.type,
+    size: 5000,
+    page: 1,
+  });
+
+  const dtos = resp.packages || [];
+  const filtered = params.type
+    ? dtos
+    : dtos.filter(d => (d.type ?? 'BASE') !== 'TOPUP');
+  const packages = filtered.map(backendPkgToEsimPackage);
+
+  if (isFullList) {
+    setCachedPackages(packages);
+  }
+
+  return packages;
 }
 
 export function prefetchPackages(): Promise<EsimPackage[]> {
-  return supplierPrefetch();
+  const now = Date.now();
+  if (!_prefetchPromise || (now - _prefetchTimestamp > CACHE_TTL_MS)) {
+    _prefetchTimestamp = now;
+    _prefetchPromise = fetchPackages();
+  }
+  return _prefetchPromise;
 }
 
 /**
@@ -145,44 +173,30 @@ export async function fetchTopUpPackages(
   iccid: string,
   supplierType?: 'pccw' | 'esimaccess',
 ): Promise<EsimPackage[]> {
-  if (!USE_BACKEND_API) {
-    return supplierFetchTopUp(iccid);
-  }
-
-  try {
-    const resp = await packageService.getRechargePackages(iccid, supplierType);
-    return (resp.packages || []).map(backendPkgToEsimPackage);
-  } catch {
-    return supplierFetchTopUp(iccid);
-  }
+  const resp = await packageService.getRechargePackages(iccid, supplierType);
+  return (resp.packages || []).map(backendPkgToEsimPackage);
 }
 
 // ─── Order eSIM ──────────────────────────────────────────────────────
 
 export async function orderEsim(req: EsimOrderRequest): Promise<EsimOrderResult> {
-  // Orders always go through supplier for now (backend order flow TBD)
   return supplierOrderEsim(req);
 }
 
 // ─── Top Up ──────────────────────────────────────────────────────────
 
 export async function topUp(req: TopUpRequest): Promise<TopUpResult> {
-  if (!USE_BACKEND_API) {
-    return supplierTopUp(req);
-  }
-
   try {
     const resp = await esimService.topup({
       iccid: req.iccid,
       packageCode: req.packageCode,
-      amount: req.amount,
       supplierType: req.supplierType || 'esimaccess',
     });
     return {
-      transactionId: resp.orderId,
+      transactionId: String(resp.id),
       iccid: resp.iccid,
-      expiredTime: '', // 后端未返回过期时间，充值成功后由后端更新
-      totalVolume: 0,  // 后端未返回总量，充值成功后由后端更新
+      expiredTime: '',
+      totalVolume: 0,
       totalDuration: 30,
       orderUsage: 0,
     };
@@ -195,10 +209,6 @@ export async function topUp(req: TopUpRequest): Promise<TopUpResult> {
 // ─── Data Usage ──────────────────────────────────────────────────────
 
 export async function checkDataUsage(iccid: string): Promise<DataUsageResult> {
-  if (!USE_BACKEND_API) {
-    return supplierCheckUsage(iccid);
-  }
-
   try {
     const usage = await esimService.getUsage(iccid);
     return {
@@ -214,27 +224,10 @@ export async function checkDataUsage(iccid: string): Promise<DataUsageResult> {
 
 // ─── Query Profile ───────────────────────────────────────────────────
 
-/**
- * Look up an ICCID's preloaded plan before the user binds it to their
- * EvairSIM account. Pass `supplierType` to choose the provider:
- *   - `'pccw'`  — physical US SIM. Use this from the "Bind your
- *                 SIM Card" flow — cards arrive preloaded and must be
- *                 verified against the carrier registry.
- *   - `'esimaccess'` — digital eSIM. Used from
- *                 the install / post-purchase flow.
- *   - omitted — backend default (esimaccess) for backwards compat.
- *
- * On backend failure we fall back to the legacy direct-supplier call
- * so the dev catalogue / offline simulator keeps working.
- */
 export async function queryProfile(
   iccid: string,
   supplierType?: 'pccw' | 'esimaccess',
 ): Promise<EsimProfileResult> {
-  if (!USE_BACKEND_API) {
-    return supplierQueryProfile(iccid);
-  }
-
   try {
     const preview = await esimService.getPreview(iccid, supplierType);
     return {
@@ -256,10 +249,6 @@ export async function queryProfile(
 // ─── Enable Profile (LPA) ────────────────────────────────────────────
 
 export async function enableProfile(iccid: string): Promise<EnableProfileResult> {
-  if (!USE_BACKEND_API) {
-    return { success: false, status: 'NO_SERVER_API' };
-  }
-
   try {
     const result = await esimService.enableProfile(iccid);
     return { success: true, status: result.status };
@@ -274,9 +263,7 @@ export async function unbindSim(iccid: string): Promise<{ success: boolean }> {
   const { userService } = await import('./api');
 
   try {
-    console.log('[unbindSim] Calling API with iccid:', iccid);
     const result = await userService.unbindSim({ iccid });
-    console.log('[unbindSim] API result:', result);
     return result;
   } catch (err: any) {
     console.error('[unbindSim] API error:', err?.message, 'code:', err?.code);
@@ -290,9 +277,7 @@ export async function bindSim(iccid: string, activationCode?: string): Promise<{
   const { userService } = await import('./api');
 
   try {
-    console.log('[bindSim] Calling API with iccid:', iccid, 'activationCode:', activationCode);
     const result = await userService.bindSim({ iccid, activationCode });
-    console.log('[bindSim] API result:', result);
     return result;
   } catch (err: any) {
     console.error('[bindSim] API error:', err?.message, 'code:', err?.code);
@@ -314,7 +299,6 @@ export {
   formatGB,
   mapRedTeaStatus,
   DEMO_MODE,
-  fetchMultiCountryRegionNames,
 };
 
 export type { FetchPackagesParams, ContinentTab, ActiveSimStatus };

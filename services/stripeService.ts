@@ -33,7 +33,7 @@ export function getStripe(): Promise<Stripe | null> {
 export async function processRechargePayment(params: {
   iccid: string;
   packageCode: string;
-  amount: number;
+  supplierType: 'esimaccess' | 'pccw';
   cardElement: StripeCardElement;
   onStatusChange?: (status: 'creating_order' | 'creating_session' | 'processing_payment' | 'completed' | 'failed', message?: string) => void;
 }): Promise<{
@@ -41,7 +41,7 @@ export async function processRechargePayment(params: {
   rechargeId?: number;
   error?: string;
 }> {
-  const { iccid, packageCode, amount, cardElement, onStatusChange } = params;
+  const { iccid, packageCode, supplierType, cardElement, onStatusChange } = params;
 
   try {
     // Step 1: 创建充值订单
@@ -49,10 +49,10 @@ export async function processRechargePayment(params: {
     const topupResponse = await esimService.topup({
       iccid,
       packageCode,
-      amount,
+      supplierType,
     });
 
-    const rechargeId = topupResponse.rechargeId;
+    const rechargeId = topupResponse.id;
 
     // Step 2: 创建支付会话
     onStatusChange?.('creating_session', 'Creating payment session...');

@@ -17,24 +17,24 @@ import type {
   AddressCreatedResponse,
   AddressUpdatedResponse,
   AddressDeletedResponse,
-  PaginatedData,
 } from './types';
 
 // ─── API 端点 ────────────────────────────────────────────────────────────
 
 const ENDPOINTS = {
   // 用户信息
-  PROFILE: '/h5/user/profile',
-  PASSWORD: '/h5/user/password',
+  PROFILE: '/app/users/me',
+  PASSWORD: '/app/users/password',
 
   // SIM 卡管理
-  SIMS: '/h5/user/sims',
-  BIND_SIM: '/h5/user/sims/bind',
-  UNBIND_SIM: '/h5/user/sims/unbind',
+  SIMS: '/app/users/sims',
+  BIND_SIM: '/app/users/bind-sim',
+  UNBIND_SIM: '/app/users/unbind-sim',
 
   // 地址管理
-  ADDRESSES: '/h5/user/addresses',
-  ADDRESS_BY_ID: (id: string) => `/h5/user/addresses/${encodeURIComponent(id)}`,
+  ADDRESSES: '/app/users/addresses',
+  ADDRESS_BY_ID: (id: string) => `/app/users/addresses/${encodeURIComponent(id)}`,
+  ADDRESS_DEFAULT: (id: string) => `/app/users/addresses/${encodeURIComponent(id)}/default`,
 } as const;
 
 // ─── 用户信息服务 ────────────────────────────────────────────────────────
@@ -68,33 +68,29 @@ export const userService = {
   // ============ SIM 卡管理 ============
 
   /**
-   * 获取用户的 SIM 卡列表
-   * @param status 状态筛选
-   * @param page 页码
-   * @param size 每页数量
+   * 获取用户的 SIM 卡绑定列表
+   * App-tier returns { list: AppUserSimResource[] } (no pagination envelope).
    */
   async getSims(params?: {
-    status?: 'ACTIVE' | 'EXPIRED' | 'PENDING';
-    page?: number;
-    size?: number;
-  }): Promise<PaginatedData<UserSimDto>> {
-    return get<PaginatedData<UserSimDto>>(ENDPOINTS.SIMS, params);
+    status?: string;
+  }): Promise<{ list: UserSimDto[] }> {
+    return get<{ list: UserSimDto[] }>(ENDPOINTS.SIMS, params);
   },
 
   /**
    * 绑定 SIM 卡
-   * @param data ICCID 和激活码
+   * App-tier returns AppUserSimResource (code "201").
    */
-  async bindSim(data: BindSimRequest): Promise<{ success: boolean; sim: UserSimDto }> {
-    return post<{ success: boolean; sim: UserSimDto }>(ENDPOINTS.BIND_SIM, data);
+  async bindSim(data: BindSimRequest): Promise<UserSimDto> {
+    return post<UserSimDto>(ENDPOINTS.BIND_SIM, data);
   },
 
   /**
    * 解绑 SIM 卡
-   * @param data ICCID
+   * App-tier returns { data: null } (code "200").
    */
-  async unbindSim(data: UnbindSimRequest): Promise<{ success: boolean }> {
-    return post<{ success: boolean }>(ENDPOINTS.UNBIND_SIM, data);
+  async unbindSim(data: UnbindSimRequest): Promise<void> {
+    await post(ENDPOINTS.UNBIND_SIM, data);
   },
 
   // ============ 地址管理 ============
@@ -148,10 +144,10 @@ export const userService = {
   },
 
   /**
-   * 设置默认地址（规范无独立 /default 路径，通过 PUT 同资源 + isDefault）
+   * 设置默认地址
    */
   async setDefaultAddress(id: string): Promise<AddressUpdatedResponse> {
-    return put<AddressUpdatedResponse>(ENDPOINTS.ADDRESS_BY_ID(id), { isDefault: true });
+    return put<AddressUpdatedResponse>(ENDPOINTS.ADDRESS_DEFAULT(id));
   },
 };
 

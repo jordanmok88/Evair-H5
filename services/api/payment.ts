@@ -16,10 +16,10 @@ import type {
 // ─── API 端点 ────────────────────────────────────────────────────────────
 
 const ENDPOINTS = {
-  CREATE_PAYMENT: '/h5/payments/create',
-  PAYMENT_BY_ID: (paymentId: string) => `/h5/payments/${paymentId}`,
-  VALIDATE_COUPON: '/h5/coupons/validate',
-  COUPONS: '/h5/coupons',
+  CREATE_PAYMENT: '/app/payments/create',
+  PAYMENT_BY_ID: (paymentId: string) => `/app/payments/${paymentId}`,
+  VALIDATE_COUPON: '/app/coupons/validate',
+  COUPONS: '/app/coupons',
   // Activation Funnel: card-on-file collection (no charge).
   // Lives on the `/app` tier — cookie/JWT scoped to the AppUser.
   SETUP_INTENT: '/app/payments/setup-intent',
@@ -52,9 +52,9 @@ export interface CreateSetupIntentRequest {
 
 export const paymentService = {
   /**
-   * 创建支付会话
-   * @param data 支付信息
-   * @returns 支付 URL 和过期时间
+   * 创建支付会话 (Stripe PaymentIntent)
+   * @param data 支付信息（orderNo + method）
+   * @returns PaymentIntent details (clientSecret, amount, etc.)
    */
   async createPayment(data: CreatePaymentRequest): Promise<CreatePaymentResponse> {
     return post<CreatePaymentResponse>(ENDPOINTS.CREATE_PAYMENT, data);
@@ -98,62 +98,6 @@ export const paymentService = {
     return post<SetupIntentSession>(ENDPOINTS.SETUP_INTENT, payload);
   },
 
-  // ============ 辅助方法 ============
-
-  /**
-   * 格式化金额显示
-   * @param cents 金额（分）
-   * @param currency 货币代码
-   */
-  formatAmount(cents: number, currency: string = 'USD'): string {
-    const amount = cents / 100;
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency,
-    }).format(amount);
-  },
-
-  /**
-   * 跳转到支付页面
-   * @param paymentUrl 支付 URL
-   */
-  redirectToPayment(paymentUrl: string): void {
-    window.location.href = paymentUrl;
-  },
-
-  /**
-   * 计算折扣金额
-   * @param orderAmount 订单金额（分）
-   * @param coupon 优惠券信息
-   */
-  calculateDiscount(
-    orderAmount: number,
-    coupon: ValidateCouponResponse
-  ): number {
-    if (!coupon.valid) return 0;
-
-    let discount = 0;
-
-    if (coupon.discountType === 'PERCENTAGE') {
-      discount = Math.round((orderAmount * (coupon.discountValue ?? 0)) / 100);
-      if (coupon.maxDiscount) {
-        discount = Math.min(discount, coupon.maxDiscount);
-      }
-    } else {
-      discount = coupon.discountValue ?? 0;
-    }
-
-    return discount;
-  },
-
-  /**
-   * 计算最终支付金额
-   * @param orderAmount 订单金额（分）
-   * @param discount 折扣金额（分）
-   */
-  calculateFinalAmount(orderAmount: number, discount: number): number {
-    return Math.max(0, orderAmount - discount);
-  },
 };
 
 export default paymentService;

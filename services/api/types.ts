@@ -30,6 +30,20 @@ export interface PaginatedData<T> {
   size: number;
 }
 
+/**
+ * Laravel pagination envelope — used by App-tier endpoints (e.g. GET /app/orders).
+ * Response shape: { data: T[], meta: { currentPage, lastPage, perPage, total } }
+ */
+export interface LaravelPaginatedData<T> {
+  data: T[];
+  meta: {
+    currentPage: number;
+    lastPage: number;
+    perPage: number;
+    total: number;
+  };
+}
+
 // ─── 错误码枚举 ──────────────────────────────────────────────────────────
 
 export enum ApiErrorCode {
@@ -122,15 +136,20 @@ export interface ResetPasswordRequest {
 
 // ─── 用户模块类型 ────────────────────────────────────────────────────────
 
+/**
+ * App-tier user resource (GET/PUT /app/users/me).
+ * Note: no `avatarUrl`, `role`, or `phone` field in App-tier.
+ * Uses `avatar` instead of `avatarUrl`.
+ */
 export interface UserDto {
-  id: string;
+  id: number;
   name: string;
   email: string;
-  avatarUrl: string | null;
-  phone?: string;
-  role: 'OWNER' | 'MEMBER';
+  avatar: string | null;
+  source: number;
+  status: 'enabled' | 'disabled';
   createdAt: string;
-  preferences?: UserPreferences;
+  updatedAt: string;
 }
 
 export interface UserPreferences {
@@ -146,8 +165,7 @@ export interface UserPreferences {
 
 export interface UpdateProfileRequest {
   name?: string;
-  phone?: string;
-  avatarUrl?: string;
+  avatar?: string;
 }
 
 export interface ChangePasswordRequest {
@@ -156,19 +174,25 @@ export interface ChangePasswordRequest {
   passwordConfirmation: string;
 }
 
+/**
+ * App-tier user-SIM binding resource (GET /app/users/sims).
+ * Each item represents a user-SIM binding with a nested sim summary.
+ */
 export interface UserSimDto {
-  id: string;
-  iccid: string;
-  type: 'ESIM' | 'PHYSICAL';
-  packageName: string;
-  countryCode: string | null;
-  status: 'ACTIVE' | 'EXPIRED' | 'PENDING' | 'INACTIVE';
-  totalVolume: number;
-  usedVolume: number;
-  expiredTime: string;
-  activationDate: string | null;
-  smdpAddress?: string;
-  activationCode?: string;
+  id: number;
+  appUserId: number;
+  simId: number;
+  role: 'owner' | 'member';
+  status: 'active' | 'inactive';
+  boundAt: string;
+  createdAt: string;
+  updatedAt: string;
+  sim: {
+    iccid: string;
+    msisdn: string | null;
+    status: 'active' | 'inactive';
+    supplierId: number;
+  };
 }
 
 export interface BindSimRequest {
@@ -262,6 +286,16 @@ export interface PackageDto {
   description?: string;
   salesCount?: number;
   rating?: number;
+  /**
+   * Supplier region code extracted from locations[], e.g. "NA-3", "EU-30".
+   * Populated by App-tier PackageResource. Null for single-country plans.
+   */
+  supplierRegionCode?: string;
+  /**
+   * Friendly region name, e.g. "Europe (30+ countries)".
+   * Populated by App-tier PackageResource (from supplier_regions table).
+   */
+  supplierRegionName?: string;
 }
 
 export interface PackageListParams {
@@ -281,8 +315,32 @@ export interface PackageListParams {
 }
 
 // ─── 订单模块类型 ────────────────────────────────────────────────────────
+//
+// Migrated to App tier (/app/orders/*).
+// Key differences from legacy H5 tier:
+//   - `orderNumber` instead of `orderNo`
+//   - Status values are lowercase: pending, paid, cancelled, etc.
+//   - Amount is float in dollars (not integer cents)
+//   - `id` is numeric (not string-encoded)
+//   - Order list uses Laravel pagination (data[] + meta)
 
+/** App-tier order type (lowercase) */
+export type AppOrderType = 'package' | 'physical';
+
+/** App-tier order status (lowercase) */
+export type AppOrderStatus =
+  | 'pending'
+  | 'paid'
+  | 'processing'
+  | 'shipped'
+  | 'completed'
+  | 'cancelled'
+  | 'refunded'
+  | 'failed';
+
+/** Legacy H5-tier order type — kept for backward compatibility */
 export type OrderType = 'ESIM' | 'PHYSICAL';
+/** Legacy H5-tier order status — kept for backward compatibility */
 export type OrderStatus =
   | 'PENDING_PAYMENT'
   | 'PAID'
@@ -292,38 +350,77 @@ export type OrderStatus =
   | 'CANCELLED'
   | 'REFUNDED';
 
+/**
+ * Order list item — returned by GET /app/orders (inside `data[]`).
+ * Mirrors App-tier OrderListResource after camelCase conversion.
+ */
 export interface OrderDto {
-  id: string;
-  orderNo: string;
-  type: OrderType;
-  packageName: string;
+  /** Numeric DB primary key */
+  id: number;
+  /** e.g. "ORD-2024-001" */
+  orderNumber: string;
+  type: AppOrderType;
+  status: AppOrderStatus;
+  /** Amount in dollars (float), e.g. 19.99 */
   amount: number;
   currency: string;
-  status: OrderStatus;
-  paymentMethod?: string;
-  paidAt?: string;
   createdAt: string;
+  paidAt: string | null;
+  /** Number of order items */
+  itemsCount: number;
 }
 
+/**
+ * Order detail — returned by GET /app/orders/{id} and POST /app/orders.
+ * Mirrors App-tier OrderDetailResource after camelCase conversion.
+ *
+ * Note: `esim` and `payment` are not documented in the App-tier spec but
+ * are kept as optional fields because the backend OrderProvisioningService
+ * populates them on the same resource (used by pollEsimOrderUntilProvisioned).
+ */
 export interface OrderDetailDto {
-  id: string;
-  orderNo: string;
-  type: OrderType;
-  status: OrderStatus;
+  /** Numeric DB primary key */
+  id: number;
+  /** e.g. "ORD-2024-001" */
+  orderNumber: string;
+  type: AppOrderType;
+  status: AppOrderStatus;
+  /** Amount in dollars (float), e.g. 19.99 */
   amount: number;
   currency: string;
-  package?: OrderPackageInfo;
-  esim?: OrderEsimInfo;
-  shipping?: OrderShippingInfo;
-  payment?: OrderPaymentInfo;
+  paymentMethod: string | null;
+  paymentIntentId: string | null;
   createdAt: string;
+  paidAt: string | null;
+  failedAt: string | null;
+  cancelledAt: string | null;
+  refundedAt: string | null;
+  failureReason: string | null;
+  items: OrderItemDto[];
+  /**
+   * Populated by OrderProvisioningService after SimAsset is created.
+   * Used by pollEsimOrderUntilProvisioned to detect fulfillment success.
+   */
+  esim?: OrderEsimInfo;
+  /** Legacy field — kept for useEsimCheckoutFlow (reads transactionId) */
+  payment?: OrderPaymentInfo;
 }
 
-export interface OrderPackageInfo {
-  packageCode: string;
-  name: string;
-  volume: number;
-  duration: number;
+/** Individual order item (App-tier) */
+export interface OrderItemDto {
+  id: number;
+  productId: number;
+  productName: string;
+  iccid: string | null;
+  unitPrice: number;
+  quantity: number;
+  subtotal: number;
+  productSnapshot?: {
+    name: string;
+    dataLimitBytes: number;
+    validityDays: number;
+    coverageCountries: string[];
+  };
 }
 
 export interface OrderEsimInfo {
@@ -370,21 +467,11 @@ export interface CreatePhysicalOrderRequest {
   shippingAddress: CreateAddressRequest;
 }
 
-export interface CreateOrderResponse {
-  /** DB primary key (string-encoded). Forwarded to Stripe Checkout as
-   *  payment_intent_data.metadata.order_id so checkout.session.completed
-   *  can match the order back. */
-  id: string;
-  orderNo: string;
-  status: OrderStatus;
-  amount: number;
-  currency: string;
-  shippingFee?: number;
-  totalAmount?: number;
-  packageCode?: string;
-  packageName?: string;
-  createdAt: string;
-}
+/**
+ * Response from POST /app/orders (code "201").
+ * Returns full OrderDetailResource — same shape as GET /app/orders/{id}.
+ */
+export type CreateOrderResponse = OrderDetailDto;
 
 export interface CreateTopupOrderRequest {
   iccid: string;
@@ -403,8 +490,8 @@ export interface CreateTopupOrderResponse {
 }
 
 export interface OrderListParams {
-  status?: OrderStatus;
-  type?: OrderType;
+  status?: AppOrderStatus;
+  type?: AppOrderType;
   page?: number;
   size?: number;
 }
@@ -414,9 +501,7 @@ export interface CancelOrderRequest {
 }
 
 export interface CancelOrderResponse {
-  success: boolean;
-  refundAmount?: number;
-  refundStatus?: string;
+  data: null;
 }
 
 export interface RefundRequest {
@@ -461,8 +546,11 @@ export interface CreatePaymentRequest {
 
 export interface CreatePaymentResponse {
   paymentId: string;
-  paymentUrl: string;
-  expiresAt: string;
+  paymentIntentId: string;
+  clientSecret: string;
+  orderNo: string;
+  amount: number;
+  currency: string;
 }
 
 export interface PaymentDto {
@@ -482,13 +570,13 @@ export interface ValidateCouponRequest {
 
 export interface ValidateCouponResponse {
   valid: boolean;
-  couponId?: string;
-  discountType?: 'PERCENTAGE' | 'FIXED';
-  discountValue?: number;
-  discountAmount?: number;
-  minOrderAmount?: number;
-  maxDiscount?: number;
-  expiresAt?: string;
+  couponId: string;
+  discountType: 'PERCENTAGE' | 'FIXED';
+  discountValue: number;
+  discountAmount: number;
+  minOrderAmount: number;
+  maxDiscount: number;
+  expiresAt: string;
 }
 
 export interface CouponDto {
@@ -496,14 +584,14 @@ export interface CouponDto {
   userCouponId: string;
   code: string;
   name: string;
-  description?: string;
+  description: string;
   discountType: 'PERCENTAGE' | 'FIXED';
   discountValue: number;
   minOrderAmount: number;
-  maxDiscount?: number;
+  maxDiscount: number;
   status: 'active' | 'used' | 'expired';
-  startsAt?: string;
-  expiresAt?: string;
+  startsAt: string;
+  expiresAt: string;
 }
 
 // ─── eSIM 模块类型 ────────────────────────────────────────────────────────
@@ -511,28 +599,32 @@ export interface CouponDto {
 export interface EsimDetailDto {
   iccid: string;
   status: string;
-  package?: {
-    packageCode: string;
-    name: string;
-    volume: number;
-    duration: number;
-  };
-  usage?: {
-    totalVolume: number;
-    usedVolume: number;
-    remainingVolume: number;
-  };
-  validity?: {
-    activationDate: string;
-    expiredTime: string;
-    daysRemaining: number;
-  };
-  activation?: {
-    smdpAddress: string;
-    activationCode: string;
-    qrCodeUrl: string;
-    lpaString: string;
-  };
+  supplierType: string;
+  isEsim: boolean;
+  packageName: string;
+  countryCode: string;
+  totalBytes: number;
+  usedBytes: number;
+  remainingBytes: number;
+  totalVolume: number;
+  usedVolume: number;
+  remainingVolume: number;
+  usagePercent: number;
+  activatedAt: string;
+  expiredAt: string;
+  activationDate: string;
+  expiredTime: string;
+  lpaCode: string;
+  lpaString: string;
+  smdpAddress: string;
+  activationCode: string;
+  qrCodeUrl: string | null;
+  isActive: boolean;
+  isExpired: boolean;
+  autoRenew: boolean;
+  autoRenewNextChargeAt: string | null;
+  autoRenewDisabledReason: string | null;
+  createdAt: string;
 }
 
 export interface EsimUsageParams {
@@ -562,19 +654,19 @@ export interface EsimUsageDto {
 export interface TopupRequest {
   iccid: string;
   packageCode: string;
-  amount: number;
-  supplierType?: 'esimaccess' | 'pccw';
+  supplierType: 'esimaccess' | 'pccw';
 }
 
+/** POST /app/recharge (RechargeController@store) — replaces deprecated /h5/orders/topup */
 export interface TopupResponse {
-  rechargeId: number;
+  id: number;
   orderId: string;
-  status: 'PENDING_PAYMENT';
+  orderStatus: 'Pending' | 'Processing' | 'Completed' | 'Failed' | 'Cancelled' | 'Refunded';
+  paymentStatus: 'Unpaid' | 'Pending' | 'Paid' | 'Failed' | 'Refunded';
   amount: number;
   currency: string;
   iccid: string;
   packageCode: string;
-  createdAt: string;
 }
 
 // ─── 充值支付类型 ───────────────────────────────────────────────────────
@@ -585,13 +677,14 @@ export interface CreatePaymentSessionRequest {
   paymentMethod?: RechargePaymentMethod;
 }
 
+/** POST /app/recharge/{id}/pay (PaymentController@createRechargePayment) */
 export interface CreatePaymentSessionResponse {
-  id: number;
-  orderId: string;
+  paymentId: string;
+  paymentIntentId: string;
+  clientSecret: string;
+  orderNo: string;
   amount: number;
   currency: string;
-  clientSecret: string;
-  paymentIntentId: string;
 }
 
 export interface RechargeRecordDetailResponse {
