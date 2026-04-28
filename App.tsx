@@ -25,7 +25,7 @@ import { Lock } from 'lucide-react';
 import { MOCK_COUNTRIES, MOCK_PLANS_US, MOCK_ACTIVE_SIMS, MOCK_NOTIFICATIONS, CARRIER_MAP } from './constants';
 import { checkDataUsage, prefetchPackages, DEMO_MODE, mapRedTeaStatus, bindSim } from './services/dataService';
 import { supabaseConfigured, fetchNotifications, logSimActivation } from './services/supabase';
-import { authService, userService, type UserDto } from './services/api';
+import { authService, userService, type UserDto, type UserSimDto } from './services/api';
 import { initPush, unregisterPush } from './services/pushService';
 import { computeTestModeEnabled, dismissTestModeForSession, isAppPath, isAppPreviewHash, stripTestModeFromUrl } from './utils/testMode';
 import { getRoute, type Route } from './utils/routing';
@@ -163,10 +163,9 @@ function CustomerApp() {
     userService.getProfile()
       .then(profile => {
         setUser({
-          id: profile.id,
+          id: String(profile.id),
           name: profile.name,
           email: profile.email,
-          role: profile.role,
         });
       })
       .catch(() => {
@@ -355,93 +354,18 @@ function CustomerApp() {
   }, [activeSims, mockSimIds]);
 
   // 转换后端 SIM 数据为前端格式
-  const convertUserSimToActiveSim = (userSim: {
-    id: string;
-    iccid: string;
-    type: 'ESIM' | 'PHYSICAL';
-    packageName: string;
-    countryCode: string | null;
-    status: 'ACTIVE' | 'EXPIRED' | 'PENDING' | 'INACTIVE';
-    totalVolume: number;
-    usedVolume: number;
-    expiredTime: string;
-    activationDate: string | null;
-  }): ActiveSim => {
-    let totalGB = userSim.totalVolume / (1024 * 1024 * 1024);
-    let usedGB = userSim.usedVolume / (1024 * 1024 * 1024);
-    if (totalGB > 500) totalGB = 3;
-    if (usedGB > totalGB) usedGB = 0;
-
-    // 国家码到信息映射
-    const countryCodeToInfo: Record<string, { name: string; flag: string }> = {
-      'US': { name: 'United States', flag: '🇺🇸' },
-      'CN': { name: 'China', flag: '🇨🇳' },
-      'JP': { name: 'Japan', flag: '🇯🇵' },
-      'KR': { name: 'South Korea', flag: '🇰🇷' },
-      'GB': { name: 'United Kingdom', flag: '🇬🇧' },
-      'AU': { name: 'Australia', flag: '🇦🇺' },
-      'CA': { name: 'Canada', flag: '🇨🇦' },
-      'DE': { name: 'Germany', flag: '🇩🇪' },
-      'FR': { name: 'France', flag: '🇫🇷' },
-      'SG': { name: 'Singapore', flag: '🇸🇬' },
-      'TH': { name: 'Thailand', flag: '🇹🇭' },
-      'MY': { name: 'Malaysia', flag: '🇲🇾' },
-      'ID': { name: 'Indonesia', flag: '🇮🇩' },
-      'VN': { name: 'Vietnam', flag: '🇻🇳' },
-      'PH': { name: 'Philippines', flag: '🇵🇭' },
-      'TW': { name: 'Taiwan', flag: '🇹🇼' },
-      'HK': { name: 'Hong Kong', flag: '🇭🇰' },
-      'IN': { name: 'India', flag: '🇮🇳' },
-      'BR': { name: 'Brazil', flag: '🇧🇷' },
-      'TR': { name: 'Turkey', flag: '🇹🇷' },
-      'MX': { name: 'Mexico', flag: '🇲🇽' },
-      'ES': { name: 'Spain', flag: '🇪🇸' },
-      'IT': { name: 'Italy', flag: '🇮🇹' },
-      'NL': { name: 'Netherlands', flag: '🇳🇱' },
-      'CH': { name: 'Switzerland', flag: '🇨🇭' },
-      'SE': { name: 'Sweden', flag: '🇸🇪' },
-      'NO': { name: 'Norway', flag: '🇳🇴' },
-      'DK': { name: 'Denmark', flag: '🇩🇰' },
-      'FI': { name: 'Finland', flag: '🇫🇮' },
-      'NZ': { name: 'New Zealand', flag: '🇳🇿' },
-    };
-
-    // 从 packageName 提取国家信息（如 "United States 1GB 7Days" -> "US"）
-    const extractCountryFromPackageName = (packageName: string): { code: string; name: string; flag: string } => {
-      // 匹配包名开头可能是国家名的地方
-      for (const [code, info] of Object.entries(countryCodeToInfo)) {
-        if (packageName.toLowerCase().startsWith(info.name.toLowerCase()) ||
-            packageName.toLowerCase().startsWith(code.toLowerCase())) {
-          return { code, ...info };
-        }
-      }
-      return { code: '', name: 'Unknown', flag: '🌍' };
-    };
-
-    // 优先使用 countryCode，否则从 packageName 提取
-    // packageName 可能为 null（通过 H5 老路径 POST /h5/user/sims/bind 绑定的卡
-    // 没有 package_name），所以用可选链 ?. 和 || '' 防止 null.startsWith 崩溃。
-    const countryCode = userSim.countryCode ||
-      (userSim.packageName?.startsWith('United States') || userSim.packageName?.startsWith('USA') ? 'US' : '');
-    const countryInfo = countryCode && countryCodeToInfo[countryCode]
-      ? { code: countryCode, ...countryCodeToInfo[countryCode] }
-      : extractCountryFromPackageName(userSim.packageName || '');
-
-    // 转换状态：inactive/INACTIVE -> PENDING_ACTIVATION
-    const mapStatus = (status: string): ActiveSim['status'] => {
-      const upper = status.toUpperCase();
-      if (upper === 'PENDING' || upper === 'INACTIVE') return 'PENDING_ACTIVATION';
-      return status as ActiveSim['status'];
-    };
-
+  // App-tier UserSimDto is a binding record with nested sim summary
+  // (iccid, msisdn, status, supplierId). Plan/usage details come from
+  // the live usage fetch (checkDataUsage) that runs immediately after.
+  const convertUserSimToActiveSim = (userSim: UserSimDto): ActiveSim => {
     return {
-      id: userSim.id,
-      iccid: userSim.iccid,
+      id: String(userSim.id),
+      iccid: userSim.sim.iccid,
       country: {
-        id: countryInfo.code.toLowerCase(),
-        name: countryInfo.name,
-        flag: countryInfo.flag,
-        countryCode: countryInfo.code,
+        id: '',
+        name: 'Unknown',
+        flag: '\u{1F30D}',
+        countryCode: '',
         region: '',
         startPrice: 0,
         networkCount: 0,
@@ -452,31 +376,29 @@ function CustomerApp() {
         isPopular: false,
       },
       plan: {
-        id: userSim.id,
-        name: userSim.packageName,
-        data: `${totalGB.toFixed(1)} GB`,
-        days: 30, // 默认值
+        id: String(userSim.id),
+        name: '',
+        data: '',
+        days: 30,
         price: 0,
         features: [],
       },
-      type: userSim.type,
-      activationDate: userSim.activationDate || new Date().toISOString(),
-      expiryDate: userSim.expiredTime,
-      dataTotalGB: Math.round(totalGB * 10) / 10,
-      dataUsedGB: Math.round(usedGB * 10) / 10,
-      status: mapStatus(userSim.status),
+      type: 'ESIM',
+      activationDate: userSim.boundAt || new Date().toISOString(),
+      expiryDate: '',
+      dataTotalGB: 0,
+      dataUsedGB: 0,
+      status: userSim.status === 'active' ? 'ACTIVE' : 'PENDING_ACTIVATION',
     };
   };
 
-  // 从后端获取用户 SIM 卡列表 + 实时用量
+  // 从后端获取用户 SIM 卡绑定列表 + 实时用量
   //
-  // `/h5/user/sims` returns the bound-SIM list with the cached
-  // `traffic_limit` / `traffic_usage` columns from our DB — which for
-  // physical SIMs is usually the purchased-plan total with `used=0`, so the
-  // UI would show "3 GB / 3 GB remaining, 0 used" even when the card has
-  // actually consumed data.
+  // `/app/users/sims` returns the user-SIM binding records with a nested
+  // sim summary (iccid, msisdn, status, supplierId). Plan/usage details
+  // are NOT included — those come from the live usage fetch per SIM.
   //
-  // For live usage we hit `/h5/esim/{iccid}/usage` per SIM — that endpoint
+  // For live usage we hit the esim usage endpoint per SIM — that endpoint
   // dispatches to the right supplier provider (eSIM vs. physical) and
   // returns the real volume/usage from upstream.
   // We fan this out in parallel after getSims() and merge the result in.
@@ -640,10 +562,9 @@ function CustomerApp() {
   const handleLoginSuccess = (userData: UserDto) => {
     setIsLoggedIn(true);
     setUser({
-      id: userData.id,
+      id: String(userData.id),
       name: userData.name,
       email: userData.email,
-      role: userData.role,
     });
     setIsLoginModalOpen(false);
 

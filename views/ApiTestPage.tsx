@@ -50,9 +50,9 @@ const MODULES = {
     name: '用户服务',
     methods: {
       getProfile: { name: '获取用户信息', params: [] },
-      updateProfile: { name: '更新用户信息', params: ['name?', 'phone?'] },
+      updateProfile: { name: '更新用户信息', params: ['name?'] },
       changePassword: { name: '修改密码', params: ['currentPassword', 'password', 'passwordConfirmation'] },
-      getSims: { name: '获取SIM卡列表', params: ['status?', 'page?', 'size?'] },
+      getSims: { name: '获取SIM卡列表', params: ['status?'] },
       bindSim: { name: '绑定SIM卡', params: ['iccid', 'activationCode?'] },
       unbindSim: { name: '解绑SIM卡', params: ['iccid'] },
       getAddresses: { name: '获取地址列表', params: [] },
@@ -76,7 +76,6 @@ const MODULES = {
     methods: {
       createEsimOrder: { name: '创建eSIM订单', params: ['packageCode', 'email', 'quantity?'] },
       createPhysicalOrder: { name: '创建实体SIM订单', params: ['productId', 'quantity', 'email'] },
-      createTopupOrder: { name: '创建充值订单', params: ['iccid', 'packageCode', 'amount'] },
       getOrders: { name: '获取订单列表', params: ['status?', 'type?', 'page?', 'size?'] },
       getOrderDetail: { name: '获取订单详情', params: ['orderNo'] },
       cancelOrder: { name: '取消订单', params: ['orderNo', 'reason?'] },
@@ -90,7 +89,7 @@ const MODULES = {
     methods: {
       getDetail: { name: '获取eSIM详情', params: ['iccid'] },
       getUsage: { name: '查询用量', params: ['iccid', 'daily?', 'page?', 'size?'] },
-      topup: { name: 'eSIM充值', params: ['iccid', 'packageCode', 'amount'] },
+      topup: { name: 'eSIM充值', params: ['iccid', 'packageCode', 'supplierType'] },
     },
   },
   payment: {
@@ -495,7 +494,6 @@ async function executeUserMethod(method: string, params: Record<string, string>)
     case 'updateProfile':
       return userService.updateProfile({
         name: params.name,
-        phone: params.phone,
       } as UpdateProfileRequest);
     case 'changePassword':
       return userService.changePassword({
@@ -505,9 +503,7 @@ async function executeUserMethod(method: string, params: Record<string, string>)
       });
     case 'getSims':
       return userService.getSims({
-        status: params.status as 'ACTIVE' | 'EXPIRED' | 'PENDING',
-        page: params.page ? parseInt(params.page) : undefined,
-        size: params.size ? parseInt(params.size) : undefined,
+        status: params.status,
       });
     case 'bindSim':
       return userService.bindSim({
@@ -587,12 +583,6 @@ async function executeOrderMethod(method: string, params: Record<string, string>
           country: params.country || DEFAULT_PARAMS.country,
         },
       } as CreatePhysicalOrderRequest);
-    case 'createTopupOrder':
-      return orderService.createTopupOrder({
-        iccid: params.iccid || DEFAULT_PARAMS.iccid,
-        packageCode: params.packageCode || DEFAULT_PARAMS.packageCode,
-        amount: parseInt(params.amount || DEFAULT_PARAMS.amount),
-      });
     case 'getOrders':
       return orderService.getOrders({
         status: params.status as OrderStatus | undefined,
@@ -637,7 +627,7 @@ async function executeEsimMethod(method: string, params: Record<string, string>)
       return esimService.topup({
         iccid: params.iccid || DEFAULT_PARAMS.iccid,
         packageCode: params.packageCode || DEFAULT_PARAMS.packageCode,
-        amount: parseInt(params.amount || DEFAULT_PARAMS.amount),
+        supplierType: (params.supplierType || 'esimaccess') as 'esimaccess' | 'pccw',
       });
     default:
       throw new Error(`Unknown method: ${method}`);

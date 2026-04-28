@@ -22,8 +22,18 @@ interface OrderCardPickerProps {
 }
 
 const STATUS_PALETTE: Record<string, { bg: string; fg: string; label: string }> = {
+  // App tier uses lowercase statuses
+  paid: { bg: 'bg-emerald-50', fg: 'text-emerald-700', label: 'Paid' },
+  completed: { bg: 'bg-emerald-50', fg: 'text-emerald-700', label: 'Paid' },
+  pending: { bg: 'bg-amber-50', fg: 'text-amber-700', label: 'Pending' },
+  processing: { bg: 'bg-amber-50', fg: 'text-amber-700', label: 'Processing' },
+  failed: { bg: 'bg-red-50', fg: 'text-red-700', label: 'Failed' },
+  cancelled: { bg: 'bg-slate-100', fg: 'text-slate-600', label: 'Cancelled' },
+  refunded: { bg: 'bg-slate-100', fg: 'text-slate-600', label: 'Refunded' },
+  // Legacy uppercase statuses (backward compat)
   PAID: { bg: 'bg-emerald-50', fg: 'text-emerald-700', label: 'Paid' },
   COMPLETED: { bg: 'bg-emerald-50', fg: 'text-emerald-700', label: 'Paid' },
+  PENDING_PAYMENT: { bg: 'bg-amber-50', fg: 'text-amber-700', label: 'Pending' },
   PENDING: { bg: 'bg-amber-50', fg: 'text-amber-700', label: 'Pending' },
   PROCESSING: { bg: 'bg-amber-50', fg: 'text-amber-700', label: 'Processing' },
   FAILED: { bg: 'bg-red-50', fg: 'text-red-700', label: 'Failed' },
@@ -32,8 +42,9 @@ const STATUS_PALETTE: Record<string, { bg: string; fg: string; label: string }> 
 };
 
 function formatStatus(status: string): { bg: string; fg: string; label: string } {
-  const upper = (status || '').toUpperCase();
-  return STATUS_PALETTE[upper] ?? { bg: 'bg-slate-100', fg: 'text-slate-600', label: status || 'Unknown' };
+  // Try exact match first (App tier lowercase), then uppercase fallback
+  return STATUS_PALETTE[status] ?? STATUS_PALETTE[(status || '').toUpperCase()]
+    ?? { bg: 'bg-slate-100', fg: 'text-slate-600', label: status || 'Unknown' };
 }
 
 function formatAmount(amount: number, currency: string): string {
@@ -63,7 +74,7 @@ export default function OrderCardPicker({ open, onClose, onPick }: OrderCardPick
       .getOrders({ size: 20 })
       .then(res => {
         if (cancelled) return;
-        setOrders(res.list ?? []);
+        setOrders(res.data ?? []);
       })
       .catch(err => {
         if (cancelled) return;
@@ -125,7 +136,7 @@ export default function OrderCardPicker({ open, onClose, onPick }: OrderCardPick
               {orders.map(order => {
                 const status = formatStatus(order.status);
                 return (
-                  <li key={order.id ?? order.orderNo}>
+                  <li key={order.id ?? order.orderNumber}>
                     <button
                       onClick={() => onPick(order)}
                       className="w-full flex items-center gap-3 px-4 py-3 text-left active:bg-slate-50"
@@ -135,10 +146,10 @@ export default function OrderCardPicker({ open, onClose, onPick }: OrderCardPick
                       </div>
                       <div className="flex-1 min-w-0">
                         <div className="font-medium text-slate-900 truncate text-sm">
-                          {order.packageName || order.orderNo}
+                          {order.orderNumber}
                         </div>
                         <div className="text-xs text-slate-500 truncate">
-                          #{order.orderNo}
+                          #{order.orderNumber}
                         </div>
                       </div>
                       <div className="text-right shrink-0">

@@ -118,7 +118,6 @@ i18n/               — Translation files (en.ts, zh.ts, es.ts)
 | `App.tsx` | Main routing, mode detection, global state |
 | `services/api/client.ts` | Core API client with interceptors |
 | `services/api/types.ts` | All backend API TypeScript types |
-| `docs/BACKEND_API_SPEC.md` | Complete API documentation |
 
 ## UI/UX Conventions
 

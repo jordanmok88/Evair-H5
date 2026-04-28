@@ -7,7 +7,7 @@
  *   1. Confirms the plan + price.
  *   2. Captures / pre-fills delivery email (defaults to the logged-in
  *      user's email — login is enforced one layer up).
- *   3. POSTs `/h5/orders/esim` to create a PENDING Laravel order (so
+ *   3. POSTs `/app/orders` to create a PENDING Laravel order (so
  *      Stripe's `checkout.session.completed` webhook can match the
  *      payment back via `payment_intent_data.metadata.order_id`).
  *   4. POSTs `/api/stripe-checkout` with EXPLICIT `successUrl` /
@@ -15,13 +15,13 @@
  *      (not the H5 root), plus the order id/no for webhook linkage.
  *      The success URL is consumed by `useEsimCheckoutFlow` mounted on
  *      `TravelEsimPage`.
- *   5. Stamps `pending_esim_order` (orderNo + email + packageName) in
+ *   5. Stamps `pending_esim_order` (orderId + orderNumber + email + packageName) in
  *      localStorage so `useEsimCheckoutFlow` can poll the order on
  *      return without re-deriving anything from URL params.
  *
  * Provisioning happens server-side via the Stripe webhook; the drawer
  * never calls supplier APIs. The parent's `useEsimCheckoutFlow` polls
- * `/h5/orders/{order_no}` until `OrderProvisioningService` writes the
+ * `/app/orders/{id}` until `OrderProvisioningService` writes the
  * SimAsset and the response exposes the `esim` block.
  */
 
@@ -141,7 +141,7 @@ const DesktopEsimCheckoutDrawer: React.FC<DesktopEsimCheckoutDrawerProps> = ({
                     transactionId: txnId,
                     countryCode: countryCode.toUpperCase(),
                     orderId: order.id,
-                    orderNo: order.orderNo,
+                    orderNo: order.orderNumber,
                     userId: undefined, // desktop flow doesn't have user.id handy
                     successUrl,
                     cancelUrl,
@@ -163,7 +163,8 @@ const DesktopEsimCheckoutDrawer: React.FC<DesktopEsimCheckoutDrawerProps> = ({
             // Same key + shape as mobile ShopView so the shared
             // useEsimCheckoutFlow hook works without branching.
             localStorage.setItem('pending_esim_order', JSON.stringify({
-                orderNo: order.orderNo,
+                orderId: order.id,
+                orderNo: order.orderNumber,
                 packageName,
                 email,
                 sessionId: data.sessionId,

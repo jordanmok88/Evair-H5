@@ -5,7 +5,7 @@ import { Country, Plan, SimType, User, SimCardProduct, EsimPackage, EsimCountryG
 import { MOCK_COUNTRIES } from '../constants';
 import AmazonPhysicalSimPicker from '../components/AmazonPhysicalSimPicker';
 import FlagIcon from '../components/FlagIcon';
-import { fetchPackages, prefetchPackages, groupPackagesByLocation, formatVolume, formatPrice, retailPrice, packagePriceUsd, orderEsim, CONTINENT_TABS, type ContinentTab, formatGB, POPULAR_COUNTRY_CODES, fetchMultiCountryRegionNames } from '../services/dataService';
+import { fetchPackages, prefetchPackages, groupPackagesByLocation, formatVolume, formatPrice, retailPrice, packagePriceUsd, orderEsim, CONTINENT_TABS, type ContinentTab, formatGB, POPULAR_COUNTRY_CODES } from '../services/dataService';
 import { orderService } from '../services/api';
 import { pollEsimOrderUntilProvisioned } from '../services/api/order';
 import type { OrderDetailDto } from '../services/api/types';
@@ -246,14 +246,9 @@ const ShopView: React.FC<ShopViewProps> = ({
     setEsimLoading(true);
     setEsimError(null);
     try {
-      // Use eSIMAccess API directly via Netlify proxy (backend not yet syncing real package data)
-      // Fetch packages + multi-country region names in parallel so the group
-      // labels ("Europe (30+ countries)") land on first render rather than
-      // falling back to raw region codes ("EU-30 (30 countries)").
-      const [packages] = await Promise.all([
-        force ? fetchPackages() : prefetchPackages(),
-        fetchMultiCountryRegionNames().catch(() => undefined),
-      ]);
+      // Region names (e.g. "Europe (30+ countries)") are now pre-computed
+      // by the backend (supplierRegionName field), no separate fetch needed.
+      const packages = force ? await fetchPackages() : await prefetchPackages();
       const groups = groupPackagesByLocation(packages);
       setEsimGroups(groups);
     } catch (err: any) {
@@ -449,7 +444,7 @@ const ShopView: React.FC<ShopViewProps> = ({
     // 新路径里 Stripe checkout.session.completed Webhook 是兜底，浏览器
     // 关掉也能在后端走完履约，前端只是负责"轮询拿结果展示给当前会话"。
     //
-    // 必须登录：/h5/orders/esim 是 auth:h5 受保护接口，且后续退款/客诉链路
+    // 必须登录：/app/orders 是 auth:app 受保护接口，且后续退款/客诉链路
     // 也要绑定 user_id；guest 订单是另一个独立工作量。
     if (!isLoggedIn) {
       onLoginRequest();
@@ -468,7 +463,7 @@ const ShopView: React.FC<ShopViewProps> = ({
     const countryCode = selectedEsimGroup?.flag || selectedEsimGroup?.locationCode.split(',')[0];
 
     try {
-      // Step 1: 后端建 PENDING 单（拿 id + order_no）
+      // Step 1: 后端建 PENDING 单（拿 id + order_number）
       const order = await orderService.createEsimOrder({
         packageCode: selectedEsimPkg.packageCode,
         email,
@@ -487,7 +482,7 @@ const ShopView: React.FC<ShopViewProps> = ({
           transactionId: txnId,
           countryCode,
           orderId: order.id,
-          orderNo: order.orderNo,
+          orderNo: order.orderNumber,
           userId: user?.id,
         }),
       });
@@ -497,10 +492,11 @@ const ShopView: React.FC<ShopViewProps> = ({
       try { data = JSON.parse(text); } catch { throw new Error('Payment service unavailable. Please try again.'); }
       if (!res.ok || !data.url) throw new Error(data.error || data.detail || 'Failed to create payment session');
 
-      // Step 3: 回跳后只需要 order_no 就能轮询 — 不再保留 transactionId/amount
+      // Step 3: 回跳后只需要 order_id 就能轮询 — 不再保留 transactionId/amount
       // （供应商订单号由 Webhook 履约后写在 OrderDetailResource.esim 里返回）
       localStorage.setItem('pending_esim_order', JSON.stringify({
-        orderNo: order.orderNo,
+        orderId: order.id,
+        orderNo: order.orderNumber,
         packageName,
         email,
         countryCode,
@@ -520,7 +516,7 @@ const ShopView: React.FC<ShopViewProps> = ({
   // Handle return from Stripe Checkout
   //
   // 新流程（2026-04 起）：履约由后端 Webhook 完成，本副作用只负责轮询
-  // GET /h5/orders/{order_no}，等 esim 字段落库后展示给当前会话。
+  // GET /app/orders/{id}，等 esim 字段落库后展示给当前会话。
   // 浏览器在支付完关掉也没关系 —— 后端 Webhook 路径已经把 SimAsset 落了，
   // 用户下次进 My SIMs 也能看到。这里只是给"支付完不关浏览器"的用户
   // 一个即时确认页。
@@ -539,7 +535,7 @@ const ShopView: React.FC<ShopViewProps> = ({
     const pendingRaw = localStorage.getItem('pending_esim_order');
     if (!pendingRaw) return;
 
-    let pending: { orderNo?: string; packageName?: string; email?: string };
+    let pending: { orderId?: number; orderNo?: string; packageName?: string; email?: string };
     try {
       pending = JSON.parse(pendingRaw);
     } catch (err) {
@@ -552,17 +548,17 @@ const ShopView: React.FC<ShopViewProps> = ({
     }
     localStorage.removeItem('pending_esim_order');
 
-    if (!pending.orderNo) {
+    if (!pending.orderId) {
       // 老格式（迁移前的 transactionId/amount/sessionId 三件套）已经没法
       // 自动履约 —— 当时 orderEsim() 直接调供应商，现在彻底走后端 Webhook，
-      // 这条没 order_no 的记录意味着用户在迁移窗口期支付了一笔。
+      // 这条没 order_id 的记录意味着用户在迁移窗口期支付了一笔。
       setOrderError(
         'We could not match your payment to a pending order. Please contact support — your card was charged.'
       );
       return;
     }
 
-    const { orderNo } = pending;
+    const { orderId } = pending;
     setIsProcessing(true);
     setOrderError(null);
     setEmailSent(false);
@@ -574,7 +570,7 @@ const ShopView: React.FC<ShopViewProps> = ({
         // Webhook 履约通常 < 10s，给到 2 分钟封顶，覆盖供应商抖动。
         // 轮询条件：esim 字段出现 = 履约成功；status=cancelled/refunded/failed = 终止；
         // 超时 = 友好提示（订单可能仍在履约，让用户去 My SIMs 看）。
-        const order = await pollEsimOrderUntilProvisioned(orderNo, {
+        const order = await pollEsimOrderUntilProvisioned(orderId, {
           intervalMs: 3000,
           maxAttempts: 40,
           isCancelled: () => cancelled,
@@ -591,7 +587,7 @@ const ShopView: React.FC<ShopViewProps> = ({
         }
 
         const result: EsimOrderResult = {
-          orderNo: order.orderNo,
+          orderNo: order.orderNumber,
           transactionId: order.payment?.transactionId ?? '',
           iccid: esim.iccid,
           smdpAddress: esim.smdpAddress,
@@ -613,7 +609,7 @@ const ShopView: React.FC<ShopViewProps> = ({
               smdpAddress: esim.smdpAddress,
               activationCode: esim.activationCode,
               lpaString: esim.lpaString,
-              orderNo: order.orderNo,
+              orderNo: order.orderNumber,
               packageName: pending.packageName,
             }),
           })

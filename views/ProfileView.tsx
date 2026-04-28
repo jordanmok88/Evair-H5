@@ -10,7 +10,7 @@ import type { UserDto } from '../services/api/types';
 
 interface ProfileViewProps {
   isLoggedIn: boolean;
-  user?: { name: string; role: string; email: string };
+  user?: { name: string; role?: string; email: string };
   onLogin: () => void;
   onSignup: () => void;
   onLogout: () => void;
@@ -18,8 +18,8 @@ interface ProfileViewProps {
   onOpenInbox: () => void;
   notifications?: AppNotification[];
   onBack?: () => void;
-  onUserUpdate?: (user: { name: string; role: string; email: string }) => void;
-}
+  onUserUpdate?: (user: { name: string; role?: string; email: string }) => void;
+};
 
 type ProfileScreen = 'MAIN' | 'ACCOUNT' | 'INBOX' | 'ORDERS' | 'CURRENCY' | 'HELP' | 'INFO' | 'LANGUAGES' | 'REFUND' | 'TERMS' | 'ABOUT' | 'PRIVACY' | 'ACCEPTABLE' | 'COOKIE' | 'REFERRAL';
 
@@ -52,7 +52,7 @@ const ScreenHeader = ({ title, onBack }: { title: string, onBack: () => void }) 
 
 // --- Sub-Views ---
 
-const AccountInfoView = ({ onBack, user, onUserUpdate }: { onBack: () => void, user?: any, onUserUpdate?: (user: { name: string; role: string; email: string }) => void }) => {
+const AccountInfoView = ({ onBack, user, onUserUpdate }: { onBack: () => void, user?: any, onUserUpdate?: (user: { name: string; role?: string; email: string }) => void }) => {
     const [promoEnabled, setPromoEnabled] = useState(true);
     const [isEditing, setIsEditing] = useState(false);
     const [editName, setEditName] = useState(user?.name || '');
@@ -86,7 +86,7 @@ const AccountInfoView = ({ onBack, user, onUserUpdate }: { onBack: () => void, u
         setSaveError('');
         try {
             const updated = await userService.updateProfile({ name: editName.trim() });
-            onUserUpdate?.({ name: updated.name, role: updated.role, email: updated.email });
+            onUserUpdate?.({ name: updated.name, email: updated.email });
             setIsEditing(false);
             setSaveSuccess(true);
             setTimeout(() => setSaveSuccess(false), 2000);
@@ -1299,7 +1299,7 @@ const ProfileView: React.FC<ProfileViewProps> = ({ isLoggedIn, user, onLogin, on
                         <div className="w-12 h-12 rounded-full bg-gradient-to-br from-red-500 to-orange-500 shadow-inner"></div>
                         <div>
                             <h2 className="text-lg font-bold text-slate-900 leading-tight">{user.name}</h2>
-                            <p className="text-slate-500 text-sm font-medium">{user.role}</p>
+                            {user.role && <p className="text-slate-500 text-sm font-medium">{user.role}</p>}
                         </div>
                     </div>
 

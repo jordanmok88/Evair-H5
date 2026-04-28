@@ -25,6 +25,8 @@ export interface RechargePaymentConfig {
   packageCode: string;
   /** 金额 */
   amount: number;
+  /** 供应商类型 */
+  supplierType: 'esimaccess' | 'pccw';
 }
 
 export interface StripePaymentModalProps {
@@ -155,20 +157,20 @@ const StripePaymentModal: React.FC<StripePaymentModalProps> = ({
         const topupResponse = await esimService.topup({
           iccid: rechargeConfig.iccid,
           packageCode: rechargeConfig.packageCode,
-          amount: rechargeConfig.amount,
+          supplierType: rechargeConfig.supplierType,
         });
 
         if (cancelled) return;
 
         // Step 2: 创建支付会话
         setInternalStatus('creating_session');
-        const session = await esimService.createRechargePayment(topupResponse.rechargeId);
+        const session = await esimService.createRechargePayment(topupResponse.id);
 
         if (cancelled) return;
 
         // 成功：更新状态
         setInternalClientSecret(session.clientSecret);
-        setInternalRechargeId(topupResponse.rechargeId);
+        setInternalRechargeId(topupResponse.id);
         setInternalStatus('ready');
       } catch (err: any) {
         if (cancelled) return;

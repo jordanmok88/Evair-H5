@@ -687,7 +687,7 @@ interface CheckoutProps {
 
 type CheckoutStep =
     | { kind: 'auth' }                                          // user not logged in
-    | { kind: 'creating_order' }                                // calling /h5/orders/topup
+    | { kind: 'creating_order' }                                // calling /app/recharge
     | { kind: 'paying'; clientSecret: string; rechargeId: number }
     | { kind: 'error'; message: string };
 
@@ -708,13 +708,13 @@ const CheckoutFlow: React.FC<CheckoutProps> = ({ iccid, selected, onClose, onSuc
             const order = await esimService.topup({
                 iccid,
                 packageCode: selected.packageCode,
-                amount: selected.price,
+                supplierType: 'esimaccess',
             });
-            const session = await esimService.createRechargePayment(order.rechargeId);
+            const session = await esimService.createRechargePayment(order.id);
             setStep({
                 kind: 'paying',
                 clientSecret: session.clientSecret,
-                rechargeId: order.rechargeId,
+                rechargeId: order.id,
             });
         } catch (err) {
             const message = err instanceof Error ? err.message : 'Could not create the order.';

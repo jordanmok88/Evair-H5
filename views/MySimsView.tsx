@@ -6,7 +6,7 @@ import FlagIcon from '../components/FlagIcon';
 import StripePaymentModal from '../components/StripePaymentModal';
 import AutoRenewToggle from '../components/AutoRenewToggle';
 import { CARRIER_MAP } from '../constants';
-import { topUp, fetchTopUpPackages, fetchPackages, checkDataUsage, formatVolume, formatPrice, retailPrice, packagePriceUsd, formatGB, queryProfile, mapRedTeaStatus, USE_BACKEND_API, unbindSim } from '../services/dataService';
+import { topUp, fetchTopUpPackages, fetchPackages, checkDataUsage, formatVolume, formatPrice, retailPrice, packagePriceUsd, formatGB, queryProfile, mapRedTeaStatus, unbindSim } from '../services/dataService';
 import { useEdgeSwipeBack } from '../hooks/useEdgeSwipeBack';
 
 interface MySimsViewProps {
@@ -96,6 +96,7 @@ const MySimsView: React.FC<MySimsViewProps> = ({ activeSims, onNavigate, filterT
     iccid: string;
     packageCode: string;
     amount: number;
+    supplierType: 'esimaccess' | 'pccw';
   } | null>(null);
 
   const currentSim = filteredSims.find(s => s.id === selectedSimId) || filteredSims[0];
@@ -1009,45 +1010,7 @@ const MySimsView: React.FC<MySimsViewProps> = ({ activeSims, onNavigate, filterT
           const carrierInfo = CARRIER_MAP[currentSim.country.countryCode] || { carrier: 'Carrier', network: '4G' };
           const iccid = resolveIccid(currentSim);
 
-          // 非后端模式：直接调用供应商 API（旧流程）
-          const handleTopUpPurchaseLegacy = async () => {
-            if (!selectedTopUp) return;
-            setTopUpProcessing(true);
-            try {
-              const iccid = resolveIccid(currentSim);
-              const txnId = `topup_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
-              await topUp({
-                iccid,
-                packageCode: selectedTopUp.packageCode,
-                transactionId: txnId,
-                amount: selectedTopUp.price,
-                // Physical SIMs use the physical recharge pipeline; eSIMs
-                // use the eSIM path. Tagging the call-site keeps the
-                // backend from using the wrong default supplier.
-                supplierType: currentSim.type === 'PHYSICAL' ? 'pccw' : 'esimaccess',
-              });
-
-              const addedGB = selectedTopUp.volume / (1024 * 1024 * 1024);
-              onUpdateSim?.(currentSim.id, {
-                dataTotalGB: currentSim.dataTotalGB + addedGB,
-                status: 'ACTIVE',
-              });
-
-              setTopUpSuccess(true);
-              setTimeout(() => {
-                setTopUpSuccess(false);
-                setIsRechargeModalOpen(false);
-                setSelectedTopUp(null);
-                setTopUpPackages([]);
-              }, 2000);
-            } catch (err: any) {
-              alert(err.message || 'Top-up failed');
-            } finally {
-              setTopUpProcessing(false);
-            }
-          };
-
-          // 后端模式：打开 Stripe 支付弹窗（组件内部处理 topup + pay 请求）
+          // 打开 Stripe 支付弹窗（组件内部处理 topup + pay 请求）
           const handleTopUpPurchase = () => {
             if (!selectedTopUp) return;
             // 设置充值配置，组件会自动创建订单和支付会话
@@ -1055,6 +1018,7 @@ const MySimsView: React.FC<MySimsViewProps> = ({ activeSims, onNavigate, filterT
               iccid,
               packageCode: selectedTopUp.packageCode,
               amount: packagePriceUsd(selectedTopUp),
+              supplierType: currentSim.type === 'PHYSICAL' ? 'pccw' : 'esimaccess',
             });
             setPaymentModalOpen(true);
           };
@@ -1185,7 +1149,7 @@ const MySimsView: React.FC<MySimsViewProps> = ({ activeSims, onNavigate, filterT
                   {/* Sticky purchase button */}
                   <div className="shrink-0 px-4 pb-6 pt-3 border-t border-slate-100 bg-white">
                     <button
-                      onClick={selectedTopUp ? (USE_BACKEND_API ? handleTopUpPurchase : handleTopUpPurchaseLegacy) : closeModal}
+                      onClick={selectedTopUp ? handleTopUpPurchase : closeModal}
                       disabled={topUpProcessing || !selectedTopUp}
                       className="w-full bg-brand-orange text-white py-4 rounded-2xl font-bold shadow-lg shadow-orange-500/20 active:scale-[0.98] transition-transform flex items-center justify-center gap-2 disabled:opacity-50"
                     >

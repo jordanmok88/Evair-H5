@@ -871,8 +871,8 @@ export default function LiveChatView({ onBack }: LiveChatViewProps) {
           setSending(true);
           try {
             await sendOrderCard({
-              orderNo: order.orderNo,
-              packageName: order.packageName,
+              orderNo: order.orderNumber,
+              packageName: order.orderNumber, // App tier OrderDto has no packageName; use orderNumber
               status: order.status,
               amount: order.amount,
               currency: order.currency,

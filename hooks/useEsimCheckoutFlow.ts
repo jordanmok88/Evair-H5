@@ -15,7 +15,7 @@
  *           page that initiated Stripe Checkout). Idempotency: we delete
  *           the entry as soon as we read it so a hard refresh after
  *           success will NOT re-trigger provisioning.
- *        b. Poll `GET /h5/orders/{order_no}` via
+ *        b. Poll `GET /app/orders/{id}` via
  *           `pollEsimOrderUntilProvisioned` until the backend webhook
  *           has finished provisioning (esim field present).
  *        c. Fire-and-forget POST `/.netlify/functions/send-esim-email`.
@@ -52,7 +52,9 @@ export type CheckoutPhase =
     | 'error';
 
 export interface PendingEsimOrder {
-    /** New flow: order_no from POST /h5/orders/esim */
+    /** Order ID (numeric) from POST /app/orders — used to poll order detail */
+    orderId?: number;
+    /** Order number string from POST /app/orders — for display / email */
     orderNo?: string;
     packageName?: string;
     email?: string;
@@ -171,9 +173,9 @@ export function useEsimCheckoutFlow(): EsimCheckoutFlowState {
         try { localStorage.removeItem(PENDING_KEY); } catch { /* ignore */ }
         cleanUrl();
 
-        // Legacy entries without orderNo can't be fulfilled through the
+        // Legacy entries without orderId can't be fulfilled through the
         // new webhook path — surface a recoverable error.
-        if (!pendingOrder.orderNo) {
+        if (!pendingOrder.orderId) {
             setPhase('error');
             setError(
                 'We could not match your payment to a pending order. Please contact support — your card was charged.',
@@ -192,7 +194,7 @@ export function useEsimCheckoutFlow(): EsimCheckoutFlowState {
                 // creates the SimAsset; pollEsimOrderUntilProvisioned waits until
                 // OrderDetailResource exposes the esim block.
                 setPhase('provisioning');
-                const order = await pollEsimOrderUntilProvisioned(pendingOrder.orderNo!, {
+                const order = await pollEsimOrderUntilProvisioned(pendingOrder.orderId!, {
                     intervalMs: 3000,
                     maxAttempts: 40,
                     isCancelled: () => cancelled,
@@ -210,7 +212,7 @@ export function useEsimCheckoutFlow(): EsimCheckoutFlowState {
                 }
 
                 const orderResult: EsimOrderResult = {
-                    orderNo: order.orderNo,
+                    orderNo: order.orderNumber,
                     transactionId: order.payment?.transactionId ?? '',
                     iccid: esim.iccid,
                     smdpAddress: esim.smdpAddress,
@@ -238,7 +240,7 @@ export function useEsimCheckoutFlow(): EsimCheckoutFlowState {
                             smdpAddress: esim.smdpAddress,
                             activationCode: esim.activationCode,
                             lpaString: esim.lpaString,
-                            orderNo: order.orderNo,
+                            orderNo: order.orderNumber,
                             packageName: pendingOrder.packageName,
                             iccid: esim.iccid,
                         }),

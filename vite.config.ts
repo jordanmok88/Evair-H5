@@ -41,8 +41,6 @@ export default defineConfig(({ mode }) => {
           // Local Laravel dev proxy. Forwards `/laravel-api/*` -> `/api/*` on
           // whichever host `VITE_LARAVEL_PROXY_TARGET` points at (defaults to
           // `php artisan serve --host=127.0.0.1 --port=8100`).
-          // Opt in by setting `VITE_BACKSTAGE_BASE_URL=/laravel-api/v1/h5` in
-          // `.env.local` when you want the H5 catalogue to hit a local backend.
           '/laravel-api': {
             target: env.VITE_LARAVEL_PROXY_TARGET || 'http://127.0.0.1:8100',
             changeOrigin: true,
