@@ -7,6 +7,7 @@ import { get, post } from './client';
 import type {
   PackageDto,
   PackageListParams,
+  PackageLocationsResponse,
   EsimDetailDto,
   EsimUsageDto,
   EsimUsageParams,
@@ -89,40 +90,19 @@ export const packageService = {
   },
 
   /**
-   * 获取可用地区列表
-   * 支持两种响应格式:
-   * 格式1 (后端返回): { single_countries: [], multi_countries: [] }
-   * 格式2 (标准化): { locations: [{ code, name, package_count }] }
+   * 获取地区 facets 索引（Shop 首屏唯一一次必调）
+   *
+   * 返回 `singleCountries` + `multiCountries` 两组筛选项，每项附带
+   * `minPrice` / `packageCount` / `countries`（多国）等聚合元数据，
+   * 直接驱动 ShopView 渲染——不再需要拉全量 packages 再做客户端分组。
+   *
+   * 后端字段是 snake_case（`single_countries` / `min_price` / ...），
+   * client.ts 在响应入口统一转 camelCase，所以这里类型直接是 camelCase。
+   *
+   * @see PackageLocationsResponse 字段定义见 types.ts
    */
-  async getLocations(): Promise<{
-    locations?: Array<{
-      code: string;
-      name: string;
-      packageCount: number;
-    }>;
-    singleCountries?: Array<{
-      code: string;
-      name?: string;
-      packageCount?: number;
-    }>;
-    multiCountries?: Array<{
-      code: string;
-      name?: string;
-      packageCount?: number;
-    }>;
-    // snake_case 格式 (后端实际返回)
-    single_countries?: Array<{
-      code: string;
-      name: string;
-      package_count?: number;
-    }>;
-    multi_countries?: Array<{
-      code: string;
-      name: string;
-      package_count?: number;
-    }>;
-  }> {
-    return get(ENDPOINTS.PACKAGE_LOCATIONS);
+  async getLocations(): Promise<PackageLocationsResponse> {
+    return get<PackageLocationsResponse>(ENDPOINTS.PACKAGE_LOCATIONS);
   },
 };
 

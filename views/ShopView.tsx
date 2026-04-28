@@ -5,7 +5,24 @@ import { Country, Plan, SimType, User, SimCardProduct, EsimPackage, EsimCountryG
 import { MOCK_COUNTRIES } from '../constants';
 import AmazonPhysicalSimPicker from '../components/AmazonPhysicalSimPicker';
 import FlagIcon from '../components/FlagIcon';
-import { fetchPackages, prefetchPackages, groupPackagesByLocation, formatVolume, formatPrice, retailPrice, packagePriceUsd, orderEsim, CONTINENT_TABS, type ContinentTab, formatGB, POPULAR_COUNTRY_CODES } from '../services/dataService';
+// 数据流（2026-04 重构）：
+//   - Shop 首屏只调 fetchLocationFacets() 拿轻量索引（含起价 / 套餐数）
+//   - 用户点开某国/某区域 → fetchPackagesForGroup() 按需拉该 location 的 packages
+//   - 旧的 fetchPackages + groupPackagesByLocation 路径已不再用于 Shop 网格，
+//     仍保留给 TopUp / DeepLink / Search 等其它消费者。
+import {
+  fetchLocationFacets,
+  fetchPackagesForGroup,
+  formatVolume,
+  formatPrice,
+  retailPrice,
+  packagePriceUsd,
+  orderEsim,
+  CONTINENT_TABS,
+  type ContinentTab,
+  formatGB,
+  POPULAR_COUNTRY_CODES,
+} from '../services/dataService';
 import { orderService } from '../services/api';
 import { pollEsimOrderUntilProvisioned } from '../services/api/order';
 import type { OrderDetailDto } from '../services/api/types';
@@ -242,19 +259,42 @@ const ShopView: React.FC<ShopViewProps> = ({
     };
   }, []);
 
+  // Shop 首屏：只拉 facets 索引（~5KB），不再一次性拉全量 packages。
+  // 卡片显示需要的 minPrice / packageCount / countries 都直接来自后端聚合。
   const loadEsimPackages = useCallback(async (force = false) => {
     setEsimLoading(true);
     setEsimError(null);
     try {
-      // Region names (e.g. "Europe (30+ countries)") are now pre-computed
-      // by the backend (supplierRegionName field), no separate fetch needed.
-      const packages = force ? await fetchPackages() : await prefetchPackages();
-      const groups = groupPackagesByLocation(packages);
+      const groups = await fetchLocationFacets(force);
       setEsimGroups(groups);
     } catch (err: any) {
       setEsimError(err.message || 'Failed to load packages');
     } finally {
       setEsimLoading(false);
+    }
+  }, []);
+
+  // 用户点开国家卡：按需拉这个 location 的具体 packages 后再进入详情。
+  // 详情视图（line 770+）依赖 selectedEsimGroup.packages 渲染套餐列表。
+  const [esimGroupLoading, setEsimGroupLoading] = useState(false);
+  const openEsimGroup = useCallback(async (group: EsimCountryGroup) => {
+    // 已经加载过详情包则直接进入（避免重复请求）
+    if (group.packages.length > 0) {
+      setSelectedEsimGroup(group);
+      return;
+    }
+    setEsimGroupLoading(true);
+    try {
+      const filled = await fetchPackagesForGroup(group);
+      // 同步把 packages 写回 esimGroups，方便下次切回时不重复拉
+      setEsimGroups((prev) =>
+        prev.map((g) => (g.locationCode === filled.locationCode ? filled : g)),
+      );
+      setSelectedEsimGroup(filled);
+    } catch (err: any) {
+      setEsimError(err.message || 'Failed to load packages');
+    } finally {
+      setEsimGroupLoading(false);
     }
   }, []);
 
@@ -279,7 +319,8 @@ const ShopView: React.FC<ShopViewProps> = ({
         (g.locationCode.toUpperCase() === want || g.flag.toUpperCase() === want),
     );
     if (group) {
-      setSelectedEsimGroup(group);
+      // Deep link 进入也走 openEsimGroup，确保进入详情前 packages 已加载
+      openEsimGroup(group);
     }
     onInitialEsimDeepLinkConsumed?.();
   }, [
@@ -288,6 +329,7 @@ const ShopView: React.FC<ShopViewProps> = ({
     esimLoading,
     esimError,
     esimGroups,
+    openEsimGroup,
     onInitialEsimDeepLinkConsumed,
   ]);
 
@@ -1408,6 +1450,16 @@ const ShopView: React.FC<ShopViewProps> = ({
         )}
 
         {/* All eSIM Plans from API - eSIM only */}
+        {/* 加载国家/区域套餐详情时的轻量 overlay */}
+        {esimGroupLoading && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/20 backdrop-blur-sm">
+            <div className="bg-white rounded-2xl p-6 flex flex-col items-center gap-3 shadow-xl">
+              <Loader2 size={28} className="animate-spin text-brand-orange" />
+              <p className="text-slate-500 text-sm font-medium">{t('shop.loading_plans')}</p>
+            </div>
+          </div>
+        )}
+
         {simType === 'ESIM' && (
           <>
             {/* Loading state */}
@@ -1446,44 +1498,57 @@ const ShopView: React.FC<ShopViewProps> = ({
                   />
                 </div>
 
-                {/* ── Location pills: continents + Multi-Country (same row, one theme) ── */}
+                {/* ── Browse Mode Toggle: Single Country / Multi-Country ── */}
                 {!searchQuery && (
-                  <div className="flex gap-2 overflow-x-auto no-scrollbar pb-3 -mx-4 px-4 md:mx-0 md:px-0 md:flex-wrap lg:-mx-4 lg:px-4 lg:flex-nowrap lg:overflow-x-auto mb-4">
-                    {CONTINENT_TABS.filter(tab => tab !== 'Multi-Region').map((tab) => {
-                      const isActive = browseMode === 'country' && continentTab === tab;
-                      return (
-                        <button
-                          key={tab}
-                          type="button"
-                          onClick={() => {
-                            setBrowseMode('country');
-                            setContinentTab(tab);
-                            setShowAllCountries(false);
-                          }}
-                          className={`flex-shrink-0 px-4 py-2 rounded-full text-xs font-bold transition-all active:scale-[0.97] ${
-                            isActive
-                              ? 'bg-brand-orange text-white shadow-sm shadow-orange-200'
-                              : 'bg-white text-slate-500 border border-slate-200 hover:bg-slate-50'
-                          }`}
-                        >
-                          {tab === 'All' ? t('shop.all') : t(`shop.continent_${tab.toLowerCase()}`)}
-                        </button>
-                      );
-                    })}
+                  <div className="flex gap-2 mb-5">
                     <button
-                      type="button"
-                      onClick={() => {
-                        setBrowseMode('region');
-                        setShowAllCountries(false);
-                      }}
-                      className={`flex-shrink-0 px-4 py-2 rounded-full text-xs font-bold transition-all active:scale-[0.97] ${
-                        browseMode === 'region'
-                          ? 'bg-brand-orange text-white shadow-sm shadow-orange-200'
-                          : 'bg-white text-slate-500 border border-slate-200 hover:bg-slate-50'
+                      onClick={() => { setBrowseMode('country'); setShowAllCountries(false); }}
+                      className={`flex-1 flex flex-col items-center justify-center gap-0.5 py-3.5 rounded-xl border transition-all duration-200 ${
+                        browseMode === 'country'
+                          ? 'bg-orange-50 border-orange-200 shadow-sm shadow-orange-100'
+                          : 'bg-white border-slate-200 hover:border-slate-300'
                       }`}
                     >
-                      {t('shop.multi_country')}
+                      <div className="flex items-center gap-1.5">
+                        <MapPin size={14} strokeWidth={2.5} className={browseMode === 'country' ? 'text-brand-orange' : 'text-slate-400'} />
+                        <span className={`text-[13px] font-bold tracking-wide ${browseMode === 'country' ? 'text-orange-800' : 'text-slate-400'}`}>{t('shop.single_country')}</span>
+                      </div>
+                      <span className={`text-[10px] font-medium ${browseMode === 'country' ? 'text-orange-500/70' : 'text-slate-300'}`}>{t('shop.single_country_sub')}</span>
                     </button>
+                    <button
+                      onClick={() => { setBrowseMode('region'); setShowAllCountries(false); }}
+                      className={`flex-1 flex flex-col items-center justify-center gap-0.5 py-3.5 rounded-xl border transition-all duration-200 ${
+                        browseMode === 'region'
+                          ? 'bg-blue-50 border-blue-200 shadow-sm shadow-blue-100'
+                          : 'bg-white border-slate-200 hover:border-slate-300'
+                      }`}
+                    >
+                      <div className="flex items-center gap-1.5">
+                        <Globe size={14} strokeWidth={2.5} className={browseMode === 'region' ? 'text-blue-600' : 'text-slate-400'} />
+                        <span className={`text-[13px] font-bold tracking-wide ${browseMode === 'region' ? 'text-blue-800' : 'text-slate-400'}`}>{t('shop.multi_country')}</span>
+                      </div>
+                      <span className={`text-[10px] font-medium ${browseMode === 'region' ? 'text-blue-500/70' : 'text-slate-300'}`}>{t('shop.multi_country_sub')}</span>
+                    </button>
+                  </div>
+                )}
+
+                {/* ── Continent Filter Tabs (only in country mode) ── */}
+                {!searchQuery && browseMode === 'country' && (
+                  <div className="flex gap-2 overflow-x-auto no-scrollbar pb-3 -mx-4 px-4 md:mx-0 md:px-0 md:flex-wrap lg:-mx-4 lg:px-4 lg:flex-nowrap lg:overflow-x-auto mb-3">
+                    {CONTINENT_TABS.filter(tab => tab !== 'Multi-Region').map((tab) => (
+                      <button
+                        key={tab}
+                        onClick={() => { setContinentTab(tab); setShowAllCountries(false); }}
+                        className={`flex-shrink-0 px-4 py-2 rounded-full text-xs font-bold transition-all active:scale-[0.97] ${
+                          continentTab === tab
+                            ? 'bg-brand-orange text-white shadow-sm shadow-orange-200'
+                            : 'bg-white text-slate-500 border border-slate-200 hover:bg-slate-50'
+                        }`}
+                      >
+                        {tab === 'All' ? t('shop.all')
+                          : t(`shop.continent_${tab.toLowerCase()}`)}
+                      </button>
+                    ))}
                   </div>
                 )}
 
@@ -1503,8 +1568,11 @@ const ShopView: React.FC<ShopViewProps> = ({
                 ) : (
                   <div className="bg-white rounded-xl border border-slate-100 divide-y divide-slate-100 overflow-hidden shadow-sm mb-5 md:grid md:grid-cols-2 md:divide-y-0 md:gap-[1px] md:bg-slate-100 md:border-0 md:[&>*]:bg-white lg:block lg:divide-y lg:divide-slate-100 lg:bg-white lg:border lg:border-slate-100 lg:[&>*]:bg-transparent">
                     {visibleEsimGroups.map((group, idx) => {
-                      const cheapestPkg = group.packages.reduce((min, p) => p.price < min.price ? p : min, group.packages[0]);
-                      const cheapestPrice = cheapestPkg ? packagePriceUsd(cheapestPkg) : 0;
+                      // facets 模式下 packages 初始为空，优先读 minPrice / packageCount
+                      const cheapestPrice = group.minPrice ?? (group.packages.length > 0
+                        ? packagePriceUsd(group.packages.reduce((min, p) => p.price < min.price ? p : min, group.packages[0]))
+                        : 0);
+                      const planCount = group.packageCount ?? group.packages.length;
                       // For multi-country groups keyed by supplier region code
                       // (e.g. "NA-3") splitting locationCode by comma is wrong —
                       // rely on the dedicated `countries` list populated by
@@ -1524,7 +1592,7 @@ const ShopView: React.FC<ShopViewProps> = ({
                             </div>
                           )}
                           <button
-                            onClick={() => setSelectedEsimGroup(group)}
+                            onClick={() => openEsimGroup(group)}
                             className={`w-full flex items-center justify-between p-4 transition-colors text-left group ${
                               isPopular ? 'bg-amber-50/50 hover:bg-amber-50' : 'hover:bg-slate-50'
                             }`}
@@ -1543,7 +1611,7 @@ const ShopView: React.FC<ShopViewProps> = ({
                                   )}
                                 </p>
                                 <p className="text-xs text-slate-400 mt-0.5">
-                                  {group.packages.length} {group.packages.length === 1 ? 'Plan' : 'Plans'}
+                                  {planCount} {planCount === 1 ? 'Plan' : 'Plans'}
                                   {group.isMultiRegion && countryCount > 1 && (
                                     <span className="ml-1.5 text-[11px] font-semibold text-blue-500 bg-blue-50 px-1.5 py-0.5 rounded">
                                       {countryCount} {t('shop.countries')}

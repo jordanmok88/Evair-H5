@@ -254,10 +254,23 @@ export interface AddressDeletedResponse {
 
 // ─── 套餐模块类型 ────────────────────────────────────────────────────────
 
+/**
+ * 后端 `/app/packages` 单条响应（已经过 client.ts 的 snake→camel 转换）。
+ *
+ * ⚠️ 历史坑：本类型早期把部分字段写成 snake_case（`is_multi_country`、
+ * `supplier_package_code`），但 HTTP 层在响应入口统一做了 snake→camel，
+ * 实际 JS 对象里的 key 已经是 camelCase。读 snake key 永远拿到 undefined，
+ * 导致 dataService 里基于 `dto.is_multi_country` 的判断长期失效。
+ * 现在统一改 camelCase 与运行时一致。
+ *
+ * 另一类坑：后端 PHP 把 `null` 字段也序列化进 JSON（不是省略），所以
+ * `supplierRegionCode` 在单国包上拿到的是 `null` 而非 `undefined`。
+ * 类型里把它声明为 `string | null` 让 TS 强制下游 nullish 检查。
+ */
 export interface PackageDto {
   packageCode: string;
   /** Red Tea packageCode for provisioning; never shown to users. */
-  supplier_package_code?: string;
+  supplierPackageCode?: string;
   name: string;
   price: number;
   currency: string;
@@ -267,7 +280,7 @@ export interface PackageDto {
   /**
    * Primary ISO-2 country code (kept for back-compat with single-country
    * renderers). For a multi-country plan this is just the first entry of
-   * {@link locations}; prefer `locations` / `is_multi_country` when you need
+   * {@link locations}; prefer `locations` / `isMultiCountry` when you need
    * to decide the "single vs multi-country" UX.
    */
   location: string;
@@ -276,10 +289,10 @@ export interface PackageDto {
    * Full ISO-2 list this plan covers. Single-country plans have length 1,
    * regional plans may have 2+ (e.g. ["US","CA","MX"] for North America),
    * global plans carry 100+ codes. Added to backend payload together with
-   * `is_multi_country` so clients can correctly group/filter.
+   * `isMultiCountry` so clients can correctly group/filter.
    */
   locations?: string[];
-  is_multi_country?: boolean;
+  isMultiCountry?: boolean;
   type: 'BASE' | 'TOPUP';
   speed?: string;
   features?: string[];
@@ -288,14 +301,16 @@ export interface PackageDto {
   rating?: number;
   /**
    * Supplier region code extracted from locations[], e.g. "NA-3", "EU-30".
-   * Populated by App-tier PackageResource. Null for single-country plans.
+   * Populated by App-tier PackageResource. **`null`** for single-country
+   * plans (PHP serializes nulls into JSON, so it's not `undefined`).
    */
-  supplierRegionCode?: string;
+  supplierRegionCode?: string | null;
   /**
    * Friendly region name, e.g. "Europe (30+ countries)".
    * Populated by App-tier PackageResource (from supplier_regions table).
+   * **`null`** for single-country plans.
    */
-  supplierRegionName?: string;
+  supplierRegionName?: string | null;
 }
 
 export interface PackageListParams {
@@ -312,6 +327,37 @@ export interface PackageListParams {
    *   - 'any'     -> legacy loose "coverage contains this code" match
    */
   scope?: 'single' | 'multi' | 'any';
+}
+
+// ─── 地区 facets 类型 ─────────────────────────────────────────────────────
+//
+// Shop 首屏只用一次轻量请求拉这份索引，按需再去拉具体国家/区域的套餐详情。
+// 后端聚合 min_price / package_count 在 PackageController::locations()。
+//
+// 注意：HTTP client 在响应入口统一做 snake_case → camelCase 转换，
+// 所以前端拿到的字段是 camelCase（即便后端 PHP 端是 snake_case）。
+
+/** 单国家筛选项（一国一行）。 */
+export interface SingleCountryFacet {
+  code: string;          // ISO-2，如 "JP"
+  name: string;          // 国家名，如 "Japan"
+  minPrice: number;      // 该国所有 BASE 套餐的最低售价（USD）
+  packageCount: number;  // 该国在售 BASE 套餐数
+}
+
+/** 多国区域筛选项（一区域一行）。 */
+export interface MultiCountryFacet {
+  code: string;            // 供应商区域码，如 "NA-3"
+  name: string;            // 区域显示名，如 "Europe (30+ countries)"
+  countries: string[];     // 覆盖的纯 ISO-2 列表
+  minPrice: number;        // 该区域所有 BASE 套餐的最低售价（USD）
+  packageCount: number;    // 该区域在售 BASE 套餐数
+}
+
+/** GET /app/packages/locations 响应 data 段。 */
+export interface PackageLocationsResponse {
+  singleCountries: SingleCountryFacet[];
+  multiCountries: MultiCountryFacet[];
 }
 
 // ─── 订单模块类型 ────────────────────────────────────────────────────────

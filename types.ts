@@ -277,6 +277,16 @@ export interface EsimCountryGroup {
   locationCode: string;
   locationName: string;    // resolved display name
   flag: string;            // ISO country code for primary country (for FlagIcon)
+  /**
+   * Detail packages for this country/region.
+   *
+   * In the legacy "fetch-all + client-group" flow this was eagerly
+   * populated by `groupPackagesByLocation`. In the new facets-driven
+   * flow it starts as `[]` and is filled on demand when the user opens
+   * the country detail card (see `fetchPackagesForGroup` in dataService).
+   * UIs that just need card metadata should read `minPrice` /
+   * `packageCount` instead of `packages.length` / `packages[0].price`.
+   */
   packages: EsimPackage[];
   continent: string;       // e.g. "Asia", "Europe", "Americas", "Africa", "Oceania", "Multi-Region"
   isMultiRegion: boolean;
@@ -286,6 +296,20 @@ export interface EsimCountryGroup {
    * `locationCode` by comma no longer works once we key on region code.
    */
   countries: string[];
+  /**
+   * Lowest USD retail price across this group's BASE packages.
+   * Provided by the backend `/packages/locations` facets endpoint so the
+   * shop grid can render "from $X" without preloading any package detail.
+   * Optional for back-compat with code paths that still build groups via
+   * client-side `groupPackagesByLocation`.
+   */
+  minPrice?: number;
+  /**
+   * Total in-stock BASE package count for this group, also from the
+   * `/packages/locations` facets endpoint. Used to render the "N Plans"
+   * sub-label on the country card before detail packages are loaded.
+   */
+  packageCount?: number;
 }
 
 // ─── End eSIM Access API Types ──────────────────────────────────────

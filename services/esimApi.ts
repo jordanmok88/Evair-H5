@@ -44,6 +44,8 @@ export interface FetchPackagesParams {
   type?: 'BASE' | 'TOPUP';
   packageCode?: string;
   iccid?: string;
+  /** 服务端范围限定（传给 /app/packages?scope=...） */
+  scope?: 'single' | 'multi' | 'any';
 }
 
 // ─── Order eSIM ──────────────────────────────────────────────────────
@@ -243,7 +245,15 @@ const CONTINENT_MAP: Record<string, string> = {
   TN:'Africa',TZ:'Africa',UG:'Africa',ZA:'Africa',ZM:'Africa',ZW:'Africa',
 };
 
-function getContinent(code: string): string {
+/**
+ * Map an ISO-2 country code to one of the CONTINENT_TABS values
+ * ("Asia" | "Europe" | "Americas" | "Africa" | "Oceania" | "Other").
+ *
+ * Exported because the new facets-driven flow (`dataService.fetchLocationFacets`)
+ * needs the same continent classification when building EsimCountryGroup
+ * placeholders from the lightweight `/packages/locations` response.
+ */
+export function getContinent(code: string): string {
   return CONTINENT_MAP[code.toUpperCase()] ?? 'Other';
 }
 
