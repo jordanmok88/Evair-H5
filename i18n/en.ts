@@ -153,6 +153,33 @@ const en = {
     hero_slide3_accent: 'One brand. Many plans.',
     hero_slide3_sub:
       'Travel eSIM in 200+ countries; US SIM with Auto APN on compatible plans — activate from your box in minutes.',
+    hero_slide_caption_1: 'GPS trackers',
+    hero_slide_caption_2: 'Smartwatches',
+    hero_slide_caption_3: 'E-readers (Kindle, Boox)',
+    hero_slide_caption_4: 'Walkie-talkies',
+    hero_slide_caption_5: 'POS terminals',
+    hero_slide_caption_6: 'Robotic mowers',
+    hero_slide_caption_7: 'Security cameras',
+    hero_slide_caption_8: 'Trail / hunting cameras',
+    hero_slide_caption_9: 'Outdoor monitors',
+    hero_slide_mobile_img_alt_1:
+      'Golden retriever on a lawn wearing a collar with a rectangular GPS tracker module.',
+    hero_slide_mobile_img_alt_2:
+      'Wrist wearing a smartwatch displaying a navigation map outdoors.',
+    hero_slide_mobile_img_alt_3:
+      'Hands holding an e-ink tablet reader showing a book page indoors.',
+    hero_slide_mobile_img_alt_4:
+      'Rugged LTE handheld radio with display and antenna held on a construction site.',
+    hero_slide_mobile_img_alt_5:
+      'Handheld touchscreen POS terminal showing a successful payment in a café.',
+    hero_slide_mobile_img_alt_6:
+      'Robotic lawn mower trimming a manicured backyard lawn.',
+    hero_slide_mobile_img_alt_7:
+      'White dome security camera mounted under exterior eaves with wireless antenna.',
+    hero_slide_mobile_img_alt_8:
+      'Camouflaged trail camera mounted on a tree trunk in a forest setting.',
+    hero_slide_mobile_img_alt_9:
+      'Field telemetry box on a pole with solar panel showing soil moisture and connectivity status.',
     home_open_app: 'OPEN APP',
     home_open_app_aria: 'Open the Evair customer app',
     home_stories_title: 'Our Happy Customers',

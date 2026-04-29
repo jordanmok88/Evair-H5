@@ -153,6 +153,33 @@ const es = {
     hero_slide3_accent: 'Una marca, muchos planes.',
     hero_slide3_sub:
       'eSIM de viaje en más de 200 países; SIM EE. UU. con Auto APN en planes compatibles — activa desde la caja en minutos.',
+    hero_slide_caption_1: 'Rastreadores GPS',
+    hero_slide_caption_2: 'Smartwatches',
+    hero_slide_caption_3: 'E-readers (Kindle, Boox)',
+    hero_slide_caption_4: 'Walkie-talkies',
+    hero_slide_caption_5: 'TPV / terminales POS',
+    hero_slide_caption_6: 'Robots cortacésped',
+    hero_slide_caption_7: 'Cámaras de seguridad',
+    hero_slide_caption_8: 'Cámaras de caza / sendero',
+    hero_slide_caption_9: 'Monitores de campo',
+    hero_slide_mobile_img_alt_1:
+      'Golden retriever en el césped con un módulo GPS rectangular en el collar.',
+    hero_slide_mobile_img_alt_2:
+      'Muñeca con smartwatch que muestra mapa de navegación al aire libre.',
+    hero_slide_mobile_img_alt_3:
+      'Manos sosteniendo un lector e-ink con texto de libro en interior.',
+    hero_slide_mobile_img_alt_4:
+      'Walkie-talkie LTE resistente con pantalla en obra en construcción.',
+    hero_slide_mobile_img_alt_5:
+      'Terminal táctil POS con pago exitoso en un café.',
+    hero_slide_mobile_img_alt_6:
+      'Robot cortacésped en un jardín cuidado.',
+    hero_slide_mobile_img_alt_7:
+      'Cúpula de videovigilancia blanca bajo alero con antena.',
+    hero_slide_mobile_img_alt_8:
+      'Cámara camuflada en tronco de árbol en bosque.',
+    hero_slide_mobile_img_alt_9:
+      'Telemetría de campo en poste con panel solar e indicadores de cobertura.',
     home_open_app: 'ABRIR APP',
     home_open_app_aria: 'Abrir la aplicación de cliente Evair',
     home_stories_title: 'Clientes satisfechos',

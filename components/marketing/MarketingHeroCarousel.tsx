@@ -31,21 +31,63 @@ function usePrefersReducedMotion(): boolean {
 }
 
 /**
- * Hero art per slide (Unsplash). Use stable `ixlib=rb-4.0.3` URLs — some bare `photo-…` IDs 404 over time.
- * Slide 2 was updated after a dead asset caused broken images on desktop.
+ * Hero product art: nine self-hosted tiles (IoT 01–06, camera 07–09). Headline copy uses
+ * `Math.floor(slideIndex / 3)` so three slides share each marketing message group.
  */
 export const MARKETING_HERO_VISUAL_SLIDES = [
     {
-        src: 'https://images.unsplash.com/photo-1511895426328-dc8714191300?ixlib=rb-4.0.3&auto=format&fit=crop&w=1600&q=82',
-        altKey: 'marketing.hero_slide1_img_alt' as const,
+        src: '/marketing/device-built-for/cell-01.png',
+        altKey: 'marketing.hero_slide_mobile_img_alt_1' as const,
+        captionKey: 'marketing.hero_slide_caption_1' as const,
+        objectPosition: '44% 46%',
     },
     {
-        src: 'https://images.unsplash.com/photo-1514565131-fce0801e5785?ixlib=rb-4.0.3&auto=format&fit=crop&w=1600&q=82',
-        altKey: 'marketing.hero_slide2_img_alt' as const,
+        src: '/marketing/device-built-for/cell-02.png',
+        altKey: 'marketing.hero_slide_mobile_img_alt_2' as const,
+        captionKey: 'marketing.hero_slide_caption_2' as const,
+        objectPosition: '50% 48%',
     },
     {
-        src: 'https://images.unsplash.com/photo-1488646953014-85cb44e25828?ixlib=rb-4.0.3&auto=format&fit=crop&w=1600&q=82',
-        altKey: 'marketing.hero_slide3_img_alt' as const,
+        src: '/marketing/device-built-for/cell-03.png',
+        altKey: 'marketing.hero_slide_mobile_img_alt_3' as const,
+        captionKey: 'marketing.hero_slide_caption_3' as const,
+        objectPosition: '50% 48%',
+    },
+    {
+        src: '/marketing/device-built-for/cell-04.png',
+        altKey: 'marketing.hero_slide_mobile_img_alt_4' as const,
+        captionKey: 'marketing.hero_slide_caption_4' as const,
+        objectPosition: '50% 46%',
+    },
+    {
+        src: '/marketing/device-built-for/cell-05.png',
+        altKey: 'marketing.hero_slide_mobile_img_alt_5' as const,
+        captionKey: 'marketing.hero_slide_caption_5' as const,
+        objectPosition: '50% 48%',
+    },
+    {
+        src: '/marketing/device-built-for/cell-06.png',
+        altKey: 'marketing.hero_slide_mobile_img_alt_6' as const,
+        captionKey: 'marketing.hero_slide_caption_6' as const,
+        objectPosition: '50% 50%',
+    },
+    {
+        src: '/marketing/device-built-for/cell-07.png',
+        altKey: 'marketing.hero_slide_mobile_img_alt_7' as const,
+        captionKey: 'marketing.hero_slide_caption_7' as const,
+        objectPosition: '76% 48%',
+    },
+    {
+        src: '/marketing/device-built-for/cell-08.png',
+        altKey: 'marketing.hero_slide_mobile_img_alt_8' as const,
+        captionKey: 'marketing.hero_slide_caption_8' as const,
+        objectPosition: '52% 48%',
+    },
+    {
+        src: '/marketing/device-built-for/cell-09.png',
+        altKey: 'marketing.hero_slide_mobile_img_alt_9' as const,
+        captionKey: 'marketing.hero_slide_caption_9' as const,
+        objectPosition: '68% 46%',
     },
 ] as const;
 
@@ -89,7 +131,7 @@ function HeroTrustStrip({
     );
 }
 
-/** Home hero: selling slides; three striped indicators (jump, no sweeping bar), imagery + CTAs. */
+/** Home hero: selling slides; striped indicators (jump, no sweeping bar), imagery + CTAs. */
 export function MarketingHeroCarousel(props: MarketingHeroCarouselProps) {
     const { t } = useTranslation();
     const { amazonUrl, travelLanding, activatePath, onTravelClick, onActivateClick } = props;
@@ -117,6 +159,7 @@ export function MarketingHeroCarousel(props: MarketingHeroCarouselProps) {
     const line2Keys = ['marketing.home_hero_anywhere', 'marketing.hero_slide2_accent', 'marketing.hero_slide3_accent'] as const;
     const subKeys = ['marketing.home_hero_sub', 'marketing.hero_slide2_sub', 'marketing.hero_slide3_sub'] as const;
 
+    const headlineIndex = Math.min(2, Math.floor(index / 3)) as 0 | 1 | 2;
     const visual = MARKETING_HERO_VISUAL_SLIDES[index];
 
     return (
@@ -138,15 +181,15 @@ export function MarketingHeroCarousel(props: MarketingHeroCarouselProps) {
                     </div>
 
                     <div className="min-h-[9rem] w-full max-w-xl sm:min-h-[8.75rem] md:min-h-[9rem]" aria-live={reducedMotion ? 'polite' : 'off'}>
-                        <div key={index}>
+                        <div key={headlineIndex}>
                             <h1 className="text-pretty text-[1.6875rem] font-extrabold leading-[1.08] tracking-tight text-slate-900 sm:text-4xl md:text-5xl md:leading-[1.08]">
-                                <span className="block">{t(line1Keys[index])}</span>
+                                <span className="block">{t(line1Keys[headlineIndex])}</span>
                                 <span className="mt-0.5 block bg-gradient-to-r from-orange-500 to-amber-400 bg-clip-text text-transparent sm:mt-1 md:mt-1.5">
-                                    {t(line2Keys[index])}
+                                    {t(line2Keys[headlineIndex])}
                                 </span>
                             </h1>
                             <p className="mx-auto mt-2 max-w-md px-0 text-sm leading-snug text-slate-600 sm:mt-3 sm:text-base sm:leading-relaxed md:text-[1.0625rem] lg:mx-0 lg:max-w-xl">
-                                {t(subKeys[index])}
+                                {t(subKeys[headlineIndex])}
                             </p>
                         </div>
                     </div>
@@ -159,23 +202,33 @@ export function MarketingHeroCarousel(props: MarketingHeroCarouselProps) {
 
                     {/* Imagery below copy on mobile/tablet — capped height keeps trust + CTAs in first screen */}
                     <div className="mt-4 w-full sm:mt-5 lg:hidden">
-                        <div className="relative h-[clamp(9rem,38vmin,240px)] w-full overflow-hidden rounded-2xl bg-gray-100 shadow-md ring-1 ring-gray-100 sm:h-[clamp(10rem,40vmin,280px)]">
+                        <figure className="relative m-0 h-[clamp(9rem,38vmin,240px)] w-full overflow-hidden rounded-2xl bg-gray-100 shadow-md ring-1 ring-gray-100 sm:h-[clamp(10rem,40vmin,280px)]">
                             <img
                                 key={`m-${visual.src}-${index}`}
                                 src={visual.src}
                                 alt={t(visual.altKey)}
                                 sizes="100vw"
-                                className="absolute inset-0 h-full w-full object-cover object-center"
+                                className="absolute inset-0 h-full w-full object-cover"
+                                style={{ objectPosition: visual.objectPosition }}
                                 decoding="async"
                                 loading="eager"
                                 fetchPriority={index === 0 ? 'high' : 'auto'}
                             />
-                        </div>
+                            <div
+                                className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/78 via-black/15 to-transparent"
+                                aria-hidden
+                            />
+                            <figcaption className="pointer-events-none absolute inset-x-0 bottom-0 p-3 sm:p-4">
+                                <p className="text-left text-sm font-semibold leading-snug text-white drop-shadow-sm md:text-[15px]">
+                                    {t(visual.captionKey)}
+                                </p>
+                            </figcaption>
+                        </figure>
                     </div>
 
-                    {/* Three stripes — active one fills brand orange; advances every 3–5s (no sweep animation) */}
+                    {/* Stripes — active one fills brand orange; advances every 3–5s (no sweep animation) */}
                     <div
-                        className="mx-auto mt-4 flex w-full max-w-md gap-2 sm:mt-5 sm:gap-2.5 lg:mx-0"
+                        className="mx-auto mt-4 flex w-full max-w-md gap-1.5 sm:mt-5 sm:gap-2 lg:mx-0"
                         role="group"
                         aria-label={t('marketing.hero_carousel_dots')}
                     >
@@ -189,7 +242,7 @@ export function MarketingHeroCarousel(props: MarketingHeroCarouselProps) {
                                     current: i + 1,
                                     total: SLIDE_COUNT,
                                 })}
-                                className={`h-2 min-h-[8px] flex-1 touch-manipulation rounded-full border-0 shadow-inner outline-none transition-colors duration-75 focus-visible:ring-2 focus-visible:ring-[#2563eb] focus-visible:ring-offset-2 sm:h-2.5 ${
+                                className={`h-1.5 min-h-[6px] flex-1 touch-manipulation rounded-full border-0 shadow-inner outline-none transition-colors duration-75 focus-visible:ring-2 focus-visible:ring-[#2563eb] focus-visible:ring-offset-2 sm:h-2 ${
                                     i === index
                                         ? 'cursor-default bg-gradient-to-r from-orange-500 to-amber-400 shadow-sm'
                                         : 'cursor-pointer bg-gray-200 hover:bg-gray-300'
@@ -238,7 +291,8 @@ export function MarketingHeroCarousel(props: MarketingHeroCarouselProps) {
                             src={visual.src}
                             alt={t(visual.altKey)}
                             sizes="(min-width: 1024px) min(46vw, 560px), 0px"
-                            className="h-full w-full min-h-[14rem] object-cover object-center"
+                            className="h-full w-full min-h-[14rem] object-cover"
+                            style={{ objectPosition: visual.objectPosition }}
                             decoding="async"
                             loading="eager"
                             fetchPriority={index === 0 ? 'high' : 'auto'}
