@@ -20,7 +20,8 @@
  *   3. Plan tiers (**primary conversion** — visible without scrolling past long prose)
  *   4. Three pillars — why Evair after price clarity
  *   5. Phone only: carrier comparison table (estimates)
- *   6. Camera / IoT: compatible devices mosaic + list
+ *   6. Camera / IoT: compatible devices mosaic — **desktop/tablet (`lg+`) only** (hero
+ *      photos hidden on narrow mobile per product UX; subtitles still enumerate devices)
  *   7. FAQ
  *   8. Final CTA
  *   9. Footer
@@ -272,14 +273,14 @@ const DeviceLandingPage: React.FC<DeviceLandingPageProps> = ({ category }) => {
                 </section>
             )}
 
-            {/* Camera / IoT — editorial product imagery (premium stock photography) */}
+            {/* Camera / IoT — editorial imagery (omit large cards on mobile: compact plans path) */}
             {category !== 'phone' && (
                 <section
                     id="built-for"
-                    className="border-t border-slate-200 bg-slate-50 px-4 py-10 md:px-8 md:py-12"
+                    className="hidden border-t border-slate-200 bg-slate-50 lg:block lg:px-8 lg:py-12"
                 >
                     <div className="mx-auto max-w-6xl">
-                        <h2 className="mb-8 text-xs font-bold uppercase tracking-[0.2em] text-slate-500 md:mb-10">
+                        <h2 className="mb-8 text-xs font-bold uppercase tracking-[0.2em] text-slate-500 lg:mb-10">
                             Built for
                         </h2>
                         <ul className="grid list-none grid-cols-1 gap-4 sm:grid-cols-2 sm:gap-5 lg:grid-cols-3 lg:gap-6 [&>li]:m-0 [&>li]:p-0">
