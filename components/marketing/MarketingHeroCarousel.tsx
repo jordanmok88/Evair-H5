@@ -3,14 +3,12 @@ import { useTranslation } from 'react-i18next';
 import {
     BadgeCheck,
     CheckCircle2,
-    ChevronLeft,
-    ChevronRight,
     Globe,
     ShoppingCart,
-    Smartphone,
     Star,
-    Zap,
 } from 'lucide-react';
+
+const SLIDE_DURATION_MS = 8000;
 
 function usePrefersReducedMotion(): boolean {
     const [reduced, setReduced] = useState(false);
@@ -25,7 +23,21 @@ function usePrefersReducedMotion(): boolean {
     return reduced;
 }
 
-const SLIDE_ICONS = [Globe, Zap, Smartphone] as const;
+/** Themed visuals per slide — Unsplash CDN; aligns with headline (family / travel+IoT / US 5G). */
+export const MARKETING_HERO_VISUAL_SLIDES = [
+    {
+        src: 'https://images.unsplash.com/photo-1511895426328-dc8714191300?auto=format&fit=crop&w=1200&q=80',
+        altKey: 'marketing.hero_slide1_img_alt' as const,
+    },
+    {
+        src: 'https://images.unsplash.com/photo-1573155993874-d5d48ffa5445?auto=format&fit=crop&w=1200&q=80',
+        altKey: 'marketing.hero_slide2_img_alt' as const,
+    },
+    {
+        src: 'https://images.unsplash.com/photo-1488646953014-85cb44e25828?auto=format&fit=crop&w=1200&q=80',
+        altKey: 'marketing.hero_slide3_img_alt' as const,
+    },
+] as const;
 
 export interface MarketingHeroCarouselProps {
     amazonUrl: string;
@@ -35,19 +47,24 @@ export interface MarketingHeroCarouselProps {
     onActivateClick: (e: React.MouseEvent<HTMLAnchorElement>) => void;
 }
 
-const SLIDE_COUNT = SLIDE_ICONS.length;
+const SLIDE_COUNT = MARKETING_HERO_VISUAL_SLIDES.length;
 
-/** Home hero: selling-point slides + shared CTAs capped to max-w-md. Auto-advance off when prefers-reduced-motion. */
+/** Home hero: selling slides, full-width progress line (no arrows), imagery + shared CTAs. */
 export function MarketingHeroCarousel(props: MarketingHeroCarouselProps) {
     const { t } = useTranslation();
     const { amazonUrl, travelLanding, activatePath, onTravelClick, onActivateClick } = props;
     const reducedMotion = usePrefersReducedMotion();
     const [index, setIndex] = useState(0);
+    const [progressBurst, setProgressBurst] = useState(0);
     const regionId = useId();
 
-    const goPrev = useCallback(() => {
-        setIndex((i) => (i - 1 + SLIDE_COUNT) % SLIDE_COUNT);
+    const selectSlide = useCallback((i: number) => {
+        setIndex(i);
     }, []);
+
+    useEffect(() => {
+        setProgressBurst((b) => b + 1);
+    }, [index]);
 
     const goNext = useCallback(() => {
         setIndex((i) => (i + 1) % SLIDE_COUNT);
@@ -55,7 +72,7 @@ export function MarketingHeroCarousel(props: MarketingHeroCarouselProps) {
 
     useEffect(() => {
         if (reducedMotion) return undefined;
-        const timer = window.setInterval(goNext, 8000);
+        const timer = window.setInterval(() => goNext(), SLIDE_DURATION_MS);
         return () => window.clearInterval(timer);
     }, [reducedMotion, goNext]);
 
@@ -63,17 +80,12 @@ export function MarketingHeroCarousel(props: MarketingHeroCarouselProps) {
     const line2Keys = ['marketing.home_hero_anywhere', 'marketing.hero_slide2_accent', 'marketing.hero_slide3_accent'] as const;
     const subKeys = ['marketing.home_hero_sub', 'marketing.hero_slide2_sub', 'marketing.hero_slide3_sub'] as const;
 
-    const gradients = [
-        'from-orange-50 to-amber-100',
-        'from-emerald-50 to-teal-50',
-        'from-slate-100 to-orange-50',
-    ] as const;
-    const SlideIcon = SLIDE_ICONS[index];
+    const visual = MARKETING_HERO_VISUAL_SLIDES[index];
 
     return (
         <div className="w-full">
             <div
-                className="grid w-full items-center gap-8 lg:grid-cols-[minmax(0,1fr)_min(240px,34%)] lg:gap-10 xl:gap-12"
+                className="grid w-full items-start gap-8 lg:grid-cols-[minmax(0,1fr)_min(260px,38%)] lg:gap-10 xl:gap-12"
                 role="region"
                 aria-roledescription="carousel"
                 aria-labelledby={regionId}
@@ -88,93 +100,137 @@ export function MarketingHeroCarousel(props: MarketingHeroCarouselProps) {
                         {t('marketing.home_badge')}
                     </div>
 
-                    <div className="min-h-[13rem] w-full max-w-xl sm:min-h-[12rem]" aria-live={reducedMotion ? 'polite' : 'off'}>
+                    <div className="min-h-[11.5rem] w-full max-w-xl sm:min-h-[10.5rem] md:min-h-[12rem]" aria-live={reducedMotion ? 'polite' : 'off'}>
                         <div key={index}>
-                            <h1 className="text-4xl font-extrabold leading-tight tracking-tight text-slate-900 sm:text-5xl md:text-6xl">
+                            <h1 className="text-pretty text-4xl font-extrabold leading-[1.12] tracking-tight text-slate-900 sm:text-5xl md:text-6xl md:leading-[1.1]">
                                 <span className="block">{t(line1Keys[index])}</span>
-                                <span className="mt-1 block bg-gradient-to-r from-orange-500 to-amber-400 bg-clip-text text-transparent">
+                                <span className="mt-1 block bg-gradient-to-r from-orange-500 to-amber-400 bg-clip-text text-transparent md:mt-1.5">
                                     {t(line2Keys[index])}
                                 </span>
                             </h1>
-                            <p className="mt-4 max-w-md px-1 text-base leading-relaxed text-slate-600 sm:mt-5 sm:text-lg lg:mx-0 lg:max-w-xl lg:px-0">
+                            <p className="mx-auto mt-4 max-w-md px-1 text-base leading-relaxed text-slate-600 sm:mt-5 sm:text-lg lg:mx-0 lg:max-w-xl lg:px-0">
                                 {t(subKeys[index])}
                             </p>
                         </div>
                     </div>
 
-                    <div className="mt-6 flex w-full max-w-md flex-col items-stretch gap-3 sm:mt-8">
-                        <div className="flex w-full items-center justify-center gap-2 lg:justify-start">
-                            <button
-                                type="button"
-                                onClick={goPrev}
-                                className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-gray-200 bg-white text-gray-700 shadow-sm transition hover:bg-gray-50"
-                                aria-label={t('marketing.hero_carousel_prev')}
+                    {/* Imagery below copy on mobile/tablet — matches slide theme */}
+                    <div className="mt-7 w-full lg:hidden">
+                        <div className="relative aspect-[5/4] overflow-hidden rounded-2xl bg-gray-100 shadow-md ring-1 ring-gray-100">
+                            <img
+                                key={`m-${visual.src}-${index}`}
+                                src={visual.src}
+                                alt={t(visual.altKey)}
+                                sizes="100vw"
+                                className="h-full w-full object-cover object-center"
+                                decoding="async"
+                                loading={index === 0 ? 'eager' : 'lazy'}
+                            />
+                        </div>
+                    </div>
+
+                    {/* Airalo-like full-bleed advancing line on mobile; tap zones for slide jump */}
+                    <div className="mt-7 w-[calc(100%+2rem)] max-w-none -mx-4 sm:mx-0 sm:mt-8 sm:w-full">
+                        {!reducedMotion ? (
+                            <div className="relative w-full">
+                                <div className="h-2 w-full rounded-full bg-gray-100 shadow-inner md:h-2.5">
+                                    <div
+                                        key={`bar-${progressBurst}`}
+                                        className="marketing-hero-progress-fill h-full rounded-full bg-gradient-to-r from-orange-500 via-[#FF6600] to-amber-400"
+                                        style={{ animationDuration: `${SLIDE_DURATION_MS}ms` }}
+                                    />
+                                </div>
+                                <div
+                                    className="absolute inset-x-0 bottom-0 top-[-10px] flex sm:top-[-12px]"
+                                    role="group"
+                                    aria-label={t('marketing.hero_carousel_dots')}
+                                >
+                                    {Array.from({ length: SLIDE_COUNT }, (_, i) => (
+                                        <button
+                                            key={i}
+                                            type="button"
+                                            className={`flex-1 touch-manipulation rounded-sm border-0 bg-transparent px-1 py-2 outline-none focus-visible:ring-2 focus-visible:ring-[#2563eb] focus-visible:ring-offset-2 ${
+                                                i === index ? 'cursor-default' : 'cursor-pointer'
+                                            }`}
+                                            aria-current={i === index ? true : undefined}
+                                            aria-label={t('marketing.hero_carousel_slide_label', {
+                                                current: i + 1,
+                                                total: SLIDE_COUNT,
+                                            })}
+                                            onClick={() => selectSlide(i)}
+                                        />
+                                    ))}
+                                </div>
+                            </div>
+                        ) : (
+                            <div
+                                className="flex gap-2 sm:gap-3"
+                                role="group"
+                                aria-label={t('marketing.hero_carousel_dots')}
                             >
-                                <ChevronLeft className="h-5 w-5" />
-                            </button>
-                            <nav className="flex gap-2" aria-label={t('marketing.hero_carousel_dots')} role="navigation">
                                 {Array.from({ length: SLIDE_COUNT }, (_, i) => (
                                     <button
                                         key={i}
                                         type="button"
+                                        onClick={() => selectSlide(i)}
                                         aria-current={i === index ? true : undefined}
                                         aria-label={t('marketing.hero_carousel_slide_label', {
                                             current: i + 1,
                                             total: SLIDE_COUNT,
                                         })}
-                                        className={`h-2 rounded-full transition-all ${
-                                            i === index ? 'w-7 bg-orange-500' : 'w-2 bg-gray-300 hover:bg-gray-400'
+                                        className={`h-2 flex-1 rounded-full transition-colors sm:h-2.5 ${
+                                            i === index ? 'bg-[#FF6600]' : 'bg-gray-200 hover:bg-gray-300'
                                         }`}
-                                        onClick={() => setIndex(i)}
                                     />
                                 ))}
-                            </nav>
-                            <button
-                                type="button"
-                                onClick={goNext}
-                                className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-gray-200 bg-white text-gray-700 shadow-sm transition hover:bg-gray-50"
-                                aria-label={t('marketing.hero_carousel_next')}
-                            >
-                                <ChevronRight className="h-5 w-5" />
-                            </button>
-                        </div>
-
-                        <div className="mx-auto w-full lg:mx-0">
-                            <a
-                                href={travelLanding}
-                                onClick={onTravelClick}
-                                className="flex w-full min-h-12 items-center justify-center gap-2 rounded-xl bg-orange-500 px-5 py-3 text-sm font-bold text-white shadow-lg shadow-orange-500/20 transition active:scale-[0.98] sm:min-h-14 sm:text-base"
-                            >
-                                <Globe className="h-[18px] w-[18px] shrink-0" />
-                                {t('marketing.home_travel_esim')}
-                            </a>
-                            <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2">
-                                <a
-                                    href={amazonUrl}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    className="flex min-h-12 items-center justify-center gap-2 rounded-xl bg-slate-900 px-4 py-3 text-sm font-bold text-white shadow-lg shadow-slate-900/20 transition active:scale-[0.98] sm:min-h-14 sm:text-base"
-                                    aria-label={t('marketing.buy_sim_card_aria')}
-                                >
-                                    <ShoppingCart className="h-[18px] w-[18px] shrink-0" />
-                                    {t('marketing.buy_sim_card')}
-                                </a>
-                                <a
-                                    href={activatePath}
-                                    onClick={onActivateClick}
-                                    className="flex min-h-12 items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm font-bold text-slate-900 shadow-sm transition active:scale-[0.98] sm:min-h-14 sm:text-base"
-                                >
-                                    <BadgeCheck className="h-[18px] w-[18px] shrink-0" />
-                                    {t('marketing.home_activate')}
-                                </a>
                             </div>
+                        )}
+                    </div>
+
+                    <div className="mt-8 w-full max-w-md sm:mt-9">
+                        <a
+                            href={travelLanding}
+                            onClick={onTravelClick}
+                            className="flex w-full min-h-12 items-center justify-center gap-2 rounded-xl bg-orange-500 px-5 py-3 text-sm font-bold text-white shadow-lg shadow-orange-500/20 transition active:scale-[0.98] sm:min-h-14 sm:text-base"
+                        >
+                            <Globe className="h-[18px] w-[18px] shrink-0" />
+                            {t('marketing.home_travel_esim')}
+                        </a>
+                        <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2">
+                            <a
+                                href={amazonUrl}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="flex min-h-12 items-center justify-center gap-2 rounded-xl bg-slate-900 px-4 py-3 text-sm font-bold text-white shadow-lg shadow-slate-900/20 transition active:scale-[0.98] sm:min-h-14 sm:text-base"
+                                aria-label={t('marketing.buy_sim_card_aria')}
+                            >
+                                <ShoppingCart className="h-[18px] w-[18px] shrink-0" />
+                                {t('marketing.buy_sim_card')}
+                            </a>
+                            <a
+                                href={activatePath}
+                                onClick={onActivateClick}
+                                className="flex min-h-12 items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm font-bold text-slate-900 shadow-sm transition active:scale-[0.98] sm:min-h-14 sm:text-base"
+                            >
+                                <BadgeCheck className="h-[18px] w-[18px] shrink-0" />
+                                {t('marketing.home_activate')}
+                            </a>
                         </div>
                     </div>
                 </div>
 
-                <div className="hidden min-h-[14rem] lg:flex lg:items-center lg:justify-center" aria-hidden>
-                    <div className={`flex w-full max-w-[280px] items-center justify-center rounded-2xl bg-gradient-to-br p-10 shadow-inner ${gradients[index]}`}>
-                        <SlideIcon className="h-24 w-24 text-[#FF6600]" strokeWidth={1.15} />
+                {/* Desktop: wide photo column */}
+                <div className="relative hidden lg:block lg:min-h-[22rem]">
+                    <div className="sticky top-24 overflow-hidden rounded-2xl bg-gray-100 shadow-lg ring-1 ring-gray-200/80 lg:aspect-[4/5] lg:max-h-[520px]">
+                        <img
+                            key={`d-${visual.src}-${index}`}
+                            src={visual.src}
+                            alt={t(visual.altKey)}
+                            sizes="(min-width: 1024px) 38vw, 0px"
+                            className="h-full min-h-[20rem] w-full object-cover object-center"
+                            decoding="async"
+                            loading={index === 0 ? 'eager' : 'lazy'}
+                        />
                     </div>
                 </div>
             </div>
