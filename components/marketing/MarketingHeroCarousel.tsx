@@ -59,6 +59,36 @@ export interface MarketingHeroCarouselProps {
 
 const SLIDE_COUNT = MARKETING_HERO_VISUAL_SLIDES.length;
 
+function HeroTrustStrip({
+    className,
+    id,
+}: {
+    className?: string;
+    /** Optional id so one strip can aria-labelledby for screen readers when both exist in DOM (only one visible). */
+    id?: string;
+}) {
+    const { t } = useTranslation();
+    return (
+        <div
+            id={id}
+            className={`flex w-full min-w-0 flex-wrap items-center justify-center gap-x-2 gap-y-1 text-[clamp(0.625rem,2vw,0.8125rem)] text-slate-500 sm:gap-x-2.5 sm:text-sm [&_svg]:mt-px ${className ?? ''}`}
+        >
+            <span className="inline-flex items-center gap-1">
+                <CheckCircle2 className="h-3 w-3 shrink-0 text-emerald-500 sm:h-3.5 sm:w-3.5" aria-hidden />
+                {t('marketing.trust_no_contracts')}
+            </span>
+            <span className="inline-flex items-center gap-1 sm:ml-0.5">
+                <CheckCircle2 className="h-3 w-3 shrink-0 text-emerald-500 sm:h-3.5 sm:w-3.5" aria-hidden />
+                {t('marketing.trust_no_hidden_fees')}
+            </span>
+            <span className="inline-flex items-center gap-1 sm:ml-0.5">
+                <CheckCircle2 className="h-3 w-3 shrink-0 text-emerald-500 sm:h-3.5 sm:w-3.5" aria-hidden />
+                {t('marketing.trust_support')}
+            </span>
+        </div>
+    );
+}
+
 /** Home hero: selling slides; three striped indicators (jump, no sweeping bar), imagery + CTAs. */
 export function MarketingHeroCarousel(props: MarketingHeroCarouselProps) {
     const { t } = useTranslation();
@@ -92,7 +122,7 @@ export function MarketingHeroCarousel(props: MarketingHeroCarouselProps) {
     return (
         <div className="w-full">
             <div
-                className="grid w-full items-center gap-8 lg:grid-cols-2 lg:gap-10 xl:gap-12"
+                className="grid w-full items-start gap-4 sm:gap-5 lg:grid-cols-2 lg:items-center lg:gap-6 xl:gap-8"
                 role="region"
                 aria-roledescription="carousel"
                 aria-labelledby={regionId}
@@ -102,34 +132,40 @@ export function MarketingHeroCarousel(props: MarketingHeroCarouselProps) {
                         {t('marketing.hero_carousel_region')}
                     </span>
 
-                    <div className="mb-3 inline-flex items-center gap-2 rounded-full bg-orange-50 px-3 py-1 text-xs font-bold uppercase tracking-wider text-orange-700 sm:mb-4">
-                        <Star className="h-3 w-3 shrink-0" fill="currentColor" />
+                    <div className="mb-2 inline-flex items-center gap-1.5 rounded-full bg-orange-50 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-orange-700 sm:mb-2.5 sm:gap-2 sm:px-3 sm:py-1 sm:text-xs">
+                        <Star className="h-2.5 w-2.5 shrink-0 sm:h-3 sm:w-3" fill="currentColor" />
                         {t('marketing.home_badge')}
                     </div>
 
-                    <div className="min-h-[11.5rem] w-full max-w-xl sm:min-h-[10.5rem] md:min-h-[12rem]" aria-live={reducedMotion ? 'polite' : 'off'}>
+                    <div className="min-h-[9rem] w-full max-w-xl sm:min-h-[8.75rem] md:min-h-[9rem]" aria-live={reducedMotion ? 'polite' : 'off'}>
                         <div key={index}>
-                            <h1 className="text-pretty text-4xl font-extrabold leading-[1.12] tracking-tight text-slate-900 sm:text-5xl md:text-6xl md:leading-[1.1]">
+                            <h1 className="text-pretty text-[1.6875rem] font-extrabold leading-[1.08] tracking-tight text-slate-900 sm:text-4xl md:text-5xl md:leading-[1.08]">
                                 <span className="block">{t(line1Keys[index])}</span>
-                                <span className="mt-1 block bg-gradient-to-r from-orange-500 to-amber-400 bg-clip-text text-transparent md:mt-1.5">
+                                <span className="mt-0.5 block bg-gradient-to-r from-orange-500 to-amber-400 bg-clip-text text-transparent sm:mt-1 md:mt-1.5">
                                     {t(line2Keys[index])}
                                 </span>
                             </h1>
-                            <p className="mx-auto mt-4 max-w-md px-1 text-base leading-relaxed text-slate-600 sm:mt-5 sm:text-lg lg:mx-0 lg:max-w-xl lg:px-0">
+                            <p className="mx-auto mt-2 max-w-md px-0 text-sm leading-snug text-slate-600 sm:mt-3 sm:text-base sm:leading-relaxed md:text-[1.0625rem] lg:mx-0 lg:max-w-xl">
                                 {t(subKeys[index])}
                             </p>
                         </div>
                     </div>
 
-                    {/* Imagery below copy on mobile/tablet — matches slide theme */}
-                    <div className="mt-7 w-full lg:hidden">
-                        <div className="relative aspect-[5/4] overflow-hidden rounded-2xl bg-gray-100 shadow-md ring-1 ring-gray-100">
+                    {/* Trust line before hero art on small screens — keeps conversion points above the fold */}
+                    <HeroTrustStrip
+                        id="marketing-hero-trust"
+                        className="mt-3 max-w-xl px-1 lg:hidden"
+                    />
+
+                    {/* Imagery below copy on mobile/tablet — capped height keeps trust + CTAs in first screen */}
+                    <div className="mt-4 w-full sm:mt-5 lg:hidden">
+                        <div className="relative h-[clamp(9rem,38vmin,240px)] w-full overflow-hidden rounded-2xl bg-gray-100 shadow-md ring-1 ring-gray-100 sm:h-[clamp(10rem,40vmin,280px)]">
                             <img
                                 key={`m-${visual.src}-${index}`}
                                 src={visual.src}
                                 alt={t(visual.altKey)}
                                 sizes="100vw"
-                                className="h-full w-full object-cover object-center"
+                                className="absolute inset-0 h-full w-full object-cover object-center"
                                 decoding="async"
                                 loading="eager"
                                 fetchPriority={index === 0 ? 'high' : 'auto'}
@@ -139,7 +175,7 @@ export function MarketingHeroCarousel(props: MarketingHeroCarouselProps) {
 
                     {/* Three stripes — active one fills brand orange; advances every 3–5s (no sweep animation) */}
                     <div
-                        className="mx-auto mt-7 flex w-full max-w-md gap-2 sm:mt-8 sm:gap-3 lg:mx-0"
+                        className="mx-auto mt-4 flex w-full max-w-md gap-2 sm:mt-5 sm:gap-2.5 lg:mx-0"
                         role="group"
                         aria-label={t('marketing.hero_carousel_dots')}
                     >
@@ -153,7 +189,7 @@ export function MarketingHeroCarousel(props: MarketingHeroCarouselProps) {
                                     current: i + 1,
                                     total: SLIDE_COUNT,
                                 })}
-                                className={`h-2.5 min-h-[10px] flex-1 touch-manipulation rounded-full border-0 shadow-inner outline-none transition-colors duration-75 focus-visible:ring-2 focus-visible:ring-[#2563eb] focus-visible:ring-offset-2 sm:h-3 ${
+                                className={`h-2 min-h-[8px] flex-1 touch-manipulation rounded-full border-0 shadow-inner outline-none transition-colors duration-75 focus-visible:ring-2 focus-visible:ring-[#2563eb] focus-visible:ring-offset-2 sm:h-2.5 ${
                                     i === index
                                         ? 'cursor-default bg-gradient-to-r from-orange-500 to-amber-400 shadow-sm'
                                         : 'cursor-pointer bg-gray-200 hover:bg-gray-300'
@@ -162,21 +198,21 @@ export function MarketingHeroCarousel(props: MarketingHeroCarouselProps) {
                         ))}
                     </div>
 
-                    <div className="mt-8 w-full max-w-md sm:mt-9">
+                    <div className="mt-5 w-full max-w-md sm:mt-6">
                         <a
                             href={travelLanding}
                             onClick={onTravelClick}
-                            className="flex w-full min-h-12 items-center justify-center gap-2 rounded-xl bg-orange-500 px-5 py-3 text-sm font-bold text-white shadow-lg shadow-orange-500/20 transition active:scale-[0.98] sm:min-h-14 sm:text-base"
+                            className="flex w-full min-h-11 items-center justify-center gap-2 rounded-xl bg-orange-500 px-4 py-2.5 text-sm font-bold text-white shadow-lg shadow-orange-500/20 transition active:scale-[0.98] sm:min-h-12 sm:px-5 sm:py-3 sm:text-base"
                         >
                             <Globe className="h-[18px] w-[18px] shrink-0" />
                             {t('marketing.home_travel_esim')}
                         </a>
-                        <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2">
+                        <div className="mt-2.5 grid grid-cols-1 gap-2.5 sm:mt-3 sm:grid-cols-2 sm:gap-3">
                             <a
                                 href={amazonUrl}
                                 target="_blank"
                                 rel="noopener noreferrer"
-                                className="flex min-h-12 items-center justify-center gap-2 rounded-xl bg-slate-900 px-4 py-3 text-sm font-bold text-white shadow-lg shadow-slate-900/20 transition active:scale-[0.98] sm:min-h-14 sm:text-base"
+                                className="flex min-h-11 items-center justify-center gap-2 rounded-xl bg-slate-900 px-4 py-2.5 text-sm font-bold text-white shadow-lg shadow-slate-900/20 transition active:scale-[0.98] sm:min-h-12 sm:py-3 sm:text-base"
                                 aria-label={t('marketing.buy_sim_card_aria')}
                             >
                                 <ShoppingCart className="h-[18px] w-[18px] shrink-0" />
@@ -185,7 +221,7 @@ export function MarketingHeroCarousel(props: MarketingHeroCarouselProps) {
                             <a
                                 href={activatePath}
                                 onClick={onActivateClick}
-                                className="flex min-h-12 items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm font-bold text-slate-900 shadow-sm transition active:scale-[0.98] sm:min-h-14 sm:text-base"
+                                className="flex min-h-11 items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-bold text-slate-900 shadow-sm transition active:scale-[0.98] sm:min-h-12 sm:py-3 sm:text-base"
                             >
                                 <BadgeCheck className="h-[18px] w-[18px] shrink-0" />
                                 {t('marketing.home_activate')}
@@ -194,15 +230,15 @@ export function MarketingHeroCarousel(props: MarketingHeroCarouselProps) {
                     </div>
                 </div>
 
-                {/* Desktop: photo column — 50/50 grid so art reads at parity with copy */}
+                {/* Desktop: shorter max height vs viewport so trust row stays above the fold on common laptop sizes */}
                 <div className="relative hidden w-full min-w-0 lg:block">
-                    <div className="sticky top-24 overflow-hidden rounded-2xl bg-gray-100 shadow-lg ring-1 ring-gray-200/80 aspect-[3/4] min-h-[min(28rem,55vh)] w-full max-h-[min(640px,72vh)]">
+                    <div className="sticky top-[4.25rem] max-h-[min(28rem,min(62dvh,calc(100dvh-10.5rem)))] overflow-hidden rounded-2xl bg-gray-100 shadow-lg ring-1 ring-gray-200/80 aspect-[5/6] min-h-[16rem] w-full xl:aspect-[4/5] xl:max-h-[min(32rem,min(65dvh,calc(100dvh-9.5rem)))]">
                         <img
                             key={`d-${visual.src}-${index}`}
                             src={visual.src}
                             alt={t(visual.altKey)}
                             sizes="(min-width: 1024px) min(46vw, 560px), 0px"
-                            className="h-full w-full min-h-[20rem] object-cover object-center"
+                            className="h-full w-full min-h-[14rem] object-cover object-center"
                             decoding="async"
                             loading="eager"
                             fetchPriority={index === 0 ? 'high' : 'auto'}
@@ -211,20 +247,8 @@ export function MarketingHeroCarousel(props: MarketingHeroCarouselProps) {
                 </div>
             </div>
 
-            <div className="mt-6 flex w-full min-w-0 max-w-full flex-wrap items-center justify-center gap-x-2 gap-y-1.5 px-1 text-[clamp(0.65rem,2.2vw,0.875rem)] text-slate-500 sm:mt-8 sm:gap-x-3 sm:gap-y-0 sm:text-sm lg:mt-10">
-                <span className="inline-flex items-center gap-1">
-                    <CheckCircle2 className="h-3.5 w-3.5 shrink-0 text-emerald-500" aria-hidden />
-                    {t('marketing.trust_no_contracts')}
-                </span>
-                <span className="inline-flex items-center gap-1 sm:ml-1">
-                    <CheckCircle2 className="h-3.5 w-3.5 shrink-0 text-emerald-500" aria-hidden />
-                    {t('marketing.trust_no_hidden_fees')}
-                </span>
-                <span className="inline-flex items-center gap-1 sm:ml-1">
-                    <CheckCircle2 className="h-3.5 w-3.5 shrink-0 text-emerald-500" aria-hidden />
-                    {t('marketing.trust_support')}
-                </span>
-            </div>
+            {/* Full-width trust row on lg+ (mobile shows strip above hero image inside the carousel column). */}
+            <HeroTrustStrip className="mt-5 hidden px-2 sm:mt-6 lg:flex xl:mt-7" />
         </div>
     );
 }
