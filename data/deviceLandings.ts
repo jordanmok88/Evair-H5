@@ -56,6 +56,8 @@ export interface DeviceCatalogItem {
      * Prefer self-hosted **`/marketing/device-built-for/cell-NN.png`** (brand PNG photography for clarity). */
     productPhotoUrl?: string;
     productPhotoAlt?: string;
+    /** Passed to `object-position` (e.g. `"72% 48%"`) so the hero subject stays centred in the crop when using wide shots in tall cards. */
+    productPhotoObjectPosition?: string;
 }
 
 /**
@@ -235,6 +237,7 @@ export const DEVICE_CONTENT: Record<DeviceCategory, DeviceContent> = {
                 productPhotoUrl: '/marketing/device-built-for/cell-07.png',
                 productPhotoAlt:
                     'White dome security camera mounted under exterior eaves with wireless antenna',
+                productPhotoObjectPosition: '76% 48%',
             },
             {
                 icon: Camera,
@@ -242,6 +245,7 @@ export const DEVICE_CONTENT: Record<DeviceCategory, DeviceContent> = {
                 productPhotoUrl: '/marketing/device-built-for/cell-08.png',
                 productPhotoAlt:
                     'Camouflaged trail camera mounted on a tree trunk in a forest setting',
+                productPhotoObjectPosition: '52% 48%',
             },
             {
                 icon: Shield,
@@ -249,6 +253,7 @@ export const DEVICE_CONTENT: Record<DeviceCategory, DeviceContent> = {
                 productPhotoUrl: '/marketing/device-built-for/cell-09.png',
                 productPhotoAlt:
                     'Field IoT telemetry box on a pole with solar panel displaying soil moisture and connectivity status',
+                productPhotoObjectPosition: '68% 46%',
             },
         ],
         plans: [
@@ -323,12 +328,14 @@ export const DEVICE_CONTENT: Record<DeviceCategory, DeviceContent> = {
                 productPhotoUrl: '/marketing/device-built-for/cell-01.png',
                 productPhotoAlt:
                     'Golden retriever on lawn wearing a collar with a rectangular GPS collar module',
+                productPhotoObjectPosition: '44% 46%',
             },
             {
                 icon: Watch,
                 label: 'Smartwatches',
                 productPhotoUrl: '/marketing/device-built-for/cell-02.png',
                 productPhotoAlt: 'Wrist wearing a smartwatch displaying a navigation map outdoors',
+                productPhotoObjectPosition: '50% 48%',
             },
             {
                 icon: BookOpen,
@@ -336,6 +343,7 @@ export const DEVICE_CONTENT: Record<DeviceCategory, DeviceContent> = {
                 productPhotoUrl: '/marketing/device-built-for/cell-03.png',
                 productPhotoAlt:
                     'Hands holding an e-ink tablet reader showing a book page indoors',
+                productPhotoObjectPosition: '50% 48%',
             },
             {
                 icon: Radio,
@@ -343,6 +351,7 @@ export const DEVICE_CONTENT: Record<DeviceCategory, DeviceContent> = {
                 productPhotoUrl: '/marketing/device-built-for/cell-04.png',
                 productPhotoAlt:
                     'Rugged LTE handheld radio with display and antenna held on a construction site',
+                productPhotoObjectPosition: '50% 46%',
             },
             {
                 icon: CreditCard,
@@ -350,12 +359,14 @@ export const DEVICE_CONTENT: Record<DeviceCategory, DeviceContent> = {
                 productPhotoUrl: '/marketing/device-built-for/cell-05.png',
                 productPhotoAlt:
                     'Handheld touchscreen POS terminal showing a successful payment in a café',
+                productPhotoObjectPosition: '50% 48%',
             },
             {
                 icon: Wrench,
                 label: 'Robotic mowers',
                 productPhotoUrl: '/marketing/device-built-for/cell-06.png',
                 productPhotoAlt: 'Robotic lawn mower trimming a manicured backyard lawn',
+                productPhotoObjectPosition: '50% 50%',
             },
         ],
         plans: [

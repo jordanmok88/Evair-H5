@@ -293,7 +293,11 @@ const DeviceLandingPage: React.FC<DeviceLandingPageProps> = ({ category }) => {
                                             <img
                                                 src={d.productPhotoUrl}
                                                 alt={d.productPhotoAlt ?? `${d.label} — illustrative product imagery`}
-                                                className="h-full w-full object-cover transition duration-500 ease-out group-hover:scale-[1.03]"
+                                                className="h-full w-full origin-center object-cover transition duration-500 ease-out group-hover:scale-[1.03]"
+                                                style={{
+                                                    objectPosition:
+                                                        d.productPhotoObjectPosition ?? 'center center',
+                                                }}
                                                 decoding="async"
                                                 loading="lazy"
                                                 sizes="(min-width: 1024px) 28vw, (min-width: 640px) 44vw, 92vw"
