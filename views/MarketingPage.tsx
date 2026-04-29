@@ -160,7 +160,8 @@ const MarketingPage: React.FC = () => {
     return (
         <div className="min-h-screen overflow-x-hidden bg-white text-gray-900 antialiased [text-rendering:optimizeLegibility]">
             <header className="sticky top-0 z-30 border-b border-gray-100 bg-white/95 backdrop-blur-md supports-[backdrop-filter]:bg-white/90">
-                <div className="mx-auto flex h-14 min-h-14 max-w-6xl items-center justify-between gap-2 px-3 sm:h-16 sm:min-h-16 sm:gap-3 sm:px-4 md:px-8">
+                {/* Match hero width on wide desktops so nav and body align */}
+                <div className="mx-auto flex h-14 min-h-14 max-w-[min(100rem,calc(100vw-2rem))] items-center justify-between gap-2 px-3 sm:h-16 sm:min-h-16 sm:gap-3 sm:px-5 md:px-8 xl:px-12 2xl:px-14">
                     <a href="/" className="flex min-w-0 max-w-[min(200px,52vw)] shrink items-center" aria-label="EvairSIM home">
                         <img
                             src="/evairsim-wordmark.png"
@@ -194,37 +195,37 @@ const MarketingPage: React.FC = () => {
                 </div>
             </header>
 
-            <section className="bg-white px-4 py-12 sm:px-5 sm:py-16 md:px-6 md:py-20 lg:py-24">
-                <div className="mx-auto flex w-full min-w-0 max-w-4xl flex-col items-center text-center">
-                    <div className="mb-3 inline-flex items-center gap-2 rounded-full bg-orange-50 px-3 py-1 text-xs font-bold uppercase tracking-wider text-orange-700 sm:mb-4">
+            <section className="bg-white px-4 py-12 sm:px-5 sm:py-16 md:px-8 md:py-20 lg:py-24 xl:px-12 2xl:px-14">
+                <div className="mx-auto flex w-full min-w-0 max-w-[min(100rem,calc(100vw-2rem))] flex-col items-center text-center">
+                    <div className="mb-3 inline-flex items-center gap-2 rounded-full bg-orange-50 px-3 py-1 text-xs font-bold uppercase tracking-wider text-orange-700 sm:mb-4 md:text-[0.8125rem] xl:text-sm">
                         <Star className="h-3 w-3 shrink-0" fill="currentColor" />
                         {t('marketing.home_badge')}
                     </div>
-                    <h1 className="text-4xl font-extrabold leading-tight tracking-tight text-slate-900 sm:text-5xl md:text-6xl">
+                    <h1 className="px-1 text-[clamp(2.125rem,min(7vw,2.875rem),4.875rem)] font-extrabold leading-[1.08] tracking-tight text-slate-900 sm:text-[clamp(2.375rem,min(6.2vw,3.5rem),4.875rem)] md:text-[clamp(2.75rem,min(5.5vw,3.75rem),5.25rem)] lg:leading-[1.06] lg:text-[clamp(3rem,min(4.8vw,4rem),5.5rem)] xl:text-[clamp(3.25rem,min(4.2vw,4.25rem),6rem)]">
                         {t('marketing.home_hero_stay')}
                         <br />
                         <span className="bg-gradient-to-r from-orange-500 to-amber-400 bg-clip-text text-transparent">
                             {t('marketing.home_hero_anywhere')}
                         </span>
                     </h1>
-                    <p className="mt-4 max-w-md px-1 text-base leading-relaxed text-slate-600 sm:mt-6 sm:text-lg">
+                    <p className="mt-4 max-w-[min(48rem,calc(100vw-3rem))] px-1 text-[clamp(1rem,1.05vw+0.85rem,1.3125rem)] leading-relaxed text-slate-600 sm:mt-6 sm:max-w-2xl md:max-w-3xl lg:max-w-4xl xl:max-w-5xl">
                         {t('marketing.home_hero_sub')}
                     </p>
-                    <div className="mt-8 w-full max-w-md sm:mt-10">
+                    <div className="mt-8 w-full max-w-[min(52rem,calc(100vw-3rem))] sm:mt-10 lg:max-w-3xl xl:max-w-4xl">
                         <a
                             href={TRAVEL_ESIM_LANDING}
                             onClick={goTravelEsimCta}
-                            className="flex w-full min-h-12 items-center justify-center gap-2 rounded-xl bg-orange-500 px-5 py-3 text-sm font-bold text-white shadow-lg shadow-orange-500/20 transition active:scale-[0.98] sm:min-h-14 sm:text-base"
+                            className="flex w-full min-h-12 items-center justify-center gap-2 rounded-xl bg-orange-500 px-5 py-3 text-[clamp(0.875rem,0.9vw+0.65rem,1.0625rem)] font-bold text-white shadow-lg shadow-orange-500/20 transition active:scale-[0.98] sm:min-h-14 xl:py-4 xl:text-[1.0625rem]"
                         >
                             <Globe className="h-[18px] w-[18px] shrink-0" />
                             {t('marketing.home_travel_esim')}
                         </a>
-                        <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2">
+                        <div className="mt-3 grid grid-cols-1 gap-3 lg:grid-cols-2 lg:gap-4">
                             <a
                                 href={AMAZON_SIM_STOREFRONT_URL}
                                 target="_blank"
                                 rel="noopener noreferrer"
-                                className="flex min-h-12 items-center justify-center gap-2 rounded-xl bg-slate-900 px-4 py-3 text-sm font-bold text-white shadow-lg shadow-slate-900/20 transition active:scale-[0.98] sm:min-h-14 sm:text-base"
+                                className="flex min-h-12 items-center justify-center gap-2 rounded-xl bg-slate-900 px-4 py-3 text-[clamp(0.875rem,0.9vw+0.65rem,1.0625rem)] font-bold text-white shadow-lg shadow-slate-900/20 transition active:scale-[0.98] sm:min-h-14 xl:py-4 xl:text-[1.0625rem]"
                                 aria-label={t('marketing.buy_sim_card_aria')}
                             >
                                 <ShoppingCart className="h-[18px] w-[18px] shrink-0" />
@@ -233,14 +234,14 @@ const MarketingPage: React.FC = () => {
                             <a
                                 href={ACTIVATE_PATH}
                                 onClick={goActivateCta}
-                                className="flex min-h-12 items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm font-bold text-slate-900 shadow-sm transition active:scale-[0.98] sm:min-h-14 sm:text-base"
+                                className="flex min-h-12 items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-3 text-[clamp(0.875rem,0.9vw+0.65rem,1.0625rem)] font-bold text-slate-900 shadow-sm transition active:scale-[0.98] sm:min-h-14 xl:py-4 xl:text-[1.0625rem]"
                             >
                                 <BadgeCheck className="h-[18px] w-[18px] shrink-0" />
                                 {t('marketing.home_activate')}
                             </a>
                         </div>
                     </div>
-                    <div className="mt-6 flex w-full min-w-0 max-w-full flex-wrap items-center justify-center gap-x-2 gap-y-1.5 px-1 text-[clamp(0.65rem,2.2vw,0.875rem)] text-slate-500 sm:mt-8 sm:gap-x-3 sm:gap-y-0 sm:text-sm">
+                    <div className="mt-6 flex w-full min-w-0 max-w-full flex-wrap items-center justify-center gap-x-2 gap-y-1.5 px-1 text-[clamp(0.75rem,0.85vw+0.55rem,0.9375rem)] text-slate-500 sm:mt-8 sm:gap-x-4 sm:gap-y-0 md:text-base">
                         <span className="inline-flex items-center gap-1">
                             <CheckCircle2 className="h-3.5 w-3.5 shrink-0 text-emerald-500" aria-hidden />
                             {t('marketing.trust_no_contracts')}
@@ -257,12 +258,12 @@ const MarketingPage: React.FC = () => {
                 </div>
             </section>
 
-            <section id="stories" className="border-t border-gray-100 bg-white px-4 py-10 sm:px-5 md:px-8 md:py-14">
-                <div className="mx-auto min-w-0 max-w-6xl">
+            <section id="stories" className="border-t border-gray-100 bg-white px-4 py-10 sm:px-5 md:px-8 md:py-14 xl:px-12 2xl:px-14">
+                <div className="mx-auto min-w-0 max-w-[min(100rem,calc(100vw-2rem))]">
                     <h2 className="text-left text-lg font-extrabold text-gray-900 sm:text-xl md:text-2xl">
                         {t('marketing.home_stories_title')}
                     </h2>
-                    <p className="mt-2 max-w-xl text-sm leading-relaxed text-gray-600 sm:text-base">
+                    <p className="mt-2 max-w-xl text-sm leading-relaxed text-gray-600 sm:text-base md:max-w-2xl lg:max-w-3xl lg:text-[1.0625rem]">
                         {t('marketing.home_stories_sub')}
                     </p>
 
@@ -306,12 +307,12 @@ const MarketingPage: React.FC = () => {
                 </div>
             </section>
 
-            <section id="why" className="border-t border-gray-100 bg-gray-50 px-4 py-10 sm:px-5 md:px-8 md:py-12">
-                <div className="mx-auto w-full min-w-0 max-w-6xl">
+            <section id="why" className="border-t border-gray-100 bg-gray-50 px-4 py-10 sm:px-5 md:px-8 md:py-12 xl:px-12 2xl:px-14">
+                <div className="mx-auto w-full min-w-0 max-w-[min(100rem,calc(100vw-2rem))]">
                     <h2 className="text-left text-lg font-extrabold text-gray-900 sm:text-xl md:text-2xl">
                         {t('marketing.home_why_title')}
                     </h2>
-                    <p className="mt-2 max-w-2xl text-sm leading-relaxed text-gray-600 sm:text-base">
+                    <p className="mt-2 max-w-2xl text-sm leading-relaxed text-gray-600 sm:text-base md:max-w-3xl lg:text-[1.0625rem] xl:max-w-4xl">
                         {t('marketing.home_why_sub')}
                     </p>
                     <div className="mt-6 grid grid-cols-1 gap-4 min-[400px]:grid-cols-2 min-[400px]:gap-4 sm:mt-7 md:mt-8 md:gap-5">
@@ -339,15 +340,15 @@ const MarketingPage: React.FC = () => {
                 </div>
             </section>
 
-            <section id="compare" className="border-t border-gray-100 bg-slate-50 px-4 py-10 sm:px-5 md:px-8 md:py-12">
-                <div className="mx-auto w-full min-w-0 max-w-6xl">
+            <section id="compare" className="border-t border-gray-100 bg-slate-50 px-4 py-10 sm:px-5 md:px-8 md:py-12 xl:px-12 2xl:px-14">
+                <div className="mx-auto w-full min-w-0 max-w-[min(100rem,calc(100vw-2rem))]">
                     <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-600 sm:text-xs">
                         {t('marketing.home_plans_eyebrow')}
                     </p>
                     <h2 className="mt-1 text-lg font-extrabold text-gray-900 sm:text-xl md:text-2xl">
                         {t('marketing.home_plans_title')}
                     </h2>
-                    <p className="mt-2 max-w-2xl text-sm leading-relaxed text-gray-600 sm:text-base">
+                    <p className="mt-2 max-w-2xl text-sm leading-relaxed text-gray-600 sm:text-base md:max-w-3xl lg:text-[1.0625rem] xl:max-w-4xl">
                         {t('marketing.home_plans_sub')}
                     </p>
 
@@ -394,9 +395,11 @@ const MarketingPage: React.FC = () => {
             </section>
 
             <section className="bg-[#0A1128] text-white">
-                <div className="mx-auto max-w-3xl px-4 py-12 text-center sm:px-6 sm:py-16">
-                    <h2 className="text-2xl font-extrabold leading-tight sm:text-3xl md:text-4xl">{t('marketing.home_ready_title')}</h2>
-                    <p className="mx-auto mt-3 max-w-lg px-1 text-base text-gray-300 sm:mt-4 sm:text-lg">
+                <div className="mx-auto max-w-[min(56rem,calc(100vw-2.5rem))] px-4 py-12 text-center sm:px-6 sm:py-16 xl:px-8">
+                    <h2 className="text-[clamp(1.5rem,2.5vw+0.85rem,2.75rem)] font-extrabold leading-tight text-white">
+                        {t('marketing.home_ready_title')}
+                    </h2>
+                    <p className="mx-auto mt-3 max-w-[min(40rem,calc(100vw-3rem))] px-1 text-[clamp(1rem,0.9vw+0.82rem,1.25rem)] text-gray-300 sm:mt-4">
                         {t('marketing.home_ready_sub')}
                     </p>
                     <div className="mt-6 flex w-full min-w-0 flex-col items-stretch justify-center gap-3 sm:mt-8 sm:flex-row sm:items-center sm:gap-4">
@@ -416,7 +419,7 @@ const MarketingPage: React.FC = () => {
                     </div>
                 </div>
                 <footer className="border-t border-gray-700 px-4 py-8 pb-safe-bottom sm:px-6 md:px-8 md:py-10">
-                    <div className="mx-auto grid max-w-6xl grid-cols-1 gap-8 text-sm text-gray-300 min-[480px]:grid-cols-2 md:grid-cols-5">
+                    <div className="mx-auto grid max-w-[min(100rem,calc(100vw-2rem))] grid-cols-1 gap-8 text-sm text-gray-300 min-[480px]:grid-cols-2 md:grid-cols-5">
                         <div className="min-w-0 min-[480px]:col-span-2 md:col-span-1">
                             <FooterWordmarkLink />
                             <p className="text-sm text-gray-400 sm:text-sm">{t('marketing.home_footer_tagline')}</p>
@@ -458,7 +461,7 @@ const MarketingPage: React.FC = () => {
                             ]}
                         />
                     </div>
-                    <div className="mx-auto mt-6 flex max-w-6xl flex-col justify-between gap-2 border-t border-gray-700 pt-6 text-[11px] text-gray-500 sm:mt-8 sm:gap-3 sm:text-xs md:flex-row md:items-center">
+                    <div className="mx-auto mt-6 flex max-w-[min(100rem,calc(100vw-2rem))] flex-col justify-between gap-2 border-t border-gray-700 pt-6 text-[11px] text-gray-500 sm:mt-8 sm:gap-3 sm:text-xs md:flex-row md:items-center">
                         <span>{t('marketing.home_footer_copyright', { year: new Date().getFullYear() })}</span>
                         <span>{t('marketing.home_footer_made')}</span>
                     </div>
