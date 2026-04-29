@@ -112,98 +112,141 @@ body {
   scrollbar-width: none;
 }
 
-/* ── Boot splash (single-layer motion: halo sits BEHIND logo; no overlapping ring stacks) ── */
+/* ── Boot splash: dark canvas + transparent logo + calm progress (sync ms with BootSplash.tsx) ── */
 
 .boot-splash-shell {
   background:
-    radial-gradient(ellipse 120% 72% at 50% 32%, rgba(255, 120, 40, 0.16), transparent 58%),
-    linear-gradient(165deg, #fffdfb 0%, #f4f8fc 52%, #eef3f9 100%);
+    radial-gradient(ellipse 90% 55% at 50% 38%, rgba(255, 102, 0, 0.11), transparent 62%),
+    radial-gradient(ellipse 70% 45% at 50% 100%, rgba(30, 22, 18, 0.65), transparent 50%),
+    linear-gradient(168deg, #0c0c0e 0%, #080809 45%, #050506 100%);
 }
 
-.boot-logo-halo {
-  position: absolute;
-  left: 50%;
-  top: 50%;
-  transform: translate(-50%, -52%);
-  z-index: 0;
-  width: clamp(260px, 78vw, 520px);
-  height: clamp(120px, 28vw, 220px);
-  border-radius: 50%;
-  background: radial-gradient(
-    ellipse 80% 70% at 50% 50%,
-    rgba(255, 149, 64, 0.48) 0%,
-    rgba(255, 153, 80, 0.15) 45%,
-    transparent 74%
-  );
-  filter: blur(22px);
-  animation: boot-halo-glow 2.85s ease-in-out infinite;
+/* Faint vignette + oversized slow pulse — z behind all UI */
+.boot-splash-aura {
   pointer-events: none;
+  position: absolute;
+  inset: -8%;
+  background: radial-gradient(circle at 50% 42%, transparent 38%, rgba(0, 0, 0, 0.45) 100%);
+  animation: boot-aura-pulse 5s ease-in-out infinite;
 }
 
-@keyframes boot-halo-glow {
+@keyframes boot-aura-pulse {
   0%,
   100% {
-    opacity: 0.76;
-    transform: translate(-50%, -52%) scale(0.94);
+    opacity: 0.85;
   }
   50% {
     opacity: 1;
-    transform: translate(-50%, -52%) scale(1.05);
   }
 }
 
-.boot-shimmer-track {
-  position: relative;
-  overflow: hidden;
-  width: clamp(216px, 58vw, 340px);
-  height: 5px;
-  border-radius: 9999px;
-  background: linear-gradient(to bottom, rgba(15, 23, 42, 0.07), rgba(241, 245, 249, 0.9));
-  box-shadow:
-    inset 0 1px 1px rgba(255, 255, 255, 0.7),
-    0 1px 2px rgba(15, 23, 42, 0.06);
+.boot-logo-stack {
+  min-height: min(204px, 36vh);
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
-.boot-shimmer-strip {
+/* Soft orange bloom ONLY behind raster — PNG transparency lets edges breathe */
+.boot-logo-bloom {
+  pointer-events: none;
   position: absolute;
-  inset: 0;
-  width: 42%;
-  border-radius: 9999px;
-  background: linear-gradient(90deg, #ff9440, #ff6600, #ffb347);
-  box-shadow: 0 0 16px rgba(255, 102, 0, 0.45);
-  animation: boot-shimmer-slide 1.65s ease-in-out infinite;
+  left: 50%;
+  top: 50%;
+  z-index: 0;
+  width: min(520px, 92vw);
+  height: clamp(100px, 22vw, 160px);
+  transform: translate(-50%, -50%);
+  border-radius: 50%;
+  background: radial-gradient(
+    ellipse 72% 80% at 50% 50%,
+    rgba(255, 110, 40, 0.22) 0%,
+    rgba(255, 90, 20, 0.06) 52%,
+    transparent 72%
+  );
+  filter: blur(36px);
+  animation: boot-bloom-breathe 3.2s ease-in-out infinite;
 }
 
-@keyframes boot-shimmer-slide {
-  0% {
-    transform: translateX(-110%);
-    opacity: 0.65;
-  }
-  48% {
-    opacity: 1;
-  }
+@keyframes boot-bloom-breathe {
+  0%,
   100% {
-    transform: translateX(295%);
-    opacity: 0.72;
+    opacity: 0.75;
+    transform: translate(-50%, -50%) scale(0.97);
+  }
+  50% {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1.03);
   }
 }
 
-.boot-splash-eyebrow {
-  letter-spacing: 0.22em;
+.boot-logo-reveal {
+  animation: boot-logo-enter 0.75s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+  opacity: 0;
+}
+
+@keyframes boot-logo-enter {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Single progress line — duration must match BOOT_SPLASH_DURATION_MS_DEFAULT (2800ms) */
+.boot-progress-track {
+  position: relative;
+  width: clamp(200px, 52vw, 280px);
+  height: 2px;
+  border-radius: 9999px;
+  background: rgba(255, 255, 255, 0.08);
+  overflow: hidden;
+}
+
+.boot-progress-inner {
+  height: 100%;
+  width: 0;
+  border-radius: 9999px;
+  background: linear-gradient(90deg, rgba(255, 102, 0, 0.35), #ff6600 45%, #ff9a4d);
+  box-shadow: 0 0 12px rgba(255, 102, 0, 0.35);
+  animation: boot-progress-fill var(--boot-ms, 2800ms) cubic-bezier(0.45, 0, 0.15, 1) forwards;
+}
+
+
+@keyframes boot-progress-fill {
+  to {
+    width: 100%;
+  }
+}
+
+.boot-splash-tag {
+  font-variant-numeric: tabular-nums;
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .boot-logo-halo {
+  .boot-splash-aura {
     animation: none;
-    opacity: 0.58;
-    transform: translate(-50%, -52%) scale(1);
+    opacity: 1;
   }
 
-  .boot-shimmer-strip {
+  .boot-logo-bloom {
     animation: none;
-    transform: translateX(29%);
-    width: 44%;
-    opacity: 0.85;
+    opacity: 0.55;
+    transform: translate(-50%, -50%) scale(1);
+  }
+
+  .boot-logo-reveal {
+    animation: none !important;
+    opacity: 1 !important;
+  }
+
+  .boot-progress-inner {
+    animation: none !important;
+    width: 100%;
+    opacity: 0.5;
     box-shadow: none;
   }
 }

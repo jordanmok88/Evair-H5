@@ -2,18 +2,14 @@ import React, { useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 
 /**
- * Canonical **horizontal EvairSIM** mark (orange Evair + SIM chip badge) — use ONLY this on boot splash.
- * Do NOT use `evairsim-logo.png` / wordmark / screenshot mock-ups here (`project-overview.mdc`).
+ * Transparent horizontal EvairSIM mark — `/evairsim-splash-logo.png` (only file for splash; see project-overview.mdc).
  */
-export const BOOT_SPLASH_LOGO_SRC = '/evairsim-splash-logo.jpg';
+export const BOOT_SPLASH_LOGO_SRC = '/evairsim-splash-logo.png';
 
-/** Total time splash holds before mounting the shell (ms). */
+/** Total splash hold (matches `--boot-ms` on shell + `.boot-progress-inner` in app.css). */
 export const BOOT_SPLASH_DURATION_MS_DEFAULT = 2800;
 export const BOOT_SPLASH_DURATION_MS_REDUCED = 980;
 
-/**
- * Skip the full-screen splash (`?nosplash=1`). Reload still shows splash unless this flag is set.
- */
 export function shouldSkipBootSplash(): boolean {
     if (typeof window === 'undefined') return true;
     try {
@@ -28,8 +24,8 @@ interface BootSplashProps {
 }
 
 /**
- * Minimal high-impact splash: warm backdrop, halo **behind** the logo only (nothing overlaps foreground),
- * single shimmering accent line — no stacked “hub + big ring” circus.
+ * Dark restrained welcome: transparent logo, soft bloom behind, single progress line.
+ * Reduced-motion variants live in app.css.
  */
 export function BootSplash({ onFinish }: BootSplashProps) {
     const { t } = useTranslation();
@@ -55,34 +51,36 @@ export function BootSplash({ onFinish }: BootSplashProps) {
 
     return (
         <div
-            className="boot-splash-shell fixed inset-0 z-[2147483646] flex flex-col items-center justify-center px-5"
+            className="boot-splash-shell relative fixed inset-0 z-[2147483646] flex flex-col items-center justify-center overflow-hidden px-6"
             role="status"
             aria-live="polite"
             aria-busy="true"
+            style={{ '--boot-ms': `${BOOT_SPLASH_DURATION_MS_DEFAULT}ms` } as React.CSSProperties}
         >
             <span className="sr-only">{t('app.boot_splash_sr')}</span>
 
-            <div className="relative z-10 flex w-full max-w-2xl flex-col items-center">
-                <div className="relative w-full px-2 sm:px-0">
-                    <span className="boot-logo-halo" aria-hidden />
+            <div className="boot-splash-aura" aria-hidden />
 
+            <div className="relative z-10 flex w-full max-w-lg flex-col items-center">
+                <div className="boot-logo-stack relative w-full">
+                    <span className="boot-logo-bloom" aria-hidden />
                     <img
                         src={BOOT_SPLASH_LOGO_SRC}
                         alt=""
                         width={1024}
-                        height={359}
-                        className="relative z-[1] mx-auto block h-auto w-full max-h-[min(192px,calc(32vh))] max-w-[min(600px,calc(100vw-2rem))] object-contain"
+                        height={266}
+                        className="boot-logo-mark boot-logo-reveal relative z-[1] mx-auto block h-auto max-h-[min(200px,34vh)] w-full max-w-[min(520px,calc(100vw-2rem))] object-contain object-center"
                         draggable={false}
                         decoding="async"
                         fetchPriority="high"
                     />
                 </div>
 
-                <div className="boot-shimmer-track mt-[clamp(2.25rem,7vw,3.5rem)]" aria-hidden>
-                    <div className="boot-shimmer-strip" />
+                <div className="boot-progress-track mt-[clamp(2.5rem,8vh,3.75rem)]" aria-hidden>
+                    <div className="boot-progress-inner" />
                 </div>
 
-                <p className="boot-splash-eyebrow mt-12 text-center text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-500 sm:text-xs">
+                <p className="boot-splash-tag mt-10 text-center text-[10px] font-medium uppercase tracking-[0.35em] text-white/38 sm:text-[11px]">
                     {t('marketing.home_badge')}
                 </p>
             </div>
