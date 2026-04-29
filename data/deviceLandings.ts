@@ -52,7 +52,8 @@ export interface DeviceFAQ {
 export interface DeviceCatalogItem {
     icon: LucideIcon;
     label: string;
-    /** Premium stock product shot — shown instead of plain icon tiles on device landings only. */
+    /** Premium stock product shot — shown instead of plain icon tiles on device landings only.
+     * Prefer self-hosted **`/marketing/device-built-for/cell-NN.jpg`** (sliced from the brand composite grid). */
     productPhotoUrl?: string;
     productPhotoAlt?: string;
 }
@@ -231,23 +232,23 @@ export const DEVICE_CONTENT: Record<DeviceCategory, DeviceContent> = {
             {
                 icon: Camera,
                 label: 'Security cameras',
-                productPhotoUrl:
-                    'https://images.pexels.com/photos/96612/pexels-photo-96612.jpeg?auto=compress&cs=tinysrgb&w=960&dpr=2',
-                productPhotoAlt: 'Outdoor dome security camera mounted on an exterior wall',
+                productPhotoUrl: '/marketing/device-built-for/cell-07.jpg',
+                productPhotoAlt:
+                    'White dome security camera mounted under exterior eaves overlooking a driveway',
             },
             {
                 icon: Camera,
                 label: 'Trail / hunting cameras',
-                productPhotoUrl:
-                    'https://images.pexels.com/photos/886521/pexels-photo-886521.jpeg?auto=compress&cs=tinysrgb&w=960&dpr=2',
-                productPhotoAlt: 'Field camera on a tripod in woodland',
+                productPhotoUrl: '/marketing/device-built-for/cell-08.jpg',
+                productPhotoAlt:
+                    'Camouflaged trail camera mounted on a tree trunk in a forest setting',
             },
             {
                 icon: Shield,
                 label: 'Outdoor monitors',
-                productPhotoUrl:
-                    'https://images.pexels.com/photos/3861969/pexels-photo-3861969.jpeg?auto=compress&cs=tinysrgb&w=960&dpr=2',
-                productPhotoAlt: 'Sleek display screen for outdoor signage or monitoring',
+                productPhotoUrl: '/marketing/device-built-for/cell-09.jpg',
+                productPhotoAlt:
+                    'Professional weather and sensor station on a pole in an open field',
             },
         ],
         plans: [
@@ -319,44 +320,40 @@ export const DEVICE_CONTENT: Record<DeviceCategory, DeviceContent> = {
             {
                 icon: Map,
                 label: 'GPS trackers',
-                productPhotoUrl:
-                    'https://images.pexels.com/photos/7661410/pexels-photo-7661410.jpeg?auto=compress&cs=tinysrgb&w=960&dpr=2',
-                productPhotoAlt: 'Portable GPS navigator and routing display in a vehicle',
+                productPhotoUrl: '/marketing/device-built-for/cell-01.jpg',
+                productPhotoAlt: 'Golden retriever on grass wearing a collar with a square GPS tracker',
             },
             {
                 icon: Watch,
                 label: 'Smartwatches',
-                productPhotoUrl:
-                    'https://images.pexels.com/photos/437037/pexels-photo-437037.jpeg?auto=compress&cs=tinysrgb&w=960&dpr=2',
-                productPhotoAlt: 'Modern smartwatch on a minimalist surface',
+                productPhotoUrl: '/marketing/device-built-for/cell-02.jpg',
+                productPhotoAlt: 'Wrist wearing a smartwatch displaying a navigation map outdoors',
             },
             {
                 icon: BookOpen,
                 label: 'E-readers (Kindle, Boox)',
-                productPhotoUrl:
-                    'https://images.pexels.com/photos/325153/pexels-photo-325153.jpeg?auto=compress&cs=tinysrgb&w=960&dpr=2',
-                productPhotoAlt: 'E-reader tablet with a reflective display on a white background',
+                productPhotoUrl: '/marketing/device-built-for/cell-03.jpg',
+                productPhotoAlt: 'Hands holding a slim e-reader displaying book text indoors',
             },
             {
                 icon: Radio,
                 label: 'Walkie-talkies',
-                productPhotoUrl:
-                    'https://images.pexels.com/photos/8942834/pexels-photo-8942834.jpeg?auto=compress&cs=tinysrgb&w=960&dpr=2',
-                productPhotoAlt: 'Two-way radios on a tabletop',
+                productPhotoUrl: '/marketing/device-built-for/cell-04.jpg',
+                productPhotoAlt:
+                    'Construction worker with high-visibility vest speaking into a rugged handheld radio',
             },
             {
                 icon: CreditCard,
                 label: 'POS terminals',
-                productPhotoUrl:
-                    'https://images.pexels.com/photos/4482900/pexels-photo-4482900.jpeg?auto=compress&cs=tinysrgb&w=960&dpr=2',
-                productPhotoAlt: 'Point-of-sale card terminal at a café counter',
+                productPhotoUrl: '/marketing/device-built-for/cell-05.jpg',
+                productPhotoAlt:
+                    'Handheld touchscreen POS terminal on a wooden retail counter with payment card nearby',
             },
             {
                 icon: Wrench,
                 label: 'Robotic mowers',
-                productPhotoUrl:
-                    'https://images.pexels.com/photos/7920266/pexels-photo-7920266.jpeg?auto=compress&cs=tinysrgb&w=960&dpr=2',
-                productPhotoAlt: 'Autonomous robotic lawn mower on cultivated grass',
+                productPhotoUrl: '/marketing/device-built-for/cell-06.jpg',
+                productPhotoAlt: 'Robotic lawn mower trimming a manicured backyard lawn',
             },
         ],
         plans: [
