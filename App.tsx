@@ -29,7 +29,7 @@ import { authService, userService, type UserDto, type UserSimDto } from './servi
 import { initPush, unregisterPush } from './services/pushService';
 import { computeTestModeEnabled, dismissTestModeForSession, isAppPath, isAppPreviewHash, stripTestModeFromUrl } from './utils/testMode';
 import { getRoute, type Route } from './utils/routing';
-import { BootSplash, splashAlreadySeen } from './components/BootSplash';
+import { BootSplash, shouldSkipBootSplash } from './components/BootSplash';
 
 function navigateToAppSupport() {
   if (typeof window === 'undefined') return;
@@ -42,8 +42,8 @@ function showGlobalSupportFabForRoute(kind: Route['kind']): boolean {
 }
 
 function App() {
-  /** One boot screen per tab session (sessionStorage). Add `?nosplash` to skip (QA). */
-  const [bootComplete, setBootComplete] = useState(() => splashAlreadySeen());
+  /** Full-screen splash on every load (~1.5 s). Append `?nosplash` to skip (QA only). Timing: `BOOT_*` exports in BootSplash.tsx. */
+  const [bootComplete, setBootComplete] = useState(() => shouldSkipBootSplash());
 
   // Top-level route detection. Falls back to <CustomerApp/> for any path
   // we don't explicitly handle, so existing app surfaces are unaffected.

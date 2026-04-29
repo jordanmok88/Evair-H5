@@ -1,27 +1,21 @@
 import React, { useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 
-/** Shown once per browser tab session; duration ~ brand intro before main UI mounts. */
-const SPLASH_DURATION_MS_DEFAULT = 1650;
-const SPLASH_DURATION_MS_REDUCED = 550;
+/** Default duration (ms) — aim ~1–2 s branding beat before mounting the app shell. */
+export const BOOT_SPLASH_DURATION_MS_DEFAULT = 1500;
+/** Shorter dismissal when prefers-reduced-motion. */
+export const BOOT_SPLASH_DURATION_MS_REDUCED = 480;
 
-const SESSION_SEEN_KEY = 'evair_boot_splash_seen_v1';
-
-export function splashAlreadySeen(): boolean {
+/**
+ * Skip the full-screen splash (`?nosplash=1`). Every normal reload shows the splash again
+ * unless this flag is present (QA / demos).
+ */
+export function shouldSkipBootSplash(): boolean {
     if (typeof window === 'undefined') return true;
     try {
-        if (sessionStorage.getItem(SESSION_SEEN_KEY) === '1') return true;
         return new URLSearchParams(window.location.search).has('nosplash');
     } catch {
         return true;
-    }
-}
-
-export function markSplashSeen(): void {
-    try {
-        sessionStorage.setItem(SESSION_SEEN_KEY, '1');
-    } catch {
-        /* ignore quota / privacy mode */
     }
 }
 
@@ -31,7 +25,7 @@ interface BootSplashProps {
 
 /**
  * Full-viewport logo + rhythmic expanding rings (“signal”).
- * ~1–2 s; lighter timeout under prefers-reduced-motion.
+ * Runs on **every hard reload**. ~1.5 s default; shorten at ~0.48 s with reduced motion.
  */
 export function BootSplash({ onFinish }: BootSplashProps) {
     const { t } = useTranslation();
@@ -43,12 +37,13 @@ export function BootSplash({ onFinish }: BootSplashProps) {
                 ? window.matchMedia('(prefers-reduced-motion: reduce)')
                 : null;
         const prefersReduced = mq?.matches ?? false;
-        const ms = prefersReduced ? SPLASH_DURATION_MS_REDUCED : SPLASH_DURATION_MS_DEFAULT;
+        const ms = prefersReduced
+            ? BOOT_SPLASH_DURATION_MS_REDUCED
+            : BOOT_SPLASH_DURATION_MS_DEFAULT;
 
         const id = window.setTimeout(() => {
             if (finished.current) return;
             finished.current = true;
-            markSplashSeen();
             onFinish();
         }, ms);
         return () => window.clearTimeout(id);
@@ -56,7 +51,7 @@ export function BootSplash({ onFinish }: BootSplashProps) {
 
     return (
         <div
-            className="fixed inset-0 z-[2147483646] flex flex-col items-center justify-center bg-white"
+            className="fixed inset-0 z-[2147483646] flex flex-col items-center justify-center bg-gradient-to-b from-white via-white to-[#f4f6f9]"
             role="status"
             aria-live="polite"
             aria-busy="true"
