@@ -48,6 +48,15 @@ export interface DeviceFAQ {
     a: string;
 }
 
+/** One row in “Built for” grids (camera / IoT). Icons stay for SSR fallbacks and a11y. */
+export interface DeviceCatalogItem {
+    icon: LucideIcon;
+    label: string;
+    /** Premium stock product shot — shown instead of plain icon tiles on device landings only. */
+    productPhotoUrl?: string;
+    productPhotoAlt?: string;
+}
+
 /**
  * US carrier price comparison (phone page only; estimates + disclaimers).
  * Keep ranges conservative — legal prefers footnotes to exact competitor quotes.
@@ -79,8 +88,8 @@ export interface DeviceContent {
     throttleNote: string;
     /** Three short brand pillars under the hero. */
     pillars: { icon: LucideIcon; title: string; body: string }[];
-    /** Devices the plan is built for. */
-    devices: { icon: LucideIcon; label: string }[];
+    /** Devices the plan is built for (see `DeviceCatalogItem`). */
+    devices: DeviceCatalogItem[];
     /** Up to 3 advertised plans. */
     plans: DevicePlan[];
     /** Short SEO FAQ — also kept as the questions support hears most. */
@@ -151,7 +160,7 @@ export const DEVICE_CONTENT: Record<DeviceCategory, DeviceContent> = {
         devices: [
             { icon: Smartphone, label: 'iPhone & Android' },
             { icon: Tablet, label: 'iPad & Android tablet' },
-            { icon: Wifi, label: 'Pocket Wi-Fi / hotspot' },
+            { icon: Wifi, label: 'Pocket Wi‑Fi / hotspot' },
         ],
         plans: [
             {
@@ -219,9 +228,27 @@ export const DEVICE_CONTENT: Record<DeviceCategory, DeviceContent> = {
             },
         ],
         devices: [
-            { icon: Camera, label: 'Security cameras' },
-            { icon: Camera, label: 'Trail / hunting cameras' },
-            { icon: Shield, label: 'Outdoor monitors' },
+            {
+                icon: Camera,
+                label: 'Security cameras',
+                productPhotoUrl:
+                    'https://images.pexels.com/photos/96612/pexels-photo-96612.jpeg?auto=compress&cs=tinysrgb&w=960&dpr=2',
+                productPhotoAlt: 'Outdoor dome security camera mounted on an exterior wall',
+            },
+            {
+                icon: Camera,
+                label: 'Trail / hunting cameras',
+                productPhotoUrl:
+                    'https://images.pexels.com/photos/886521/pexels-photo-886521.jpeg?auto=compress&cs=tinysrgb&w=960&dpr=2',
+                productPhotoAlt: 'Field camera on a tripod in woodland',
+            },
+            {
+                icon: Shield,
+                label: 'Outdoor monitors',
+                productPhotoUrl:
+                    'https://images.pexels.com/photos/3861969/pexels-photo-3861969.jpeg?auto=compress&cs=tinysrgb&w=960&dpr=2',
+                productPhotoAlt: 'Sleek display screen for outdoor signage or monitoring',
+            },
         ],
         plans: [
             {
@@ -289,12 +316,48 @@ export const DEVICE_CONTENT: Record<DeviceCategory, DeviceContent> = {
             },
         ],
         devices: [
-            { icon: Map, label: 'GPS trackers' },
-            { icon: Watch, label: 'Smartwatches' },
-            { icon: BookOpen, label: 'E-readers (Kindle, Boox)' },
-            { icon: Radio, label: 'Walkie-talkies' },
-            { icon: CreditCard, label: 'POS terminals' },
-            { icon: Wrench, label: 'Robotic mowers' },
+            {
+                icon: Map,
+                label: 'GPS trackers',
+                productPhotoUrl:
+                    'https://images.pexels.com/photos/7661410/pexels-photo-7661410.jpeg?auto=compress&cs=tinysrgb&w=960&dpr=2',
+                productPhotoAlt: 'Portable GPS navigator and routing display in a vehicle',
+            },
+            {
+                icon: Watch,
+                label: 'Smartwatches',
+                productPhotoUrl:
+                    'https://images.pexels.com/photos/437037/pexels-photo-437037.jpeg?auto=compress&cs=tinysrgb&w=960&dpr=2',
+                productPhotoAlt: 'Modern smartwatch on a minimalist surface',
+            },
+            {
+                icon: BookOpen,
+                label: 'E-readers (Kindle, Boox)',
+                productPhotoUrl:
+                    'https://images.pexels.com/photos/325153/pexels-photo-325153.jpeg?auto=compress&cs=tinysrgb&w=960&dpr=2',
+                productPhotoAlt: 'E-reader tablet with a reflective display on a white background',
+            },
+            {
+                icon: Radio,
+                label: 'Walkie-talkies',
+                productPhotoUrl:
+                    'https://images.pexels.com/photos/8942834/pexels-photo-8942834.jpeg?auto=compress&cs=tinysrgb&w=960&dpr=2',
+                productPhotoAlt: 'Two-way radios on a tabletop',
+            },
+            {
+                icon: CreditCard,
+                label: 'POS terminals',
+                productPhotoUrl:
+                    'https://images.pexels.com/photos/4482900/pexels-photo-4482900.jpeg?auto=compress&cs=tinysrgb&w=960&dpr=2',
+                productPhotoAlt: 'Point-of-sale card terminal at a café counter',
+            },
+            {
+                icon: Wrench,
+                label: 'Robotic mowers',
+                productPhotoUrl:
+                    'https://images.pexels.com/photos/7920266/pexels-photo-7920266.jpeg?auto=compress&cs=tinysrgb&w=960&dpr=2',
+                productPhotoAlt: 'Autonomous robotic lawn mower on cultivated grass',
+            },
         ],
         plans: [
             {

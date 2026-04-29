@@ -272,46 +272,56 @@ const DeviceLandingPage: React.FC<DeviceLandingPageProps> = ({ category }) => {
                 </section>
             )}
 
-            {/* Camera / IoT — device collage after plans & pillars */}
+            {/* Camera / IoT — editorial product imagery (premium stock photography) */}
             {category !== 'phone' && (
                 <section
                     id="built-for"
                     className="border-t border-slate-200 bg-slate-50 px-4 py-10 md:px-8 md:py-12"
                 >
                     <div className="mx-auto max-w-6xl">
-                        <h2 className="mb-6 text-lg font-bold uppercase tracking-wide text-slate-500 md:mb-8 md:text-sm">
+                        <h2 className="mb-8 text-xs font-bold uppercase tracking-[0.2em] text-slate-500 md:mb-10">
                             Built for
                         </h2>
-                        <div className="hidden md:block">
-                            <div className="mx-auto grid max-w-md grid-cols-3 gap-3 md:max-w-xl">
-                                {content.devices.slice(0, 9).map((d, i) => (
-                                    <div
-                                        key={`${d.label}-${i}`}
-                                        className={`flex aspect-square flex-col items-center justify-center gap-2 rounded-2xl text-slate-600 ${
-                                            i === 4
-                                                ? 'bg-orange-500 text-white shadow-xl shadow-orange-500/20'
-                                                : 'border border-slate-200 bg-white'
-                                        }`}
-                                    >
-                                        <d.icon size={26} />
-                                        <span className="text-center text-[11px] font-semibold px-1">
-                                            {d.label}
-                                        </span>
-                                    </div>
-                                ))}
-                            </div>
-                        </div>
-                        <div className="grid grid-cols-2 gap-2 md:grid-cols-3 lg:grid-cols-4">
-                            {content.devices.map(d => (
-                                <div
-                                    key={d.label}
-                                    className="flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2"
+                        <ul className="grid list-none grid-cols-1 gap-4 sm:grid-cols-2 sm:gap-5 lg:grid-cols-3 lg:gap-6 [&>li]:m-0 [&>li]:p-0">
+                            {content.devices.map((d, i) => (
+                                <li
+                                    key={`${category}-${d.label}-${String(i)}`}
+                                    className="group overflow-hidden rounded-2xl border border-slate-200/90 bg-white shadow-sm ring-1 ring-slate-100"
                                 >
-                                    <d.icon size={16} className="text-slate-500" />
-                                    <span className="text-sm text-slate-700">{d.label}</span>
-                                </div>
+                                    {d.productPhotoUrl ? (
+                                        <figure className="relative m-0 aspect-[4/5] w-full bg-slate-200 sm:aspect-[3/4]">
+                                            <img
+                                                src={d.productPhotoUrl}
+                                                alt={d.productPhotoAlt ?? `${d.label} — illustrative product imagery`}
+                                                className="h-full w-full object-cover transition duration-500 ease-out group-hover:scale-[1.03]"
+                                                decoding="async"
+                                                loading="lazy"
+                                                sizes="(min-width: 1024px) 28vw, (min-width: 640px) 44vw, 92vw"
+                                            />
+                                            <div
+                                                className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/78 via-black/15 to-transparent"
+                                                aria-hidden
+                                            />
+                                            <figcaption
+                                                className="absolute inset-x-0 bottom-0 p-4"
+                                                aria-hidden
+                                            >
+                                                <p className="text-sm font-semibold leading-snug text-white drop-shadow-sm md:text-[15px]">
+                                                    {d.label}
+                                                </p>
+                                            </figcaption>
+                                        </figure>
+                                    ) : (
+                                        <div className="flex aspect-[4/5] flex-col items-center justify-center gap-3 bg-white p-6 text-center">
+                                            <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-slate-50">
+                                                <d.icon className="text-orange-500" size={28} />
+                                            </div>
+                                            <p className="text-sm font-semibold text-slate-800">{d.label}</p>
+                                        </div>
+                                    )}
+                                </li>
                             ))}
-                        </div>
+                        </ul>
                     </div>
                 </section>
             )}
