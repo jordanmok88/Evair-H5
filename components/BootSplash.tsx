@@ -1,8 +1,8 @@
 import React, { useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 
-/** Splash logo — **`/evairsim-splash-logo.png`** (RGBA PNG shipped from canonical `evairsim-wordmark.png`). Never overwrite with JPEG pretending to be PNG—the OS will bake a matte and you get a solid black/brick box around the mark. */
-export const BOOT_SPLASH_LOGO_SRC = '/evairsim-splash-logo.png';
+/** Same RGBA wordmark PNG as SiteHeader/marketing (`/evairsim-wordmark.png`). Do not swap in JPEG renamed as `.png`—composite shows a dark matte rectangle on white. */
+export const BOOT_SPLASH_LOGO_SRC = '/evairsim-wordmark.png';
 
 export const BOOT_SPLASH_DURATION_MS_DEFAULT = 2800;
 export const BOOT_SPLASH_DURATION_MS_REDUCED = 980;

@@ -421,7 +421,14 @@ const AboutEvairView = ({ onBack }: { onBack: () => void }) => {
 
                 {/* Hero */}
                 <div className="rounded-2xl mb-6 overflow-hidden px-5 py-5 flex items-center gap-4" style={{ background: 'linear-gradient(135deg, #1a0a00 0%, #3d1800 50%, #5c2600 100%)' }}>
-                    <img src="/evairsim-logo-full.png" alt="EvairSIM – Travel eSIM and SIM Card Provider" loading="lazy" width={130} height={40} style={{ width: 130, height: 'auto', objectFit: 'contain', flexShrink: 0, mixBlendMode: 'screen' }} />
+                    <img
+                        src="/evairsim-wordmark.png"
+                        alt="EvairSIM – Travel eSIM and SIM Card Provider"
+                        loading="lazy"
+                        width={896}
+                        height={228}
+                        style={{ width: 130, height: 'auto', objectFit: 'contain', flexShrink: 0 }}
+                    />
                     <p style={{ fontSize: 15, fontWeight: 600, color: 'rgba(255,165,80,0.6)', lineHeight: 1.5, letterSpacing: '0.02em', fontStyle: 'italic' }}>
                         "Connecting the world,<br />one journey at a time."
                     </p>
