@@ -141,7 +141,7 @@ const zh = {
     hero_carousel_dots: '选择焦点屏',
     hero_carousel_slide_label: '第 {{current}} / {{total}} 屏',
     hero_slide1_img_alt: '沙滩上开心的一家人出游场景。',
-    hero_slide2_img_alt: '暮色中的城市鸟瞰，象征全美 5G 覆盖。',
+    hero_slide2_img_alt: '夜晚城市天际线，象征全美 5G 覆盖与工作居家场景。',
     hero_slide3_img_alt: '旅行规划：笔记本与地图相机，适配出行与物联场景。',
     hero_slide2_stay: '美国长流量 5G。',
     hero_slide2_accent: '资费与网速透明。',

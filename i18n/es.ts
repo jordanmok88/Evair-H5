@@ -143,7 +143,7 @@ const es = {
     hero_carousel_dots: 'Seleccionar diapositiva',
     hero_carousel_slide_label: 'Diapositiva {{current}} de {{total}}',
     hero_slide1_img_alt: 'Familia sonriendo en la playa — conectados en movimiento.',
-    hero_slide2_img_alt: 'Vista aérea de ciudad al atardecer — 5G EE. UU. para casa y trabajo.',
+    hero_slide2_img_alt: 'Horizonte urbano de noche — 5G EE. UU. para casa y trabajo.',
     hero_slide3_img_alt: 'Planificar un viaje con portátil, mapa y cámara: viajes e IoT.',
     hero_slide2_stay: '5G EE. UU. mes a mes.',
     hero_slide2_accent: 'Velocidades y tarifas claras.',

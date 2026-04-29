@@ -23,18 +23,21 @@ function usePrefersReducedMotion(): boolean {
     return reduced;
 }
 
-/** Themed visuals per slide — Unsplash CDN; aligns with headline (family / travel+IoT / US 5G). */
+/**
+ * Hero art per slide (Unsplash). Use stable `ixlib=rb-4.0.3` URLs — some bare `photo-…` IDs 404 over time.
+ * Slide 2 was updated after a dead asset caused broken images on desktop.
+ */
 export const MARKETING_HERO_VISUAL_SLIDES = [
     {
-        src: 'https://images.unsplash.com/photo-1511895426328-dc8714191300?auto=format&fit=crop&w=1200&q=80',
+        src: 'https://images.unsplash.com/photo-1511895426328-dc8714191300?ixlib=rb-4.0.3&auto=format&fit=crop&w=1600&q=82',
         altKey: 'marketing.hero_slide1_img_alt' as const,
     },
     {
-        src: 'https://images.unsplash.com/photo-1573155993874-d5d48ffa5445?auto=format&fit=crop&w=1200&q=80',
+        src: 'https://images.unsplash.com/photo-1514565131-fce0801e5785?ixlib=rb-4.0.3&auto=format&fit=crop&w=1600&q=82',
         altKey: 'marketing.hero_slide2_img_alt' as const,
     },
     {
-        src: 'https://images.unsplash.com/photo-1488646953014-85cb44e25828?auto=format&fit=crop&w=1200&q=80',
+        src: 'https://images.unsplash.com/photo-1488646953014-85cb44e25828?ixlib=rb-4.0.3&auto=format&fit=crop&w=1600&q=82',
         altKey: 'marketing.hero_slide3_img_alt' as const,
     },
 ] as const;
@@ -85,7 +88,7 @@ export function MarketingHeroCarousel(props: MarketingHeroCarouselProps) {
     return (
         <div className="w-full">
             <div
-                className="grid w-full items-start gap-8 lg:grid-cols-[minmax(0,1fr)_min(260px,38%)] lg:gap-10 xl:gap-12"
+                className="grid w-full items-center gap-8 lg:grid-cols-2 lg:gap-10 xl:gap-12"
                 role="region"
                 aria-roledescription="carousel"
                 aria-labelledby={regionId}
@@ -124,13 +127,14 @@ export function MarketingHeroCarousel(props: MarketingHeroCarouselProps) {
                                 sizes="100vw"
                                 className="h-full w-full object-cover object-center"
                                 decoding="async"
-                                loading={index === 0 ? 'eager' : 'lazy'}
+                                loading="eager"
+                                fetchPriority={index === 0 ? 'high' : 'auto'}
                             />
                         </div>
                     </div>
 
-                    {/* Airalo-like full-bleed advancing line on mobile; tap zones for slide jump */}
-                    <div className="mt-7 w-[calc(100%+2rem)] max-w-none -mx-4 sm:mx-0 sm:mt-8 sm:w-full">
+                    {/* Progress line matches CTA width (max-w-md); tap zones for slide jump */}
+                    <div className="mx-auto mt-7 w-full max-w-md sm:mt-8 lg:mx-0">
                         {!reducedMotion ? (
                             <div className="relative w-full">
                                 <div className="h-2 w-full rounded-full bg-gray-100 shadow-inner md:h-2.5">
@@ -219,17 +223,18 @@ export function MarketingHeroCarousel(props: MarketingHeroCarouselProps) {
                     </div>
                 </div>
 
-                {/* Desktop: wide photo column */}
-                <div className="relative hidden lg:block lg:min-h-[22rem]">
-                    <div className="sticky top-24 overflow-hidden rounded-2xl bg-gray-100 shadow-lg ring-1 ring-gray-200/80 lg:aspect-[4/5] lg:max-h-[520px]">
+                {/* Desktop: photo column — 50/50 grid so art reads at parity with copy */}
+                <div className="relative hidden w-full min-w-0 lg:block">
+                    <div className="sticky top-24 overflow-hidden rounded-2xl bg-gray-100 shadow-lg ring-1 ring-gray-200/80 aspect-[3/4] min-h-[min(28rem,55vh)] w-full max-h-[min(640px,72vh)]">
                         <img
                             key={`d-${visual.src}-${index}`}
                             src={visual.src}
                             alt={t(visual.altKey)}
-                            sizes="(min-width: 1024px) 38vw, 0px"
-                            className="h-full min-h-[20rem] w-full object-cover object-center"
+                            sizes="(min-width: 1024px) min(46vw, 560px), 0px"
+                            className="h-full w-full min-h-[20rem] object-cover object-center"
                             decoding="async"
-                            loading={index === 0 ? 'eager' : 'lazy'}
+                            loading="eager"
+                            fetchPriority={index === 0 ? 'high' : 'auto'}
                         />
                     </div>
                 </div>

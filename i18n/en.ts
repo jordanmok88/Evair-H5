@@ -143,7 +143,7 @@ const en = {
     hero_carousel_dots: 'Slide picker',
     hero_carousel_slide_label: 'Slide {{current}} of {{total}}',
     hero_slide1_img_alt: 'Family smiling together at the beach — stay connected on the go.',
-    hero_slide2_img_alt: 'Aerial city view at dusk — US 5G coverage for work and home.',
+    hero_slide2_img_alt: 'City skyline at night — US 5G coverage for work and home.',
     hero_slide3_img_alt: 'Travel planning on a laptop with map and camera — trips, IoT, and long stays.',
     hero_slide2_stay: 'Monthly US 5G.',
     hero_slide2_accent: 'Honest speeds & rates.',
