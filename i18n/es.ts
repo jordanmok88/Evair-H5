@@ -157,7 +157,7 @@ const es = {
     hero_slide_caption_2: 'Smartwatches',
     hero_slide_caption_3: 'E-readers (Kindle, Boox)',
     hero_slide_caption_4: 'Walkie-talkies',
-    hero_slide_caption_5: 'TPV / terminales POS',
+    hero_slide_caption_5: 'Móvil, tablet y hotspot',
     hero_slide_caption_6: 'Robots cortacésped',
     hero_slide_caption_7: 'Cámaras de seguridad',
     hero_slide_caption_8: 'Cámaras de caza / sendero',
@@ -171,7 +171,8 @@ const es = {
     hero_slide_mobile_img_alt_4:
       'Walkie-talkie LTE resistente con pantalla en obra en construcción.',
     hero_slide_mobile_img_alt_5:
-      'Terminal táctil POS con pago exitoso en un café.',
+      'Smartphone, tablet con datos y punto de acceso móvil 5G sobre una mesa.',
+    hero_slide_open_plan_aria: 'Elegir un plan — {{product}}',
     hero_slide_mobile_img_alt_6:
       'Robot cortacésped en un jardín cuidado.',
     hero_slide_mobile_img_alt_7:

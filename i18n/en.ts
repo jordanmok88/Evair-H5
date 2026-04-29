@@ -157,7 +157,7 @@ const en = {
     hero_slide_caption_2: 'Smartwatches',
     hero_slide_caption_3: 'E-readers (Kindle, Boox)',
     hero_slide_caption_4: 'Walkie-talkies',
-    hero_slide_caption_5: 'POS terminals',
+    hero_slide_caption_5: 'Mobile, tablet & pocket Wi‑Fi',
     hero_slide_caption_6: 'Robotic mowers',
     hero_slide_caption_7: 'Security cameras',
     hero_slide_caption_8: 'Trail / hunting cameras',
@@ -171,7 +171,8 @@ const en = {
     hero_slide_mobile_img_alt_4:
       'Rugged LTE handheld radio with display and antenna held on a construction site.',
     hero_slide_mobile_img_alt_5:
-      'Handheld touchscreen POS terminal showing a successful payment in a café.',
+      'Smartphone, iPad cellular settings, and 5G mobile hotspot together on a cafe table.',
+    hero_slide_open_plan_aria: 'Pick a plan — {{product}}.',
     hero_slide_mobile_img_alt_6:
       'Robotic lawn mower trimming a manicured backyard lawn.',
     hero_slide_mobile_img_alt_7:

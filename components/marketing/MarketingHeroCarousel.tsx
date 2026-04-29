@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useId, useState } from 'react';
+import React, { useCallback, useEffect, useId, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
     BadgeCheck,
@@ -11,6 +11,13 @@ import {
 /** Seconds between carousel steps (each advance picks a delay in this range). */
 const SLIDE_INTERVAL_MIN_MS = 3000;
 const SLIDE_INTERVAL_MAX_MS = 5000;
+
+/** Minimum horizontal drag (px) before a touch is treated as a slide swipe (not a tap). */
+const MOBILE_SWIPE_MIN_PX = 48;
+
+const PLAN_HREF_PHONE = '/sim/phone#plans';
+const PLAN_HREF_IOT = '/sim/iot#plans';
+const PLAN_HREF_CAMERA = '/sim/camera#plans';
 
 function nextSlideDelayMs(): number {
     const r = SLIDE_INTERVAL_MIN_MS + Math.random() * (SLIDE_INTERVAL_MAX_MS - SLIDE_INTERVAL_MIN_MS);
@@ -31,8 +38,9 @@ function usePrefersReducedMotion(): boolean {
 }
 
 /**
- * Hero product art: nine self-hosted tiles (IoT 01–06, camera 07–09). Headline copy uses
- * `Math.floor(slideIndex / 3)` so three slides share each marketing message group.
+ * Hero product tiles: IoT (01–04, 06), mobile/tablet/hotspot hero art, then camera (07–09).
+ * Headline copy groups: `Math.floor(slideIndex / 3)` maps to three marketing message sets.
+ * `planHref` jumps to each device landing «Pick a plan» block.
  */
 export const MARKETING_HERO_VISUAL_SLIDES = [
     {
@@ -40,54 +48,63 @@ export const MARKETING_HERO_VISUAL_SLIDES = [
         altKey: 'marketing.hero_slide_mobile_img_alt_1' as const,
         captionKey: 'marketing.hero_slide_caption_1' as const,
         objectPosition: '44% 46%',
+        planHref: PLAN_HREF_IOT,
     },
     {
         src: '/marketing/device-built-for/cell-02.png',
         altKey: 'marketing.hero_slide_mobile_img_alt_2' as const,
         captionKey: 'marketing.hero_slide_caption_2' as const,
         objectPosition: '50% 48%',
+        planHref: PLAN_HREF_IOT,
     },
     {
         src: '/marketing/device-built-for/cell-03.png',
         altKey: 'marketing.hero_slide_mobile_img_alt_3' as const,
         captionKey: 'marketing.hero_slide_caption_3' as const,
         objectPosition: '50% 48%',
+        planHref: PLAN_HREF_IOT,
+    },
+    {
+        src: '/marketing/hero-mobile-tablet-hotspot.png',
+        altKey: 'marketing.hero_slide_mobile_img_alt_5' as const,
+        captionKey: 'marketing.hero_slide_caption_5' as const,
+        objectPosition: '50% 45%',
+        planHref: PLAN_HREF_PHONE,
     },
     {
         src: '/marketing/device-built-for/cell-04.png',
         altKey: 'marketing.hero_slide_mobile_img_alt_4' as const,
         captionKey: 'marketing.hero_slide_caption_4' as const,
         objectPosition: '50% 46%',
-    },
-    {
-        src: '/marketing/device-built-for/cell-05.png',
-        altKey: 'marketing.hero_slide_mobile_img_alt_5' as const,
-        captionKey: 'marketing.hero_slide_caption_5' as const,
-        objectPosition: '50% 48%',
+        planHref: PLAN_HREF_IOT,
     },
     {
         src: '/marketing/device-built-for/cell-06.png',
         altKey: 'marketing.hero_slide_mobile_img_alt_6' as const,
         captionKey: 'marketing.hero_slide_caption_6' as const,
         objectPosition: '50% 50%',
+        planHref: PLAN_HREF_IOT,
     },
     {
         src: '/marketing/device-built-for/cell-07.png',
         altKey: 'marketing.hero_slide_mobile_img_alt_7' as const,
         captionKey: 'marketing.hero_slide_caption_7' as const,
         objectPosition: '76% 48%',
+        planHref: PLAN_HREF_CAMERA,
     },
     {
         src: '/marketing/device-built-for/cell-08.png',
         altKey: 'marketing.hero_slide_mobile_img_alt_8' as const,
         captionKey: 'marketing.hero_slide_caption_8' as const,
         objectPosition: '52% 48%',
+        planHref: PLAN_HREF_CAMERA,
     },
     {
         src: '/marketing/device-built-for/cell-09.png',
         altKey: 'marketing.hero_slide_mobile_img_alt_9' as const,
         captionKey: 'marketing.hero_slide_caption_9' as const,
         objectPosition: '68% 46%',
+        planHref: PLAN_HREF_CAMERA,
     },
 ] as const;
 
@@ -131,13 +148,16 @@ function HeroTrustStrip({
     );
 }
 
-/** Home hero: selling slides; striped indicators (jump, no sweeping bar), imagery + CTAs. */
+/** Home hero: selling slides; striped indicators (jump, swipe on touch), imagery + CTAs. */
 export function MarketingHeroCarousel(props: MarketingHeroCarouselProps) {
     const { t } = useTranslation();
     const { amazonUrl, travelLanding, activatePath, onTravelClick, onActivateClick } = props;
     const reducedMotion = usePrefersReducedMotion();
     const [index, setIndex] = useState(0);
     const regionId = useId();
+    const mobileTouchStartX = useRef<number | null>(null);
+    /** After a horizontal swipe, block the trailing synthetic click so the slide link doesn't fire. */
+    const blockSlideLinkNavigateRef = useRef(false);
 
     const selectSlide = useCallback((i: number) => {
         setIndex(i);
@@ -155,12 +175,47 @@ export function MarketingHeroCarousel(props: MarketingHeroCarouselProps) {
         return () => window.clearTimeout(id);
     }, [index, reducedMotion, goNext]);
 
+    const handleMobileSwipeStart = useCallback((e: React.TouchEvent) => {
+        mobileTouchStartX.current = e.touches[0]?.clientX ?? null;
+    }, []);
+
+    const handleMobileSwipeEnd = useCallback(
+        (e: React.TouchEvent) => {
+            const start = mobileTouchStartX.current;
+            mobileTouchStartX.current = null;
+            const end = e.changedTouches[0]?.clientX;
+            if (start == null || end == null) return;
+            const dx = end - start;
+            if (Math.abs(dx) < MOBILE_SWIPE_MIN_PX) return;
+            blockSlideLinkNavigateRef.current = true;
+            window.setTimeout(() => {
+                blockSlideLinkNavigateRef.current = false;
+            }, 450);
+            if (dx < 0) {
+                setIndex((i) => (i + 1) % SLIDE_COUNT);
+            } else {
+                setIndex((i) => (i - 1 + SLIDE_COUNT) % SLIDE_COUNT);
+            }
+        },
+        [],
+    );
+
+    const onSlidePlanLinkClick = useCallback((e: React.MouseEvent<HTMLAnchorElement>) => {
+        if (blockSlideLinkNavigateRef.current) {
+            e.preventDefault();
+        }
+    }, []);
+
     const line1Keys = ['marketing.home_hero_stay', 'marketing.hero_slide2_stay', 'marketing.hero_slide3_stay'] as const;
     const line2Keys = ['marketing.home_hero_anywhere', 'marketing.hero_slide2_accent', 'marketing.hero_slide3_accent'] as const;
     const subKeys = ['marketing.home_hero_sub', 'marketing.hero_slide2_sub', 'marketing.hero_slide3_sub'] as const;
 
     const headlineIndex = Math.min(2, Math.floor(index / 3)) as 0 | 1 | 2;
     const visual = MARKETING_HERO_VISUAL_SLIDES[index];
+
+    const planLinkAria = t('marketing.hero_slide_open_plan_aria', {
+        product: t(visual.captionKey),
+    });
 
     return (
         <div className="w-full">
@@ -200,33 +255,45 @@ export function MarketingHeroCarousel(props: MarketingHeroCarouselProps) {
                         className="mt-3 max-w-xl px-1 lg:hidden"
                     />
 
-                    {/* Imagery below copy on mobile/tablet — capped height keeps trust + CTAs in first screen */}
-                    <div className="mt-4 w-full sm:mt-5 lg:hidden">
-                        <figure className="relative m-0 h-[clamp(9rem,38vmin,240px)] w-full overflow-hidden rounded-2xl bg-gray-100 shadow-md ring-1 ring-gray-100 sm:h-[clamp(10rem,40vmin,280px)]">
-                            <img
-                                key={`m-${visual.src}-${index}`}
-                                src={visual.src}
-                                alt={t(visual.altKey)}
-                                sizes="100vw"
-                                className="absolute inset-0 h-full w-full object-cover"
-                                style={{ objectPosition: visual.objectPosition }}
-                                decoding="async"
-                                loading="eager"
-                                fetchPriority={index === 0 ? 'high' : 'auto'}
-                            />
-                            <div
-                                className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/78 via-black/15 to-transparent"
-                                aria-hidden
-                            />
-                            <figcaption className="pointer-events-none absolute inset-x-0 bottom-0 p-3 sm:p-4">
-                                <p className="text-left text-sm font-semibold leading-snug text-white drop-shadow-sm md:text-[15px]">
-                                    {t(visual.captionKey)}
-                                </p>
-                            </figcaption>
-                        </figure>
+                    {/* Touch swipe advances slides; tapping opens Pick a plan for that slide's category */}
+                    <div
+                        className="mt-4 w-full touch-pan-y sm:mt-5 lg:hidden"
+                        onTouchStart={handleMobileSwipeStart}
+                        onTouchEnd={handleMobileSwipeEnd}
+                        role="presentation"
+                    >
+                        <a
+                            href={visual.planHref}
+                            onClick={onSlidePlanLinkClick}
+                            aria-label={planLinkAria}
+                            className="block touch-manipulation outline-none ring-offset-white focus-visible:ring-2 focus-visible:ring-[#2563eb] focus-visible:ring-offset-2"
+                        >
+                            <figure className="relative m-0 h-[clamp(9rem,38vmin,240px)] w-full overflow-hidden rounded-2xl bg-gray-100 shadow-md ring-1 ring-gray-100 sm:h-[clamp(10rem,40vmin,280px)]">
+                                <img
+                                    key={`m-${visual.src}-${index}`}
+                                    src={visual.src}
+                                    alt={t(visual.altKey)}
+                                    sizes="100vw"
+                                    className="absolute inset-0 h-full w-full object-cover"
+                                    style={{ objectPosition: visual.objectPosition }}
+                                    decoding="async"
+                                    loading="eager"
+                                    fetchPriority={index === 0 ? 'high' : 'auto'}
+                                />
+                                <div
+                                    className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/78 via-black/15 to-transparent"
+                                    aria-hidden
+                                />
+                                <figcaption className="pointer-events-none absolute inset-x-0 bottom-0 p-3 sm:p-4">
+                                    <p className="text-left text-sm font-semibold leading-snug text-white drop-shadow-sm md:text-[15px]">
+                                        {t(visual.captionKey)}
+                                    </p>
+                                </figcaption>
+                            </figure>
+                        </a>
                     </div>
 
-                    {/* Stripes — active one fills brand orange; advances every 3–5s (no sweep animation) */}
+                    {/* Stripes — active one fills brand orange */}
                     <div
                         className="mx-auto mt-4 flex w-full max-w-md gap-1.5 sm:mt-5 sm:gap-2 lg:mx-0"
                         role="group"
@@ -283,20 +350,26 @@ export function MarketingHeroCarousel(props: MarketingHeroCarouselProps) {
                     </div>
                 </div>
 
-                {/* Desktop: shorter max height vs viewport so trust row stays above the fold on common laptop sizes */}
+                {/* Desktop: sticky image linked to Pick a plan for that tile */}
                 <div className="relative hidden w-full min-w-0 lg:block">
                     <div className="sticky top-[4.25rem] max-h-[min(28rem,min(62dvh,calc(100dvh-10.5rem)))] overflow-hidden rounded-2xl bg-gray-100 shadow-lg ring-1 ring-gray-200/80 aspect-[5/6] min-h-[16rem] w-full xl:aspect-[4/5] xl:max-h-[min(32rem,min(65dvh,calc(100dvh-9.5rem)))]">
-                        <img
-                            key={`d-${visual.src}-${index}`}
-                            src={visual.src}
-                            alt={t(visual.altKey)}
-                            sizes="(min-width: 1024px) min(46vw, 560px), 0px"
-                            className="h-full w-full min-h-[14rem] object-cover"
-                            style={{ objectPosition: visual.objectPosition }}
-                            decoding="async"
-                            loading="eager"
-                            fetchPriority={index === 0 ? 'high' : 'auto'}
-                        />
+                        <a
+                            href={visual.planHref}
+                            aria-label={planLinkAria}
+                            className="block h-full outline-none ring-offset-white focus-visible:ring-2 focus-visible:ring-[#2563eb] focus-visible:ring-offset-4"
+                        >
+                            <img
+                                key={`d-${visual.src}-${index}`}
+                                src={visual.src}
+                                alt={t(visual.altKey)}
+                                sizes="(min-width: 1024px) min(46vw, 560px), 0px"
+                                className="h-full w-full min-h-[14rem] object-cover"
+                                style={{ objectPosition: visual.objectPosition }}
+                                decoding="async"
+                                loading="eager"
+                                fetchPriority={index === 0 ? 'high' : 'auto'}
+                            />
+                        </a>
                     </div>
                 </div>
             </div>
