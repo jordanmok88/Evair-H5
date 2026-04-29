@@ -890,7 +890,7 @@ const ShopView: React.FC<ShopViewProps> = ({
             <div>
               <h2 className="text-2xl font-bold text-slate-900 tracking-tight">{selectedEsimGroup.locationName}</h2>
               <p className="text-sm text-slate-400 mt-0.5">
-                {selectedEsimGroup.locationCode.includes(',') ? t('shop.multi_region') : t('shop.single_country')}
+                {selectedEsimGroup.isMultiRegion ? t('shop.multi_region') : t('shop.single_country')}
                 {' · '}{selectedEsimGroup.packages.length} {selectedEsimGroup.packages.length === 1 ? 'Plan' : 'Plans'}
               </p>
             </div>
