@@ -43,7 +43,7 @@ hooks/useEdgeSwipeBack.ts — iOS-like swipe gesture
 - Brand color: `#FF6600` (orange), referred to as `brand-orange` in Tailwind
 - Brand gradient: `linear-gradient(135deg, #FF6600 0%, #FF8A3D 100%)`
 - Logo / wordmarks:
-  - **Boot splash** (`BootSplash`): **`/public/evairsim-splash-logo.png`** on **white** (`#fff`) with animated signal bars — not a dark full-screen theme.
+  - **Boot splash** (`BootSplash`): **`/public/evairsim-splash-logo.png`** — must be a **real PNG with alpha** (copied from `evairsim-wordmark.png`). **Do not** drop in JPEGs renamed to `.png` or you get an opaque black/cyan matte box on white.
   - Other surfaces: `/public/evairsim-logo.png`, `/evairsim-wordmark.png`, etc., as wired today.
 - No bottom navigation bar (removed — blocked too much screen area). Uses top SIM Card / eSIM toggle instead.
 - All sub-views support swipe-from-left-edge to go back

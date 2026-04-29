@@ -1,7 +1,7 @@
 import React, { useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 
-/** Splash logo — `/evairsim-splash-logo.png` (see project-overview.mdc). */
+/** Splash logo — **`/evairsim-splash-logo.png`** (RGBA PNG shipped from canonical `evairsim-wordmark.png`). Never overwrite with JPEG pretending to be PNG—the OS will bake a matte and you get a solid black/brick box around the mark. */
 export const BOOT_SPLASH_LOGO_SRC = '/evairsim-splash-logo.png';
 
 export const BOOT_SPLASH_DURATION_MS_DEFAULT = 2800;
@@ -56,9 +56,9 @@ export function BootSplash({ onFinish }: BootSplashProps) {
                 <img
                     src={BOOT_SPLASH_LOGO_SRC}
                     alt=""
-                    width={472}
-                    height={1024}
-                    className="boot-logo-mark boot-logo-reveal mx-auto block h-auto max-h-[min(280px,calc(42vh))] w-auto max-w-[min(92vw,440px)] object-contain object-center"
+                    width={896}
+                    height={228}
+                    className="boot-logo-mark boot-logo-reveal mx-auto block h-auto max-h-[min(160px,calc(26vh))] w-auto max-w-[min(92vw,560px)] object-contain object-center"
                     draggable={false}
                     decoding="async"
                     fetchPriority="high"
