@@ -29,6 +29,7 @@ import { authService, userService, type UserDto, type UserSimDto } from './servi
 import { initPush, unregisterPush } from './services/pushService';
 import { computeTestModeEnabled, dismissTestModeForSession, isAppPath, isAppPreviewHash, stripTestModeFromUrl } from './utils/testMode';
 import { getRoute, type Route } from './utils/routing';
+import { BootSplash, splashAlreadySeen } from './components/BootSplash';
 
 function navigateToAppSupport() {
   if (typeof window === 'undefined') return;
@@ -41,6 +42,8 @@ function showGlobalSupportFabForRoute(kind: Route['kind']): boolean {
 }
 
 function App() {
+  /** One boot screen per tab session (sessionStorage). Add `?nosplash` to skip (QA). */
+  const [bootComplete, setBootComplete] = useState(() => splashAlreadySeen());
 
   // Top-level route detection. Falls back to <CustomerApp/> for any path
   // we don't explicitly handle, so existing app surfaces are unaffected.
@@ -75,6 +78,7 @@ function App() {
   //      (the latter is what start-all-previews.sh opens for QA).
   //   3. anything else   → "Evair H5"
   useEffect(() => {
+    if (!bootComplete) return;
     const applyTitle = () => {
       if (route.kind === 'activate') {
         document.title = 'Activate your Evair SIM';
@@ -103,9 +107,14 @@ function App() {
       }
     };
     applyTitle();
-  }, [route]);
+  }, [route, bootComplete]);
+
+  const handleBootSplashDone = useCallback(() => {
+    setBootComplete(true);
+  }, []);
 
   const appBody = useMemo(() => {
+    if (!bootComplete) return null;
     if (route.kind === 'apiTest') return <ApiTestPage />;
     if (route.kind === 'activate') return <ActivatePage iccid={route.iccid} />;
     if (route.kind === 'topup') return <TopUpPage iccid={route.iccid} />;
@@ -117,7 +126,11 @@ function App() {
     if (route.kind === 'blog') return <BlogPage slug={route.slug} />;
     if (route.kind === 'legal') return <LegalPage slug={route.slug} />;
     return <CustomerApp />;
-  }, [route]);
+  }, [route, bootComplete]);
+
+  if (!bootComplete) {
+    return <BootSplash onFinish={handleBootSplashDone} />;
+  }
 
   return (
     <>

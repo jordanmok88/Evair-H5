@@ -572,6 +572,7 @@ const en = {
     filter_promos: 'Promos',
   },
   app: {
+    boot_splash_sr: 'Loading EvairSIM',
     test_mode_banner: 'Test mode',
     test_mode_subline: 'No payment — local preview',
     test_mode_exit: 'Exit',

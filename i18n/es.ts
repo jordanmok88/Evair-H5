@@ -564,6 +564,7 @@ const es = {
     filter_promos: 'Ofertas',
   },
   app: {
+    boot_splash_sr: 'Cargando EvairSIM',
     test_mode_banner: 'Modo prueba',
     test_mode_subline: 'Sin pago — vista previa local',
     test_mode_exit: 'Salir',

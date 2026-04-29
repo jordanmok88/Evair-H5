@@ -557,6 +557,7 @@ const zh = {
     filter_promos: '优惠',
   },
   app: {
+    boot_splash_sr: '正在加载 EvairSIM',
     test_mode_banner: '测试模式',
     test_mode_subline: '免支付 · 本地预览',
     test_mode_exit: '关闭',
