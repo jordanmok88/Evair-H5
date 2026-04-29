@@ -53,7 +53,7 @@ export interface DeviceCatalogItem {
     icon: LucideIcon;
     label: string;
     /** Premium stock product shot — shown instead of plain icon tiles on device landings only.
-     * Prefer self-hosted **`/marketing/device-built-for/cell-NN.jpg`** (sliced from the brand composite grid). */
+     * Prefer self-hosted **`/marketing/device-built-for/cell-NN.png`** (brand PNG photography for clarity). */
     productPhotoUrl?: string;
     productPhotoAlt?: string;
 }
@@ -232,23 +232,23 @@ export const DEVICE_CONTENT: Record<DeviceCategory, DeviceContent> = {
             {
                 icon: Camera,
                 label: 'Security cameras',
-                productPhotoUrl: '/marketing/device-built-for/cell-07.jpg',
+                productPhotoUrl: '/marketing/device-built-for/cell-07.png',
                 productPhotoAlt:
-                    'White dome security camera mounted under exterior eaves overlooking a driveway',
+                    'White dome security camera mounted under exterior eaves with wireless antenna',
             },
             {
                 icon: Camera,
                 label: 'Trail / hunting cameras',
-                productPhotoUrl: '/marketing/device-built-for/cell-08.jpg',
+                productPhotoUrl: '/marketing/device-built-for/cell-08.png',
                 productPhotoAlt:
                     'Camouflaged trail camera mounted on a tree trunk in a forest setting',
             },
             {
                 icon: Shield,
                 label: 'Outdoor monitors',
-                productPhotoUrl: '/marketing/device-built-for/cell-09.jpg',
+                productPhotoUrl: '/marketing/device-built-for/cell-09.png',
                 productPhotoAlt:
-                    'Professional weather and sensor station on a pole in an open field',
+                    'Field IoT telemetry box on a pole with solar panel displaying soil moisture and connectivity status',
             },
         ],
         plans: [
@@ -320,39 +320,41 @@ export const DEVICE_CONTENT: Record<DeviceCategory, DeviceContent> = {
             {
                 icon: Map,
                 label: 'GPS trackers',
-                productPhotoUrl: '/marketing/device-built-for/cell-01.jpg',
-                productPhotoAlt: 'Golden retriever on grass wearing a collar with a square GPS tracker',
+                productPhotoUrl: '/marketing/device-built-for/cell-01.png',
+                productPhotoAlt:
+                    'Golden retriever on lawn wearing a collar with a rectangular GPS collar module',
             },
             {
                 icon: Watch,
                 label: 'Smartwatches',
-                productPhotoUrl: '/marketing/device-built-for/cell-02.jpg',
+                productPhotoUrl: '/marketing/device-built-for/cell-02.png',
                 productPhotoAlt: 'Wrist wearing a smartwatch displaying a navigation map outdoors',
             },
             {
                 icon: BookOpen,
                 label: 'E-readers (Kindle, Boox)',
-                productPhotoUrl: '/marketing/device-built-for/cell-03.jpg',
-                productPhotoAlt: 'Hands holding a slim e-reader displaying book text indoors',
+                productPhotoUrl: '/marketing/device-built-for/cell-03.png',
+                productPhotoAlt:
+                    'Hands holding an e-ink tablet reader showing a book page indoors',
             },
             {
                 icon: Radio,
                 label: 'Walkie-talkies',
-                productPhotoUrl: '/marketing/device-built-for/cell-04.jpg',
+                productPhotoUrl: '/marketing/device-built-for/cell-04.png',
                 productPhotoAlt:
-                    'Construction worker with high-visibility vest speaking into a rugged handheld radio',
+                    'Rugged LTE handheld radio with display and antenna held on a construction site',
             },
             {
                 icon: CreditCard,
                 label: 'POS terminals',
-                productPhotoUrl: '/marketing/device-built-for/cell-05.jpg',
+                productPhotoUrl: '/marketing/device-built-for/cell-05.png',
                 productPhotoAlt:
-                    'Handheld touchscreen POS terminal on a wooden retail counter with payment card nearby',
+                    'Handheld touchscreen POS terminal showing a successful payment in a café',
             },
             {
                 icon: Wrench,
                 label: 'Robotic mowers',
-                productPhotoUrl: '/marketing/device-built-for/cell-06.jpg',
+                productPhotoUrl: '/marketing/device-built-for/cell-06.png',
                 productPhotoAlt: 'Robotic lawn mower trimming a manicured backyard lawn',
             },
         ],
