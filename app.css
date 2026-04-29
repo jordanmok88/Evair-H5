@@ -112,27 +112,3 @@ body {
   scrollbar-width: none;
 }
 
-/* Marketing hero carousel — full-width progress fill (Airalo-like) */
-@keyframes marketing-hero-progress {
-  from {
-    transform: scaleX(0);
-  }
-
-  to {
-    transform: scaleX(1);
-  }
-}
-
-.marketing-hero-progress-fill {
-  transform-origin: left center;
-  will-change: transform;
-  animation-name: marketing-hero-progress;
-  animation-timing-function: linear;
-  animation-fill-mode: forwards;
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .marketing-hero-progress-fill {
-    animation: none !important;
-  }
-}

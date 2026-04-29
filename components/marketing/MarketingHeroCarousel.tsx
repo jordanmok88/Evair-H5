@@ -8,7 +8,14 @@ import {
     Star,
 } from 'lucide-react';
 
-const SLIDE_DURATION_MS = 8000;
+/** Seconds between carousel steps (each advance picks a delay in this range). */
+const SLIDE_INTERVAL_MIN_MS = 3000;
+const SLIDE_INTERVAL_MAX_MS = 5000;
+
+function nextSlideDelayMs(): number {
+    const r = SLIDE_INTERVAL_MIN_MS + Math.random() * (SLIDE_INTERVAL_MAX_MS - SLIDE_INTERVAL_MIN_MS);
+    return Math.round(r);
+}
 
 function usePrefersReducedMotion(): boolean {
     const [reduced, setReduced] = useState(false);
@@ -52,22 +59,17 @@ export interface MarketingHeroCarouselProps {
 
 const SLIDE_COUNT = MARKETING_HERO_VISUAL_SLIDES.length;
 
-/** Home hero: selling slides, full-width progress line (no arrows), imagery + shared CTAs. */
+/** Home hero: selling slides; three striped indicators (jump, no sweeping bar), imagery + CTAs. */
 export function MarketingHeroCarousel(props: MarketingHeroCarouselProps) {
     const { t } = useTranslation();
     const { amazonUrl, travelLanding, activatePath, onTravelClick, onActivateClick } = props;
     const reducedMotion = usePrefersReducedMotion();
     const [index, setIndex] = useState(0);
-    const [progressBurst, setProgressBurst] = useState(0);
     const regionId = useId();
 
     const selectSlide = useCallback((i: number) => {
         setIndex(i);
     }, []);
-
-    useEffect(() => {
-        setProgressBurst((b) => b + 1);
-    }, [index]);
 
     const goNext = useCallback(() => {
         setIndex((i) => (i + 1) % SLIDE_COUNT);
@@ -75,9 +77,11 @@ export function MarketingHeroCarousel(props: MarketingHeroCarouselProps) {
 
     useEffect(() => {
         if (reducedMotion) return undefined;
-        const timer = window.setInterval(() => goNext(), SLIDE_DURATION_MS);
-        return () => window.clearInterval(timer);
-    }, [reducedMotion, goNext]);
+        const id = window.setTimeout(() => {
+            goNext();
+        }, nextSlideDelayMs());
+        return () => window.clearTimeout(id);
+    }, [index, reducedMotion, goNext]);
 
     const line1Keys = ['marketing.home_hero_stay', 'marketing.hero_slide2_stay', 'marketing.hero_slide3_stay'] as const;
     const line2Keys = ['marketing.home_hero_anywhere', 'marketing.hero_slide2_accent', 'marketing.hero_slide3_accent'] as const;
@@ -133,62 +137,29 @@ export function MarketingHeroCarousel(props: MarketingHeroCarouselProps) {
                         </div>
                     </div>
 
-                    {/* Progress line matches CTA width (max-w-md); tap zones for slide jump */}
-                    <div className="mx-auto mt-7 w-full max-w-md sm:mt-8 lg:mx-0">
-                        {!reducedMotion ? (
-                            <div className="relative w-full">
-                                <div className="h-2 w-full rounded-full bg-gray-100 shadow-inner md:h-2.5">
-                                    <div
-                                        key={`bar-${progressBurst}`}
-                                        className="marketing-hero-progress-fill h-full rounded-full bg-gradient-to-r from-orange-500 via-[#FF6600] to-amber-400"
-                                        style={{ animationDuration: `${SLIDE_DURATION_MS}ms` }}
-                                    />
-                                </div>
-                                <div
-                                    className="absolute inset-x-0 bottom-0 top-[-10px] flex sm:top-[-12px]"
-                                    role="group"
-                                    aria-label={t('marketing.hero_carousel_dots')}
-                                >
-                                    {Array.from({ length: SLIDE_COUNT }, (_, i) => (
-                                        <button
-                                            key={i}
-                                            type="button"
-                                            className={`flex-1 touch-manipulation rounded-sm border-0 bg-transparent px-1 py-2 outline-none focus-visible:ring-2 focus-visible:ring-[#2563eb] focus-visible:ring-offset-2 ${
-                                                i === index ? 'cursor-default' : 'cursor-pointer'
-                                            }`}
-                                            aria-current={i === index ? true : undefined}
-                                            aria-label={t('marketing.hero_carousel_slide_label', {
-                                                current: i + 1,
-                                                total: SLIDE_COUNT,
-                                            })}
-                                            onClick={() => selectSlide(i)}
-                                        />
-                                    ))}
-                                </div>
-                            </div>
-                        ) : (
-                            <div
-                                className="flex gap-2 sm:gap-3"
-                                role="group"
-                                aria-label={t('marketing.hero_carousel_dots')}
-                            >
-                                {Array.from({ length: SLIDE_COUNT }, (_, i) => (
-                                    <button
-                                        key={i}
-                                        type="button"
-                                        onClick={() => selectSlide(i)}
-                                        aria-current={i === index ? true : undefined}
-                                        aria-label={t('marketing.hero_carousel_slide_label', {
-                                            current: i + 1,
-                                            total: SLIDE_COUNT,
-                                        })}
-                                        className={`h-2 flex-1 rounded-full transition-colors sm:h-2.5 ${
-                                            i === index ? 'bg-[#FF6600]' : 'bg-gray-200 hover:bg-gray-300'
-                                        }`}
-                                    />
-                                ))}
-                            </div>
-                        )}
+                    {/* Three stripes — active one fills brand orange; advances every 3–5s (no sweep animation) */}
+                    <div
+                        className="mx-auto mt-7 flex w-full max-w-md gap-2 sm:mt-8 sm:gap-3 lg:mx-0"
+                        role="group"
+                        aria-label={t('marketing.hero_carousel_dots')}
+                    >
+                        {Array.from({ length: SLIDE_COUNT }, (_, i) => (
+                            <button
+                                key={i}
+                                type="button"
+                                onClick={() => selectSlide(i)}
+                                aria-current={i === index ? true : undefined}
+                                aria-label={t('marketing.hero_carousel_slide_label', {
+                                    current: i + 1,
+                                    total: SLIDE_COUNT,
+                                })}
+                                className={`h-2.5 min-h-[10px] flex-1 touch-manipulation rounded-full border-0 shadow-inner outline-none transition-colors duration-75 focus-visible:ring-2 focus-visible:ring-[#2563eb] focus-visible:ring-offset-2 sm:h-3 ${
+                                    i === index
+                                        ? 'cursor-default bg-gradient-to-r from-orange-500 to-amber-400 shadow-sm'
+                                        : 'cursor-pointer bg-gray-200 hover:bg-gray-300'
+                                }`}
+                            />
+                        ))}
                     </div>
 
                     <div className="mt-8 w-full max-w-md sm:mt-9">
