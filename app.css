@@ -112,83 +112,21 @@ body {
   scrollbar-width: none;
 }
 
-/* ── Boot splash: dark canvas + transparent logo + calm progress (sync ms with BootSplash.tsx) ── */
+/* ── Boot splash: white screen + logo + moving signal bars ── */
 
 .boot-splash-shell {
-  background:
-    radial-gradient(ellipse 90% 55% at 50% 38%, rgba(255, 102, 0, 0.11), transparent 62%),
-    radial-gradient(ellipse 70% 45% at 50% 100%, rgba(30, 22, 18, 0.65), transparent 50%),
-    linear-gradient(168deg, #0c0c0e 0%, #080809 45%, #050506 100%);
-}
-
-/* Faint vignette + oversized slow pulse — z behind all UI */
-.boot-splash-aura {
-  pointer-events: none;
-  position: absolute;
-  inset: -8%;
-  background: radial-gradient(circle at 50% 42%, transparent 38%, rgba(0, 0, 0, 0.45) 100%);
-  animation: boot-aura-pulse 5s ease-in-out infinite;
-}
-
-@keyframes boot-aura-pulse {
-  0%,
-  100% {
-    opacity: 0.85;
-  }
-  50% {
-    opacity: 1;
-  }
-}
-
-.boot-logo-stack {
-  min-height: min(204px, 36vh);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-/* Soft orange bloom ONLY behind raster — PNG transparency lets edges breathe */
-.boot-logo-bloom {
-  pointer-events: none;
-  position: absolute;
-  left: 50%;
-  top: 50%;
-  z-index: 0;
-  width: min(520px, 92vw);
-  height: clamp(100px, 22vw, 160px);
-  transform: translate(-50%, -50%);
-  border-radius: 50%;
-  background: radial-gradient(
-    ellipse 72% 80% at 50% 50%,
-    rgba(255, 110, 40, 0.22) 0%,
-    rgba(255, 90, 20, 0.06) 52%,
-    transparent 72%
-  );
-  filter: blur(36px);
-  animation: boot-bloom-breathe 3.2s ease-in-out infinite;
-}
-
-@keyframes boot-bloom-breathe {
-  0%,
-  100% {
-    opacity: 0.75;
-    transform: translate(-50%, -50%) scale(0.97);
-  }
-  50% {
-    opacity: 1;
-    transform: translate(-50%, -50%) scale(1.03);
-  }
+  background: #ffffff;
 }
 
 .boot-logo-reveal {
-  animation: boot-logo-enter 0.75s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+  animation: boot-logo-enter 0.55s cubic-bezier(0.22, 1, 0.36, 1) forwards;
   opacity: 0;
 }
 
 @keyframes boot-logo-enter {
   from {
     opacity: 0;
-    transform: translateY(12px);
+    transform: translateY(8px);
   }
   to {
     opacity: 1;
@@ -196,58 +134,59 @@ body {
   }
 }
 
-/* Single progress line — duration must match BOOT_SPLASH_DURATION_MS_DEFAULT (2800ms) */
-.boot-progress-track {
-  position: relative;
-  width: clamp(200px, 52vw, 280px);
-  height: 2px;
-  border-radius: 9999px;
-  background: rgba(255, 255, 255, 0.08);
-  overflow: hidden;
+/* Cellular-style bars: staggered vertical pulse (bottom-aligned) */
+.boot-sig-bar {
+  display: block;
+  width: 6px;
+  border-radius: 3px;
+  background: linear-gradient(180deg, #ff9440 0%, #ff6600 55%, #ea580c 100%);
+  transform-origin: bottom center;
+  animation: boot-sig-wave 0.95s ease-in-out infinite;
 }
 
-.boot-progress-inner {
-  height: 100%;
-  width: 0;
-  border-radius: 9999px;
-  background: linear-gradient(90deg, rgba(255, 102, 0, 0.35), #ff6600 45%, #ff9a4d);
-  box-shadow: 0 0 12px rgba(255, 102, 0, 0.35);
-  animation: boot-progress-fill var(--boot-ms, 2800ms) cubic-bezier(0.45, 0, 0.15, 1) forwards;
+.boot-sig-bar--1 {
+  height: 9px;
+  animation-delay: 0ms;
+}
+.boot-sig-bar--2 {
+  height: 15px;
+  animation-delay: 0.1s;
+}
+.boot-sig-bar--3 {
+  height: 22px;
+  animation-delay: 0.2s;
+}
+.boot-sig-bar--4 {
+  height: 30px;
+  animation-delay: 0.3s;
+}
+.boot-sig-bar--5 {
+  height: 38px;
+  animation-delay: 0.4s;
 }
 
-
-@keyframes boot-progress-fill {
-  to {
-    width: 100%;
+@keyframes boot-sig-wave {
+  0%,
+  100% {
+    opacity: 0.35;
+    transform: scaleY(0.42);
   }
-}
-
-.boot-splash-tag {
-  font-variant-numeric: tabular-nums;
+  50% {
+    opacity: 1;
+    transform: scaleY(1);
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .boot-splash-aura {
-    animation: none;
-    opacity: 1;
-  }
-
-  .boot-logo-bloom {
-    animation: none;
-    opacity: 0.55;
-    transform: translate(-50%, -50%) scale(1);
-  }
-
   .boot-logo-reveal {
     animation: none !important;
     opacity: 1 !important;
   }
 
-  .boot-progress-inner {
-    animation: none !important;
-    width: 100%;
-    opacity: 0.5;
-    box-shadow: none;
+  .boot-sig-bar {
+    animation: none;
+    opacity: 1;
+    transform: scaleY(1);
   }
 }
 
