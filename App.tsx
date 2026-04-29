@@ -42,7 +42,7 @@ function showGlobalSupportFabForRoute(kind: Route['kind']): boolean {
 }
 
 function App() {
-  /** Full-screen splash on every load (~1.5 s). Append `?nosplash` to skip (QA only). Timing: `BOOT_*` exports in BootSplash.tsx. */
+  /** Full-screen splash on every load (~2.8 s). Append `?nosplash` to skip (QA). Timing: BootSplash.tsx `BOOT_SPLASH_DURATION_*`. */
   const [bootComplete, setBootComplete] = useState(() => shouldSkipBootSplash());
 
   // Top-level route detection. Falls back to <CustomerApp/> for any path

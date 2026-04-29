@@ -1,23 +1,18 @@
 import React, { useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 
-/** Fullscreen boot splash MUST use app icon art — `/evairsim-brand-icon.png` — NOT the horizontal `evairsim-logo.png` wordmark/banner (see `.cursor/rules/project-overview.mdc`). */
-export const BOOT_SPLASH_ICON_SRC = '/evairsim-brand-icon.png';
-
 /**
- * Splash visible duration (~3.5 s feels substantial for brand moment before shell mounts).
- * Adjust here only—matches CSS ring rhythm via `BOOT_SIGNAL_LOOP_S` below.
+ * Canonical **horizontal EvairSIM** mark (orange Evair + SIM chip badge) — use ONLY this on boot splash.
+ * Do NOT use `evairsim-logo.png` / wordmark / screenshot mock-ups here (`project-overview.mdc`).
  */
-export const BOOT_SPLASH_DURATION_MS_DEFAULT = 3400;
-/** Shorter when prefers-reduced-motion. */
-export const BOOT_SPLASH_DURATION_MS_REDUCED = 920;
+export const BOOT_SPLASH_LOGO_SRC = '/evairsim-splash-logo.jpg';
 
-/** Keep CSS ring loop length in sync (~one full ripple cycle reads “complete”). */
-export const BOOT_SIGNAL_LOOP_S = 2.55;
+/** Total time splash holds before mounting the shell (ms). */
+export const BOOT_SPLASH_DURATION_MS_DEFAULT = 2800;
+export const BOOT_SPLASH_DURATION_MS_REDUCED = 980;
 
 /**
- * Skip the full-screen splash (`?nosplash=1`). Every normal reload runs splash again
- * unless this flag is present (QA / demos).
+ * Skip the full-screen splash (`?nosplash=1`). Reload still shows splash unless this flag is set.
  */
 export function shouldSkipBootSplash(): boolean {
     if (typeof window === 'undefined') return true;
@@ -33,7 +28,8 @@ interface BootSplashProps {
 }
 
 /**
- * Brand **app-icon** raster + oversized expanding rings (moving signal below mark).
+ * Minimal high-impact splash: warm backdrop, halo **behind** the logo only (nothing overlaps foreground),
+ * single shimmering accent line — no stacked “hub + big ring” circus.
  */
 export function BootSplash({ onFinish }: BootSplashProps) {
     const { t } = useTranslation();
@@ -59,36 +55,36 @@ export function BootSplash({ onFinish }: BootSplashProps) {
 
     return (
         <div
-            className="fixed inset-0 z-[2147483646] flex flex-col items-center justify-center bg-gradient-to-b from-white via-white to-[#f4f6f9] px-4"
+            className="boot-splash-shell fixed inset-0 z-[2147483646] flex flex-col items-center justify-center px-5"
             role="status"
             aria-live="polite"
             aria-busy="true"
         >
             <span className="sr-only">{t('app.boot_splash_sr')}</span>
-            <div className="relative flex w-full max-w-lg flex-col items-center">
-                <img
-                    src={BOOT_SPLASH_ICON_SRC}
-                    alt=""
-                    width={800}
-                    height={670}
-                    className="relative z-[2] mx-auto h-auto max-h-[min(320px,calc(50vh))] w-full max-w-[min(440px,calc(100vw-2rem))] object-contain drop-shadow-[0_12px_40px_-8px_rgba(255,102,0,0.18)]"
-                    draggable={false}
-                    decoding="async"
-                    fetchPriority="high"
-                />
 
-                {/* Large sonar rings — scaled for impact; synced to BOOT_SIGNAL_LOOP_S in app.css */}
-                <div
-                    className="boot-signal-stage pointer-events-none relative z-[1] -mt-[10%] flex h-[min(18rem,44vw)] w-full max-w-none shrink-0 items-center justify-center sm:h-[min(22rem,50vw)] lg:max-w-xl"
-                    style={{ '--boot-loop': `${BOOT_SIGNAL_LOOP_S}s` } as React.CSSProperties}
-                    aria-hidden
-                >
-                    <span className="boot-signal-hub" />
-                    <span className="boot-signal-ring" />
-                    <span className="boot-signal-ring" />
-                    <span className="boot-signal-ring" />
-                    <span className="boot-signal-ring" />
+            <div className="relative z-10 flex w-full max-w-2xl flex-col items-center">
+                <div className="relative w-full px-2 sm:px-0">
+                    <span className="boot-logo-halo" aria-hidden />
+
+                    <img
+                        src={BOOT_SPLASH_LOGO_SRC}
+                        alt=""
+                        width={1024}
+                        height={359}
+                        className="relative z-[1] mx-auto block h-auto w-full max-h-[min(192px,calc(32vh))] max-w-[min(600px,calc(100vw-2rem))] object-contain"
+                        draggable={false}
+                        decoding="async"
+                        fetchPriority="high"
+                    />
                 </div>
+
+                <div className="boot-shimmer-track mt-[clamp(2.25rem,7vw,3.5rem)]" aria-hidden>
+                    <div className="boot-shimmer-strip" />
+                </div>
+
+                <p className="boot-splash-eyebrow mt-12 text-center text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-500 sm:text-xs">
+                    {t('marketing.home_badge')}
+                </p>
             </div>
         </div>
     );
