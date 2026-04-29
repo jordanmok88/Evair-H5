@@ -11,18 +11,19 @@
  *     (Jordan's brand principle: honest pricing → fewer refunds).
  *   - Be readable when JS is slow / fonts haven't loaded — no
  *     animation gating, no API calls.
- *   - Funnel into `/app` for the actual purchase. We don't try to
- *     close the sale on the SEO page itself.
+ *   - Funnel into `/app` for the actual purchase — plan cards are now
+ *     immediately after the compact hero on all device pages.
  *
- * Sections:
- *   1. Header (apex Evair logo)
- *   2. Hero (title + subtitle + speed badge + check row; no hero CTA on phone)
- *   3. Compatible devices (camera / IoT; omitted on phone)
- *   4. Three pillars
- *   5. Plan tiers
- *   6. FAQ
- *   7. Final CTA
- *   8. Footer (shared with MarketingPage in spirit)
+ * Sections (conversion-first):
+ *   1. Header
+ *   2. Compact hero — speed badge, title, subtitle, throttle (honest disclosure), trust row
+ *   3. Plan tiers (**primary conversion** — visible without scrolling past long prose)
+ *   4. Three pillars — why Evair after price clarity
+ *   5. Phone only: carrier comparison table (estimates)
+ *   6. Camera / IoT: compatible devices mosaic + list
+ *   7. FAQ
+ *   8. Final CTA
+ *   9. Footer
  *
  * @see data/deviceLandings.ts
  * @see docs/EVAIRSIM_ROADMAP_ZH.md §四 — Phase 2
@@ -60,65 +61,121 @@ const DeviceLandingPage: React.FC<DeviceLandingPageProps> = ({ category }) => {
         <div className="min-h-screen bg-white text-slate-900">
             <SiteHeader active={category} />
 
-            {/* Hero */}
-            <section className="px-4 md:px-8 py-12 md:py-20 max-w-6xl mx-auto">
-                <div
-                    className={
-                        category === 'phone'
-                            ? 'grid gap-10'
-                            : 'grid md:grid-cols-2 gap-10 items-center'
-                    }
-                >
-                    <div>
-                        <div className="inline-flex items-center gap-2 bg-slate-100 text-slate-700 text-xs font-bold uppercase tracking-wider px-3 py-1 rounded-full mb-4">
-                            <Gauge size={12} /> {content.speedHeadline}
-                        </div>
-                        <h1 className="text-4xl md:text-5xl font-extrabold leading-tight tracking-tight mb-5">
-                            {content.heroTitle}
-                        </h1>
-                        <p className="text-lg text-slate-600 mb-6 max-w-xl leading-relaxed">
-                            {content.heroSubtitle}
-                        </p>
-                        <p className="text-sm text-slate-500 mb-8 max-w-xl leading-relaxed bg-slate-50 border border-slate-200 rounded-xl p-3">
-                            <strong className="text-slate-700">Speed honesty:</strong>{' '}
-                            {content.throttleNote}
-                        </p>
-                        <div className="flex items-center gap-2 mt-2 text-xs text-slate-500">
+            {/* Compact hero — plans follow immediately below for conversion */}
+            <section className="mx-auto max-w-6xl px-4 pb-6 pt-8 md:px-8 md:pb-8 md:pt-11">
+                <div className="max-w-3xl">
+                    <div className="mb-3 inline-flex items-center gap-2 rounded-full bg-slate-100 px-3 py-1 text-xs font-bold uppercase tracking-wider text-slate-700">
+                        <Gauge size={12} /> {content.speedHeadline}
+                    </div>
+                    <h1 className="mb-3 text-[1.75rem] font-extrabold leading-[1.15] tracking-tight text-slate-900 md:mb-4 md:text-4xl lg:text-5xl">
+                        {content.heroTitle}
+                    </h1>
+                    <p className="mb-4 max-w-xl text-base leading-snug text-slate-600 md:text-lg md:leading-relaxed">
+                        {content.heroSubtitle}
+                    </p>
+                    <p className="mb-5 max-w-2xl border-l-4 border-orange-400 pl-4 text-sm leading-relaxed text-slate-700">
+                        <strong className="font-semibold text-slate-800">Speed honesty:</strong> {content.throttleNote}
+                    </p>
+                    <div className="flex flex-wrap items-center gap-x-3 gap-y-2 text-[11px] text-slate-500 sm:text-xs">
+                        <span className="inline-flex items-center gap-1">
                             <CheckCircle2 size={14} className="text-emerald-500" />
                             No contract.
-                            <CheckCircle2 size={14} className="text-emerald-500 ml-2" />
+                        </span>
+                        <span className="inline-flex items-center gap-1">
+                            <CheckCircle2 size={14} className="text-emerald-500" />
                             No hidden fees.
-                            <CheckCircle2 size={14} className="text-emerald-500 ml-2" />
+                        </span>
+                        <span className="inline-flex items-center gap-1">
+                            <CheckCircle2 size={14} className="text-emerald-500" />
                             US support.
-                        </div>
+                        </span>
                     </div>
+                </div>
+            </section>
 
-                    {/* Decorative device mosaic — phone page omits (headline + pillars cover it). */}
-                    {category !== 'phone' && (
-                        <div className="hidden md:block">
-                            <div className="grid grid-cols-3 gap-3">
-                                {content.devices.slice(0, 9).map((d, i) => (
-                                    <div
-                                        key={`${d.label}-${i}`}
-                                        className={`aspect-square rounded-2xl flex flex-col items-center justify-center gap-2 text-slate-600 ${
-                                            i === 4
-                                                ? 'bg-orange-500 text-white shadow-xl shadow-orange-500/20'
-                                                : 'bg-slate-50 border border-slate-200'
-                                        }`}
-                                    >
-                                        <d.icon size={26} />
-                                        <span className="text-[11px] font-semibold text-center px-1">
-                                            {d.label}
-                                        </span>
-                                    </div>
-                                ))}
+            {/* Plans — primary CTA */}
+            <section
+                id="plans"
+                className="scroll-mt-28 px-4 pb-10 pt-2 md:px-8 md:pb-12 max-w-6xl mx-auto"
+            >
+                <h2 className="mb-2 text-center text-3xl font-extrabold md:text-4xl">Pick a plan</h2>
+                <p className="mx-auto mb-8 max-w-lg text-center text-slate-600">
+                    All plans renew monthly. Cancel any time, no fees.
+                </p>
+                <div className="grid gap-4 md:grid-cols-3">
+                    {content.plans.map(plan => (
+                        <div
+                            key={plan.name}
+                            className={`rounded-2xl p-6 border-2 ${
+                                plan.highlight
+                                    ? 'border-orange-500 bg-orange-50/40 shadow-xl shadow-orange-500/10'
+                                    : 'border-slate-200 bg-white'
+                            }`}
+                        >
+                            <div className="mb-2 flex items-baseline gap-2">
+                                <span className="text-2xl font-bold">{plan.name}</span>
+                                {plan.highlight && (
+                                    <span className="rounded bg-orange-500 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-white">
+                                        Most popular
+                                    </span>
+                                )}
                             </div>
+                            <div className="mb-3 flex items-end gap-1">
+                                <span className="text-4xl font-extrabold">${plan.priceUsd}</span>
+                                <span className="mb-1 text-sm text-slate-500">/ month</span>
+                            </div>
+                            <p className="mb-5 text-sm leading-relaxed text-slate-600">{plan.summary}</p>
+                            <a
+                                href={content.ctaHref}
+                                className={`block rounded-xl py-2.5 text-center font-bold ${
+                                    plan.highlight
+                                        ? 'bg-orange-500 text-white'
+                                        : 'bg-slate-900 text-white'
+                                }`}
+                            >
+                                Get {plan.name}
+                            </a>
                         </div>
+                    ))}
+                </div>
+            </section>
+
+            {/* Why Evair — after shopper sees price */}
+            <section className="mx-auto max-w-6xl px-4 py-10 md:px-8 md:py-14">
+                <div className="grid gap-4 md:grid-cols-3">
+                    {content.pillars.map(p =>
+                        category === 'phone' ? (
+                            <div
+                                key={p.title}
+                                className="relative overflow-hidden rounded-2xl border border-slate-200 bg-white p-5 shadow-sm"
+                            >
+                                <div
+                                    className="absolute left-0 right-0 top-0 h-1 bg-gradient-to-r from-orange-500 via-amber-400 to-yellow-300"
+                                    aria-hidden
+                                />
+                                <h3 className="mb-1.5 flex items-center gap-2 pt-0.5 text-lg font-bold text-slate-900">
+                                    <p.icon size={20} className="shrink-0 text-[#F27420]" />
+                                    {p.title}
+                                </h3>
+                                <p className="text-sm leading-relaxed text-slate-600">{p.body}</p>
+                            </div>
+                        ) : (
+                            <div
+                                key={p.title}
+                                className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm"
+                            >
+                                <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-xl bg-slate-50">
+                                    <p.icon size={22} className="text-orange-500" />
+                                </div>
+                                <h3 className="mb-1 text-lg font-bold">{p.title}</h3>
+                                <p className="text-sm leading-relaxed text-slate-600">{p.body}</p>
+                            </div>
+                        ),
                     )}
                 </div>
             </section>
 
-            {/* Phone only: Evair vs AT&T / Verizon (concise est.) */}
+            {/* Phone only: carrier comparison */}
             {content.carrierComparison && (
                 <section
                     id={content.carrierComparison.sectionId}
@@ -215,108 +272,49 @@ const DeviceLandingPage: React.FC<DeviceLandingPageProps> = ({ category }) => {
                 </section>
             )}
 
-            {/* Compatible devices strip (camera / IoT). Phone page: headline is enough. */}
+            {/* Camera / IoT — device collage after plans & pillars */}
             {category !== 'phone' && (
-                <section className="md:hidden px-4 py-8 bg-slate-50">
-                    <h2 className="text-sm font-bold uppercase tracking-wider text-slate-500 mb-3">
-                        Built for
-                    </h2>
-                    <div className="grid grid-cols-2 gap-2">
-                        {content.devices.map(d => (
-                            <div
-                                key={d.label}
-                                className="flex items-center gap-2 bg-white border border-slate-200 rounded-xl px-3 py-2"
-                            >
-                                <d.icon size={16} className="text-slate-500" />
-                                <span className="text-sm text-slate-700">{d.label}</span>
+                <section
+                    id="built-for"
+                    className="border-t border-slate-200 bg-slate-50 px-4 py-10 md:px-8 md:py-12"
+                >
+                    <div className="mx-auto max-w-6xl">
+                        <h2 className="mb-6 text-lg font-bold uppercase tracking-wide text-slate-500 md:mb-8 md:text-sm">
+                            Built for
+                        </h2>
+                        <div className="hidden md:block">
+                            <div className="mx-auto grid max-w-md grid-cols-3 gap-3 md:max-w-xl">
+                                {content.devices.slice(0, 9).map((d, i) => (
+                                    <div
+                                        key={`${d.label}-${i}`}
+                                        className={`flex aspect-square flex-col items-center justify-center gap-2 rounded-2xl text-slate-600 ${
+                                            i === 4
+                                                ? 'bg-orange-500 text-white shadow-xl shadow-orange-500/20'
+                                                : 'border border-slate-200 bg-white'
+                                        }`}
+                                    >
+                                        <d.icon size={26} />
+                                        <span className="text-center text-[11px] font-semibold px-1">
+                                            {d.label}
+                                        </span>
+                                    </div>
+                                ))}
                             </div>
-                        ))}
+                        </div>
+                        <div className="grid grid-cols-2 gap-2 md:grid-cols-3 lg:grid-cols-4">
+                            {content.devices.map(d => (
+                                <div
+                                    key={d.label}
+                                    className="flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2"
+                                >
+                                    <d.icon size={16} className="text-slate-500" />
+                                    <span className="text-sm text-slate-700">{d.label}</span>
+                                </div>
+                            ))}
+                        </div>
                     </div>
                 </section>
             )}
-
-            {/* Pillars — phone: gradient rail + inline icon; others: original cards */}
-            <section className="px-4 md:px-8 py-12 md:py-16 max-w-6xl mx-auto">
-                <div className="grid md:grid-cols-3 gap-4">
-                    {content.pillars.map(p =>
-                        category === 'phone' ? (
-                            <div
-                                key={p.title}
-                                className="relative overflow-hidden rounded-2xl border border-slate-200 bg-white p-5 shadow-sm"
-                            >
-                                <div
-                                    className="absolute left-0 right-0 top-0 h-1 bg-gradient-to-r from-orange-500 via-amber-400 to-yellow-300"
-                                    aria-hidden
-                                />
-                                <h3 className="mb-1.5 flex items-center gap-2 pt-0.5 text-lg font-bold text-slate-900">
-                                    <p.icon size={20} className="shrink-0 text-[#F27420]" />
-                                    {p.title}
-                                </h3>
-                                <p className="text-sm leading-relaxed text-slate-600">{p.body}</p>
-                            </div>
-                        ) : (
-                            <div
-                                key={p.title}
-                                className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm"
-                            >
-                                <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-xl bg-slate-50">
-                                    <p.icon size={22} className="text-orange-500" />
-                                </div>
-                                <h3 className="mb-1 text-lg font-bold">{p.title}</h3>
-                                <p className="text-sm leading-relaxed text-slate-600">{p.body}</p>
-                            </div>
-                        ),
-                    )}
-                </div>
-            </section>
-
-            {/* Plans */}
-            <section className="px-4 md:px-8 py-12 max-w-6xl mx-auto">
-                <h2 className="text-3xl md:text-4xl font-extrabold text-center mb-2">
-                    Pick a plan
-                </h2>
-                <p className="text-center text-slate-600 mb-8">
-                    All plans renew monthly. Cancel any time, no fees.
-                </p>
-                <div className="grid md:grid-cols-3 gap-4">
-                    {content.plans.map(plan => (
-                        <div
-                            key={plan.name}
-                            className={`rounded-2xl p-6 border-2 ${
-                                plan.highlight
-                                    ? 'border-orange-500 bg-orange-50/40 shadow-xl shadow-orange-500/10'
-                                    : 'border-slate-200 bg-white'
-                            }`}
-                        >
-                            <div className="flex items-baseline gap-2 mb-2">
-                                <span className="text-2xl font-bold">{plan.name}</span>
-                                {plan.highlight && (
-                                    <span className="text-[10px] font-bold uppercase tracking-wider bg-orange-500 text-white px-2 py-0.5 rounded">
-                                        Most popular
-                                    </span>
-                                )}
-                            </div>
-                            <div className="flex items-end gap-1 mb-3">
-                                <span className="text-4xl font-extrabold">${plan.priceUsd}</span>
-                                <span className="text-slate-500 mb-1 text-sm">/ month</span>
-                            </div>
-                            <p className="text-slate-600 text-sm mb-5 leading-relaxed">
-                                {plan.summary}
-                            </p>
-                            <a
-                                href={content.ctaHref}
-                                className={`block text-center font-bold py-2.5 rounded-xl ${
-                                    plan.highlight
-                                        ? 'bg-orange-500 text-white'
-                                        : 'bg-slate-900 text-white'
-                                }`}
-                            >
-                                Get {plan.name}
-                            </a>
-                        </div>
-                    ))}
-                </div>
-            </section>
 
             {/* FAQ */}
             <section className="px-4 md:px-8 py-12 md:py-16 bg-slate-50">
