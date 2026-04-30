@@ -1,6 +1,10 @@
 /**
  * LiveChatView — full-screen real-time chat with a human agent.
  *
+ * @deprecated Use ContactUsView instead. This component is superseded by the
+ * unified chat interface that handles both AI and human agent conversations
+ * in a single view. Kept only for reference / rollback.
+ *
  * Sits on top of `useChat` (which owns conversation state, optimistic
  * sends, WS subscription, polling fallback, and pagination). This
  * component is presentation only.
@@ -39,6 +43,7 @@ import {
   Plus,
   Receipt,
   Package,
+  FileText,
   X,
   Headphones,
   MessageSquare,
@@ -182,6 +187,8 @@ function OrderCardContent({ message, mine }: { message: LocalChatMessage; mine: 
       ? meta.amount_cents
       : typeof meta.amount === 'number'
         ? Math.round((meta.amount as number) * 100)
+        : typeof meta.amount === 'string'
+          ? Math.round(Number(meta.amount) * 100)
         : undefined;
 
   const statusLabel = (() => {
@@ -243,6 +250,8 @@ function ProductCardContent({ message, mine }: { message: LocalChatMessage; mine
       ? meta.price_cents
       : typeof meta.price === 'number'
         ? Math.round((meta.price as number) * 100)
+        : typeof meta.price === 'string'
+          ? Math.round(Number(meta.price) * 100)
         : undefined;
   const location = (meta.location as string) ?? (meta.location_name as string) ?? '';
   const dataGb = meta.data_volume_gb as number | undefined;
@@ -280,6 +289,41 @@ function ProductCardContent({ message, mine }: { message: LocalChatMessage; mine
         )}
       </div>
     </div>
+  );
+}
+
+function FileCardContent({ message, mine }: { message: LocalChatMessage; mine: boolean }) {
+  const meta = (message.metadata ?? {}) as Record<string, unknown>;
+  const name = (meta.original_name as string) || message.content || 'file';
+  const mime = (meta.mime_type as string) || '';
+  const size = typeof meta.size === 'number' ? meta.size : undefined;
+  const sizeLabel =
+    typeof size === 'number'
+      ? size >= 1024 * 1024
+        ? `${(size / (1024 * 1024)).toFixed(1)} MB`
+        : `${Math.max(1, Math.round(size / 1024))} KB`
+      : null;
+
+  return (
+    <a
+      href={message.media_url ?? '#'}
+      target="_blank"
+      rel="noreferrer"
+      className={`block min-w-[220px] rounded-lg p-3 ${mine ? 'bg-white/15' : 'bg-slate-50'}`}
+      onClick={e => {
+        if (!message.media_url) e.preventDefault();
+      }}
+    >
+      <div className="flex items-start gap-2">
+        <FileText size={16} className={mine ? 'text-white/80 mt-0.5' : 'text-slate-500 mt-0.5'} />
+        <div className="min-w-0 flex-1">
+          <div className={`text-sm font-medium truncate ${mine ? 'text-white' : 'text-slate-900'}`}>{name}</div>
+          <div className={`text-[11px] ${mine ? 'text-white/75' : 'text-slate-500'}`}>
+            {[mime, sizeLabel].filter(Boolean).join(' · ')}
+          </div>
+        </div>
+      </div>
+    </a>
   );
 }
 
@@ -380,6 +424,8 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
             className="rounded-lg max-h-64 max-w-full object-contain"
           />
         ) : null;
+      case 'file':
+        return <FileCardContent message={message} mine={mine} />;
       case 'order':
         return <OrderCardContent message={message} mine={mine} />;
       case 'product':
@@ -475,11 +521,12 @@ interface AttachMenuProps {
   open: boolean;
   onClose: () => void;
   onPickImage: () => void;
+  onPickFile: () => void;
   onPickOrder: () => void;
   onPickProduct: () => void;
 }
 
-function AttachMenu({ open, onClose, onPickImage, onPickOrder, onPickProduct }: AttachMenuProps) {
+function AttachMenu({ open, onClose, onPickImage, onPickFile, onPickOrder, onPickProduct }: AttachMenuProps) {
   const { t } = useTranslation();
   if (!open) return null;
   return (
@@ -509,6 +556,17 @@ function AttachMenu({ open, onClose, onPickImage, onPickOrder, onPickProduct }: 
           </div>
           <span className="text-sm text-slate-900">
             {t('chat.attachOrder', { defaultValue: 'Order' })}
+          </span>
+        </button>
+        <button
+          onClick={onPickFile}
+          className="w-full flex items-center gap-3 px-3 py-3 rounded-lg active:bg-slate-50"
+        >
+          <div className="w-9 h-9 rounded-xl bg-slate-100 flex items-center justify-center">
+            <FileText size={18} className="text-slate-600" />
+          </div>
+          <span className="text-sm text-slate-900">
+            {t('chat.attachFile', { defaultValue: 'File' })}
           </span>
         </button>
         <button
@@ -543,6 +601,7 @@ export default function LiveChatView({ onBack }: LiveChatViewProps) {
     loadingMore,
     sendText,
     sendImage,
+    sendFile,
     sendOrderCard,
     sendProductCard,
     retry,
@@ -551,6 +610,7 @@ export default function LiveChatView({ onBack }: LiveChatViewProps) {
 
   const [draft, setDraft] = useState('');
   const [sending, setSending] = useState(false);
+  const imageInputRef = useRef<HTMLInputElement | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const listEndRef = useRef<HTMLDivElement | null>(null);
   const scrollerRef = useRef<HTMLDivElement | null>(null);
@@ -652,12 +712,30 @@ export default function LiveChatView({ onBack }: LiveChatViewProps) {
     if (!file) return;
     setSending(true);
     try {
+      if (file.type.startsWith('image/')) {
+        await sendImage(file);
+      } else {
+        await sendFile(file);
+      }
+    } catch (err) {
+      console.warn('[LiveChatView] attachment send failed', err);
+    } finally {
+      setSending(false);
+      if (fileInputRef.current) fileInputRef.current.value = '';
+    }
+  };
+
+  const handleImageFile = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+    setSending(true);
+    try {
       await sendImage(file);
     } catch (err) {
       console.warn('[LiveChatView] image send failed', err);
     } finally {
       setSending(false);
-      if (fileInputRef.current) fileInputRef.current.value = '';
+      if (imageInputRef.current) imageInputRef.current.value = '';
     }
   };
 
@@ -822,9 +900,16 @@ export default function LiveChatView({ onBack }: LiveChatViewProps) {
             <Plus size={22} />
           </button>
           <input
+            ref={imageInputRef}
+            type="file"
+            accept="image/jpeg,image/jpg,image/png,image/gif,image/webp"
+            className="hidden"
+            onChange={handleImageFile}
+          />
+          <input
             ref={fileInputRef}
             type="file"
-            accept="image/*"
+            accept="application/pdf,text/plain,text/csv"
             className="hidden"
             onChange={handleFile}
           />
@@ -858,6 +943,10 @@ export default function LiveChatView({ onBack }: LiveChatViewProps) {
         onClose={() => setSheet('none')}
         onPickImage={() => {
           setSheet('none');
+          imageInputRef.current?.click();
+        }}
+        onPickFile={() => {
+          setSheet('none');
           fileInputRef.current?.click();
         }}
         onPickOrder={() => setSheet('order')}
@@ -872,10 +961,6 @@ export default function LiveChatView({ onBack }: LiveChatViewProps) {
           try {
             await sendOrderCard({
               orderNo: order.orderNumber,
-              packageName: order.orderNumber, // App tier OrderDto has no packageName; use orderNumber
-              status: order.status,
-              amount: order.amount,
-              currency: order.currency,
             });
           } catch (err) {
             console.warn('[LiveChatView] sendOrderCard failed', err);
@@ -894,14 +979,6 @@ export default function LiveChatView({ onBack }: LiveChatViewProps) {
             await sendProductCard({
               packageCode: pkg.packageCode,
               name: pkg.name,
-              price: pkg.price,
-              currency: pkg.currency,
-              location: pkg.locationName,
-              durationDays:
-                pkg.durationUnit === 'MONTH'
-                  ? pkg.duration * 30
-                  : pkg.duration,
-              dataVolumeGb: pkg.volume,
             });
           } catch (err) {
             console.warn('[LiveChatView] sendProductCard failed', err);
