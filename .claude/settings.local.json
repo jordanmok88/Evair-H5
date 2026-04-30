@@ -13,7 +13,26 @@
       "Bash(npx tsc:*)",
       "Bash(git pull:*)",
       "Bash(git stash:*)",
-      "Bash(git stash pop:*)"
+      "Bash(git stash pop:*)",
+      "Bash(npm run dev)",
+      "Bash(timeout 5 tail -f:*)",
+      "Bash(cd:*)",
+      "WebFetch(domain:minimax-algeng-chat-tts.oss-cn-wulanchabu.aliyuncs.com)",
+      "Bash(npm install:*)",
+      "Bash(npm run build)",
+      "Bash(git -C \"C:\\\\wwwroot\\\\Evair-H5\" branch -a)",
+      "Bash(git -C \"C:\\\\wwwroot\\\\Evair-H5\" checkout -b feature/pccw-integration)",
+      "Bash(git -C \"C:\\wwwroot\\\\Evair-H5\" branch --show-current)",
+      "Bash(npm run test:*)",
+      "Bash(php:*)",
+      "Bash(for:*)",
+      "Bash(do echo \"=== DELETED: $f ===\")",
+      "Bash(done)",
+      "Bash(npx vite build:*)",
+      "Bash(ls:*)",
+      "Bash(npx vite:*)",
+      "Bash(git status:*)",
+      "Bash(git push -u origin fix/pccw-recharge-flow)"
     ]
   }
 }
