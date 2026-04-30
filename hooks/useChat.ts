@@ -30,6 +30,7 @@ import {
   chatService,
   ConversationDto,
   ChatMessageDto,
+  ChatMessageCamel,
   newClientMsgId,
   MessageType,
 } from '../services/api/chat';
@@ -73,6 +74,28 @@ function sortMessages(list: LocalChatMessage[]): LocalChatMessage[] {
     if (ta !== tb) return ta - tb;
     return a.id - b.id;
   });
+}
+
+/**
+ * Convert ChatMessageCamel (from chatService API) to snake_case shape
+ * compatible with LocalChatMessage / mergeMessages.
+ */
+function camelToSnake(m: ChatMessageCamel): ChatMessageDto {
+  return {
+    id: m.id,
+    conversation_id: m.conversationId,
+    sender: m.sender,
+    sender_name: m.senderName,
+    sender_admin: m.senderAdmin,
+    content: m.content,
+    english_content: m.englishContent ?? null,
+    client_msg_id: m.clientMsgId,
+    is_read: m.isRead,
+    message_type: m.messageType,
+    media_url: m.mediaUrl,
+    metadata: m.metadata,
+    created_at: m.createdAt,
+  };
 }
 
 /**
@@ -276,10 +299,10 @@ export function useChat() {
       const { messages: initial, hasMore: initialHasMore } =
         await chatService.listMessages(conv.id);
       if (!mountedRef.current) return;
-      setMessages(sortMessages(initial.map(m => ({ ...m }))));
+      setMessages(sortMessages(initial.map(camelToSnake)));
       setHasMore(initialHasMore);
       lastMessageAtRef.current =
-        initial.length > 0 ? initial[initial.length - 1].created_at : null;
+        initial.length > 0 ? initial[initial.length - 1].createdAt : null;
 
       const cleanup = await subscribeRealtime(conv.id);
       // Stash cleanup so the unmount/effect can call it.
@@ -417,13 +440,13 @@ export function useChat() {
       setMessages(prev => sortMessages([...prev, optimistic]));
 
       try {
-        const upload = await chatService.uploadAttachment(file);
+        const upload = await chatService.uploadAttachment(file, 'image');
         const confirmed = await chatService.sendMessage(conversation.id, {
           content: '[image]',
           client_msg_id: clientMsgId,
           message_type: 'image',
           media_url: upload.url,
-          metadata: { width: upload.width, height: upload.height, bytes: upload.bytes },
+          metadata: { path: upload.path },
         });
         if (mountedRef.current) ingestMessages([confirmed]);
       } catch (err) {
@@ -455,6 +478,62 @@ export function useChat() {
     [conversation, ingestMessages]
   );
 
+  const sendFile = useCallback(
+    async (file: File) => {
+      if (!conversation) {
+        throw new Error('Cannot send before conversation is ready');
+      }
+
+      const clientMsgId = newClientMsgId();
+      const optimistic: LocalChatMessage = {
+        id: -Date.now(),
+        conversation_id: conversation.id,
+        sender: 'customer',
+        sender_name: null,
+        content: file.name || '[file]',
+        english_content: null,
+        client_msg_id: clientMsgId,
+        is_read: false,
+        message_type: 'file',
+        media_url: null,
+        metadata: { uploading: true, original_name: file.name, size: file.size },
+        created_at: new Date().toISOString(),
+        isOptimistic: true,
+      };
+      setMessages(prev => sortMessages([...prev, optimistic]));
+
+      try {
+        const upload = await chatService.uploadAttachment(file, 'file');
+        const confirmed = await chatService.sendMessage(conversation.id, {
+          content: upload.original_name || '[file]',
+          client_msg_id: clientMsgId,
+          message_type: 'file',
+          media_url: upload.url,
+          metadata: {
+            path: upload.path,
+            original_name: upload.original_name,
+            size: upload.size,
+            mime_type: upload.mime_type,
+            extension: upload.extension,
+          },
+        });
+        if (mountedRef.current) ingestMessages([confirmed]);
+      } catch (err) {
+        console.warn('[useChat] sendFile failed', err);
+        if (!mountedRef.current) return;
+        setMessages(prev =>
+          prev.map(m =>
+            m.client_msg_id === clientMsgId
+              ? { ...m, failed: true, metadata: { ...(m.metadata as object | null), uploading: false } }
+              : m
+          )
+        );
+        throw err;
+      }
+    },
+    [conversation, ingestMessages]
+  );
+
   /**
    * Send a structured order-card message per CROSS_PLATFORM_CONTRACT §6.3.
    * The renderer (this side and the agent admin) shows a tap-able card
@@ -465,20 +544,11 @@ export function useChat() {
   const sendOrderCard = useCallback(
     (params: {
       orderNo: string;
-      packageName: string;
-      status: string;
-      /** Total in major units (dollars). Converted to cents for the contract. */
-      amount: number;
-      currency?: string;
     }) =>
       sendMessage(`Order #${params.orderNo}`, {
         messageType: 'order',
         metadata: {
           order_no: params.orderNo,
-          package_name: params.packageName,
-          status: params.status,
-          amount_cents: Math.round(params.amount * 100),
-          currency: params.currency ?? 'USD',
         },
       }),
     [sendMessage]
@@ -495,23 +565,11 @@ export function useChat() {
     (params: {
       packageCode: string;
       name: string;
-      /** Price in major units (dollars). Converted to cents for the contract. */
-      price: number;
-      currency?: string;
-      location?: string;
-      durationDays?: number;
-      dataVolumeGb?: number;
     }) =>
       sendMessage(`Recommended: ${params.name}`, {
         messageType: 'product',
         metadata: {
-          package_code: params.packageCode,
-          name: params.name,
-          price_cents: Math.round(params.price * 100),
-          currency: params.currency ?? 'USD',
-          ...(params.location ? { location: params.location } : {}),
-          ...(params.durationDays !== undefined ? { duration_days: params.durationDays } : {}),
-          ...(params.dataVolumeGb !== undefined ? { data_volume_gb: params.dataVolumeGb } : {}),
+          sku_code: params.packageCode,
         },
       }),
     [sendMessage]
@@ -545,7 +603,7 @@ export function useChat() {
       if (!mountedRef.current) return;
       // Older pages can't conflict with optimistic entries (different id
       // ranges), so a plain merge by id is sufficient.
-      setMessages(prev => mergeMessages(prev, older));
+      setMessages(prev => mergeMessages(prev, older.map(camelToSnake)));
       setHasMore(stillMore);
     } catch (err) {
       console.warn('[useChat] loadMore failed', err);
@@ -585,6 +643,7 @@ export function useChat() {
       loadingMore,
       sendText,
       sendImage,
+      sendFile,
       sendOrderCard,
       sendProductCard,
       sendMessage,
@@ -602,6 +661,7 @@ export function useChat() {
       loadingMore,
       sendText,
       sendImage,
+      sendFile,
       sendOrderCard,
       sendProductCard,
       sendMessage,
