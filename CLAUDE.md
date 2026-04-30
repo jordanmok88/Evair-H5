@@ -133,6 +133,54 @@ i18n/               — Translation files (en.ts, zh.ts, es.ts)
 - Site: `evair-h5.netlify.app`
 - Environment variables set in Netlify dashboard: `ESIM_ACCESS_CODE`, `ESIM_SECRET`, `RESEND_API_KEY`, `RESEND_FROM`
 
+## Engineering Constraints
+
+### Core Logic — Stop & Ask
+
+Some areas are high-risk. Changes here can cause real financial or service
+impact. Before refactoring or implementing complex logic in these modules, the
+agent **must outline the plan and wait for approval**:
+
+- Order creation & fulfillment (`orderService`, `esimService`)
+- Payment integration and Stripe webhook processing
+- ICCID validation and top-up logic
+- API interceptor core logic (`services/api/client.ts`)
+
+Do not hallucinate external API payloads or SDK signatures. If the exact
+structure of an ESIMAccess, Stripe, or PCCW response is uncertain, ask Jordan
+for the documentation or a real response payload instead of guessing.
+
+### Architecture Boundaries — Legacy Isolation
+
+The project is transitioning architectures. The agent must respect these
+boundaries to prevent legacy code from leaking into the new stack:
+
+- **Do NOT import from `services/esimApi.ts` (legacy) into any file using
+  `services/api/client.ts` (new).**
+- If a feature needs a legacy ESIMAccess endpoint but lives in the new
+  architecture, migrate that endpoint into `services/api/` rather than
+  creating cross-architecture imports.
+- Keep UI libraries and theme conventions consistent with what already exists.
+  Do not introduce arbitrary UI libraries or inline styles that break the
+  established design system.
+
+### Defensive Integration — Known Failure Modes
+
+The H5 frontend integrates internal APIs and external suppliers. Rather than
+blanket-defensive coding, handle **specific known failure modes**:
+
+- **Supplier API instability**: ESIMAccess may return `null` where an array is
+  expected, or omit fields that exist in the docs. Use `?.` and `??` when
+  consuming supplier responses, but let internal API contract violations
+  surface as errors so they get caught and fixed.
+- **Catalogue regression**: eSIM catalogue fetches **only** via
+  `supplierFetchPackages` in `services/dataService.ts`. Do not reroute through
+  `packageService` — it crashed the shop before (see
+  `.cursor/rules/esim-api-services.mdc`).
+- **Strict outbound, tolerant inbound**: payloads sent to `orderEsim` and
+  payment endpoints must be strictly typed and validated before submission.
+  Response parsing should handle missing/null fields without crashing.
+
 ## Custom Vite Plugin
 
 `vite-plugins/apiResponseCapture.ts` — Development-only plugin that captures API responses via WebSocket and saves to `docs/api-responses/` for documentation purposes.
