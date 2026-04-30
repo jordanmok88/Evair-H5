@@ -568,6 +568,33 @@ function CustomerApp() {
     window.scrollTo(0, 0);
   };
 
+  const clearLogoutStorage = () => {
+    // Session/auth related keys only. Keep UX preferences (e.g. language, FAB position).
+    const localKeys = [
+      'pending_esim_order',
+      'evair_demo_sims',
+      'evair-chat-draft',
+      'evair-customer-id',
+      'evair_access_token',
+      'evair_refresh_token',
+    ];
+    const sessionKeys = [
+      'evair-activeTab',
+      'evair-simType',
+    ];
+
+    try {
+      localKeys.forEach((key) => localStorage.removeItem(key));
+    } catch {
+      /* noop */
+    }
+    try {
+      sessionKeys.forEach((key) => sessionStorage.removeItem(key));
+    } catch {
+      /* noop */
+    }
+  };
+
   // Push token cached so we can detach it on explicit logout.
   const pushTokenRef = useRef<string | null>(null);
 
@@ -608,6 +635,7 @@ function CustomerApp() {
       setUser(undefined);
       setActiveSims([]);
       setServerSims([]);
+      clearLogoutStorage();
     }
   };
 
