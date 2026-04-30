@@ -5,6 +5,8 @@
  */
 
 import { useState, useEffect } from 'react';
+// DEPRECATED: 此页面已弃用，不再作为正式联调/回归入口。
+// 后续请勿在此新增、审查或检索功能逻辑。
 import {
   authService,
   userService,
@@ -18,6 +20,7 @@ import {
   isAuthenticated,
   ApiError,
 } from '../services/api';
+import { chatService, newClientMsgId } from '../services/api/chat';
 import type {
   LoginRequest,
   RegisterRequest,
@@ -101,6 +104,18 @@ const MODULES = {
       getCoupons: { name: '获取优惠券列表', params: [] },
     },
   },
+  chat: {
+    name: '客服聊天',
+    methods: {
+      getOrCreateConversation: { name: '获取/创建会话', params: [] },
+      listMessages: { name: '消息列表', params: ['conversationId'] },
+      sendText: { name: '发送文本', params: ['conversationId', 'content'] },
+      sendOrder: { name: '发送订单卡片', params: ['conversationId', 'orderNo'] },
+      sendProduct: { name: '发送商品卡片', params: ['conversationId', 'skuCode', 'content?'] },
+      uploadImageAndSend: { name: '上传图片并发送', params: ['conversationId', 'fileUrl?'] },
+      uploadFileAndSend: { name: '上传文件并发送', params: ['conversationId', 'fileUrl?'] },
+    },
+  },
 } as const;
 
 type ModuleKey = keyof typeof MODULES;
@@ -115,7 +130,7 @@ const DEFAULT_PARAMS: Record<string, string> = {
   iccid: '8985200000000000001',
   packageCode: 'PKG-US-5GB-30D',
   productId: 'SIM-US-10GB-30D',
-  orderNo: 'ORD-20260317-0001',
+  orderNo: 'ORD20260429123456',
   paymentId: 'pi_xxx',
   code: 'SAVE10',
   quantity: '1',
@@ -127,6 +142,10 @@ const DEFAULT_PARAMS: Record<string, string> = {
   type: 'BASE',
   locationCode: 'US',
   method: 'STRIPE',
+  conversationId: '1',
+  content: 'hello from api test page',
+  skuCode: 'SKU-001',
+  fileUrl: '/logo.png',
   successUrl: 'https://evairsim.com/order/success',
   cancelUrl: 'https://evairsim.com/order/cancel',
   reason: 'Test reason',
@@ -143,6 +162,7 @@ const DEFAULT_PARAMS: Record<string, string> = {
 };
 
 export default function ApiTestPage() {
+  // DEPRECATED: 保留仅为兼容历史入口，不再维护功能正确性。
   const [activeModule, setActiveModule] = useState<ModuleKey>('auth');
   const [activeMethod, setActiveMethod] = useState<string>('login');
   const [params, setParams] = useState<Record<string, string>>({});
@@ -242,6 +262,9 @@ export default function ApiTestPage() {
           break;
         case 'payment':
           response = await executePaymentMethod(activeMethod, params);
+          break;
+        case 'chat':
+          response = await executeChatMethod(activeMethod, params);
           break;
       }
 
@@ -652,6 +675,73 @@ async function executePaymentMethod(method: string, params: Record<string, strin
       } as ValidateCouponRequest);
     case 'getCoupons':
       return paymentService.getCoupons();
+    default:
+      throw new Error(`Unknown method: ${method}`);
+  }
+}
+
+async function executeChatMethod(method: string, params: Record<string, string>): Promise<unknown> {
+  const conversationId = Number(params.conversationId || DEFAULT_PARAMS.conversationId);
+  switch (method) {
+    case 'getOrCreateConversation':
+      return chatService.getOrCreateConversation();
+    case 'listMessages':
+      return chatService.listMessages(conversationId);
+    case 'sendText':
+      return chatService.sendMessage(conversationId, {
+        content: params.content || DEFAULT_PARAMS.content,
+        client_msg_id: newClientMsgId(),
+        message_type: 'text',
+      });
+    case 'sendOrder':
+      return chatService.sendMessage(conversationId, {
+        content: `Order #${params.orderNo || DEFAULT_PARAMS.orderNo}`,
+        client_msg_id: `${Date.now()}-order`,
+        message_type: 'order',
+        metadata: {
+          order_no: params.orderNo || DEFAULT_PARAMS.orderNo,
+        },
+      });
+    case 'sendProduct':
+      return chatService.sendMessage(conversationId, {
+        content: params.content || 'Product card',
+        client_msg_id: `${Date.now()}-product`,
+        message_type: 'product',
+        metadata: {
+          sku_code: params.skuCode || DEFAULT_PARAMS.skuCode,
+        },
+      });
+    case 'uploadImageAndSend': {
+      const fileUrl = params.fileUrl || DEFAULT_PARAMS.fileUrl;
+      const res = await fetch(fileUrl);
+      const blob = await res.blob();
+      const file = new File([blob], 'chat-image.png', { type: blob.type || 'image/png' });
+      const upload = await chatService.uploadAttachment(file, 'image');
+      return chatService.sendMessage(conversationId, {
+        content: '[image]',
+        client_msg_id: `${Date.now()}-image`,
+        message_type: 'image',
+        media_url: upload.url,
+        metadata: { path: upload.path },
+      });
+    }
+    case 'uploadFileAndSend': {
+      const file = new File(['chat file upload test'], 'chat-file.txt', { type: 'text/plain' });
+      const upload = await chatService.uploadAttachment(file, 'file');
+      return chatService.sendMessage(conversationId, {
+        content: upload.original_name || 'file',
+        client_msg_id: `${Date.now()}-file`,
+        message_type: 'file',
+        media_url: upload.url,
+        metadata: {
+          path: upload.path,
+          original_name: upload.original_name,
+          size: upload.size,
+          mime_type: upload.mime_type,
+          extension: upload.extension,
+        },
+      });
+    }
     default:
       throw new Error(`Unknown method: ${method}`);
   }
