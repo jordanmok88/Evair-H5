@@ -12,7 +12,7 @@
 
 export type ChatProviderName = 'supabase' | 'laravel' | 'local';
 
-export type ChatMessageType = 'text' | 'image' | 'order' | 'product';
+export type ChatMessageType = 'text' | 'image' | 'file' | 'order' | 'product';
 
 export type ChatMessageSender = 'customer' | 'ai' | 'agent';
 

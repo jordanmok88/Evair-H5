@@ -1,7 +1,7 @@
 /**
  * Laravel chat provider
  *
- * 走 Laravel 后端 /api/v1/h5/conversations* 接口 + Reverb 实时频道。
+ * 走 Laravel 后端 /api/v1/app/conversations* 接口 + Reverb 实时频道。
  *
  * 设计要点：
  * 1. 直接 fetch 而非复用 services/api/client 的 request()，原因是 chat 模块
@@ -34,6 +34,11 @@ interface ChatApiResponse<T> {
   data: T;
 }
 
+interface RawMessageListData {
+  messages?: RawMessage[];
+  has_more?: boolean;
+}
+
 interface RawMessage {
   id: number;
   conversation_id: number;
@@ -44,7 +49,7 @@ interface RawMessage {
   english_content: string | null;
   client_msg_id: string | null;
   is_read: boolean;
-  message_type: 'text' | 'image' | 'order' | 'product';
+  message_type: 'text' | 'image' | 'file' | 'order' | 'product';
   media_url: string | null;
   metadata: Record<string, unknown> | null;
   created_at: string;
@@ -91,10 +96,16 @@ function rawToUnified(m: RawMessage): UnifiedChatMessage {
     messageType: m.message_type,
     mediaUrl: m.media_url ?? undefined,
     metadata: m.metadata ?? undefined,
-    timestamp: new Date(m.created_at.replace(' ', 'T') + 'Z'),
+    timestamp: new Date(m.created_at.replace(' ', 'T')),
     status: m.is_read ? 'read' : (m.sender === 'customer' ? 'sent' : 'delivered'),
     clientMsgId: m.client_msg_id ?? undefined,
   };
+}
+
+function normalizeMessageRows(data: RawMessage[] | RawMessageListData): RawMessage[] {
+  if (Array.isArray(data)) return data;
+  if (data && Array.isArray(data.messages)) return data.messages;
+  return [];
 }
 
 async function fetchJson<T>(path: string, init?: RequestInit): Promise<T> {
@@ -156,9 +167,10 @@ export function createLaravelProvider(): ChatProvider {
           ? lastFetchedAt.toISOString().replace('T', ' ').slice(0, 19)
           : undefined;
         const url = since
-          ? `/h5/conversations/${conversationId}/messages?since=${encodeURIComponent(since)}`
-          : `/h5/conversations/${conversationId}/messages`;
-        const rows = await fetchJson<RawMessage[]>(url);
+          ? `/app/conversations/${conversationId}/messages?since=${encodeURIComponent(since)}`
+          : `/app/conversations/${conversationId}/messages`;
+        const data = await fetchJson<RawMessage[] | RawMessageListData>(url);
+        const rows = normalizeMessageRows(data);
         rows.forEach(r => {
           const unified = rawToUnified(r);
           if (unified.timestamp > (lastFetchedAt ?? new Date(0))) {
@@ -291,7 +303,7 @@ export function createLaravelProvider(): ChatProvider {
       if (input?.customerEmail) body.customer_email = input.customerEmail;
       if (input?.language) body.language = input.language;
 
-      const conv = await fetchJson<RawConversation>('/h5/conversations', {
+      const conv = await fetchJson<RawConversation>('/app/conversations', {
         method: 'POST',
         body: JSON.stringify(body),
       });
@@ -313,9 +325,10 @@ export function createLaravelProvider(): ChatProvider {
       const sinceParam = opts?.since
         ? `?since=${encodeURIComponent(opts.since.toISOString().replace('T', ' ').slice(0, 19))}`
         : '';
-      const rows = await fetchJson<RawMessage[]>(
-        `/h5/conversations/${conversationId}/messages${sinceParam}`,
+      const data = await fetchJson<RawMessage[] | RawMessageListData>(
+        `/app/conversations/${conversationId}/messages${sinceParam}`,
       );
+      const rows = normalizeMessageRows(data);
       const list = rows.map(rawToUnified);
       const latest = list[list.length - 1]?.timestamp;
       if (latest && (!lastFetchedAt || latest > lastFetchedAt)) {
@@ -336,7 +349,7 @@ export function createLaravelProvider(): ChatProvider {
       if (input.metadata) payload.metadata = input.metadata;
 
       const row = await fetchJson<RawMessage>(
-        `/h5/conversations/${conversationId}/messages`,
+        `/app/conversations/${conversationId}/messages`,
         { method: 'POST', body: JSON.stringify(payload) },
       );
       return { ...rawToUnified(row), status: 'sent' };
@@ -344,18 +357,22 @@ export function createLaravelProvider(): ChatProvider {
 
     async sendAi(input: SendMessageInput): Promise<UnifiedChatMessage> {
       if (!conversationId) throw new Error('conversation not ready');
-      const payload: Record<string, unknown> = {
-        content: input.text,
-        client_msg_id: input.clientMsgId,
+      // `/app/*` currently has no `/messages/ai` endpoint in this backend.
+      // Keep AI replies client-side to avoid noisy 404s and unnecessary fallback.
+      return {
+        id: input.clientMsgId,
+        conversationId,
+        sender: 'ai',
+        senderName: 'Evair AI',
+        text: input.text,
+        englishText: input.englishText,
+        messageType: input.messageType ?? 'text',
+        mediaUrl: input.mediaUrl,
+        metadata: input.metadata,
+        timestamp: new Date(),
+        status: 'sent',
+        clientMsgId: input.clientMsgId,
       };
-      if (input.englishText) payload.english_content = input.englishText;
-      if (input.metadata) payload.metadata = input.metadata;
-
-      const row = await fetchJson<RawMessage>(
-        `/h5/conversations/${conversationId}/messages/ai`,
-        { method: 'POST', body: JSON.stringify(payload) },
-      );
-      return { ...rawToUnified(row), status: 'sent' };
     },
 
     async markNeedsHuman(): Promise<void> {
@@ -368,7 +385,7 @@ export function createLaravelProvider(): ChatProvider {
       if (!conversationId) return;
       try {
         await fetchJson<{ updated: number }>(
-          `/h5/conversations/${conversationId}/mark-read`,
+          `/app/conversations/${conversationId}/mark-read`,
           { method: 'POST' },
         );
       } catch {
