@@ -1,0 +1,43 @@
+---
+description: Jordan's distilled chat decisions — persistent so new agents avoid repeating mistakes. Not a verbatim chat log.
+alwaysApply: true
+---
+
+# Jordan's standing instructions (from chats)
+
+Jordan is **not** an engineer; replies to him should use **clear, plain English** when explaining tools or limits.
+
+## How this file works
+
+- Cursor **cannot** paste in every sentence from every past chat automatically. Past threads are **not** stored inside this repo as full transcripts.
+- This file holds **lasting decisions Jordan cares about**. When something new must stick, Jordan can say **"Add this to my standing instructions"** — the assistant should **append concise bullets here** (and run `scripts/save.sh` after code/rule changes).
+
+## Communication
+
+- Prefer **English** when the assistant replies **to Jordan** (avoid switching assistant explanations into Chinese unless he asks).
+
+## Deploy and live previews
+
+- After meaningful changes in **this repo**, finish with **`bash scripts/save.sh "short message"`** in the **same session** when Jordan wants GitHub updated. That push is what triggers **Netlify** (there is no separate "push only to Netlify"). Expect ~1–3 minutes build time after GitHub receives the commit.
+
+See also: `.cursor/rules/auto-save-workflow.mdc`.
+
+## OPEN APP / mobile gate (marketing — do not regress)
+
+- For **narrowing desktop** users: deciding "phone vs desktop" for the OPEN APP modal should **not** rely only on a small window width (`max-width`). Use **`isMobileUserAgentClient()`** (user-agent intent) where the gate skips the modal; **do not conflate with `isMobileDevice()`** usages that intentionally include viewport (other call sites stay as documented in code).
+
+- **"Continue on desktop anyway"**: must **not** send users to `/app`; they **stay on the current marketing URL**. Only acknowledge + close. Next OPEN APP tap may use ack and proceed to `/app` without reopening the modal.
+
+Relevant implementation: `hooks/useMobileSignInGate.ts`, `components/marketing/MobileOnlyNotice.tsx`, `utils/device.ts`.
+
+## Other rules still apply
+
+This file adds Jordan-specific chat outcomes. These remain authoritative and overlapping items win on product/tech specifics:
+
+- `.cursor/rules/ongoing-work.mdc` — current work thread
+- `.cursor/rules/product-decisions.mdc` — locked product decisions (e.g. AI assistant tone, no emojis)
+- `.cursor/rules/agent-quality.mdc` — logic, regressions, pushback when direction conflicts with rules
+
+## Appendix — growth pattern
+
+Jordan can paste bullets himself here, or ask the assistant to merge a short list after a chat. Prefer **specific** lines ("never X when Y") over long stories.

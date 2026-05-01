@@ -7,6 +7,9 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 Three `alwaysApply` rule files hold Jordan's persistent memory — the agent
 should treat them as preloaded context:
 
+- `.cursor/rules/jordan-standing-instructions.mdc` — **Jordan's distilled chat outcomes**
+  (plain English, UX/deploy habits, OPEN APP modal rules). New lasting instructions
+  from Jordan should be **appended** here when he asks.
 - `.cursor/rules/ongoing-work.mdc` — what's in-flight right now, what was just
   resolved, what the next step is. **Always read first.**
 - `.cursor/rules/product-decisions.mdc` — locked-in product decisions.
