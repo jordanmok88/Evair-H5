@@ -14,7 +14,8 @@
  *
  * Behaviour summary:
  *
- *   - Mobile click             → fall through to <a href="/app"> (no-op).
+ *   - Mobile **browser UA** click → fall through to <a href="/app"> (no-op).
+ *     (Viewport width is ignored here so narrow desktop windows still get the modal.)
  *   - Desktop click, not acked → preventDefault + open the modal.
  *   - Desktop click, acked     → fall through to <a href="/app">. We
  *                                respect the customer-support escape
@@ -30,7 +31,7 @@
 
 import { useCallback, useState } from 'react';
 import type React from 'react';
-import { isMobileDevice } from '../utils/device';
+import { isMobileUserAgentClient } from '../utils/device';
 
 const ACK_STORAGE_KEY = 'evair_desktop_signin_acked.v1';
 
@@ -74,7 +75,7 @@ export function useMobileSignInGate(appPath: string = '/app'): MobileSignInGate 
 
     const gateClick = useCallback(
         (e: React.MouseEvent<HTMLAnchorElement>) => {
-            if (isMobileDevice()) return;
+            if (isMobileUserAgentClient()) return;
             if (readAck()) return;
             e.preventDefault();
             setOpen(true);

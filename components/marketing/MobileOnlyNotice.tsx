@@ -3,12 +3,9 @@
  * marketing site.
  *
  * IMPORTANT: this modal is **never rendered for mobile visitors**.
- * `useMobileSignInGate.gateClick` returns early on mobile without
- * preventing the click default, so the underlying <a href="/app">
- * navigates straight to the customer app — and the customer app at
- * /app renders fullscreen on mobile (the phone-mock chrome in
- * app.css is gated behind `@media (min-width: 1024px)`). Mobile
- * users get the real H5, not a popup.
+ * `useMobileSignInGate` skips this modal only when **User-Agent** looks like a
+ * phone/tablet browser (not when the viewport is narrow). Narrow desktop windows
+ * still see this dialog. True mobile UA clicks go straight to `/app`.
  *
  * Contents:
  *

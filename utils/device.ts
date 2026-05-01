@@ -45,3 +45,15 @@ export function isMobileDevice(): boolean {
 
     return uaMobile || narrow;
 }
+
+/**
+ * **User-agent only** — no viewport check.
+ * Used by the marketing "OPEN APP" modal gate: desktop browsers with a narrow
+ * window must still see the scan-QR dialog; `isMobileDevice()` would wrongly
+ * treat them as mobile because of `max-width: 1023px`.
+ */
+export function isMobileUserAgentClient(): boolean {
+    if (typeof window === 'undefined') return false;
+    const ua = navigator.userAgent || '';
+    return /iPhone|iPad|iPod|Android|Mobile|Silk|BlackBerry|IEMobile|Opera Mini/i.test(ua);
+}
