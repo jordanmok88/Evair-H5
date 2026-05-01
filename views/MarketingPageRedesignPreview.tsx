@@ -111,23 +111,23 @@ const MarketingPageRedesignPreview: React.FC = () => {
                             className="h-7 w-auto max-h-9 sm:h-8 sm:max-h-10 md:h-9"
                         />
                     </a>
-                    <nav className="hidden min-w-0 items-center gap-4 text-sm font-medium text-gray-600 md:flex md:gap-6">
-                        <a href="/travel-esim" className="transition hover:text-gray-900">
+                    <nav className="hidden min-w-0 flex-wrap items-center justify-end gap-x-5 gap-y-2 text-[0.9375rem] font-semibold leading-snug text-gray-800 md:flex lg:gap-x-7 lg:text-base">
+                        <a href="/travel-esim" className="transition-colors hover:text-gray-950">
                             Travel eSIM
                         </a>
-                        <a href="/sim/phone" className="transition hover:text-gray-900">
+                        <a href="/sim/phone" className="transition-colors hover:text-gray-950">
                             {t('marketing.nav_mobile')}
                         </a>
-                        <a href="/sim/camera" className="transition hover:text-gray-900">
+                        <a href="/sim/camera" className="transition-colors hover:text-gray-950">
                             Camera
                         </a>
-                        <a href="/sim/iot" className="transition hover:text-gray-900">
+                        <a href="/sim/iot" className="transition-colors hover:text-gray-950">
                             IoT
                         </a>
-                        <a href="/help" className="transition hover:text-gray-900">
+                        <a href="/help" className="transition-colors hover:text-gray-950">
                             Help
                         </a>
-                        <a href="/blog" className="transition hover:text-gray-900">
+                        <a href="/blog" className="transition-colors hover:text-gray-950">
                             Blog
                         </a>
                     </nav>

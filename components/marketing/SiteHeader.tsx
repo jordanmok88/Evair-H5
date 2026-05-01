@@ -70,15 +70,15 @@ const SiteHeader: React.FC<SiteHeaderProps> = ({ active = null }) => {
                         className="h-7 w-auto max-h-9 sm:h-8 sm:max-h-10 md:h-9"
                     />
                 </a>
-                <nav className="hidden md:flex items-center gap-6 text-sm font-medium text-slate-600">
+                <nav className="hidden flex-wrap justify-end md:flex md:items-center md:gap-x-5 md:gap-y-2 lg:gap-x-7">
                     {NAV_ITEMS.map(item => (
                         <a
                             key={item.key}
                             href={item.href}
                             className={
                                 active === item.key
-                                    ? 'text-orange-600 font-semibold'
-                                    : 'hover:text-slate-900'
+                                    ? 'text-[0.9375rem] font-semibold text-orange-600 transition-colors lg:text-base'
+                                    : 'text-[0.9375rem] font-semibold text-slate-700 transition-colors hover:text-slate-900 lg:text-base'
                             }
                         >
                             {item.key === 'phone' ? t('marketing.nav_mobile') : STATIC_NAV_LABEL[item.key]}

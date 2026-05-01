@@ -161,7 +161,7 @@ const MarketingPage: React.FC = () => {
     return (
         <div className="min-h-screen overflow-x-hidden bg-white text-gray-900 antialiased [text-rendering:optimizeLegibility]">
             <header className="sticky top-0 z-30 border-b border-gray-100 bg-white/95 backdrop-blur-md supports-[backdrop-filter]:bg-white/90">
-                <div className="mx-auto flex h-12 min-h-12 max-w-6xl items-center justify-between gap-2 px-3 sm:h-14 sm:min-h-14 sm:gap-3 sm:px-4 md:px-8">
+                <div className="mx-auto flex h-14 min-h-14 max-w-6xl items-center justify-between gap-2 px-3 sm:h-16 sm:min-h-16 sm:gap-3 sm:px-4 md:px-8">
                     <a href="/" className="flex min-w-0 max-w-[min(200px,52vw)] shrink items-center" aria-label="EvairSIM home">
                         <img
                             src="/evairsim-wordmark.png"
@@ -171,23 +171,23 @@ const MarketingPage: React.FC = () => {
                             className="h-7 w-auto max-h-9 sm:h-8 sm:max-h-10 md:h-9"
                         />
                     </a>
-                    <nav className="hidden min-w-0 items-center gap-4 text-sm font-medium text-gray-600 md:flex md:gap-6">
-                        <a href="/travel-esim" className="transition hover:text-gray-900">
+                    <nav className="hidden min-w-0 flex-wrap items-center justify-end gap-x-5 gap-y-2 text-[0.9375rem] font-semibold leading-snug text-gray-800 md:flex lg:gap-x-7 lg:text-base">
+                        <a href="/travel-esim" className="transition-colors hover:text-gray-950">
                             Travel eSIM
                         </a>
-                        <a href="/sim/phone" className="transition hover:text-gray-900">
+                        <a href="/sim/phone" className="transition-colors hover:text-gray-950">
                             {t('marketing.nav_mobile')}
                         </a>
-                        <a href="/sim/camera" className="transition hover:text-gray-900">
+                        <a href="/sim/camera" className="transition-colors hover:text-gray-950">
                             Camera
                         </a>
-                        <a href="/sim/iot" className="transition hover:text-gray-900">
+                        <a href="/sim/iot" className="transition-colors hover:text-gray-950">
                             IoT
                         </a>
-                        <a href="/help" className="transition hover:text-gray-900">
+                        <a href="/help" className="transition-colors hover:text-gray-950">
                             Help
                         </a>
-                        <a href="/blog" className="transition hover:text-gray-900">
+                        <a href="/blog" className="transition-colors hover:text-gray-950">
                             Blog
                         </a>
                     </nav>
