@@ -1,11 +1,9 @@
 /**
  * Click gate for the marketing-site "OPEN APP" CTA.
  *
- * The link points at `/app`. On mobile devices that's
- * a great destination — the H5 customer app renders fullscreen. On
- * desktop the same URL renders inside a 430×880 phone-mock, which is a
- * brand showcase for browsing the dashboard but a frustrating
- * sign-in surface (tiny form floating in a sea of grey).
+ * The link points at `/app`. Narrow viewports render the handset shell
+ * fullscreen. From **`md` (768px)** the in-app chrome goes full-width (see
+ * `APP_WIDE_LAYOUT_MIN_PX` in App.tsx — no centred phone bezel).
  *
  * This hook centralises the "intercept on desktop, show a notice
  * instead" behaviour so both call sites — `views/MarketingPage.tsx`
@@ -14,12 +12,12 @@
  *
  * Behaviour summary:
  *
- *   - **Mobile-width viewport** (< `lg` / 1024px) **and** handset-like UA (or
+ *   - **Mobile-width viewport** (< `md` / 768px) **and** handset-like UA (or
  *     Client Hints `mobile: true`) → fall through to `/app` (no modal).
- *   - **Desktop layout** (`min-width: 1024px`) → **always** show the QR modal
+ *   - **Tablet/desktop width** (`min-width: 768px`) → **always** show the QR modal
  *     when not acked, even if UA looks like a phone (fixes DevTools emulation,
  *     embedded browsers, odd corporate UAs).
- *   - **Narrow viewport** (&lt;1024px): not acked → preventDefault + modal, **unless**
+ *   - Narrow viewport (<768): not acked → preventDefault + modal, **unless**
  *     the session looks like a handset (see `shouldSkipOpenAppQrModal`).
  *   - Acked (`Continue on desktop anyway`) → fall through to `/app` without modal;
  *     they stay on the current marketing URL until then; next OPEN APP goes straight into the shell.
@@ -35,12 +33,15 @@ import { useCallback, useState } from 'react';
 import type React from 'react';
 import { isMobileUserAgentClient } from '../utils/device';
 
+/** Must match App.tsx APP_WIDE_LAYOUT_MIN_PX (`md` / 768px). */
+const DESKTOP_GATE_MIN_PX = 768;
+
 /** v2 — reset with 2026-05 QR gate fix (wide viewport always shows modal). */
 const ACK_STORAGE_KEY = 'evair_desktop_signin_acked.v2';
 
 function shouldSkipOpenAppQrModal(): boolean {
     if (typeof window === 'undefined') return false;
-    if (window.matchMedia('(min-width: 1024px)').matches) return false;
+    if (window.matchMedia(`(min-width: ${DESKTOP_GATE_MIN_PX}px)`).matches) return false;
     return isMobileUserAgentClient();
 }
 

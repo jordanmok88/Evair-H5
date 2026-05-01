@@ -30,6 +30,10 @@ import { initPush, unregisterPush } from './services/pushService';
 import { computeTestModeEnabled, dismissTestModeForSession, isAppPath, isAppPreviewHash, stripTestModeFromUrl } from './utils/testMode';
 import { getRoute, type Route } from './utils/routing';
 import { BootSplash, shouldSkipBootSplash } from './components/BootSplash';
+import { useViewportMinWidth } from './hooks/useViewportMinWidth';
+
+/** Matches Tailwind `--breakpoint-md` (`48rem`): tablet / windowed Safari and up use full `/app` chrome (no centred phone mock). */
+const APP_WIDE_LAYOUT_MIN_PX = 768;
 
 function navigateToAppSupport() {
   if (typeof window === 'undefined') return;
@@ -218,6 +222,7 @@ function CustomerApp() {
     return (sessionStorage.getItem('evair-activeTab') as Tab) || Tab.SIM_CARD;
   });
   const previousTab = useRef<Tab>(Tab.SIM_CARD);
+  const viewportMdUp = useViewportMinWidth(APP_WIDE_LAYOUT_MIN_PX);
 
   /** ISO-2 from `/app/travel-esim/{xx}` — passed to ShopView once, then cleared. */
   const [travelEsimOpenCode, setTravelEsimOpenCode] = useState<string | null>(() =>
@@ -247,36 +252,22 @@ function CustomerApp() {
     }
   }, []);
 
-  // Phone-frame scroll lock — opt-in via `html.app-shell`. The CSS
-  // rule in app.css scopes `overflow: hidden` behind that class so
-  // the iPhone-style contained layout is the only scroll container.
-  //
-  // The eSIM tab is a public-facing store on desktop (no phone-mock
-  // chrome — see `showStoreLayout` below) so it needs normal page
-  // scrolling; we keep the class OFF for that tab. Every other tab
-  // is a customer-account screen and keeps the contained layout, so
-  // the class stays ON. The cleanup function strips the class on
-  // unmount, which is what restores normal scrolling when the user
-  // navigates from /app to a marketing/device/travel surface.
+  // `html.app-shell` — off only for full-bleed chrome: eSIM catalogue, or any tab at `md` (768px)+
+  // so windowed desktop / iPad never see the centred bezel; narrow phones keep confined scroll.
+  const isEsimStoreTab = activeTab === Tab.ESIM;
+  const layoutFullBleed = isEsimStoreTab || viewportMdUp;
+
   useEffect(() => {
     const root = document.documentElement;
-    if (activeTab === Tab.ESIM) {
+    if (layoutFullBleed) {
       root.classList.remove('app-shell');
     } else {
       root.classList.add('app-shell');
     }
     return () => { root.classList.remove('app-shell'); };
-  }, [activeTab]);
+  }, [layoutFullBleed]);
 
-  // Desktop layout switch. The customer-app phone-mock is a useful
-  // brand showcase for the account/dashboard tabs (My SIMs, Profile,
-  // etc.), but it actively gets in the way of the eSIM store: a
-  // desktop visitor coming from the marketing CTA expects a real
-  // wide-format catalogue, not a tiny iPhone-shaped panel centred
-  // on a grey page. When the eSIM tab is active we drop the entire
-  // phone-mock styling (border, rounded corners, fixed height and
-  // width, status-bar mock) and let `<main>` use the full page.
-  const showStoreLayout = activeTab === Tab.ESIM;
+  const showStoreLayout = layoutFullBleed;
   // Mirror activeTab into a ref so the hashchange listener (which we
   // wire once on mount) reads the *current* tab when remembering the
   // previous one — without this the listener captured the initial
