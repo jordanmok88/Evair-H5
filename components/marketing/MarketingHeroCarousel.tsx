@@ -41,69 +41,62 @@ function usePrefersReducedMotion(): boolean {
  * Hero product tiles: IoT (01–04, 06), mobile/tablet/hotspot hero art, then camera (07–09).
  * Headline copy groups: `Math.floor(slideIndex / 3)` maps to three marketing message sets.
  * `planHref` jumps to each device landing «Pick a plan» block.
+ * Imagery is `object-contain` / centred so subjects are not clipped.
  */
+/** Hero imagery uses `object-contain` so devices stay centred and are not clipped. */
 export const MARKETING_HERO_VISUAL_SLIDES = [
     {
         src: '/marketing/device-built-for/cell-01.png',
         altKey: 'marketing.hero_slide_mobile_img_alt_1' as const,
         captionKey: 'marketing.hero_slide_caption_1' as const,
-        objectPosition: '44% 46%',
         planHref: PLAN_HREF_IOT,
     },
     {
         src: '/marketing/device-built-for/cell-02.png',
         altKey: 'marketing.hero_slide_mobile_img_alt_2' as const,
         captionKey: 'marketing.hero_slide_caption_2' as const,
-        objectPosition: '50% 48%',
         planHref: PLAN_HREF_IOT,
     },
     {
         src: '/marketing/device-built-for/cell-03.png',
         altKey: 'marketing.hero_slide_mobile_img_alt_3' as const,
         captionKey: 'marketing.hero_slide_caption_3' as const,
-        objectPosition: '50% 48%',
         planHref: PLAN_HREF_IOT,
     },
     {
         src: '/marketing/hero-mobile-tablet-hotspot.png',
         altKey: 'marketing.hero_slide_mobile_img_alt_5' as const,
         captionKey: 'marketing.hero_slide_caption_5' as const,
-        objectPosition: '50% 45%',
         planHref: PLAN_HREF_PHONE,
     },
     {
         src: '/marketing/device-built-for/cell-04.png',
         altKey: 'marketing.hero_slide_mobile_img_alt_4' as const,
         captionKey: 'marketing.hero_slide_caption_4' as const,
-        objectPosition: '50% 46%',
         planHref: PLAN_HREF_IOT,
     },
     {
         src: '/marketing/device-built-for/cell-06.png',
         altKey: 'marketing.hero_slide_mobile_img_alt_6' as const,
         captionKey: 'marketing.hero_slide_caption_6' as const,
-        objectPosition: '50% 50%',
         planHref: PLAN_HREF_IOT,
     },
     {
         src: '/marketing/device-built-for/cell-07.png',
         altKey: 'marketing.hero_slide_mobile_img_alt_7' as const,
         captionKey: 'marketing.hero_slide_caption_7' as const,
-        objectPosition: '76% 48%',
         planHref: PLAN_HREF_CAMERA,
     },
     {
         src: '/marketing/device-built-for/cell-08.png',
         altKey: 'marketing.hero_slide_mobile_img_alt_8' as const,
         captionKey: 'marketing.hero_slide_caption_8' as const,
-        objectPosition: '52% 48%',
         planHref: PLAN_HREF_CAMERA,
     },
     {
         src: '/marketing/device-built-for/cell-09.png',
         altKey: 'marketing.hero_slide_mobile_img_alt_9' as const,
         captionKey: 'marketing.hero_slide_caption_9' as const,
-        objectPosition: '68% 46%',
         planHref: PLAN_HREF_CAMERA,
     },
 ] as const;
@@ -274,8 +267,7 @@ export function MarketingHeroCarousel(props: MarketingHeroCarouselProps) {
                                     src={visual.src}
                                     alt={t(visual.altKey)}
                                     sizes="100vw"
-                                    className="absolute inset-0 h-full w-full object-cover"
-                                    style={{ objectPosition: visual.objectPosition }}
+                                    className="absolute inset-0 box-border h-full w-full object-contain object-center"
                                     decoding="async"
                                     loading="eager"
                                     fetchPriority={index === 0 ? 'high' : 'auto'}
@@ -363,8 +355,7 @@ export function MarketingHeroCarousel(props: MarketingHeroCarouselProps) {
                                 src={visual.src}
                                 alt={t(visual.altKey)}
                                 sizes="(min-width: 1024px) min(46vw, 560px), 0px"
-                                className="h-full w-full min-h-[14rem] object-cover"
-                                style={{ objectPosition: visual.objectPosition }}
+                                className="h-full w-full min-h-[14rem] object-contain object-center"
                                 decoding="async"
                                 loading="eager"
                                 fetchPriority={index === 0 ? 'high' : 'auto'}
