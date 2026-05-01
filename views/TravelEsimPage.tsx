@@ -494,10 +494,8 @@ const CatalogueIndexView: React.FC = () => {
                 </div>
                 {/* Hero count is the *carrier-supported* country count from
                     the RedTea/Maya travel eSIM catalogue (200+), not the
-                    length of TRAVEL_COUNTRIES (which is just the curated
-                    SEO landing pages we've authored). The grid below is
-                    positioned as "popular destinations" so the catalogue
-                    depth and the curated highlights are both honest. */}
+                    length of TRAVEL_COUNTRIES (curated landing pages).
+                    Regions + cards follow immediately below. */}
                 <h1 className="text-4xl md:text-5xl font-extrabold leading-tight tracking-tight mb-5 max-w-3xl mx-auto">
                     Stay connected in 200+ destinations
                 </h1>
@@ -516,29 +514,8 @@ const CatalogueIndexView: React.FC = () => {
 
             <section
                 id="popular-destinations"
-                className="px-4 md:px-8 pb-16 max-w-6xl mx-auto"
+                className="px-4 md:px-8 pt-4 md:pt-6 pb-16 max-w-6xl mx-auto"
             >
-                <div className="text-center mb-10 md:mb-12">
-                    <div className="inline-flex items-center gap-2 bg-orange-50 text-orange-700 text-xs font-bold uppercase tracking-wider px-3 py-1 rounded-full mb-4">
-                        <Globe size={12} /> Popular destinations
-                    </div>
-                    {/* Bigger, more prominent section heading — earlier
-                        version used a small pill which got lost between
-                        the hero and the country cards. */}
-                    <h2 className="text-3xl md:text-4xl font-extrabold text-slate-900 leading-tight tracking-tight mb-3">
-                        Pick a destination
-                    </h2>
-                    <p className="text-base text-slate-600 max-w-2xl mx-auto">
-                        Browse the {TRAVEL_COUNTRIES.length} most-searched
-                        countries below — tap{' '}
-                        <span className="font-semibold text-slate-700">
-                            See all
-                        </span>{' '}
-                        in any region to expand the full list. The complete
-                        RedTea catalogue covering 200+ destinations is also
-                        searchable inside the app.
-                    </p>
-                </div>
                 {regionOrder
                     .filter(r => grouped[r]?.length)
                     .map(region => {
