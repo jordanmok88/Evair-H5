@@ -27,7 +27,14 @@ import { checkDataUsage, prefetchPackages, DEMO_MODE, mapRedTeaStatus, bindSim }
 import { supabaseConfigured, fetchNotifications, logSimActivation } from './services/supabase';
 import { authService, userService, type UserDto, type UserSimDto } from './services/api';
 import { initPush, unregisterPush } from './services/pushService';
-import { computeTestModeEnabled, dismissTestModeForSession, isAppPath, isAppPreviewHash, stripTestModeFromUrl } from './utils/testMode';
+import {
+  computeTestModeEnabled,
+  dismissTestModeForSession,
+  isAppPath,
+  isAppPreviewHash,
+  runningInsideNativeApp,
+  stripTestModeFromUrl,
+} from './utils/testMode';
 import { getRoute, type Route } from './utils/routing';
 import { BootSplash, shouldSkipBootSplash } from './components/BootSplash';
 import { useViewportMinWidth } from './hooks/useViewportMinWidth';
@@ -255,11 +262,14 @@ function CustomerApp() {
     }
   }, []);
 
-  // Full-bleed: eSIM shop/checkout (desktop store UX). **`SIM_CARD`** stays in the centred
-  // phone frame on **`md`+** — physical-SIM landing is mobile-first and looked broken edge-to-edge on
-  // wide Safari (`layoutFullBleed || viewportMdUp` used to stretch it full width).
+  // Full-bleed eSIM “store aisle” on every **non-native** viewport (legacy mobile-Safari UX).
+  // Flutter WebView + `#app-preview` keep the **condensed** shell for eSIM so travel deep links
+  // never open the wide multi-column shop inside a narrow / wrong-width webview.
   const isEsimStoreTab = activeTab === Tab.ESIM;
-  const layoutFullBleed = isEsimStoreTab || (viewportMdUp && activeTab !== Tab.SIM_CARD);
+  const condensedCustomerChrome = runningInsideNativeApp() || isAppPreviewHash();
+  const layoutFullBleed = condensedCustomerChrome
+    ? !isEsimStoreTab && viewportMdUp && activeTab !== Tab.SIM_CARD
+    : isEsimStoreTab || (viewportMdUp && activeTab !== Tab.SIM_CARD);
 
   useEffect(() => {
     const root = document.documentElement;
@@ -945,9 +955,8 @@ function CustomerApp() {
     >
 
       {/* Phone preview frame vs full-bleed store.
-          `showStoreLayout` is false for **`SIM_CARD` at every viewport** — always the contained
-          mock (physical-SIM UX). True for **`ESIM`** (real desktop store). Other tabs (**`md`+
-          only**) use full-bleed without the bezel so inbox/profile don’t float in a tiny column. */}
+          Native shell / `#app-preview`: eSIM uses the **condensed** chrome (same as SIM Card).
+          Normal browsers: eSIM stays full-bleed at all widths; other tabs use full-bleed from `md`+. */}
       <div
         ref={phoneRef}
         className={
