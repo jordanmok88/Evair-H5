@@ -1,9 +1,11 @@
 ---
-description: Jordan's distilled chat decisions — proactive updates by agents so Jordan never repeats himself.
+description: Jordan chat history — distilled decisions from chats; agents update proactively (file jordan-chat-history.mdc).
 alwaysApply: true
 ---
 
-# Jordan's standing instructions (from chats)
+# Jordan chat history
+
+_Saved preferences and decisions from chats (not a full Cursor transcript)._
 
 Jordan is **not** an engineer; replies to him should use **clear, plain English** when explaining tools or limits.
 
@@ -17,8 +19,8 @@ Jordan is **not** an engineer; replies to him should use **clear, plain English*
 
 | What helps | Does it reduce repeat mistakes? |
 |------------|----------------------------------|
-| **This file (`jordan-standing-instructions.mdc`) + other `.cursor/rules/*.mdc` files** | **Yes.** New agents for **Evair‑H5** receive them automatically when Cursor injects **`alwaysApply`** rules. Tell an assistant plainly what must never regress; **they are supposed to add a bullet here** during the session (Jordan does **not** need a cue phrase). |
-| **`scripts/save.sh`** after edits | **Yes for teamwork + Netlify.** It **commits and pushes Git** — that is **not** the same button as “save chat”, but **without push** nobody else (and sometimes not even you tomorrow) has the latest written rules. |
+| **This file (`jordan-chat-history.mdc`) + other `.cursor/rules/*.mdc` files** | **Yes.** New agents for **Evair‑H5** receive them automatically when Cursor injects **`alwaysApply`** rules. Tell an assistant plainly what must never regress; **they are supposed to add a bullet here** during the session (Jordan does **not** need a cue phrase). |
+| **`scripts/save.sh`** after edits | **Yes for teamwork + Netlify.** It **commits and pushes Git** — that is **not** the same button as “save chat”, but **without push** nobody else (and sometimes not even you tomorrow) gets the latest written rules. |
 | **Cursor → Settings → Rules for AI** | **Yes, globally** — short lines that apply to **every** project you open. |
 | **Cursor “Memories”** (if your Cursor version shows it) | **A little** — good for short facts; **not** a copy of every chat. |
 | **“Old chats” inside Cursor** | Assistants **cannot** auto-import them into this folder. If something matters, it must land as **text in a file** (above). |
@@ -37,7 +39,7 @@ Jordan is **not** an engineer; replies to him should use **clear, plain English*
 
 ## Agents DEFAULT — proactively save what Jordan cares about (Jordan should not rely on cue phrases)
 
-**Jordan does **not** have to say things like “add this to standing instructions.”** Whenever he communicates something that reads as **lasting** — do this in **the same work session**:
+**Jordan does **not** have to say things like “add this to Jordan chat history.”** Whenever he communicates something that reads as **lasting** — do this in **the same work session**:
 
 1. **Append a concise bullet** under the best matching heading below — or create a dated line under **`### Auto-captured (rolling)`**.
 2. **Merge duplicates** instead of stacking near-identical bullets; trim older wording if superseded.
@@ -89,6 +91,7 @@ Relevant implementation: `hooks/useMobileSignInGate.ts`, `components/marketing/M
 
 _Use one dated line each; agents append newest at bottom. Optionally compress older bullets when this section grows._
 
-- 2026-04-29 — Jordan: proactively write lasting prefs into this file **without** making him say "add to standing instructions" every time; same-session `save.sh` when rules change.
-- 2026-04-29 — When Jordan says "review before we work," pull from **this file** + **`ongoing-work.mdc`** (+ other `alwaysApply` rules). **Do not** claim full Cursor chat replay; offer to fold any missing points he mentions into standing instructions.
+- 2026-04-29 — Jordan: proactively write lasting prefs into **Jordan chat history** **without** making him ask every time; same-session `save.sh` when rules change.
+- 2026-04-29 — When Jordan says "review before we work," pull from **this file** + **`ongoing-work.mdc`** (+ other `alwaysApply` rules). **Do not** claim full Cursor chat replay; offer to fold any missing points he mentions into **Jordan chat history**.
 - 2026-04-29 — Plain “what sticks” table added (no plugin for full chat; files + optional Cursor Rules/Memories; `save.sh` for Git/Netlify). Don’t dodge—point Jordan at that section.
+- 2026-05-01 — Renamed rule file from `jordan-standing-instructions.mdc` to **`jordan-chat-history.mdc`** so Jordan can say “Jordan chat history” to call it out.

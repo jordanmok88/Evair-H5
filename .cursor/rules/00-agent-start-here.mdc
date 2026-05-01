@@ -8,11 +8,11 @@ alwaysApply: true
 
 **Jordan is not asking you to hunt for docs.** Cursor injects **all** `.cursor/rules/*.mdc` files that have **`alwaysApply: true`** whenever this workspace is open. Treat that bundle as **mandatory**, not optional.
 
-**You do *not* get Jordan’s raw Cursor chat log**—those messages are not streamed into this workspace. **`jordan-standing-instructions.mdc`** explains limits and substitutes.
+**You do *not* get Jordan’s raw Cursor chat log**—those messages are not streamed into this workspace. **`jordan-chat-history.mdc`** (**Jordan chat history**) explains limits and substitutes.
 
 ## Skim these in order before your first substantive edit
 
-1. **`jordan-standing-instructions.mdc`** — human preferences from chats (**agents update this proactively** when Jordan states lasting rules — he doesn’t owe you a cue phrase).
+1. **`jordan-chat-history.mdc`** — **Jordan chat history**: preferences from chats (**agents update this proactively** when Jordan states lasting rules — he doesn’t owe you a cue phrase).
 2. **`ongoing-work.mdc`** — what is actively in-flight and what already shipped (avoid rework).
 3. **`product-decisions.mdc`** — locked product decisions — do not re-debate without Jordan.
 4. **`auto-save-workflow.mdc`** — commit/push **`scripts/save.sh`** after meaningful changes → GitHub triggers Netlify.
