@@ -20,13 +20,6 @@ const APP_PATH = '/app';
 const ACTIVATE_PATH = '/activate';
 const TRAVEL_ESIM_LANDING = '/travel-esim';
 
-const goTravelEsimCta = (e: React.MouseEvent<HTMLAnchorElement>) => {
-    if (isMobileDevice()) {
-        e.preventDefault();
-        window.location.assign(`${APP_PATH}#esim`);
-    }
-};
-
 const goActivateCta = (e: React.MouseEvent<HTMLAnchorElement>) => {
     if (isMobileDevice()) {
         e.preventDefault();
@@ -103,7 +96,6 @@ const MarketingPage: React.FC = () => {
                     title: t('marketing.home_why_coverage_h'),
                     body: t('marketing.home_why_coverage_p'),
                     href: TRAVEL_ESIM_LANDING,
-                    onClick: goTravelEsimCta,
                 },
                 {
                     gradient: 'from-emerald-500 via-teal-400 to-cyan-300',
@@ -201,7 +193,6 @@ const MarketingPage: React.FC = () => {
                         amazonUrl={AMAZON_SIM_STOREFRONT_URL}
                         travelLanding={TRAVEL_ESIM_LANDING}
                         activatePath={ACTIVATE_PATH}
-                        onTravelClick={goTravelEsimCta}
                         onActivateClick={goActivateCta}
                     />
                 </div>
@@ -376,7 +367,7 @@ const MarketingPage: React.FC = () => {
                         <FooterColumn
                             title={t('marketing.footer_col_travel')}
                             links={[
-                                { label: t('marketing.footer_link_travel_esim'), href: '/travel-esim', onClick: goTravelEsimCta },
+                                { label: t('marketing.footer_link_travel_esim'), href: '/travel-esim' },
                                 { label: t('marketing.footer_link_jp'), href: '/travel-esim/jp' },
                                 { label: t('marketing.footer_link_uk'), href: '/travel-esim/gb' },
                                 { label: t('marketing.footer_link_mx'), href: '/travel-esim/mx' },

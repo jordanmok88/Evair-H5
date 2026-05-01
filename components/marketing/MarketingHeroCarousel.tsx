@@ -108,7 +108,8 @@ export interface MarketingHeroCarouselProps {
     amazonUrl: string;
     travelLanding: string;
     activatePath: string;
-    onTravelClick: (e: React.MouseEvent<HTMLAnchorElement>) => void;
+    /** Optional override; omit so Travel eSIM uses `travelLanding` (e.g. `/travel-esim`) on all devices. */
+    onTravelClick?: (e: React.MouseEvent<HTMLAnchorElement>) => void;
     onActivateClick: (e: React.MouseEvent<HTMLAnchorElement>) => void;
 }
 

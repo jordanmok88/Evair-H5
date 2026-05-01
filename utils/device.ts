@@ -4,10 +4,12 @@
  *
  * Why this lives in /utils and not inline in MarketingPage:
  *
- *   - The same heuristic is wanted by the long-stay button, the
- *     pillar "Browse plans" link, footer travel shortcuts, etc. —
- *     not by **OPEN APP** / **Get started** (those use **`useMobileSignInGate`**).
- *     centralising the check keeps them all in lockstep.
+ *   - The same heuristic is wanted by **Activate** / **Activate my SIM**
+ *     links that deep-link mobile users into **`/app#bind-sim`**, not by
+ *     **OPEN APP** / **Get started** (those use **`useMobileSignInGate`**).
+ *     Travel eSIM CTAs use `/travel-esim` on all devices for the public
+ *     destination index; centralising the activate check here keeps it
+ *     consistent across marketing blocks.
  *
  *   - Detection has to happen at click time (not href-render time)
  *     because the marketing surface is statically pre-rendered and
