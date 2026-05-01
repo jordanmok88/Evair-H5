@@ -34,7 +34,8 @@
  * the desktop drawer for a mobile click — defence in depth lives
  * inside the grid + drawer themselves.
  *
- * @see data/travelEsimCountries.ts
+ * @see data/travelEsimCountries.ts — curated blurbs/carriers only; catalogue
+ *   index pulls live facets via `fetchLocationFacets()` so every sold country appears.
  * @see hooks/useEsimCheckoutFlow.ts
  * @see components/desktop/EsimPlanGrid.tsx
  * @see components/desktop/DesktopEsimCheckoutDrawer.tsx
@@ -59,6 +60,8 @@ import {
     groupByRegion,
     type TravelCountry,
 } from '../data/travelEsimCountries';
+import { fetchLocationFacets, getContinent } from '../services/dataService';
+import type { EsimCountryGroup } from '../types';
 import SiteHeader from '../components/marketing/SiteHeader';
 import SiteFooter from '../components/marketing/SiteFooter';
 import EsimPlanGrid from '../components/desktop/EsimPlanGrid';
@@ -72,22 +75,131 @@ import { applyPageSeo } from '../utils/seoHead';
 import type { EsimPackage } from '../types';
 import type { UserDto } from '../services/api/types';
 
+/** Maps ISO codes to catalogue shelf headers (marketing index). */
+const MIDDLE_EAST_SHELF = new Set([
+    'AE', 'SA', 'QA', 'IL', 'BH', 'KW', 'OM', 'YE', 'JO', 'LB', 'IQ', 'IR', 'SY',
+]);
+
+function shelfRegionForIso2(isoLower: string): TravelCountry['region'] {
+    const u = isoLower.toUpperCase();
+    if (MIDDLE_EAST_SHELF.has(u)) return 'Middle East';
+    const c = getContinent(u);
+    if (c === 'Asia' || c === 'Europe' || c === 'Americas' || c === 'Africa' || c === 'Oceania') {
+        return c;
+    }
+    return 'Other';
+}
+
+type ShelfRow = { code: string; name: string; priceFromUsd: string };
+
+function buildShelfRowsSingleCountries(groups: EsimCountryGroup[]): Record<string, ShelfRow[]> {
+    const out: Record<string, ShelfRow[]> = {};
+    for (const g of groups) {
+        if (g.isMultiRegion) continue;
+        const code = g.locationCode.toLowerCase();
+        const shelf = shelfRegionForIso2(code);
+        const minUsd = g.minPrice ?? 0;
+        const priceFromUsd = minUsd > 0 ? minUsd.toFixed(2) : '—';
+        (out[shelf] ??= []).push({ code, name: g.locationName, priceFromUsd });
+    }
+    for (const k of Object.keys(out)) {
+        out[k]!.sort((a, b) => a.name.localeCompare(b.name));
+    }
+    return out;
+}
+
+function shelfRowsFromStaticTravelCountries(): Record<string, ShelfRow[]> {
+    const byRegion = groupByRegion();
+    const out: Record<string, ShelfRow[]> = {};
+    for (const [region, list] of Object.entries(byRegion)) {
+        out[region] = list.map(c => ({
+            code: c.code,
+            name: c.name,
+            priceFromUsd: c.priceFromUsd,
+        }));
+    }
+    return out;
+}
+
+type DynamicCountryState =
+    | { kind: 'unset' }
+    | { kind: 'loading' }
+    | { kind: 'ok'; country: TravelCountry }
+    | { kind: 'missing' };
+
 interface TravelEsimPageProps {
     countryCode: string | null;
 }
 
 const TravelEsimPage: React.FC<TravelEsimPageProps> = ({ countryCode }) => {
-    const country = countryCode ? findCountry(countryCode) : undefined;
+    const staticCountry = countryCode ? findCountry(countryCode) : undefined;
+    const [dynamic, setDynamic] = useState<DynamicCountryState>({ kind: 'unset' });
     const flow = useEsimCheckoutFlow();
 
     useEffect(() => {
+        if (!countryCode || staticCountry) {
+            setDynamic({ kind: 'unset' });
+            return;
+        }
+        setDynamic({ kind: 'loading' });
+        let cancel = false;
+        (async () => {
+            try {
+                const facets = await fetchLocationFacets(true);
+                if (cancel) return;
+                const g = facets.find(
+                    f =>
+                        !f.isMultiRegion &&
+                        f.locationCode.toLowerCase() === countryCode.toLowerCase(),
+                );
+                if (!g) {
+                    setDynamic({ kind: 'missing' });
+                    return;
+                }
+                const code = g.locationCode.toLowerCase();
+                const minP = g.minPrice ?? 0;
+                setDynamic({
+                    kind: 'ok',
+                    country: {
+                        code,
+                        name: g.locationName,
+                        region: shelfRegionForIso2(code),
+                        carriers: ['Leading local networks'],
+                        priceFromUsd: minP > 0 ? minP.toFixed(2) : '—',
+                        blurb: `Data-only travel eSIM for ${g.locationName}. Pick a plan below — instant QR delivery, no SIM swap.`,
+                    },
+                });
+            } catch {
+                if (!cancel) setDynamic({ kind: 'missing' });
+            }
+        })();
+        return () => {
+            cancel = true;
+        };
+    }, [countryCode, staticCountry]);
+
+    const country: TravelCountry | undefined =
+        staticCountry ?? (dynamic.kind === 'ok' ? dynamic.country : undefined);
+
+    const showDynamicLoader =
+        Boolean(countryCode) &&
+        !staticCountry &&
+        (dynamic.kind === 'loading' || dynamic.kind === 'unset');
+    const showDynamicMissing =
+        Boolean(countryCode) && !staticCountry && dynamic.kind === 'missing';
+
+    useEffect(() => {
         if (country) {
+            const dollars =
+                country.priceFromUsd !== '—'
+                    ? ` from $${country.priceFromUsd}`
+                    : '';
             applyPageSeo({
                 path: `/travel-esim/${country.code}`,
-                title: `${country.name} eSIM from $${country.priceFromUsd} — Evair`,
+                title: `${country.name} eSIM${dollars} — Evair`,
                 description: country.blurb,
             });
-        } else {
+        } else if (!countryCode) {
             applyPageSeo({
                 path: '/travel-esim',
                 title: 'Travel eSIM in 200+ countries — Evair',
@@ -95,7 +207,7 @@ const TravelEsimPage: React.FC<TravelEsimPageProps> = ({ countryCode }) => {
                     'Buy a travel eSIM for your mobile. Instant QR delivery, no SIM swap, works in 200+ countries.',
             });
         }
-    }, [country]);
+    }, [country, countryCode]);
 
     // Success / verifying / provisioning takes over the whole page —
     // these states only appear after a Stripe redirect, and the
@@ -137,7 +249,11 @@ const TravelEsimPage: React.FC<TravelEsimPageProps> = ({ countryCode }) => {
     return (
         <div className="min-h-screen bg-white text-slate-900">
             <SiteHeader active="travel" />
-            {country ? (
+            {showDynamicLoader ? (
+                <CountryFacetsLoaderView />
+            ) : showDynamicMissing ? (
+                <CountryNotFoundView code={countryCode!} />
+            ) : country ? (
                 <SingleCountryView
                     country={country}
                     showCancelledBanner={flow.phase === 'cancelled'}
@@ -236,10 +352,18 @@ const SingleCountryView: React.FC<SingleCountryViewProps> = ({
                             {country.blurb}
                         </p>
                         <div className="flex items-baseline gap-2 mb-6">
-                            <span className="text-sm text-slate-500">From</span>
-                            <span className="text-4xl font-extrabold text-slate-900">
-                                ${country.priceFromUsd}
-                            </span>
+                            {country.priceFromUsd !== '—' ? (
+                                <>
+                                    <span className="text-sm text-slate-500">From</span>
+                                    <span className="text-4xl font-extrabold text-slate-900">
+                                        ${country.priceFromUsd}
+                                    </span>
+                                </>
+                            ) : (
+                                <span className="text-xl font-semibold text-slate-700">
+                                    See live prices below
+                                </span>
+                            )}
                         </div>
                         <div className="flex flex-wrap gap-3">
                             <a
@@ -445,6 +569,42 @@ const ErrorView: React.FC<{ message: string | null; onDismiss: () => void }> = (
     </section>
 );
 
+const CountryFacetsLoaderView: React.FC = () => (
+    <section className="px-4 md:px-8 py-24 md:py-32 max-w-6xl mx-auto flex flex-col items-center justify-center text-center">
+        <Loader2 size={40} className="animate-spin text-orange-500 mb-6" aria-hidden />
+        <p className="text-slate-600 font-medium">Loading destination…</p>
+    </section>
+);
+
+const CountryNotFoundView: React.FC<{ code: string }> = ({ code }) => (
+    <section className="px-4 md:px-8 py-20 md:py-28 max-w-xl mx-auto text-center">
+        <div className="inline-flex items-center gap-2 bg-slate-100 text-slate-700 text-xs font-bold uppercase tracking-wider px-3 py-1 rounded-full mb-4">
+            <Globe size={12} /> Travel eSIM
+        </div>
+        <h1 className="text-2xl font-extrabold text-slate-900 mb-3">
+            No plans matched “{code.toUpperCase()}”
+        </h1>
+        <p className="text-slate-600 mb-8">
+            This code is not in our live catalogue right now. Try browsing all destinations, or open
+            the app — regional bundles sometimes use a nearby popular country tile.
+        </p>
+        <div className="flex flex-wrap justify-center gap-3">
+            <a
+                href="/travel-esim"
+                className="inline-flex items-center justify-center gap-2 bg-orange-500 text-white font-bold px-5 py-3 rounded-xl"
+            >
+                Browse destinations <ArrowRight size={18} />
+            </a>
+            <a
+                href="/app"
+                className="inline-flex items-center justify-center gap-2 bg-white text-slate-900 font-semibold px-5 py-3 rounded-xl border border-slate-300"
+            >
+                Open the app
+            </a>
+        </div>
+    </section>
+);
+
 // ─── catalogue index mode ────────────────────────────────────────────
 
 /**
@@ -459,20 +619,57 @@ const ErrorView: React.FC<{ message: string | null; onDismiss: () => void }> = (
  */
 const INITIAL_VISIBLE_PER_REGION = 6;
 
-const CatalogueIndexView: React.FC = () => {
-    const grouped = groupByRegion();
-    const regionOrder: (keyof typeof grouped)[] = [
-        'Asia',
-        'Europe',
-        'Americas',
-        'Oceania',
-        'Middle East',
-        'Africa',
-    ];
+const CATALOGUE_SHELF_ORDER: TravelCountry['region'][] = [
+    'Asia',
+    'Europe',
+    'Americas',
+    'Oceania',
+    'Middle East',
+    'Africa',
+    'Other',
+];
 
-    // Track which regions the user has expanded. Set keeps the
-    // re-render minimal and lets a region's expanded state survive
-    // unrelated re-renders (e.g. window resizes).
+const CatalogueIndexView: React.FC = () => {
+    const [facetState, setFacetState] = useState<
+        | { kind: 'loading' }
+        | {
+              kind: 'ready';
+              grouped: Record<string, ShelfRow[]>;
+              singleCountryCount: number;
+              source: 'facets' | 'fallback';
+          }
+    >({ kind: 'loading' });
+
+    useEffect(() => {
+        let cancel = false;
+        (async () => {
+            try {
+                const facets = await fetchLocationFacets(true);
+                const singles = facets.filter(f => !f.isMultiRegion);
+                if (cancel) return;
+                setFacetState({
+                    kind: 'ready',
+                    grouped: buildShelfRowsSingleCountries(singles),
+                    singleCountryCount: singles.length,
+                    source: 'facets',
+                });
+            } catch (e) {
+                console.warn('[TravelEsim] catalogue facets failed:', e);
+                if (!cancel) {
+                    setFacetState({
+                        kind: 'ready',
+                        grouped: shelfRowsFromStaticTravelCountries(),
+                        singleCountryCount: TRAVEL_COUNTRIES.length,
+                        source: 'fallback',
+                    });
+                }
+            }
+        })();
+        return () => {
+            cancel = true;
+        };
+    }, []);
+
     const [expandedRegions, setExpandedRegions] = useState<Set<string>>(
         () => new Set(),
     );
@@ -486,45 +683,60 @@ const CatalogueIndexView: React.FC = () => {
         });
     };
 
+    const grouped = facetState.kind === 'ready' ? facetState.grouped : {};
+    const headlineCount =
+        facetState.kind === 'ready'
+            ? facetState.singleCountryCount >= 200
+                ? '200+'
+                : String(facetState.singleCountryCount)
+            : null;
+
     return (
         <>
             <section className="px-4 md:px-8 pt-12 md:pt-16 pb-6 md:pb-8 max-w-6xl mx-auto text-center">
                 <div className="inline-flex items-center gap-2 bg-orange-50 text-orange-700 text-xs font-bold uppercase tracking-wider px-3 py-1 rounded-full mb-4">
                     <Globe size={12} /> Travel eSIM
                 </div>
-                {/* Hero count is the *carrier-supported* country count from
-                    the RedTea/Maya travel eSIM catalogue (200+), not the
-                    length of TRAVEL_COUNTRIES (curated landing pages).
-                    Regions + cards follow immediately below. */}
                 <h1 className="text-4xl md:text-5xl font-extrabold leading-tight tracking-tight mb-5 max-w-3xl mx-auto">
-                    Stay connected in 200+ destinations
+                    Stay connected in {headlineCount ?? '200+'} destinations
                 </h1>
-                {/* No standalone "Browse all plans" CTA on this page — the
-                    country grid directly below is the primary browse
-                    surface, and any redirect to /app#esim from a desktop
-                    visit just bumps the customer into the H5 store layout
-                    they already came here to bypass. The subhead points
-                    them at the grid; we trust them to scroll. */}
-                <p className="text-lg text-slate-600 max-w-2xl mx-auto">
-                    One app, one travel eSIM library, and an optional US 5G data
-                    plan waiting for you when you land. Pick your destination
-                    below — install in minutes, connect when you arrive.
+                <p className="text-lg text-slate-600 max-w-2xl mx-auto flex flex-wrap items-center justify-center gap-2">
+                    {facetState.kind === 'loading' && (
+                        <Loader2
+                            size={18}
+                            className="animate-spin text-orange-500 shrink-0"
+                            aria-hidden
+                        />
+                    )}
+                    <span>
+                        One app, one travel eSIM library, and an optional US 5G data plan waiting for you
+                        when you land. Pick your destination below — install in minutes, connect when you
+                        arrive.
+                    </span>
                 </p>
+                {facetState.kind === 'ready' && facetState.source === 'fallback' && (
+                    <div className="mt-6 max-w-2xl mx-auto rounded-xl bg-amber-50 border border-amber-100 px-4 py-3 text-sm text-amber-950">
+                        Live catalogue is temporarily unavailable — showing a shortened list. Open the app
+                        for the full catalogue, or retry in a minute.
+                    </div>
+                )}
             </section>
 
             <section
                 id="popular-destinations"
                 className="px-4 md:px-8 pt-4 md:pt-6 pb-16 max-w-6xl mx-auto"
             >
-                {regionOrder
-                    .filter(r => grouped[r]?.length)
-                    .map(region => {
-                        const all = grouped[region];
+                {facetState.kind === 'loading' && (
+                    <div className="flex justify-center py-16">
+                        <Loader2 size={36} className="animate-spin text-orange-500" aria-hidden />
+                    </div>
+                )}
+                {facetState.kind === 'ready' &&
+                    CATALOGUE_SHELF_ORDER.filter(r => grouped[r]?.length).map(region => {
+                        const all = grouped[region]!;
                         const isExpanded = expandedRegions.has(region);
                         const showToggle = all.length > INITIAL_VISIBLE_PER_REGION;
-                        const visible = isExpanded
-                            ? all
-                            : all.slice(0, INITIAL_VISIBLE_PER_REGION);
+                        const visible = isExpanded ? all : all.slice(0, INITIAL_VISIBLE_PER_REGION);
                         const hiddenCount = all.length - INITIAL_VISIBLE_PER_REGION;
 
                         return (
@@ -534,9 +746,7 @@ const CatalogueIndexView: React.FC = () => {
                                         {region}
                                         <span className="ml-2 text-sm font-normal text-slate-400">
                                             {all.length}{' '}
-                                            {all.length === 1
-                                                ? 'destination'
-                                                : 'destinations'}
+                                            {all.length === 1 ? 'destination' : 'destinations'}
                                         </span>
                                     </h3>
                                     {showToggle && (
@@ -547,9 +757,7 @@ const CatalogueIndexView: React.FC = () => {
                                             aria-expanded={isExpanded}
                                             aria-controls={`region-grid-${region}`}
                                         >
-                                            {isExpanded
-                                                ? 'Show fewer'
-                                                : `See all ${all.length}`}
+                                            {isExpanded ? 'Show fewer' : `See all ${all.length}`}
                                             <ArrowRight
                                                 size={14}
                                                 className={`transition-transform ${
@@ -569,21 +777,18 @@ const CatalogueIndexView: React.FC = () => {
                                             href={`/travel-esim/${c.code}`}
                                             className="bg-white border border-slate-200 hover:border-orange-300 hover:shadow-md transition-all rounded-2xl p-4 flex items-center gap-3"
                                         >
-                                            <span className="text-3xl">
-                                                {flagEmoji(c.code)}
-                                            </span>
+                                            <span className="text-3xl">{flagEmoji(c.code)}</span>
                                             <div className="flex-1 min-w-0">
                                                 <div className="font-bold text-slate-900 truncate">
                                                     {c.name}
                                                 </div>
                                                 <div className="text-xs text-slate-500">
-                                                    from ${c.priceFromUsd}
+                                                    {c.priceFromUsd === '—'
+                                                        ? 'See plans'
+                                                        : `from $${c.priceFromUsd}`}
                                                 </div>
                                             </div>
-                                            <ArrowRight
-                                                size={16}
-                                                className="text-slate-300"
-                                            />
+                                            <ArrowRight size={16} className="text-slate-300 shrink-0" />
                                         </a>
                                     ))}
                                 </div>

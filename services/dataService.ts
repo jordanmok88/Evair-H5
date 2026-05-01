@@ -433,6 +433,7 @@ export async function bindSim(iccid: string, activationCode?: string): Promise<{
 export {
   groupPackagesByLocation,
   getPopularGroups,
+  getContinent,
   CONTINENT_TABS,
   POPULAR_COUNTRY_CODES,
   formatVolume,

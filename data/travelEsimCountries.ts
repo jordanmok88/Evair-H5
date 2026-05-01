@@ -12,11 +12,12 @@
  * outbound stats) plus the most-searched eSIM keywords from
  * Ahrefs — covers ~95% of search intent. The full RedTea/Maya
  * catalogue is 200+ countries; this file is the curated subset
- * we author static SEO landing pages for. The `groupByRegion`
- * helper powers the catalogue index at `/travel-esim`, where
- * each region shows its first ~6 entries with a "See all in
- * {region}" toggle to expand inline (no H5 redirect — see
- * `views/TravelEsimPage.tsx#CatalogueIndexView`).
+ * we author static SEO landing pages for. The primary `/travel-esim`
+ * index lists **every country** returned by backend facets
+ * (`fetchLocationFacets`); `groupByRegion` remains a fallback if
+ * facets fail. Curated blurbs/carriers/`priceFromUsd` still enrich
+ * `/travel-esim/{iso2}` where an entry exists here; other ISO codes
+ * use API-backed names and live plan grids.
  */
 
 export interface TravelCountry {
@@ -25,7 +26,7 @@ export interface TravelCountry {
     /** Marketing display name (en). */
     name: string;
     /** Region grouping for the catalogue index. */
-    region: 'Asia' | 'Europe' | 'Americas' | 'Oceania' | 'Africa' | 'Middle East';
+    region: 'Asia' | 'Europe' | 'Americas' | 'Oceania' | 'Africa' | 'Middle East' | 'Other';
     /** Local networks the eSIM connects to (informational only). */
     carriers: string[];
     /** "From $X.XX" anchor for the hero. Update if Red Tea pricing changes. */
