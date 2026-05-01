@@ -9,6 +9,7 @@ Jordan is **not** an engineer; replies to him should use **clear, plain English*
 
 ## How this file works
 
+- **New agents:** Instructions **load automatically** when this project is opened in Cursor. Read **`00-agent-start-here.mdc`** for the full ordered list—Jordan should not need to paste project rules each time.
 - Cursor **cannot** paste in every sentence from every past chat automatically. Past threads are **not** stored inside this repo as full transcripts.
 - This file holds **lasting decisions Jordan cares about**. When something new must stick, Jordan can say **"Add this to my standing instructions"** — the assistant should **append concise bullets here** (and run `scripts/save.sh` after code/rule changes).
 

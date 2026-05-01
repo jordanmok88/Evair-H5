@@ -1,0 +1,30 @@
+---
+description: >-
+  NEW AGENTS START HERE — master index so all Evair-H5 instructions load automatically via Cursor rules (alwaysApply). Jordan requested no manual “remember to read” step.
+alwaysApply: true
+---
+
+# New agent — your instructions load automatically
+
+**Jordan is not asking you to hunt for docs.** Cursor injects **all** `.cursor/rules/*.mdc` files that have **`alwaysApply: true`** whenever this workspace is open. Treat that bundle as **mandatory**, not optional.
+
+## Skim these in order before your first substantive edit
+
+1. **`jordan-standing-instructions.mdc`** — human preferences distilled from chats (language, deploy, OPEN APP UX).
+2. **`ongoing-work.mdc`** — what is actively in-flight and what already shipped (avoid rework).
+3. **`product-decisions.mdc`** — locked product decisions — do not re-debate without Jordan.
+4. **`auto-save-workflow.mdc`** — commit/push **`scripts/save.sh`** after meaningful changes → GitHub triggers Netlify.
+5. **`agent-quality.mdc`** — logic-first edits, regressions, polite pushback when direction conflicts with rules or obvious bugs.
+6. **`project-overview.mdc`** — file map + stack + UX conventions (`pt-safe`, i18n, brand orange).
+7. **`business-context.mdc`** — company + suppliers summary.
+8. **`business-decisions.mdc`** — long-term operational decisions log.
+9. **`cross-repo-sync.mdc`** — when to check H5 vs Laravel vs Admin vs Flutter.
+10. **`deployment.mdc`** — git remotes, Netlify branch, backups.
+11. **`esim-api-services.mdc`** — shop catalogue guards; **`services/dataService.ts`** as facade.
+12. **`competitor-analysis.mdc`** — Airalo/EIOTCLUB positioning reference for marketing/copy.
+
+Also read **`CLAUDE.md`** at the repo root for build commands (`npm run dev`, `npm run build`) and architecture notes.
+
+---
+
+If Jordan contradicts something in chat, **follow Jordan** for that task and propose updating the rule file so future agents stay aligned.

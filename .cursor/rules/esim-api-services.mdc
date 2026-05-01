@@ -1,7 +1,6 @@
 ---
-description: API integration, data service layer, and SIM activation flow
-globs: services/**,views/ShopView.tsx,views/MySimsView.tsx,views/PhysicalSimSetupView.tsx,netlify/functions/**
-alwaysApply: false
+description: API integration, data service layer, and SIM activation flow — always attach for catalogue / supplier guardrails
+alwaysApply: true
 ---
 
 # API Architecture

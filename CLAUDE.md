@@ -4,9 +4,11 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Active context (read these first, every session)
 
-Three `alwaysApply` rule files hold Jordan's persistent memory — the agent
-should treat them as preloaded context:
+**How instructions reach you:** For this workspace, Cursor injects **`alwaysApply`** rules automatically — see **`.cursor/rules/00-agent-start-here.mdc`** for the ordered checklist.
 
+These files ship with Jordan's persistent preferences (preload / always apply):
+
+- `.cursor/rules/00-agent-start-here.mdc` — **master index** for new agents; lists every rule below in read order.
 - `.cursor/rules/jordan-standing-instructions.mdc` — **Jordan's distilled chat outcomes**
   (plain English, UX/deploy habits, OPEN APP modal rules). New lasting instructions
   from Jordan should be **appended** here when he asks.
@@ -16,15 +18,10 @@ should treat them as preloaded context:
   Do not re-debate.
 - `.cursor/rules/auto-save-workflow.mdc` — how to save work across all mirrors.
 - `.cursor/rules/agent-quality.mdc` — logic-first edits, flag bad outcomes, respectful pushback when direction conflicts with rules or obvious regressions.
+- **`project-overview.mdc`**, **`deployment.mdc`**, **`cross-repo-sync.mdc`**, **`business-context.mdc`**, **`business-decisions.mdc`**, **`esim-api-services.mdc`**, **`competitor-analysis.mdc`** — same auto-loaded bundle (`alwaysApply`); skim order is in **`00-agent-start-here.mdc`**.
 
-On-demand reference (load when the topic comes up):
+**Optional deep dive (not injected as rules):**
 
-- `.cursor/rules/competitor-analysis.mdc` — Airalo + EIOTCLUB dossier
-  (home page, shop UX, pricing, trust signals, loyalty, blog, SEO).
-- `.cursor/rules/esim-api-services.mdc` — supplier integration + shop
-  catalogue regression guards.
-- `.cursor/rules/business-context.mdc` / `business-decisions.mdc` — product
-  and business context.
 - `docs/CONVERSATION_HISTORY.md` — chronological log of past work sessions
   and major decisions.
 
