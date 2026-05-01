@@ -5,7 +5,8 @@
  * Why this lives in /utils and not inline in MarketingPage:
  *
  *   - The same heuristic is wanted by the long-stay button, the
- *     pillar "Browse plans" link, and the final "Get started" CTA, so
+ *     pillar "Browse plans" link, footer travel shortcuts, etc. —
+ *     not by **OPEN APP** / **Get started** (those use **`useMobileSignInGate`**).
  *     centralising the check keeps them all in lockstep.
  *
  *   - Detection has to happen at click time (not href-render time)

@@ -351,8 +351,8 @@ const MarketingPage: React.FC = () => {
                     </p>
                     <div className="mt-6 flex w-full min-w-0 flex-col items-stretch justify-center gap-3 sm:mt-8 sm:flex-row sm:items-center sm:gap-4">
                         <a
-                            href={TRAVEL_ESIM_LANDING}
-                            onClick={goTravelEsimCta}
+                            href={APP_PATH}
+                            onClick={signInGate.gateClick}
                             className="inline-flex min-h-12 items-center justify-center gap-2 rounded-xl bg-[#F27420] px-6 py-3.5 text-sm font-bold text-white transition hover:brightness-105 sm:min-h-14 sm:px-8 sm:py-4 sm:text-base"
                         >
                             {t('marketing.home_ready_get_started')} <ArrowRight className="h-4 w-4 sm:h-[18px] sm:w-[18px]" />
