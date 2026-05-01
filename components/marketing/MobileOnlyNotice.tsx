@@ -2,10 +2,9 @@
  * Modal shown to desktop visitors who tap "OPEN APP" on the
  * marketing site.
  *
- * IMPORTANT: this modal is **never rendered for mobile visitors**.
- * `useMobileSignInGate` skips this modal only when **User-Agent** looks like a
- * phone/tablet browser (not when the viewport is narrow). Narrow desktop windows
- * still see this dialog. True mobile UA clicks go straight to `/app`.
+ * IMPORTANT: this modal is **skipped only for narrow phone viewports**.
+ * `useMobileSignInGate` skips when **`max-width: 767px`** — desktop/iPad/tablet-width
+ * windows always see this dialog first (unless the visitor acknowledged "open next time").
  *
  * Contents:
  *

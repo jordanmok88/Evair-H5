@@ -74,7 +74,7 @@ See also: `.cursor/rules/auto-save-workflow.mdc`.
 
 ## OPEN APP / mobile gate (marketing — do not regress)
 
-- For **narrowing desktop** users: the OPEN APP gate skips the QR modal only on **handset-like** browsers **and** **viewport &lt; `md` (768px)**. At **`min-width: 768px`** the modal **always** appears (when not acked) so iPad / windowed Safari never lose it to UA quirks or DevTools. Use **`isMobileUserAgentClient()`** only inside that hook’s narrow-viewport branch — do not conflate with **`isMobileDevice()`** for broader marketing CTAs.
+- OPEN APP QR modal is **viewport-only** (ignore User‑Agent): **skip** modal and go straight to `/app` only when **`max-width: 767px`** (narrow phone band). **`min-width: 768px`** → always show QR first unless **`evair_desktop_signin_acked.v3`** is already set in localStorage. Covers iPad, windowed/desktop Safari at any width ≥768px, and DevTools. **Trade-off**: a desktop browser window shrunk below 768px wide behaves like mobile (no modal). Do not use **`isMobileUserAgent()`** / **`isMobileUserAgentClient()`** for this gate — do not conflate with **`isMobileDevice()`** for other marketing CTAs.
 
 - **"Continue on desktop anyway"**: must **not** send users to `/app`; they **stay on the current marketing URL**. Only acknowledge + close. Next OPEN APP tap may use ack and proceed to `/app` without reopening the modal.
 
