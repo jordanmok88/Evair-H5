@@ -13,7 +13,8 @@ export function urlHasTestMode(): boolean {
  * Evair-H5 /../EvairSIM-App/docs/native-bridge-api.md and
  * EvairSIM-App/lib/core/bridge/native_bridge.dart.
  */
-function runningInsideNativeApp(): boolean {
+/** True inside the Flutter/WebView shell — never show desktop-only QR overlays. */
+export function runningInsideNativeApp(): boolean {
   if (typeof window === 'undefined') return false;
   try {
     const evair = (window as unknown as { evair?: { isNative?: boolean } }).evair;

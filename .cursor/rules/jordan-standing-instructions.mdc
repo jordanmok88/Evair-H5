@@ -74,13 +74,12 @@ See also: `.cursor/rules/auto-save-workflow.mdc`.
 
 ## OPEN APP / mobile gate (marketing — do not regress)
 
-- OPEN APP QR modal uses **hybrid** detection:
-  - **`min-width: 768px`**: **always** show QR first unless **`evair_desktop_signin_acked.v3`** is set — viewport-only branch so desktop/iPad/full-width layouts never lose the modal to UA.
-  - **`max-width: 767px`**: show QR unless the session looks **handheld** — **`isMobileUserAgentClient()`** **or** primary **`(pointer: coarse)`** with **`(hover: none)`**; then skip straight to **`/app`**. Narrow **desktop** windows still get QR.
-  - **Trade-off**: "Request desktop site" on a phone can show QR in a skinny window.
-  For other marketing CTAs, **`isMobileDevice()`** (different heuristic — UA **or** `max-width: 1023px`) stays separate; do not conflate.
+- OPEN APP QR modal (**`MobileOnlyNotice`**) — **shared ack** **`evair_desktop_signin_acked.v4`**:
+  - **Marketing OPEN APP** (hybrid): **`min-width: 768px`** → show QR unless acked. **`max-width: 767px`** → handheld session (**`isMobileUserAgentClient()`** or **`(pointer: coarse)`** + **`(hover: none)`**) skips straight to **`/app`**. Narrow desktop windows still get QR on OPEN APP tap.
+  - **`/app` shell**: desktop browsers **auto-open the same QR** on load when **`isAppPath()`**, viewport **`≥768px`**, **`(hover: hover)`** + **`(pointer: fine)`**, not native WebView, not **`#app-preview`**. Native app + real phones stay uninterrupted.
+  For other marketing CTAs, **`isMobileDevice()`** stays separate; do not conflate.
 
-- **"Continue on desktop anyway"**: must **not** send users to `/app`; they **stay on the current marketing URL**. Only acknowledge + close. Next OPEN APP tap may use ack and proceed to `/app` without reopening the modal.
+- **"Continue on desktop anyway"**: persist ack (**`v4`**); **stay on current URL** — no fake navigation. Subsequent **`/app`** visits and OPEN APP taps respect ack until cleared.
 
 Relevant implementation: `hooks/useMobileSignInGate.ts`, `components/marketing/MobileOnlyNotice.tsx`, `utils/device.ts`.
 

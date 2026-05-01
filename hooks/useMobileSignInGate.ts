@@ -1,30 +1,34 @@
 /**
- * Click gate for the marketing-site "OPEN APP" CTA — **hybrid** detection.
+ * Desktop QR experience for Evair (shared ack **`evair_desktop_signin_acked.v4`**):
  *
- *   • **`min-width: 768px`** (Tailwind `md`+) → always intercept with the QR modal
- *     first (unless acked). Viewport carries the decision; UA quirks cannot drop
- *     the modal on tablets / desktop Safari at full width.
+ * 1. **Marketing OPEN APP** — hybrid click gate (`useMobileSignInGate`).
+ * 2. **`/app` shell** — same modal auto-opens for wide viewport + `(hover:hover)` +
+ *    `(pointer:fine)` (`useCustomerAppDesktopQr`; see `shouldAutoPromptQrOnCustomerApp`).
  *
- *   • **`max-width: 767px`** → **skip** the modal (straight to `/app`) only when
- *     the session looks like a handheld: **`isMobileUserAgentClient()`** (UA-CH
- *     `mobile` when available), **or** primary **`(pointer: coarse)`** with
- *     **`(hover: none)`** (touch-first, no hover device). Narrow **desktop**
- *     windows therefore still get the QR.
+ * Marketing OPEN APP specifics:
  *
- * Trade-off: "Request desktop site" on a phone can show the QR in a skinny window.
+ * - **`min-width: 768px`**: intercept with QR unless acked (viewport-led so wide Safari keeps the modal).
+ * - **`max-width: 767px`**: skip when handheld (`isMobileUserAgentClient` or coarse pointer + `(hover:none)`).
+ *
+ * Trade-off: "Request desktop site" on a phone can surface the QR on OPEN APP taps.
  *
  * @see `APP_WIDE_LAYOUT_MIN_PX` in App.tsx (`md` / 768).
  */
 
-import { useCallback, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import type React from 'react';
 import { isMobileUserAgentClient } from '@/utils/device';
+import {
+    isAppPath,
+    isAppPreviewHash,
+    runningInsideNativeApp,
+} from '@/utils/testMode';
 
 /** Must match App.tsx `APP_WIDE_LAYOUT_MIN_PX` (Tailwind `md`). */
 const MOBILE_VIEWPORT_MAX_PX = 767;
 
-/** v3 — bumped when gate semantics changed; hybrid still uses same key after v3. */
-const ACK_STORAGE_KEY = 'evair_desktop_signin_acked.v3';
+/** v4 — adds `/app` auto QR; resets prior acks so desktop visitors see the modal again. */
+const ACK_STORAGE_KEY = 'evair_desktop_signin_acked.v4';
 
 function isNarrowMobileViewport(): boolean {
     if (typeof window === 'undefined') return false;
@@ -60,6 +64,81 @@ function writeAck(): void {
     } catch {
         /* no-op — privacy-mode or storage-disabled environments */
     }
+}
+
+/** True when primary input matches desktop browsers — excludes phones/tablets (`hover:none`, coarse pointer). */
+function looksLikeDesktopPointerEnvironment(): boolean {
+    if (typeof window === 'undefined') return false;
+    try {
+        return (
+            window.matchMedia('(hover: hover)').matches &&
+            window.matchMedia('(pointer: fine)').matches
+        );
+    } catch {
+        return !isMobileUserAgentClient();
+    }
+}
+
+/**
+ * Auto-open **`MobileOnlyNotice`** when the functional shell loads under **`/app`**
+ * on a wide, desktop-pointer session. Marketing **`OPEN APP`** click uses the same modal + ack key.
+ *
+ * Native WebView (`evair.isNative`), **`#app-preview`**, handheld viewports (&lt;768), and
+ * touch-primary devices are excluded — real phones opening `/app` in landscape stay uninterrupted.
+ */
+export function shouldAutoPromptQrOnCustomerApp(): boolean {
+    if (typeof window === 'undefined') return false;
+    if (!isAppPath()) return false;
+    if (runningInsideNativeApp()) return false;
+    if (isAppPreviewHash()) return false;
+    if (readAck()) return false;
+    if (!window.matchMedia(`(min-width: ${MOBILE_VIEWPORT_MAX_PX + 1}px)`).matches) return false;
+    if (!looksLikeDesktopPointerEnvironment()) return false;
+    return true;
+}
+
+/**
+ * Mounted only from **`CustomerApp`**: pops the QR dialog when **`shouldAutoPromptQrOnCustomerApp()`**
+ * is true; keeps it in sync on breakpoint / hover capability changes while the shell is mounted.
+ */
+export function useCustomerAppDesktopQr(): Pick<
+    MobileSignInGate,
+    'open' | 'onClose' | 'onContinueAnyway'
+> {
+    const [open, setOpen] = useState(false);
+
+    useEffect(() => {
+        function evaluate(): void {
+            setOpen(shouldAutoPromptQrOnCustomerApp());
+        }
+
+        evaluate();
+
+        const mqs = [
+            `(min-width: ${MOBILE_VIEWPORT_MAX_PX + 1}px)` as const,
+            '(hover: hover)' as const,
+            '(pointer: fine)' as const,
+        ].map((q) => window.matchMedia(q));
+
+        mqs.forEach((mq) => mq.addEventListener('change', evaluate));
+        window.addEventListener('storage', evaluate);
+
+        return () => {
+            mqs.forEach((mq) => mq.removeEventListener('change', evaluate));
+            window.removeEventListener('storage', evaluate);
+        };
+    }, []);
+
+    const onClose = useCallback(() => {
+        setOpen(false);
+    }, []);
+
+    const onContinueAnyway = useCallback(() => {
+        writeAck();
+        setOpen(false);
+    }, []);
+
+    return { open, onClose, onContinueAnyway };
 }
 
 export interface MobileSignInGate {

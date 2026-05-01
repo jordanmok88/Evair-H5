@@ -31,6 +31,8 @@ import { computeTestModeEnabled, dismissTestModeForSession, isAppPath, isAppPrev
 import { getRoute, type Route } from './utils/routing';
 import { BootSplash, shouldSkipBootSplash } from './components/BootSplash';
 import { useViewportMinWidth } from './hooks/useViewportMinWidth';
+import { useCustomerAppDesktopQr } from './hooks/useMobileSignInGate';
+import MobileOnlyNotice from './components/marketing/MobileOnlyNotice';
 
 /** Matches Tailwind `--breakpoint-md` (`48rem`): tablet / windowed Safari and up use full `/app` chrome (no centred phone mock). */
 const APP_WIDE_LAYOUT_MIN_PX = 768;
@@ -149,6 +151,7 @@ function App() {
 function CustomerApp() {
   const { t } = useTranslation();
   const phoneRef = useRef<HTMLDivElement>(null);
+  const desktopAppQr = useCustomerAppDesktopQr();
   const [testMode, setTestMode] = useState(computeTestModeEnabled);
 
   useEffect(() => {
@@ -1037,6 +1040,12 @@ function CustomerApp() {
             onClose={() => setIsLoginModalOpen(false)}
             onLogin={handleLoginSuccess}
             initialMode={loginModalMode}
+        />
+
+        <MobileOnlyNotice
+          open={desktopAppQr.open}
+          onClose={desktopAppQr.onClose}
+          onContinueAnyway={desktopAppQr.onContinueAnyway}
         />
 
       </div>
