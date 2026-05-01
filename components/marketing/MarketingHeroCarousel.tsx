@@ -44,10 +44,10 @@ function usePrefersReducedMotion(): boolean {
  * Hero product tiles: IoT (01–04, 06), mobile/tablet/hotspot hero art, then camera (07–09).
  * Headline copy groups: `Math.floor(slideIndex / 3)` maps to three marketing message sets.
  * `planHref` jumps to each device landing «Pick a plan» block.
- * Imagery is `object-contain` / centred inside flex frames; hero chrome uses a
- * **transparent** card (no grey “mat” behind the PNG) so only the artwork reads.
+ * Imagery is **`w-full h-auto`** inside the branded frame (**`HERO_ART_FRAME_CLASS`**) so landscape
+ * art is not vertically letterboxed — only a **`max-height`** caps very tall slides.
  */
-/** Hero imagery uses `object-contain` so devices stay centred and are not clipped. */
+/** Hero imagery: full column width, natural aspect ratio (**`max-h`** only — no forced letterboxing). */
 export const MARKETING_HERO_VISUAL_SLIDES = [
     {
         src: '/marketing/device-built-for/cell-01.png',
@@ -266,14 +266,14 @@ export function MarketingHeroCarousel(props: MarketingHeroCarouselProps) {
                             className="block touch-manipulation outline-none ring-offset-white focus-visible:ring-2 focus-visible:ring-[#2563eb] focus-visible:ring-offset-2"
                         >
                             <figure
-                                className={`relative m-0 flex h-[clamp(9rem,38vmin,240px)] w-full items-center justify-center bg-transparent sm:h-[clamp(10rem,40vmin,280px)] ${HERO_ART_FRAME_CLASS}`}
+                                className={`relative m-0 w-full bg-transparent ${HERO_ART_FRAME_CLASS}`}
                             >
                                 <img
                                     key={`m-${visual.src}-${index}`}
                                     src={visual.src}
                                     alt={t(visual.altKey)}
                                     sizes="100vw"
-                                    className="relative z-0 max-h-full max-w-full object-contain object-center"
+                                    className="relative z-0 block h-auto w-full max-h-[min(17.5rem,52vmin)] object-contain object-center sm:max-h-[min(18.75rem,56vmin)]"
                                     decoding="async"
                                     loading="eager"
                                     fetchPriority={index === 0 ? 'high' : 'auto'}
@@ -348,22 +348,22 @@ export function MarketingHeroCarousel(props: MarketingHeroCarouselProps) {
                     </div>
                 </div>
 
-                {/* Desktop: photo frame matches landscape product art — flex-centre + shallower than old 5/6 to avoid huge letterboxing */}
+                {/* Desktop: frame hugs each slide's aspect ratio; max-height avoids runaway portraits. */}
                 <div className="relative hidden w-full min-w-0 lg:block">
                     <div
-                        className={`sticky top-[4.25rem] flex h-[clamp(17rem,min(52dvh,26rem),28rem)] w-full max-h-[min(28rem,min(62dvh,calc(100dvh-10.5rem)))] min-h-[15rem] flex-col bg-transparent xl:h-[clamp(18rem,min(54dvh,28rem),30rem)] xl:max-h-[min(30rem,min(65dvh,calc(100dvh-9.5rem)))] ${HERO_ART_FRAME_CLASS}`}
+                        className={`sticky top-[4.25rem] w-full bg-transparent ${HERO_ART_FRAME_CLASS}`}
                     >
                         <a
                             href={visual.planHref}
                             aria-label={planLinkAria}
-                            className="flex h-full min-h-0 w-full flex-1 items-center justify-center p-0 outline-none ring-offset-white focus-visible:ring-2 focus-visible:ring-[#2563eb] focus-visible:ring-offset-4"
+                            className="block w-full outline-none ring-offset-white focus-visible:ring-2 focus-visible:ring-[#2563eb] focus-visible:ring-offset-4"
                         >
                             <img
                                 key={`d-${visual.src}-${index}`}
                                 src={visual.src}
                                 alt={t(visual.altKey)}
                                 sizes="(min-width: 1024px) min(46vw, 560px), 0px"
-                                className="max-h-full max-w-full object-contain object-center"
+                                className="block h-auto w-full max-h-[min(30rem,min(65dvh,calc(100dvh-9.5rem)))] object-contain object-center"
                                 decoding="async"
                                 loading="eager"
                                 fetchPriority={index === 0 ? 'high' : 'auto'}
