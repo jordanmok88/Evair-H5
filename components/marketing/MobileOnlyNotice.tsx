@@ -12,6 +12,9 @@
  *   - QR code generated **client-side** via the `qrcode` package →
  *     PNG data URL. External QR image APIs often fail silently (privacy
  *     tools, flaky CDNs). Local generation keeps the popup reliable.
+ *
+ * Secondary escape: stays on the current marketing URL without redirecting into
+ * `/app`; acknowledges so the next OPEN APP tap opens the app normally.
  */
 
 import React, { useEffect, useRef, useState } from 'react';
@@ -170,7 +173,7 @@ const MobileOnlyNotice: React.FC<MobileOnlyNoticeProps> = ({
                                 onClick={onContinueAnyway}
                                 className="text-xs font-medium text-slate-500 underline-offset-2 hover:text-slate-800 hover:underline"
                             >
-                                Continue on desktop anyway →
+                                Stay on this site — open app next time →
                             </button>
                         </div>
                     </div>

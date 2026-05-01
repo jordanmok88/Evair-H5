@@ -17,10 +17,11 @@
  *   - Mobile **browser UA** click → fall through to <a href="/app"> (no-op).
  *     (Viewport width is ignored here so narrow desktop windows still get the modal.)
  *   - Desktop click, not acked → preventDefault + open the modal.
- *   - Desktop click, acked     → fall through to <a href="/app">. We
- *                                respect the customer-support escape
- *                                hatch so people who *need* desktop
- *                                aren't nagged forever.
+ *   - Desktop click, acked     → fall through to <a href="/app"> (no modal).
+ *                                Ack is set when the user chooses "Continue on
+ *                                desktop anyway" — they stay on the current
+ *                                marketing URL; the next OPEN APP tap goes
+ *                                straight to the app shell.
  *
  * The dismissal flag is stored in localStorage with a versioned key so
  * we can invalidate it later (e.g. when we ship a real desktop
@@ -60,8 +61,8 @@ export interface MobileSignInGate {
     /** Dismiss without proceeding. Wire to modal's "Got it" / X / backdrop. */
     onClose: () => void;
     /**
-     * Customer chose "continue on desktop anyway" — record the ack
-     * and navigate to /app. Wire to modal's tertiary button.
+     * "Continue on desktop anyway" — persist ack, close modal, **stay on the
+     * current page** (no redirect). Next OPEN APP opens `/app` normally.
      */
     onContinueAnyway: () => void;
 }
@@ -90,10 +91,7 @@ export function useMobileSignInGate(appPath: string = '/app'): MobileSignInGate 
     const onContinueAnyway = useCallback(() => {
         writeAck();
         setOpen(false);
-        if (typeof window !== 'undefined') {
-            window.location.assign(appPath);
-        }
-    }, [appPath]);
+    }, []);
 
     return { open, gateClick, onClose, onContinueAnyway };
 }
