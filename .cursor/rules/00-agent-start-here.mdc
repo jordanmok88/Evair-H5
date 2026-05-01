@@ -8,6 +8,8 @@ alwaysApply: true
 
 **Jordan is not asking you to hunt for docs.** Cursor injects **all** `.cursor/rules/*.mdc` files that have **`alwaysApply: true`** whenever this workspace is open. Treat that bundle as **mandatory**, not optional.
 
+**You do *not* get Jordan’s raw Cursor chat log**—those messages are not streamed into this workspace. **`jordan-standing-instructions.mdc`** explains limits and substitutes.
+
 ## Skim these in order before your first substantive edit
 
 1. **`jordan-standing-instructions.mdc`** — human preferences distilled from chats (language, deploy, OPEN APP UX).

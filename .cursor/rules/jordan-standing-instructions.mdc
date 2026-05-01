@@ -10,7 +10,19 @@ Jordan is **not** an engineer; replies to him should use **clear, plain English*
 ## How this file works
 
 - **New agents:** Instructions **load automatically** when this project is opened in Cursor. Read **`00-agent-start-here.mdc`** for the full ordered list—Jordan should not need to paste project rules each time.
-- Cursor **cannot** paste in every sentence from every past chat automatically. Past threads are **not** stored inside this repo as full transcripts.
+
+## Jordan asked: “automatically load all my chat history” for every new agent
+
+- **Cannot be done.** Chat threads live **inside Cursor’s app**, not in this Git repo. Agents have **no way** to pull your full past conversations into a new chat by themselves—it isn’t something we can turn on by editing Evair-H5 files.
+- **What *is* automatic:** Every rule here with **`alwaysApply: true`** (see **`00-agent-start-here.mdc`**) is your **official memory**—new agents load those docs without Jordan copying them again.
+- **Best way to preserve what you actually said:**
+  - For **sticky rules**, say **“Add this to my standing instructions.”** Short bullets beat pasting whole chats.
+  - In **Cursor Settings**, use **Rules for AI / Memories** if you see them—those are for **little facts** Cursor can replay globally (optional; product-dependent).
+  - Cursor may offer **chat export or share** elsewhere in the UI; if Jordan ever exports text, storing a **single summary markdown** under `docs/` is optional—we do **not** have auto-import of exports today.
+
+---
+
+- Cursor **cannot** paste every sentence from every past chat automatically. Past threads are **not** stored inside this repo as full transcripts.
 - This file holds **lasting decisions Jordan cares about**. When something new must stick, Jordan can say **"Add this to my standing instructions"** — the assistant should **append concise bullets here** (and run `scripts/save.sh` after code/rule changes).
 
 ## Communication
