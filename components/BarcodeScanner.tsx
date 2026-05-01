@@ -44,6 +44,7 @@ const BarcodeScanner: React.FC<BarcodeScannerProps> = ({ open, onClose, onDetect
             return { width: w, height: Math.max(120, h) };
           },
           aspectRatio: 1.777778,
+          // Runtime supports narrowing barcode formats; @types lag Html5QrcodeCameraScanConfig.
           formatsToSupport: [
             Html5QrcodeSupportedFormats.CODE_128,
             Html5QrcodeSupportedFormats.QR_CODE,
@@ -52,7 +53,7 @@ const BarcodeScanner: React.FC<BarcodeScannerProps> = ({ open, onClose, onDetect
             Html5QrcodeSupportedFormats.DATA_MATRIX,
             Html5QrcodeSupportedFormats.ITF,
           ],
-        },
+        } as Parameters<Html5Qrcode['start']>[1],
         (decodedText) => {
           if (cancelled) return;
           const iccid = extractIccidFromScan(decodedText);

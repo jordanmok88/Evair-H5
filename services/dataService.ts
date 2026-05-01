@@ -406,8 +406,8 @@ export async function unbindSim(iccid: string): Promise<{ success: boolean }> {
   const { userService } = await import('./api');
 
   try {
-    const result = await userService.unbindSim({ iccid });
-    return result;
+    await userService.unbindSim({ iccid });
+    return { success: true };
   } catch (err: any) {
     console.error('[unbindSim] API error:', err?.message, 'code:', err?.code);
     throw err;
@@ -420,8 +420,8 @@ export async function bindSim(iccid: string, activationCode?: string): Promise<{
   const { userService } = await import('./api');
 
   try {
-    const result = await userService.bindSim({ iccid, activationCode });
-    return result;
+    await userService.bindSim({ iccid, activationCode });
+    return { success: true };
   } catch (err: any) {
     console.error('[bindSim] API error:', err?.message, 'code:', err?.code);
     throw err;
