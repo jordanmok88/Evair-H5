@@ -72,3 +72,4 @@ Relevant implementation: `hooks/useMobileSignInGate.ts`, `components/marketing/M
 _Use one dated line each; agents append newest at bottom. Optionally compress older bullets when this section grows._
 
 - 2026-04-29 — Jordan: proactively write lasting prefs into this file **without** making him say "add to standing instructions" every time; same-session `save.sh` when rules change.
+- 2026-04-29 — When Jordan says "review before we work," pull from **this file** + **`ongoing-work.mdc`** (+ other `alwaysApply` rules). **Do not** claim full Cursor chat replay; offer to fold any missing points he mentions into standing instructions.
