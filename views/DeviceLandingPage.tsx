@@ -11,8 +11,8 @@
  *     (Jordan's brand principle: honest pricing → fewer refunds).
  *   - Be readable when JS is slow / fonts haven't loaded — no
  *     animation gating, no API calls.
- *   - Funnel into `/app` for the actual purchase — plan cards are now
- *     immediately after the compact hero on all device pages.
+ *   - Funnel physical-SIM purchases to Amazon (see `AMAZON_SIM_PRIMARY_PRODUCT_URL`)
+ *     — plan cards sit immediately after the compact hero on all device pages.
  *
  * Sections (conversion-first):
  *   1. Header
@@ -44,6 +44,7 @@ interface DeviceLandingPageProps {
 
 const DeviceLandingPage: React.FC<DeviceLandingPageProps> = ({ category }) => {
     const content = DEVICE_CONTENT[category];
+    const ctaOpensExternal = content.ctaHref.startsWith('http');
 
     // Set tab title + meta description from JS for now. When we move to
     // a real SSR/SSG setup these become server-rendered <head> tags;
@@ -128,6 +129,9 @@ const DeviceLandingPage: React.FC<DeviceLandingPageProps> = ({ category }) => {
                             <p className="mb-5 text-sm leading-relaxed text-slate-600">{plan.summary}</p>
                             <a
                                 href={content.ctaHref}
+                                {...(ctaOpensExternal
+                                    ? { target: '_blank', rel: 'noopener noreferrer' }
+                                    : {})}
                                 className={`block rounded-xl py-2.5 text-center font-bold ${
                                     plan.highlight
                                         ? 'bg-orange-500 text-white'
@@ -368,6 +372,7 @@ const DeviceLandingPage: React.FC<DeviceLandingPageProps> = ({ category }) => {
                 </p>
                 <a
                     href={content.ctaHref}
+                    {...(ctaOpensExternal ? { target: '_blank', rel: 'noopener noreferrer' } : {})}
                     className="inline-flex items-center justify-center gap-2 bg-orange-500 text-white font-bold px-6 py-4 rounded-xl shadow-lg shadow-orange-500/20"
                 >
                     {content.ctaLabel} <ArrowRight size={18} />

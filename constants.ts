@@ -73,6 +73,9 @@ export const AMAZON_SIM_STOREFRONT_URL =
   (import.meta.env.VITE_AMAZON_SIM_STOREFRONT_URL as string | undefined) ||
   'https://www.amazon.com/s?k=EvairSIM';
 
+/** Canonical Amazon PDP — marketing “Pick a plan” buttons + `/sim/*` tier CTAs (physical SIM checkout via Amazon for now). */
+export const AMAZON_SIM_PRIMARY_PRODUCT_URL = 'https://www.amazon.com/dp/B0GZ2BVB1F';
+
 export const MOCK_PLANS_US: Plan[] = MOCK_COUNTRIES.find(c => c.countryCode === 'US')?.plans ?? [];
 
 export const MOCK_ORDERS: Order[] = [

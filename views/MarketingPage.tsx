@@ -14,7 +14,7 @@ import MobileOnlyNotice from '../components/marketing/MobileOnlyNotice';
 import { MarketingHeroCarousel } from '../components/marketing/MarketingHeroCarousel';
 import { OpenAppHeaderButton } from '../components/marketing/OpenAppHeaderButton';
 import { FooterWordmarkLink } from '../components/marketing/FooterWordmarkLink';
-import { AMAZON_SIM_STOREFRONT_URL } from '../constants';
+import { AMAZON_SIM_PRIMARY_PRODUCT_URL, AMAZON_SIM_STOREFRONT_URL } from '../constants';
 
 const APP_PATH = '/app';
 const ACTIVATE_PATH = '/activate';
@@ -328,7 +328,9 @@ const MarketingPage: React.FC = () => {
                                     {t('marketing.home_plan_carriers')}
                                 </p>
                                 <a
-                                    href={`${APP_PATH}#sim-card`}
+                                    href={AMAZON_SIM_PRIMARY_PRODUCT_URL}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
                                     className={`mt-3 inline-flex min-h-10 w-full items-center justify-center rounded-lg px-3 py-2 text-xs font-bold transition sm:min-h-11 sm:rounded-xl sm:py-2.5 sm:text-sm md:mt-auto md:min-h-12 md:py-3 ${
                                         p.popular
                                             ? 'bg-[#F27420] text-white hover:brightness-105'

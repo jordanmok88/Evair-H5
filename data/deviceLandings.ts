@@ -4,8 +4,8 @@
  * Each category has a static content block so the page is fully
  * server-renderable (and therefore crawlable). Plans listed here are
  * the **public price tiers** Marketing wants to advertise — the
- * actual catalogue still lives in Laravel, and the CTA buttons funnel
- * users into the H5 app where they pick a real package.
+ * actual catalogue still lives in Laravel. Plan-tier CTAs open the Amazon
+ * listing so purchases run there for now (`AMAZON_SIM_PRIMARY_PRODUCT_URL`).
  *
  * Brand principle (Jordan): **honest pricing = fewer refunds = more
  * profit**. Speed caps and throttling behaviour are stated up front,
@@ -31,6 +31,7 @@ import {
     Wrench,
 } from 'lucide-react';
 import type { DeviceCategory } from '../utils/routing';
+import { AMAZON_SIM_PRIMARY_PRODUCT_URL } from '../constants';
 
 export interface DevicePlan {
     /** Marketing label (e.g. "Starter"). */
@@ -97,7 +98,7 @@ export interface DeviceContent {
     plans: DevicePlan[];
     /** Short SEO FAQ — also kept as the questions support hears most. */
     faq: DeviceFAQ[];
-    /** Where the primary CTA points (always inside the H5 app). */
+    /** Where primary plan + footer CTAs point (physical SIM goes to Amazon for now). */
     ctaHref: string;
     /** Verb on the primary CTA ("Get a phone plan"). */
     ctaLabel: string;
@@ -201,7 +202,7 @@ export const DEVICE_CONTENT: Record<DeviceCategory, DeviceContent> = {
                 a: 'Yes. Tethering is included on all plans, capped to your remaining high-speed allotment.',
             },
         ],
-        ctaHref: '/app',
+        ctaHref: AMAZON_SIM_PRIMARY_PRODUCT_URL,
         ctaLabel: 'Get a data plan',
     },
 
@@ -292,7 +293,7 @@ export const DEVICE_CONTENT: Record<DeviceCategory, DeviceContent> = {
                 a: 'No. Pay monthly, cancel any time. Auto-renew is opt-in (not opt-out).',
             },
         ],
-        ctaHref: '/app',
+        ctaHref: AMAZON_SIM_PRIMARY_PRODUCT_URL,
         ctaLabel: 'Get a camera SIM',
     },
 
@@ -405,7 +406,7 @@ export const DEVICE_CONTENT: Record<DeviceCategory, DeviceContent> = {
                 a: 'No. Pay monthly, cancel any time. Auto-renew is opt-in (not opt-out).',
             },
         ],
-        ctaHref: '/app',
+        ctaHref: AMAZON_SIM_PRIMARY_PRODUCT_URL,
         ctaLabel: 'Get an IoT SIM',
     },
 };
