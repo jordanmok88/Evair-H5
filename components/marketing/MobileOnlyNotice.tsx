@@ -13,11 +13,12 @@
  *     PNG data URL. External QR image APIs often fail silently (privacy
  *     tools, flaky CDNs). Local generation keeps the popup reliable.
  *
- * Secondary escape: stays on the current marketing URL without redirecting into
- * `/app`; acknowledges so the next OPEN APP tap opens the app normally.
+ * Mounted with **createPortal(..., document.body)** so stacking context /
+ * ancestor `overflow:hidden` cannot hide the popup on dense marketing layouts.
  */
 
 import React, { useEffect, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import QRCode from 'qrcode';
 import { Smartphone, X } from 'lucide-react';
 
@@ -76,8 +77,8 @@ const MobileOnlyNotice: React.FC<MobileOnlyNoticeProps> = ({
 
     if (!open) return null;
 
-    return (
-        <div className="fixed inset-0 z-[100]" aria-live="polite">
+    const overlay = (
+        <div className="fixed inset-0 z-[200]" aria-live="polite">
             {/* Backdrop */}
             <button
                 type="button"
@@ -181,6 +182,8 @@ const MobileOnlyNotice: React.FC<MobileOnlyNoticeProps> = ({
             </div>
         </div>
     );
+
+    return typeof document !== 'undefined' ? createPortal(overlay, document.body) : null;
 };
 
 export default MobileOnlyNotice;
