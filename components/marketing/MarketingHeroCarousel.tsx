@@ -44,10 +44,9 @@ function usePrefersReducedMotion(): boolean {
  * Hero product tiles: IoT (01–04, 06), mobile/tablet/hotspot hero art, then camera (07–09).
  * Headline copy groups: `Math.floor(slideIndex / 3)` maps to three marketing message sets.
  * `planHref` jumps to each device landing «Pick a plan» block.
- * Imagery is **`w-full h-auto`** inside the branded frame (**`HERO_ART_FRAME_CLASS`**) so landscape
- * art is not vertically letterboxed — only a **`max-height`** caps very tall slides.
+ * Imagery fills the orange frame with **`object-cover`** (landscape **16:10** box) so narrow
+ * viewports do not show side letterboxing; captions match mobile (**gradient + bottom-left**).
  */
-/** Hero imagery: full column width, natural aspect ratio (**`max-h`** only — no forced letterboxing). */
 export const MARKETING_HERO_VISUAL_SLIDES = [
     {
         src: '/marketing/device-built-for/cell-01.png',
@@ -142,6 +141,55 @@ function HeroTrustStrip({
                 {t('marketing.trust_support')}
             </span>
         </div>
+    );
+}
+
+function HeroSlideFigure({
+    visual,
+    index,
+    variant,
+    figureClassName,
+}: {
+    visual: (typeof MARKETING_HERO_VISUAL_SLIDES)[number];
+    index: number;
+    variant: 'mobile' | 'desktop';
+    figureClassName: string;
+}) {
+    const { t } = useTranslation();
+    const keyPrefix = variant === 'mobile' ? 'm' : 'd';
+    const boxClass =
+        variant === 'mobile'
+            ? 'relative aspect-[16/10] w-full max-h-[min(17.5rem,52vmin)] sm:max-h-[min(18.75rem,56vmin)]'
+            : 'relative aspect-[16/10] w-full max-h-[min(30rem,min(65dvh,calc(100dvh-9.5rem)))]';
+
+    return (
+        <figure className={figureClassName}>
+            <div className={boxClass}>
+                <img
+                    key={`${keyPrefix}-${visual.src}-${index}`}
+                    src={visual.src}
+                    alt={t(visual.altKey)}
+                    sizes={
+                        variant === 'mobile'
+                            ? '100vw'
+                            : '(min-width: 1024px) min(46vw, 560px), 0px'
+                    }
+                    className="absolute inset-0 z-0 h-full w-full object-cover object-center"
+                    decoding="async"
+                    loading="eager"
+                    fetchPriority={index === 0 ? 'high' : 'auto'}
+                />
+                <div
+                    className="pointer-events-none absolute inset-0 z-[1] bg-gradient-to-t from-black/78 via-black/15 to-transparent"
+                    aria-hidden
+                />
+            </div>
+            <figcaption className="pointer-events-none absolute inset-x-0 bottom-0 z-[2] p-3 sm:p-4">
+                <p className="text-left text-sm font-semibold leading-snug text-white drop-shadow-sm md:text-[15px] lg:text-base">
+                    {t(visual.captionKey)}
+                </p>
+            </figcaption>
+        </figure>
     );
 }
 
@@ -265,29 +313,12 @@ export function MarketingHeroCarousel(props: MarketingHeroCarouselProps) {
                             aria-label={planLinkAria}
                             className="block touch-manipulation outline-none ring-offset-white focus-visible:ring-2 focus-visible:ring-[#2563eb] focus-visible:ring-offset-2"
                         >
-                            <figure
-                                className={`relative m-0 w-full bg-transparent ${HERO_ART_FRAME_CLASS}`}
-                            >
-                                <img
-                                    key={`m-${visual.src}-${index}`}
-                                    src={visual.src}
-                                    alt={t(visual.altKey)}
-                                    sizes="100vw"
-                                    className="relative z-0 block h-auto w-full max-h-[min(17.5rem,52vmin)] object-contain object-center sm:max-h-[min(18.75rem,56vmin)]"
-                                    decoding="async"
-                                    loading="eager"
-                                    fetchPriority={index === 0 ? 'high' : 'auto'}
-                                />
-                                <div
-                                    className="pointer-events-none absolute inset-0 z-[1] bg-gradient-to-t from-black/78 via-black/15 to-transparent"
-                                    aria-hidden
-                                />
-                                <figcaption className="pointer-events-none absolute inset-x-0 bottom-0 z-[2] p-3 sm:p-4">
-                                    <p className="text-left text-sm font-semibold leading-snug text-white drop-shadow-sm md:text-[15px]">
-                                        {t(visual.captionKey)}
-                                    </p>
-                                </figcaption>
-                            </figure>
+                            <HeroSlideFigure
+                                visual={visual}
+                                index={index}
+                                variant="mobile"
+                                figureClassName={`relative m-0 w-full bg-transparent ${HERO_ART_FRAME_CLASS}`}
+                            />
                         </a>
                     </div>
 
@@ -348,7 +379,7 @@ export function MarketingHeroCarousel(props: MarketingHeroCarouselProps) {
                     </div>
                 </div>
 
-                {/* Desktop: frame hugs each slide's aspect ratio; max-height avoids runaway portraits. */}
+                {/* Desktop: same 16:10 crop + bottom-left captions as mobile; orange frame via sticky wrapper. */}
                 <div className="relative hidden w-full min-w-0 lg:block">
                     <div
                         className={`sticky top-[4.25rem] w-full bg-transparent ${HERO_ART_FRAME_CLASS}`}
@@ -358,15 +389,11 @@ export function MarketingHeroCarousel(props: MarketingHeroCarouselProps) {
                             aria-label={planLinkAria}
                             className="block w-full outline-none ring-offset-white focus-visible:ring-2 focus-visible:ring-[#2563eb] focus-visible:ring-offset-4"
                         >
-                            <img
-                                key={`d-${visual.src}-${index}`}
-                                src={visual.src}
-                                alt={t(visual.altKey)}
-                                sizes="(min-width: 1024px) min(46vw, 560px), 0px"
-                                className="block h-auto w-full max-h-[min(30rem,min(65dvh,calc(100dvh-9.5rem)))] object-contain object-center"
-                                decoding="async"
-                                loading="eager"
-                                fetchPriority={index === 0 ? 'high' : 'auto'}
+                            <HeroSlideFigure
+                                visual={visual}
+                                index={index}
+                                variant="desktop"
+                                figureClassName="relative m-0 w-full"
                             />
                         </a>
                     </div>
