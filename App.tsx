@@ -252,10 +252,11 @@ function CustomerApp() {
     }
   }, []);
 
-  // `html.app-shell` — off only for full-bleed chrome: eSIM catalogue, or any tab at `md` (768px)+
-  // so windowed desktop / iPad never see the centred bezel; narrow phones keep confined scroll.
+  // Full-bleed: eSIM shop/checkout (desktop store UX). **`SIM_CARD`** stays in the centred
+  // phone frame on **`md`+** — physical-SIM landing is mobile-first and looked broken edge-to-edge on
+  // wide Safari (`layoutFullBleed || viewportMdUp` used to stretch it full width).
   const isEsimStoreTab = activeTab === Tab.ESIM;
-  const layoutFullBleed = isEsimStoreTab || viewportMdUp;
+  const layoutFullBleed = isEsimStoreTab || (viewportMdUp && activeTab !== Tab.SIM_CARD);
 
   useEffect(() => {
     const root = document.documentElement;
@@ -940,15 +941,10 @@ function CustomerApp() {
       }
     >
 
-      {/* Phone preview frame.
-          When `showStoreLayout` is on (eSIM tab) we render full-width
-          with no border / no rounded corners / no shadow / no fixed
-          height — the eSIM catalogue and checkout become a real
-          desktop store. Tab switching from eSIM into any account
-          tab (My SIMs, Profile, etc.) flips the layout back to the
-          contained iPhone-style mock by toggling these classes on
-          the same node, so the H5 still works as a brand showcase
-          for the customer-facing tabs. */}
+      {/* Phone preview frame vs full-bleed store.
+          `showStoreLayout` is false for **`SIM_CARD` at every viewport** — always the contained
+          mock (physical-SIM UX). True for **`ESIM`** (real desktop store). Other tabs (**`md`+
+          only**) use full-bleed without the bezel so inbox/profile don’t float in a tiny column. */}
       <div
         ref={phoneRef}
         className={
