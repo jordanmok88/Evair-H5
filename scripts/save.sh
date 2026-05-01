@@ -1,6 +1,8 @@
 #!/usr/bin/env bash
 # Evair H5 — one-command "save everything".
 # Stages, commits, and pushes to ALL configured git remotes.
+# Netlify: production deploy is triggered by push to GitHub (origin) on the
+# branch Netlify watches (main). There is no separate "push to Netlify".
 #
 # Usage:
 #   bash scripts/save.sh                # auto commit message (timestamp)

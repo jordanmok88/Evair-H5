@@ -24,6 +24,12 @@ does not receive a separate push** — it builds when **GitHub** (`origin`)
 gets the new commit on the branch Netlify watches (production **`main`**).
 So “push to Netlify” = **push to `origin main`** (via `save.sh`).
 
+Jordan wants updates live on Netlify ASAP: **always** finish the same turn with
+`save.sh` after any change you intend him to preview (never hand back only a
+local diff). Typical Netlify build + CDN is **~1–3 minutes** after the GitHub
+webhook; open the production URL or **Netlify → Deploys** if you need the
+exact “Published” time.
+
 If **`git push origin` fails** (e.g. “fetch first” / non-fast-forward), fix it
 in the same session and finish the save — do not leave the user with only a
 local commit:
