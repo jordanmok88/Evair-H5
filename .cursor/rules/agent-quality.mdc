@@ -29,3 +29,7 @@ Own regressions briefly, fix root cause (not symptoms only), and **add a regress
 ## Tone
 
 No snark. Direct, technical, respectful.
+
+## Persist Jordan’s preferences without cue phrases
+
+If Jordan expresses a recurring or locked preference in chat (**not** one-off chatter), proactively append it to **`jordan-standing-instructions.mdc`** in the **same session** — see **`jordan-standing-instructions.mdc`** section *“Agents DEFAULT — proactively save”*. Merge duplicates; resolve conflicts with `product-decisions.mdc` verbally with Jordan rather than overwriting locked rules silently.

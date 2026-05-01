@@ -1,5 +1,5 @@
 ---
-description: Jordan's distilled chat decisions — persistent so new agents avoid repeating mistakes. Not a verbatim chat log.
+description: Jordan's distilled chat decisions — proactive updates by agents so Jordan never repeats himself.
 alwaysApply: true
 ---
 
@@ -7,23 +7,45 @@ alwaysApply: true
 
 Jordan is **not** an engineer; replies to him should use **clear, plain English** when explaining tools or limits.
 
-## How this file works
+## How new agents pick this up
 
-- **New agents:** Instructions **load automatically** when this project is opened in Cursor. Read **`00-agent-start-here.mdc`** for the full ordered list—Jordan should not need to paste project rules each time.
-
-## Jordan asked: “automatically load all my chat history” for every new agent
-
-- **Cannot be done.** Chat threads live **inside Cursor’s app**, not in this Git repo. Agents have **no way** to pull your full past conversations into a new chat by themselves—it isn’t something we can turn on by editing Evair-H5 files.
-- **What *is* automatic:** Every rule here with **`alwaysApply: true`** (see **`00-agent-start-here.mdc`**) is your **official memory**—new agents load those docs without Jordan copying them again.
-- **Best way to preserve what you actually said:**
-  - For **sticky rules**, say **“Add this to my standing instructions.”** Short bullets beat pasting whole chats.
-  - In **Cursor Settings**, use **Rules for AI / Memories** if you see them—those are for **little facts** Cursor can replay globally (optional; product-dependent).
-  - Cursor may offer **chat export or share** elsewhere in the UI; if Jordan ever exports text, storing a **single summary markdown** under `docs/` is optional—we do **not** have auto-import of exports today.
+- Instructions **load automatically** when this project is opened in Cursor. Read **`00-agent-start-here.mdc`** for the full bundle order.
 
 ---
 
-- Cursor **cannot** paste every sentence from every past chat automatically. Past threads are **not** stored inside this repo as full transcripts.
-- This file holds **lasting decisions Jordan cares about**. When something new must stick, Jordan can say **"Add this to my standing instructions"** — the assistant should **append concise bullets here** (and run `scripts/save.sh` after code/rule changes).
+## HARD LIMIT — full Cursor chat replay
+
+- Cursor keeps past **threads inside the product**, not in Git. Agents **cannot** silently download Jordan’s entire chat history into a fresh session.
+- This file is therefore the **writable memory** Jordan controls through normal work—with **agents doing the clerical updating** so he doesn’t memorize cue phrases.
+
+---
+
+## Agents DEFAULT — proactively save what Jordan cares about (Jordan should not rely on cue phrases)
+
+**Jordan does **not** have to say things like “add this to standing instructions.”** Whenever he communicates something that reads as **lasting** — do this in **the same work session**:
+
+1. **Append a concise bullet** under the best matching heading below — or create a dated line under **`### Auto-captured (rolling)`**.
+2. **Merge duplicates** instead of stacking near-identical bullets; trim older wording if superseded.
+3. **Run `scripts/save.sh`** when you touched this repo (same turn as substantive work), unless Jordan asked for purely local experimentation.
+
+Treat as candidates for persistence when Jordan clearly means **policy**, not trivia:
+
+- “Always / never / don’t regress / you keep messing up…”
+- UX, copy, or workflow choices he wants unchanged next time  
+- Tone (e.g. English-only replies to Jordan) or deploy rhythm  
+- Frustrations after **repeated mistakes** — capture the corrective rule explicitly
+
+**Do not log:** small talk, one-off hypotheticals, ephemeral experiments he labels temporary.
+
+If a new bullet would **contradict** `.cursor/rules/product-decisions.mdc` or other locked rules — **tell Jordan politely**, don’t bury a conflict here.
+
+Jordan **may still** explicitly ask “save this”; that’s optional, not required.
+
+Other files stay authoritative:
+
+- `.cursor/rules/ongoing-work.mdc` — current work thread  
+- `.cursor/rules/product-decisions.mdc` — locked product decisions (e.g. AI assistant tone, no emojis)  
+- `.cursor/rules/agent-quality.mdc` — logic, regressions, pushback  
 
 ## Communication
 
@@ -43,14 +65,10 @@ See also: `.cursor/rules/auto-save-workflow.mdc`.
 
 Relevant implementation: `hooks/useMobileSignInGate.ts`, `components/marketing/MobileOnlyNotice.tsx`, `utils/device.ts`.
 
-## Other rules still apply
+---
 
-This file adds Jordan-specific chat outcomes. These remain authoritative and overlapping items win on product/tech specifics:
+### Auto-captured (rolling)
 
-- `.cursor/rules/ongoing-work.mdc` — current work thread
-- `.cursor/rules/product-decisions.mdc` — locked product decisions (e.g. AI assistant tone, no emojis)
-- `.cursor/rules/agent-quality.mdc` — logic, regressions, pushback when direction conflicts with rules
+_Use one dated line each; agents append newest at bottom. Optionally compress older bullets when this section grows._
 
-## Appendix — growth pattern
-
-Jordan can paste bullets himself here, or ask the assistant to merge a short list after a chat. Prefer **specific** lines ("never X when Y") over long stories.
+- 2026-04-29 — Jordan: proactively write lasting prefs into this file **without** making him say "add to standing instructions" every time; same-session `save.sh` when rules change.

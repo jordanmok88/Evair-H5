@@ -12,7 +12,7 @@ alwaysApply: true
 
 ## Skim these in order before your first substantive edit
 
-1. **`jordan-standing-instructions.mdc`** — human preferences distilled from chats (language, deploy, OPEN APP UX).
+1. **`jordan-standing-instructions.mdc`** — human preferences from chats (**agents update this proactively** when Jordan states lasting rules — he doesn’t owe you a cue phrase).
 2. **`ongoing-work.mdc`** — what is actively in-flight and what already shipped (avoid rework).
 3. **`product-decisions.mdc`** — locked product decisions — do not re-debate without Jordan.
 4. **`auto-save-workflow.mdc`** — commit/push **`scripts/save.sh`** after meaningful changes → GitHub triggers Netlify.
