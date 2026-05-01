@@ -11,7 +11,22 @@ Jordan is **not** an engineer; replies to him should use **clear, plain English*
 
 - Instructions **load automatically** when this project is opened in Cursor. Read **`00-agent-start-here.mdc`** for the full bundle order.
 
+## What actually sticks (plain English — Jordan asked “plugin or auto-save?”)
+
+**There is no secret plugin that downloads your whole Cursor chat history into Git.** Assistants inside Evair‑H5 read **whatever is committed in this repo** (rules + this file).
+
+| What helps | Does it reduce repeat mistakes? |
+|------------|----------------------------------|
+| **This file (`jordan-standing-instructions.mdc`) + other `.cursor/rules/*.mdc` files** | **Yes.** New agents for **Evair‑H5** receive them automatically when Cursor injects **`alwaysApply`** rules. Tell an assistant plainly what must never regress; **they are supposed to add a bullet here** during the session (Jordan does **not** need a cue phrase). |
+| **`scripts/save.sh`** after edits | **Yes for teamwork + Netlify.** It **commits and pushes Git** — that is **not** the same button as “save chat”, but **without push** nobody else (and sometimes not even you tomorrow) has the latest written rules. |
+| **Cursor → Settings → Rules for AI** | **Yes, globally** — short lines that apply to **every** project you open. |
+| **Cursor “Memories”** (if your Cursor version shows it) | **A little** — good for short facts; **not** a copy of every chat. |
+| **“Old chats” inside Cursor** | Assistants **cannot** auto-import them into this folder. If something matters, it must land as **text in a file** (above). |
+
+**Bottom line:** Memory you can rely on = **written in project files**. Auto-save assistants use = **`save.sh`** when Git should update. Plugins don’t replace that.
+
 ---
+
 
 ## HARD LIMIT — full Cursor chat replay
 
@@ -73,3 +88,4 @@ _Use one dated line each; agents append newest at bottom. Optionally compress ol
 
 - 2026-04-29 — Jordan: proactively write lasting prefs into this file **without** making him say "add to standing instructions" every time; same-session `save.sh` when rules change.
 - 2026-04-29 — When Jordan says "review before we work," pull from **this file** + **`ongoing-work.mdc`** (+ other `alwaysApply` rules). **Do not** claim full Cursor chat replay; offer to fold any missing points he mentions into standing instructions.
+- 2026-04-29 — Plain “what sticks” table added (no plugin for full chat; files + optional Cursor Rules/Memories; `save.sh` for Git/Netlify). Don’t dodge—point Jordan at that section.
