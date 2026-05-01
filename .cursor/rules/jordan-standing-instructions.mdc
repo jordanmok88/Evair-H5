@@ -74,7 +74,7 @@ See also: `.cursor/rules/auto-save-workflow.mdc`.
 
 ## OPEN APP / mobile gate (marketing — do not regress)
 
-- For **narrowing desktop** users: deciding "phone vs desktop" for the OPEN APP modal should **not** rely only on a small window width (`max-width`). Use **`isMobileUserAgentClient()`** (user-agent intent) where the gate skips the modal; **do not conflate with `isMobileDevice()`** usages that intentionally include viewport (other call sites stay as documented in code).
+- For **narrowing desktop** users: the OPEN APP gate skips the QR modal only on **handset-like** browsers **and** **viewport &lt; `lg` (1024px)**. At **`min-width: 1024px`** the modal **always** appears (when not acked) so real desktop sessions never lose the QR flow to UA quirks or DevTools. Use **`isMobileUserAgentClient()`** only inside that hook’s narrow-viewport branch — do not conflate with **`isMobileDevice()`** for broader marketing CTAs.
 
 - **"Continue on desktop anyway"**: must **not** send users to `/app`; they **stay on the current marketing URL**. Only acknowledge + close. Next OPEN APP tap may use ack and proceed to `/app` without reopening the modal.
 

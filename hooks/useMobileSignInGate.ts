@@ -14,14 +14,15 @@
  *
  * Behaviour summary:
  *
- *   - Mobile **browser UA** click → fall through to <a href="/app"> (no-op).
- *     (Viewport width is ignored here so narrow desktop windows still get the modal.)
- *   - Desktop click, not acked → preventDefault + open the modal.
- *   - Desktop click, acked     → fall through to <a href="/app"> (no modal).
- *                                Ack is set when the user chooses "Continue on
- *                                desktop anyway" — they stay on the current
- *                                marketing URL; the next OPEN APP tap goes
- *                                straight to the app shell.
+ *   - **Mobile-width viewport** (< `lg` / 1024px) **and** handset-like UA (or
+ *     Client Hints `mobile: true`) → fall through to `/app` (no modal).
+ *   - **Desktop layout** (`min-width: 1024px`) → **always** show the QR modal
+ *     when not acked, even if UA looks like a phone (fixes DevTools emulation,
+ *     embedded browsers, odd corporate UAs).
+ *   - **Narrow viewport** (&lt;1024px): not acked → preventDefault + modal, **unless**
+ *     the session looks like a handset (see `shouldSkipOpenAppQrModal`).
+ *   - Acked (`Continue on desktop anyway`) → fall through to `/app` without modal;
+ *     they stay on the current marketing URL until then; next OPEN APP goes straight into the shell.
  *
  * The dismissal flag is stored in localStorage with a versioned key so
  * we can invalidate it later (e.g. when we ship a real desktop
@@ -34,7 +35,14 @@ import { useCallback, useState } from 'react';
 import type React from 'react';
 import { isMobileUserAgentClient } from '../utils/device';
 
-const ACK_STORAGE_KEY = 'evair_desktop_signin_acked.v1';
+/** v2 — reset with 2026-05 QR gate fix (wide viewport always shows modal). */
+const ACK_STORAGE_KEY = 'evair_desktop_signin_acked.v2';
+
+function shouldSkipOpenAppQrModal(): boolean {
+    if (typeof window === 'undefined') return false;
+    if (window.matchMedia('(min-width: 1024px)').matches) return false;
+    return isMobileUserAgentClient();
+}
 
 function readAck(): boolean {
     try {
@@ -76,7 +84,7 @@ export function useMobileSignInGate(appPath: string = '/app'): MobileSignInGate 
 
     const gateClick = useCallback(
         (e: React.MouseEvent<HTMLAnchorElement>) => {
-            if (isMobileUserAgentClient()) return;
+            if (shouldSkipOpenAppQrModal()) return;
             if (readAck()) return;
             e.preventDefault();
             setOpen(true);

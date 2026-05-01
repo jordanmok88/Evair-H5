@@ -38,7 +38,10 @@ export function isMobileDevice(): boolean {
     if (typeof window === 'undefined') return false;
 
     const ua = navigator.userAgent || '';
-    const uaMobile = /iPhone|iPad|iPod|Android|Mobile|Silk|BlackBerry|IEMobile|Opera Mini/i.test(ua);
+    const uaMobile =
+        /iPhone|iPad|iPod|Android|CriOS|FxiOS|IEMobile|Opera Mini|webOS|Mobile Safari|SamsungBrowser|Silk\/|BlackBerry|BB10|\bUCBrowser\b/i.test(
+            ua,
+        );
     const narrow =
         typeof window.matchMedia === 'function' &&
         window.matchMedia('(max-width: 1023px)').matches;
@@ -52,8 +55,23 @@ export function isMobileDevice(): boolean {
  * window must still see the scan-QR dialog; `isMobileDevice()` would wrongly
  * treat them as mobile because of `max-width: 1023px`.
  */
+/**
+ * True when the **User-Agent string** looks like a handset / tablet browser.
+ * Does **not** consult viewport (see `useMobileSignInGate` for OPEN APP: wide
+ * desktop layouts always get the QR modal even if UA is odd or DevTools-spoofed).
+ *
+ * Avoids a bare `Mobile` token (too easy to false-positive on unexpected UAs).
+ */
 export function isMobileUserAgentClient(): boolean {
     if (typeof window === 'undefined') return false;
+
+    const ud = navigator.userAgentData as { mobile?: boolean } | undefined;
+    if (ud && typeof ud.mobile === 'boolean') {
+        return ud.mobile;
+    }
+
     const ua = navigator.userAgent || '';
-    return /iPhone|iPad|iPod|Android|Mobile|Silk|BlackBerry|IEMobile|Opera Mini/i.test(ua);
+    return /iPhone|iPad|iPod|Android|CriOS|FxiOS|IEMobile|Opera Mini|webOS|Mobile Safari|SamsungBrowser|Silk\/|BlackBerry|BB10|\bUCBrowser\b/i.test(
+        ua,
+    );
 }
