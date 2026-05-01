@@ -41,8 +41,8 @@ function usePrefersReducedMotion(): boolean {
  * Hero product tiles: IoT (01–04, 06), mobile/tablet/hotspot hero art, then camera (07–09).
  * Headline copy groups: `Math.floor(slideIndex / 3)` maps to three marketing message sets.
  * `planHref` jumps to each device landing «Pick a plan» block.
- * Imagery is `object-contain` / centred inside flex frames (not absolute fill) so
- * subjects stay visually balanced; desktop frame is landscape-friendly (no tall 5:6 gutter).
+ * Imagery is `object-contain` / centred inside flex frames; hero chrome uses a
+ * **transparent** card (no grey “mat” behind the PNG) so only the artwork reads.
  */
 /** Hero imagery uses `object-contain` so devices stay centred and are not clipped. */
 export const MARKETING_HERO_VISUAL_SLIDES = [
@@ -262,7 +262,7 @@ export function MarketingHeroCarousel(props: MarketingHeroCarouselProps) {
                             aria-label={planLinkAria}
                             className="block touch-manipulation outline-none ring-offset-white focus-visible:ring-2 focus-visible:ring-[#2563eb] focus-visible:ring-offset-2"
                         >
-                            <figure className="relative m-0 flex h-[clamp(9rem,38vmin,240px)] w-full items-center justify-center overflow-hidden rounded-2xl bg-gradient-to-b from-slate-100 to-slate-200/95 p-2 shadow-md ring-1 ring-gray-100 sm:h-[clamp(10rem,40vmin,280px)] sm:p-3">
+                            <figure className="relative m-0 flex h-[clamp(9rem,38vmin,240px)] w-full items-center justify-center overflow-hidden rounded-2xl bg-transparent sm:h-[clamp(10rem,40vmin,280px)]">
                                 <img
                                     key={`m-${visual.src}-${index}`}
                                     src={visual.src}
@@ -345,11 +345,11 @@ export function MarketingHeroCarousel(props: MarketingHeroCarouselProps) {
 
                 {/* Desktop: photo frame matches landscape product art — flex-centre + shallower than old 5/6 to avoid huge letterboxing */}
                 <div className="relative hidden w-full min-w-0 lg:block">
-                    <div className="sticky top-[4.25rem] flex h-[clamp(17rem,min(52dvh,26rem),28rem)] w-full max-h-[min(28rem,min(62dvh,calc(100dvh-10.5rem)))] min-h-[15rem] flex-col overflow-hidden rounded-2xl bg-gradient-to-b from-slate-100 via-slate-50 to-slate-200/95 shadow-lg ring-1 ring-gray-200/80 xl:h-[clamp(18rem,min(54dvh,28rem),30rem)] xl:max-h-[min(30rem,min(65dvh,calc(100dvh-9.5rem)))]">
+                    <div className="sticky top-[4.25rem] flex h-[clamp(17rem,min(52dvh,26rem),28rem)] w-full max-h-[min(28rem,min(62dvh,calc(100dvh-10.5rem)))] min-h-[15rem] flex-col overflow-hidden rounded-2xl bg-transparent xl:h-[clamp(18rem,min(54dvh,28rem),30rem)] xl:max-h-[min(30rem,min(65dvh,calc(100dvh-9.5rem)))]">
                         <a
                             href={visual.planHref}
                             aria-label={planLinkAria}
-                            className="flex h-full min-h-0 w-full flex-1 items-center justify-center p-3 outline-none ring-offset-white focus-visible:ring-2 focus-visible:ring-[#2563eb] focus-visible:ring-offset-4 sm:p-4"
+                            className="flex h-full min-h-0 w-full flex-1 items-center justify-center p-0 outline-none ring-offset-white focus-visible:ring-2 focus-visible:ring-[#2563eb] focus-visible:ring-offset-4"
                         >
                             <img
                                 key={`d-${visual.src}-${index}`}
