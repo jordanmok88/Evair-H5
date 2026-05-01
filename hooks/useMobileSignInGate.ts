@@ -1,29 +1,48 @@
 /**
- * Click gate for the marketing-site "OPEN APP" CTA.
+ * Click gate for the marketing-site "OPEN APP" CTA — **hybrid** detection.
  *
- * Decision is **viewport-only** (no User-Agent):
- *   • `max-width: 767px` (below Tailwind `md`) → real phone-sized window; follow
- *     the link straight to `/app` (no QR modal).
- *   • `min-width: 768px` → tablet, iPad, resized desktop — always intercept with
- *     the QR modal first (unless the visitor already chose "open app next time").
+ *   • **`min-width: 768px`** (Tailwind `md`+) → always intercept with the QR modal
+ *     first (unless acked). Viewport carries the decision; UA quirks cannot drop
+ *     the modal on tablets / desktop Safari at full width.
  *
- * That matches Jordan's rule: everything except a narrow "mobile" band shows the QR.
+ *   • **`max-width: 767px`** → **skip** the modal (straight to `/app`) only when
+ *     the session looks like a handheld: **`isMobileUserAgentClient()`** (UA-CH
+ *     `mobile` when available), **or** primary **`(pointer: coarse)`** with
+ *     **`(hover: none)`** (touch-first, no hover device). Narrow **desktop**
+ *     windows therefore still get the QR.
  *
- * @see `APP_WIDE_LAYOUT_MIN_PX` in App.tsx (`md` / 768 — same split for `/app` chrome).
+ * Trade-off: "Request desktop site" on a phone can show the QR in a skinny window.
+ *
+ * @see `APP_WIDE_LAYOUT_MIN_PX` in App.tsx (`md` / 768).
  */
 
 import { useCallback, useState } from 'react';
 import type React from 'react';
+import { isMobileUserAgentClient } from '@/utils/device';
 
 /** Must match App.tsx `APP_WIDE_LAYOUT_MIN_PX` (Tailwind `md`). */
 const MOBILE_VIEWPORT_MAX_PX = 767;
 
-/** v3 — viewport-only gate; clears older ack keys so QR is not stuck off. */
+/** v3 — bumped when gate semantics changed; hybrid still uses same key after v3. */
 const ACK_STORAGE_KEY = 'evair_desktop_signin_acked.v3';
 
 function isNarrowMobileViewport(): boolean {
     if (typeof window === 'undefined') return false;
     return window.matchMedia(`(max-width: ${MOBILE_VIEWPORT_MAX_PX}px)`).matches;
+}
+
+/** True → follow `href` to `/app` without opening `MobileOnlyNotice`. */
+function shouldSkipOpenAppQrModal(): boolean {
+    if (!isNarrowMobileViewport()) return false;
+    if (isMobileUserAgentClient()) return true;
+    try {
+        const coarse = window.matchMedia?.('(pointer: coarse)')?.matches === true;
+        const noHover = window.matchMedia?.('(hover: none)')?.matches === true;
+        if (coarse && noHover) return true;
+    } catch {
+        /* matchMedia unsupported */
+    }
+    return false;
 }
 
 function readAck(): boolean {
@@ -65,7 +84,7 @@ export function useMobileSignInGate(_appPath: string = '/app'): MobileSignInGate
 
     const gateClick = useCallback(
         (e: React.MouseEvent<HTMLAnchorElement>) => {
-            if (isNarrowMobileViewport()) return;
+            if (shouldSkipOpenAppQrModal()) return;
             if (readAck()) return;
             e.preventDefault();
             setOpen(true);

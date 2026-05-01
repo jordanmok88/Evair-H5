@@ -2,9 +2,9 @@
  * Modal shown to desktop visitors who tap "OPEN APP" on the
  * marketing site.
  *
- * IMPORTANT: this modal is **skipped only for narrow phone viewports**.
- * `useMobileSignInGate` skips when **`max-width: 767px`** — desktop/iPad/tablet-width
- * windows always see this dialog first (unless the visitor acknowledged "open next time").
+ * IMPORTANT: **Wide viewports (`min-width: 768px`)** always show this modal
+ * first (unless acknowledged). Below **`md`**, it is skipped for handheld-like
+ * sessions only — see **`useMobileSignInGate`** (UA + **`pointer` / `hover`**).
  *
  * Contents:
  *

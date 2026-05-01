@@ -50,15 +50,10 @@ export function isMobileDevice(): boolean {
 }
 
 /**
- * **User-agent only** — no viewport check.
- * Used by the marketing "OPEN APP" modal gate: desktop browsers with a narrow
- * window must still see the scan-QR dialog; `isMobileDevice()` would wrongly
- * treat them as mobile because of `max-width: 1023px`.
- */
-/**
- * True when the **User-Agent string** looks like a handset / tablet browser.
- * Does **not** consult viewport (see `useMobileSignInGate` for OPEN APP: wide
- * desktop layouts always get the QR modal even if UA is odd or DevTools-spoofed).
+ * True when the **User-Agent** (or UA-CH `mobile`) looks like a handset / tablet browser.
+ * Does **not** consult viewport. **`useMobileSignInGate`** uses this in the **`max-width:
+ * 767px`** branch together with **`pointer` / `hover`** media queries, while
+ * **`min-width: 768px`** still always shows the QR first (unless acked).
  *
  * Avoids a bare `Mobile` token (too easy to false-positive on unexpected UAs).
  */
