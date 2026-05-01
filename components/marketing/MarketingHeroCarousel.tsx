@@ -19,6 +19,9 @@ const PLAN_HREF_PHONE = '/sim/phone#plans';
 const PLAN_HREF_IOT = '/sim/iot#plans';
 const PLAN_HREF_CAMERA = '/sim/camera#plans';
 
+/** 3px `#FF6600` frame — Tailwind `brand-orange` / app.css `--color-brand-orange`. */
+const HERO_ART_FRAME_CLASS = 'overflow-hidden rounded-2xl border-[3px] border-brand-orange';
+
 function nextSlideDelayMs(): number {
     const r = SLIDE_INTERVAL_MIN_MS + Math.random() * (SLIDE_INTERVAL_MAX_MS - SLIDE_INTERVAL_MIN_MS);
     return Math.round(r);
@@ -262,7 +265,9 @@ export function MarketingHeroCarousel(props: MarketingHeroCarouselProps) {
                             aria-label={planLinkAria}
                             className="block touch-manipulation outline-none ring-offset-white focus-visible:ring-2 focus-visible:ring-[#2563eb] focus-visible:ring-offset-2"
                         >
-                            <figure className="relative m-0 flex h-[clamp(9rem,38vmin,240px)] w-full items-center justify-center overflow-hidden rounded-2xl bg-transparent sm:h-[clamp(10rem,40vmin,280px)]">
+                            <figure
+                                className={`relative m-0 flex h-[clamp(9rem,38vmin,240px)] w-full items-center justify-center bg-transparent sm:h-[clamp(10rem,40vmin,280px)] ${HERO_ART_FRAME_CLASS}`}
+                            >
                                 <img
                                     key={`m-${visual.src}-${index}`}
                                     src={visual.src}
@@ -345,7 +350,9 @@ export function MarketingHeroCarousel(props: MarketingHeroCarouselProps) {
 
                 {/* Desktop: photo frame matches landscape product art — flex-centre + shallower than old 5/6 to avoid huge letterboxing */}
                 <div className="relative hidden w-full min-w-0 lg:block">
-                    <div className="sticky top-[4.25rem] flex h-[clamp(17rem,min(52dvh,26rem),28rem)] w-full max-h-[min(28rem,min(62dvh,calc(100dvh-10.5rem)))] min-h-[15rem] flex-col overflow-hidden rounded-2xl bg-transparent xl:h-[clamp(18rem,min(54dvh,28rem),30rem)] xl:max-h-[min(30rem,min(65dvh,calc(100dvh-9.5rem)))]">
+                    <div
+                        className={`sticky top-[4.25rem] flex h-[clamp(17rem,min(52dvh,26rem),28rem)] w-full max-h-[min(28rem,min(62dvh,calc(100dvh-10.5rem)))] min-h-[15rem] flex-col bg-transparent xl:h-[clamp(18rem,min(54dvh,28rem),30rem)] xl:max-h-[min(30rem,min(65dvh,calc(100dvh-9.5rem)))] ${HERO_ART_FRAME_CLASS}`}
+                    >
                         <a
                             href={visual.planHref}
                             aria-label={planLinkAria}

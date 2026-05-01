@@ -1,10 +1,7 @@
 /**
- * Modal shown to desktop visitors who tap "OPEN APP" on the
- * marketing site.
- *
- * IMPORTANT: **Wide viewports (`min-width: 768px`)** always show this modal
- * first (unless acknowledged). Below **`md`**, it is skipped for handheld-like
- * sessions only — see **`useMobileSignInGate`** (UA + **`pointer` / `hover`**).
+ * Desktop QR modal — **`OPEN APP`** (marketing click) **`useMobileSignInGate`**
+ * and **`/app`** shell auto-prompt **`useCustomerAppDesktopQr`** use the same
+ * component + ack (**`hooks/useMobileSignInGate`**).
  *
  * Contents:
  *
