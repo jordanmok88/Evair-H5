@@ -42,7 +42,7 @@
  * @see components/desktop/DesktopEsimSuccess.tsx
  */
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import {
     AlertTriangle,
     ArrowRight,
@@ -50,6 +50,7 @@ import {
     Globe,
     Loader2,
     QrCode,
+    Search,
     Wifi,
     Zap,
 } from 'lucide-react';
@@ -74,6 +75,7 @@ import { isMobileDevice } from '../utils/device';
 import { applyPageSeo } from '../utils/seoHead';
 import type { EsimPackage } from '../types';
 import type { UserDto } from '../services/api/types';
+import { sortRowsForShelf } from '../utils/travelEsimCatalogRank';
 
 /** Maps ISO codes to catalogue shelf headers (marketing index). */
 const MIDDLE_EAST_SHELF = new Set([
@@ -103,7 +105,7 @@ function buildShelfRowsSingleCountries(groups: EsimCountryGroup[]): Record<strin
         (out[shelf] ??= []).push({ code, name: g.locationName, priceFromUsd });
     }
     for (const k of Object.keys(out)) {
-        out[k]!.sort((a, b) => a.name.localeCompare(b.name));
+        out[k] = sortRowsForShelf(k, out[k]!);
     }
     return out;
 }
@@ -112,11 +114,12 @@ function shelfRowsFromStaticTravelCountries(): Record<string, ShelfRow[]> {
     const byRegion = groupByRegion();
     const out: Record<string, ShelfRow[]> = {};
     for (const [region, list] of Object.entries(byRegion)) {
-        out[region] = list.map(c => ({
+        const rows = list.map(c => ({
             code: c.code,
             name: c.name,
             priceFromUsd: c.priceFromUsd,
         }));
+        out[region] = sortRowsForShelf(region, rows);
     }
     return out;
 }
@@ -619,10 +622,11 @@ const CountryNotFoundView: React.FC<{ code: string }> = ({ code }) => (
  */
 const INITIAL_VISIBLE_PER_REGION = 6;
 
+/** Americas + Asia surface first — US outbound audience. Remaining continents follow. */
 const CATALOGUE_SHELF_ORDER: TravelCountry['region'][] = [
+    'Americas',
     'Asia',
     'Europe',
-    'Americas',
     'Oceania',
     'Middle East',
     'Africa',
@@ -674,6 +678,8 @@ const CatalogueIndexView: React.FC = () => {
         () => new Set(),
     );
 
+    const [catalogueSearch, setCatalogueSearch] = useState('');
+
     const toggleRegion = (region: string) => {
         setExpandedRegions(prev => {
             const next = new Set(prev);
@@ -684,6 +690,24 @@ const CatalogueIndexView: React.FC = () => {
     };
 
     const grouped = facetState.kind === 'ready' ? facetState.grouped : {};
+
+    const filteredGrouped = useMemo(() => {
+        const q = catalogueSearch.trim().toLowerCase();
+        if (!q) return grouped;
+        const next: Record<string, ShelfRow[]> = {};
+        for (const shelf of CATALOGUE_SHELF_ORDER) {
+            const list = grouped[shelf];
+            if (!list?.length) continue;
+            const hit = list.filter(
+                row =>
+                    row.name.toLowerCase().includes(q) ||
+                    row.code.toLowerCase().includes(q),
+            );
+            if (hit.length) next[shelf] = hit;
+        }
+        return next;
+    }, [grouped, catalogueSearch]);
+
     const headlineCount =
         facetState.kind === 'ready'
             ? facetState.singleCountryCount >= 200
@@ -726,14 +750,52 @@ const CatalogueIndexView: React.FC = () => {
                 id="popular-destinations"
                 className="px-4 md:px-8 pt-4 md:pt-6 pb-16 max-w-6xl mx-auto"
             >
+                {facetState.kind === 'ready' && (
+                    <div className="max-w-xl mx-auto mb-8">
+                        <label htmlFor="travel-esim-catalogue-search" className="sr-only">
+                            Search destinations
+                        </label>
+                        <div className="relative">
+                            <Search
+                                size={18}
+                                className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none"
+                                aria-hidden
+                            />
+                            <input
+                                id="travel-esim-catalogue-search"
+                                type="search"
+                                enterKeyHint="search"
+                                placeholder="Search by country…"
+                                value={catalogueSearch}
+                                onChange={e => setCatalogueSearch(e.target.value)}
+                                className="w-full rounded-xl border border-slate-200 bg-white pl-10 pr-4 py-3 text-slate-900 placeholder:text-slate-400 shadow-sm focus:border-orange-400 focus:ring-2 focus:ring-orange-200 outline-none transition"
+                            />
+                        </div>
+                        {catalogueSearch.trim() && (
+                            <p className="mt-2 text-center text-sm text-slate-500">
+                                Showing matches across all regions. Clear search to browse the full catalogue by
+                                region.
+                            </p>
+                        )}
+                    </div>
+                )}
                 {facetState.kind === 'loading' && (
                     <div className="flex justify-center py-16">
                         <Loader2 size={36} className="animate-spin text-orange-500" aria-hidden />
                     </div>
                 )}
                 {facetState.kind === 'ready' &&
-                    CATALOGUE_SHELF_ORDER.filter(r => grouped[r]?.length).map(region => {
-                        const all = grouped[region]!;
+                    catalogueSearch.trim() &&
+                    !CATALOGUE_SHELF_ORDER.some(s => filteredGrouped[s]?.length) && (
+                        <p className="text-center text-slate-600 py-12 px-4">
+                            No destinations match{' '}
+                            <span className="font-semibold text-slate-900">"{catalogueSearch.trim()}"</span>.
+                            Try another spelling or browse the full catalogue.
+                        </p>
+                    )}
+                {facetState.kind === 'ready' &&
+                    CATALOGUE_SHELF_ORDER.filter(r => filteredGrouped[r]?.length).map(region => {
+                        const all = filteredGrouped[region]!;
                         const isExpanded = expandedRegions.has(region);
                         const showToggle = all.length > INITIAL_VISIBLE_PER_REGION;
                         const visible = isExpanded ? all : all.slice(0, INITIAL_VISIBLE_PER_REGION);
