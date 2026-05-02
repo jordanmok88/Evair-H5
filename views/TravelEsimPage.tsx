@@ -401,8 +401,8 @@ const HeroCountryBanner: React.FC<{ code: string; name: string }> = ({ code, nam
                   )
                 : '🌐';
         return (
-            <div className="relative flex aspect-[5/3] w-[min(300px,88vw)] shrink-0 flex-col items-center justify-center gap-2 overflow-hidden rounded-2xl border border-slate-200 bg-gradient-to-br from-slate-100 to-orange-50 p-4 shadow-lg md:w-[320px] md:p-5 lg:rounded-3xl lg:shadow-xl">
-                <span className="text-5xl leading-none md:text-6xl" aria-hidden>
+            <div className="flex w-full max-w-[min(620px,calc(100vw-32px))] shrink-0 flex-col items-center justify-center gap-2 rounded-2xl px-6 py-8 shadow-xl ring-1 ring-slate-900/[0.08] md:max-w-[min(680px,46vw)] md:rounded-3xl lg:max-w-none lg:w-[min(680px,max(520px,40vw))]">
+                <span className="text-7xl leading-none md:text-8xl lg:text-9xl" aria-hidden>
                     {glyph}
                 </span>
                 <span className="text-xs font-bold text-slate-600 md:text-sm">{name}</span>
@@ -414,19 +414,23 @@ const HeroCountryBanner: React.FC<{ code: string; name: string }> = ({ code, nam
         tier === 'w640' ? `https://flagcdn.com/w640/${iso}.png` : `https://flagcdn.com/w320/${iso}.png`;
 
     return (
-        <div className="relative flex aspect-[5/3] w-[min(300px,88vw)] shrink-0 items-center justify-center overflow-hidden rounded-2xl border border-slate-200 bg-slate-100 p-3 shadow-lg md:w-[320px] md:p-4 lg:rounded-3xl lg:shadow-xl">
+        <div className="shrink-0 overflow-hidden rounded-2xl shadow-xl ring-1 ring-slate-900/[0.08] md:rounded-3xl">
             {/*
-              Never use object-cover on national flags: wide ratios (CA, CH, …) get cropped
-              to the center charge only. object-contain keeps the full flag correct.
+              Do not inset the bitmap in a tinted box (`bg-slate-100` + padding + `contain`):
+              that reads as “wrong matte” framing. CDN PNGs are already the rectangular
+              hoist/fly extents — size by width + h-auto preserves each country’s ratio
+              edge-to-edge. Never use object-cover inside a mismatched fixed box — it crops
+              wide flags (CA, …) down to center charge only.
             */}
             <img
                 src={src}
                 alt=""
-                className="h-full w-full object-contain object-center"
+                className="block h-auto w-[min(520px,calc(100vw-32px))] max-w-none md:w-[min(620px,max(460px,44vw))] lg:w-[min(680px,max(520px,40vw))]"
                 width={640}
-                height={384}
+                height={320}
                 loading="lazy"
                 decoding="async"
+                sizes="(min-width: 1024px) 680px, (min-width: 768px) 44vw, calc(100vw - 32px)"
                 onError={() => setTier((t) => (t === 'w640' ? 'w320' : 'emoji'))}
             />
             <span className="sr-only">{name}</span>
