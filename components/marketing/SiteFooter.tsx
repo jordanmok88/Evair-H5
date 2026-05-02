@@ -9,20 +9,19 @@
 
 import React, { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
+import { MARKETING_NAV_ITEMS } from './siteNavConfig';
 
 const SiteFooter: React.FC = () => {
     const { t } = useTranslation();
     const footerLinks = useMemo(
         () => [
-            { label: 'Home', href: '/welcome' as const },
-            { label: t('marketing.nav_mobile'), href: '/sim/phone' as const },
-            { label: 'Camera', href: '/sim/camera' as const },
-            { label: 'IoT', href: '/sim/iot' as const },
-            { label: 'Travel eSIM', href: '/travel-esim' as const },
-            { label: 'Help', href: '/help' as const },
-            { label: 'Blog', href: '/blog' as const },
-            { label: 'Refunds', href: '/legal/refund' as const },
-            { label: 'Support', href: 'mailto:service@evairdigital.com' as const },
+            { label: t('marketing.footer_flat_home'), href: '/welcome' as const },
+            ...MARKETING_NAV_ITEMS.map((item) => ({
+                label: t(item.labelKey),
+                href: `${item.href}` as const,
+            })),
+            { label: t('marketing.footer_flat_refunds'), href: '/legal/refund' as const },
+            { label: t('marketing.footer_flat_support'), href: 'mailto:service@evairdigital.com' as const },
         ],
         [t],
     );
@@ -44,7 +43,7 @@ const SiteFooter: React.FC = () => {
                 </div>
                 <div className="flex flex-wrap items-center gap-x-5 gap-y-2 justify-center">
                     {footerLinks.map(link => (
-                        <a key={link.href} href={link.href} className="hover:text-white">
+                        <a key={`${link.label}-${link.href}`} href={link.href} className="hover:text-white">
                             {link.label}
                         </a>
                     ))}

@@ -14,6 +14,7 @@ import MobileOnlyNotice from '../components/marketing/MobileOnlyNotice';
 import { MarketingHeroCarousel } from '../components/marketing/MarketingHeroCarousel';
 import { OpenAppHeaderButton } from '../components/marketing/OpenAppHeaderButton';
 import { FooterWordmarkLink } from '../components/marketing/FooterWordmarkLink';
+import { MARKETING_NAV_ITEMS } from '../components/marketing/siteNavConfig';
 import { AMAZON_SIM_PRIMARY_PRODUCT_URL, AMAZON_SIM_STOREFRONT_URL } from '../constants';
 
 const APP_PATH = '/app';
@@ -163,25 +164,12 @@ const MarketingPage: React.FC = () => {
                             className="h-7 w-auto max-h-9 sm:h-8 sm:max-h-10 md:h-9"
                         />
                     </a>
-                    <nav className="hidden min-w-0 flex-wrap items-center justify-end gap-x-5 gap-y-2 text-[0.9375rem] font-semibold leading-snug text-gray-800 md:flex lg:gap-x-7 lg:text-base">
-                        <a href="/travel-esim" className="transition-colors hover:text-gray-950">
-                            Travel eSIM
-                        </a>
-                        <a href="/sim/phone" className="transition-colors hover:text-gray-950">
-                            {t('marketing.nav_mobile')}
-                        </a>
-                        <a href="/sim/camera" className="transition-colors hover:text-gray-950">
-                            Camera
-                        </a>
-                        <a href="/sim/iot" className="transition-colors hover:text-gray-950">
-                            IoT
-                        </a>
-                        <a href="/help" className="transition-colors hover:text-gray-950">
-                            Help
-                        </a>
-                        <a href="/blog" className="transition-colors hover:text-gray-950">
-                            Blog
-                        </a>
+                    <nav className="hidden min-w-0 flex-wrap items-center justify-end gap-x-4 gap-y-2 text-[0.8125rem] font-semibold leading-snug text-gray-800 sm:text-[0.875rem] md:flex lg:gap-x-6 lg:text-[0.9375rem] xl:gap-x-7 xl:text-base">
+                        {MARKETING_NAV_ITEMS.map((item) => (
+                            <a key={item.key} href={item.href} className="transition-colors hover:text-gray-950">
+                                {t(item.labelKey)}
+                            </a>
+                        ))}
                     </nav>
                     <OpenAppHeaderButton href={APP_PATH} onClick={signInGate.gateClick} />
                 </div>

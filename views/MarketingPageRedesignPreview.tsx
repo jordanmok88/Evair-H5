@@ -11,6 +11,7 @@ import { applyPageSeo } from '../utils/seoHead';
 import { isMobileDevice } from '../utils/device';
 import { FooterWordmarkLink } from '../components/marketing/FooterWordmarkLink';
 import { OpenAppHeaderButton } from '../components/marketing/OpenAppHeaderButton';
+import { MARKETING_NAV_ITEMS } from '../components/marketing/siteNavConfig';
 import MobileOnlyNotice from '../components/marketing/MobileOnlyNotice';
 import { useMobileSignInGate } from '../hooks/useMobileSignInGate';
 import { AMAZON_SIM_PRIMARY_PRODUCT_URL, AMAZON_SIM_STOREFRONT_URL } from '../constants';

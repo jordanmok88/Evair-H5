@@ -1,8 +1,8 @@
 /**
  * SiteHeader — single nav used across every public-facing surface
  * (DeviceLandingPage, TravelEsimPage, HelpCenterPage, BlogPage,
- * MarketingPage). Adding a new top-level link means editing this
- * file once.
+ * MarketingPage). Routes + order live in `siteNavConfig.ts` with the
+ * apex marketing page header.
  *
  * Active-section highlight is driven by `active` (a stable key) so
  * pages don't have to reason about pathname matching themselves.
@@ -17,37 +17,14 @@ import { Menu, X } from 'lucide-react';
 import { useMobileSignInGate } from '../../hooks/useMobileSignInGate';
 import MobileOnlyNotice from './MobileOnlyNotice';
 import { OpenAppHeaderButton } from './OpenAppHeaderButton';
+import { MARKETING_NAV_ITEMS, type MarketingNavKey } from './siteNavConfig';
 
-export type SiteSection =
-    | 'phone'
-    | 'camera'
-    | 'iot'
-    | 'travel'
-    | 'help'
-    | 'blog'
-    | null;
+export type SiteSection = MarketingNavKey | null;
 
 interface SiteHeaderProps {
     /** Highlight the matching nav item; pass `null` for the apex. */
     active?: SiteSection;
 }
-
-const NAV_ITEMS: { key: Exclude<SiteSection, null>; href: string }[] = [
-    { key: 'phone', href: '/sim/phone' },
-    { key: 'camera', href: '/sim/camera' },
-    { key: 'iot', href: '/sim/iot' },
-    { key: 'travel', href: '/travel-esim' },
-    { key: 'help', href: '/help' },
-    { key: 'blog', href: '/blog' },
-];
-
-const STATIC_NAV_LABEL: Record<Exclude<SiteSection, 'phone' | null>, string> = {
-    camera: 'Camera',
-    iot: 'IoT',
-    travel: 'Travel eSIM',
-    help: 'Help',
-    blog: 'Blog',
-};
 
 const SiteHeader: React.FC<SiteHeaderProps> = ({ active = null }) => {
     const { t } = useTranslation();
@@ -92,19 +69,19 @@ const SiteHeader: React.FC<SiteHeaderProps> = ({ active = null }) => {
                 </a>
                 <nav
                     aria-label="Main"
-                    className="hidden flex-wrap justify-end md:flex md:items-center md:gap-x-5 md:gap-y-2 lg:gap-x-7"
+                    className="hidden flex-wrap justify-end md:flex md:items-center md:gap-x-4 md:gap-y-2 lg:gap-x-6 xl:gap-x-7"
                 >
-                    {NAV_ITEMS.map(item => (
+                    {MARKETING_NAV_ITEMS.map(item => (
                         <a
                             key={item.key}
                             href={item.href}
                             className={
                                 active === item.key
-                                    ? 'text-[0.9375rem] font-semibold text-orange-600 transition-colors lg:text-base'
-                                    : 'text-[0.9375rem] font-semibold text-slate-700 transition-colors hover:text-slate-900 lg:text-base'
+                                    ? 'text-[0.8125rem] font-semibold text-orange-600 transition-colors sm:text-[0.875rem] lg:text-[0.9375rem] xl:text-base'
+                                    : 'text-[0.8125rem] font-semibold text-slate-700 transition-colors hover:text-slate-900 sm:text-[0.875rem] lg:text-[0.9375rem] xl:text-base'
                             }
                         >
-                            {item.key === 'phone' ? t('marketing.nav_mobile') : STATIC_NAV_LABEL[item.key]}
+                            {t(item.labelKey)}
                         </a>
                     ))}
                 </nav>
@@ -129,14 +106,14 @@ const SiteHeader: React.FC<SiteHeaderProps> = ({ active = null }) => {
                     aria-label="Mobile main"
                     className="border-t border-slate-100 bg-white/98 px-4 pb-4 pt-2 shadow-inner md:hidden"
                 >
-                    {NAV_ITEMS.map(item => (
+                    {MARKETING_NAV_ITEMS.map(item => (
                         <a
                             key={item.key}
                             href={item.href}
                             className={linkCls(active === item.key)}
                             onClick={() => setMobileOpen(false)}
                         >
-                            {item.key === 'phone' ? t('marketing.nav_mobile') : STATIC_NAV_LABEL[item.key]}
+                            {t(item.labelKey)}
                         </a>
                     ))}
                 </nav>
