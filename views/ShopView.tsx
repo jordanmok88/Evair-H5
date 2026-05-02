@@ -918,7 +918,7 @@ const ShopView: React.FC<ShopViewProps> = ({
     };
 
     return (
-      <div className="lg:h-full flex flex-col relative bg-[#F2F4F7]">
+      <div className="flex flex-col flex-1 min-h-0 h-full lg:h-full relative bg-[#F2F4F7]">
         {/* eSIM Checkout Modal */}
         {selectedEsimPkg && (
           <div className="fixed lg:absolute inset-0 z-[60] flex items-end lg:items-center justify-center bg-black/20 backdrop-blur-sm" style={{ paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}>
@@ -990,10 +990,13 @@ const ShopView: React.FC<ShopViewProps> = ({
         </div>
 
         {/* Content */}
-        <div className="lg:flex-1 lg:overflow-y-auto no-scrollbar pb-6 px-4 md:px-8 lg:px-4 pt-5">
+        <div className="flex-1 min-h-0 overflow-y-auto no-scrollbar pb-6 px-4 md:px-8 lg:px-4 pt-5">
           {/* Country header */}
           <div className="flex items-center gap-4 mb-5">
-            <FlagIcon countryCode={selectedEsimGroup.flag} size="lg" />
+            <FlagIcon
+              countryCode={selectedEsimGroup.isMultiRegion ? selectedEsimGroup.countries[0] ?? '' : selectedEsimGroup.flag}
+              size="lg"
+            />
             <div>
               <h2 className="text-2xl font-bold text-slate-900 tracking-tight">{selectedEsimGroup.locationName}</h2>
               <p className="text-sm text-slate-400 mt-0.5">
@@ -1164,7 +1167,7 @@ const ShopView: React.FC<ShopViewProps> = ({
     const total = discountedPrice + shippingCost;
 
     return (
-      <div className="lg:h-full flex flex-col relative bg-[#F2F4F7]">
+      <div className="flex flex-col flex-1 min-h-0 h-full lg:h-full relative bg-[#F2F4F7]">
         {/* Checkout Modal */}
         {selectedPlan && (
           <div className="fixed lg:absolute inset-0 z-[60] flex items-end lg:items-center justify-center bg-black/20 backdrop-blur-sm" style={{ paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}>
@@ -1259,7 +1262,7 @@ const ShopView: React.FC<ShopViewProps> = ({
         </div>
 
         {/* Content */}
-        <div className="lg:flex-1 lg:overflow-y-auto no-scrollbar pb-6 px-4 md:px-8 lg:px-4 pt-5">
+        <div className="flex-1 min-h-0 overflow-y-auto no-scrollbar pb-6 px-4 md:px-8 lg:px-4 pt-5">
           
           {/* Visual Country Header */}
           <div className="flex items-center gap-4 mb-5">
@@ -1360,8 +1363,8 @@ const ShopView: React.FC<ShopViewProps> = ({
 
   // --- MAIN VIEW: Shop Home ---
   return (
-    <div className="lg:h-full relative bg-[#F2F4F7]">
-      <div ref={scrollContainerRef} className="h-full lg:overflow-y-auto no-scrollbar">
+    <div className="flex flex-col flex-1 min-h-0 h-full lg:h-full relative bg-[#F2F4F7]">
+      <div ref={scrollContainerRef} className="flex-1 min-h-0 overflow-y-auto no-scrollbar">
         {/* Header - auto-hides on scroll down, reappears on scroll up */}
         <div
           className="bg-white px-4 pt-safe pb-3 sticky top-0 z-40 border-b border-slate-100 transition-transform duration-300 ease-out"

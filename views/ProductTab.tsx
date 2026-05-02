@@ -137,7 +137,7 @@ const ProductTab: React.FC<ProductTabProps> = ({
   }, []);
 
   return (
-    <div className="lg:h-full relative">
+    <div className="flex flex-col flex-1 min-h-0 h-full lg:h-full relative">
        {viewMode === 'SHOP' && (
           <ShopView
             simType={type}

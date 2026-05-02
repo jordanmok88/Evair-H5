@@ -478,7 +478,7 @@ const MySimsView: React.FC<MySimsViewProps> = ({ activeSims, onNavigate, filterT
   }
 
   return (
-    <div className={`lg:h-full flex flex-col bg-[#F2F4F7] no-scrollbar relative ${isRechargeModalOpen ? 'overflow-hidden' : 'lg:overflow-y-auto'}`}>
+    <div className={`flex flex-col flex-1 min-h-0 h-full lg:h-full bg-[#F2F4F7] no-scrollbar relative ${isRechargeModalOpen ? 'overflow-hidden' : 'overflow-y-auto lg:overflow-y-auto'}`}>
       
       {/* Header */}
       <div className="bg-white/90 backdrop-blur-xl pt-safe px-4 pb-3 flex items-center justify-between shrink-0 sticky top-0 z-10 border-b border-slate-100">

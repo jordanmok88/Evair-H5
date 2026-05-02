@@ -247,6 +247,8 @@ const CONTINENT_MAP: Record<string, string> = {
   NE:'Africa',NG:'Africa',RE:'Africa',RW:'Africa',SC:'Africa',SD:'Africa',SL:'Africa',
   SN:'Africa',SO:'Africa',SS:'Africa',ST:'Africa',SZ:'Africa',TD:'Africa',TG:'Africa',
   TN:'Africa',TZ:'Africa',UG:'Africa',ZA:'Africa',ZM:'Africa',ZW:'Africa',
+  /** Territories in stocked catalogue but missing from the bulk map above */
+  AX:'Europe',GL:'Americas',MS:'Americas',
 };
 
 /**
