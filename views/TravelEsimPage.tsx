@@ -401,11 +401,11 @@ const HeroCountryBanner: React.FC<{ code: string; name: string }> = ({ code, nam
                   )
                 : '🌐';
         return (
-            <div className="relative flex h-full min-h-[200px] w-full max-w-[364px] shrink-0 flex-col items-center justify-center gap-2 overflow-hidden rounded-3xl border border-slate-200 bg-gradient-to-br from-slate-100 to-orange-50 p-6 shadow-xl aspect-[5/4]">
-                <span className="text-7xl leading-none" aria-hidden>
+            <div className="relative flex aspect-[4/5] w-[min(260px,72vw)] shrink-0 flex-col items-center justify-center gap-2 overflow-hidden rounded-2xl border border-slate-200 bg-gradient-to-br from-slate-100 to-orange-50 p-5 shadow-lg md:w-[272px] md:aspect-[4/5] md:p-6 lg:w-[292px] lg:rounded-3xl lg:shadow-xl">
+                <span className="text-6xl leading-none md:text-7xl" aria-hidden>
                     {glyph}
                 </span>
-                <span className="text-sm font-bold text-slate-600">{name}</span>
+                <span className="text-xs font-bold text-slate-600 md:text-sm">{name}</span>
             </div>
         );
     }
@@ -414,7 +414,7 @@ const HeroCountryBanner: React.FC<{ code: string; name: string }> = ({ code, nam
         tier === 'w640' ? `https://flagcdn.com/w640/${iso}.png` : `https://flagcdn.com/w320/${iso}.png`;
 
     return (
-        <div className="relative aspect-[5/4] w-full max-w-[364px] shrink-0 overflow-hidden rounded-3xl border border-slate-200 bg-slate-100 shadow-xl">
+        <div className="relative aspect-[4/5] w-[min(260px,72vw)] shrink-0 overflow-hidden rounded-2xl border border-slate-200 bg-slate-100 shadow-lg md:w-[272px] md:aspect-[4/5] lg:w-[292px] lg:rounded-3xl lg:shadow-xl">
             <img
                 src={src}
                 alt=""
@@ -499,62 +499,62 @@ const SingleCountryView: React.FC<SingleCountryViewProps> = ({
 
     return (
         <>
-            {/* Hero */}
-            <section className="px-4 md:px-8 py-12 md:py-20 max-w-6xl mx-auto">
-                <div className="grid md:grid-cols-2 gap-10 items-center">
-                    <div>
-                        <div className="inline-flex items-center gap-2 bg-slate-100 text-slate-700 text-xs font-bold uppercase tracking-wider px-3 py-1 rounded-full mb-4">
+            {/* Hero — flex (not 50/50 grid) so the flag card doesn’t leave a huge empty half-column on wide screens */}
+            <section className="mx-auto max-w-5xl px-4 py-8 md:px-8 md:py-10 xl:max-w-6xl">
+                <div className="flex flex-col-reverse items-stretch gap-6 md:flex-row md:items-start md:gap-7 lg:gap-9 xl:gap-10">
+                    <div className="min-w-0 max-w-xl flex-1 md:max-w-none md:pr-2 lg:max-w-xl xl:max-w-2xl">
+                        <div className="inline-flex items-center gap-2 rounded-full bg-slate-100 px-3 py-1 text-[11px] font-bold uppercase tracking-wider text-slate-700 md:text-xs mb-3">
                             <Globe size={12} /> {country.region}
                         </div>
-                        <h1 className="text-4xl md:text-5xl font-extrabold leading-tight tracking-tight mb-5">
+                        <h1 className="mb-3 text-3xl font-extrabold leading-tight tracking-tight text-slate-900 md:text-4xl xl:text-[2.65rem]">
                             {country.name} eSIM
                         </h1>
-                        <p className="text-lg text-slate-600 mb-6 max-w-xl leading-relaxed">
+                        <p className="mb-4 max-w-xl text-base leading-relaxed text-slate-600 md:text-lg">
                             {country.blurb}
                         </p>
-                        <div className="flex items-baseline gap-2 mb-6">
+                        <div className="mb-4 flex flex-wrap items-baseline gap-2 md:mb-5">
                             {country.priceFromUsd !== '—' ? (
                                 <>
                                     <span className="text-sm text-slate-500">From</span>
-                                    <span className="text-4xl font-extrabold text-slate-900">
+                                    <span className="text-3xl font-extrabold text-slate-900 md:text-4xl">
                                         ${country.priceFromUsd}
                                     </span>
                                 </>
                             ) : (
-                                <span className="text-xl font-semibold text-slate-700">
+                                <span className="text-lg font-semibold text-slate-700 md:text-xl">
                                     See live prices below
                                 </span>
                             )}
                         </div>
-                        <div className="flex flex-col gap-4 sm:flex-row sm:flex-wrap sm:items-start sm:gap-x-8 md:gap-x-10">
-                            <div className="flex flex-wrap gap-3 shrink-0">
+                        <div className="flex flex-col gap-4 sm:flex-row sm:flex-wrap sm:items-start sm:gap-x-6 lg:gap-x-8">
+                            <div className="flex shrink-0 flex-wrap gap-2 md:gap-3">
                                 <a
                                     href={`/app/travel-esim/${country.code}`}
                                     onClick={handleHeroCta}
-                                    className="inline-flex items-center justify-center gap-2 bg-orange-500 text-white font-bold px-5 py-3 rounded-xl shadow-lg shadow-orange-500/20 active:scale-[0.98] transition-transform"
+                                    className="inline-flex items-center justify-center gap-2 rounded-xl bg-orange-500 px-4 py-2.5 font-bold text-white shadow-md shadow-orange-500/20 transition-transform active:scale-[0.98] md:px-5 md:py-3 lg:shadow-lg"
                                 >
                                     See {country.name} plans <ArrowRight size={18} />
                                 </a>
                                 <a
                                     href="/travel-esim"
-                                    className="inline-flex items-center justify-center gap-2 bg-white text-slate-900 font-semibold px-5 py-3 rounded-xl border border-slate-300"
+                                    className="inline-flex items-center justify-center gap-2 rounded-xl border border-slate-300 bg-white px-4 py-2.5 font-semibold text-slate-900 md:px-5 md:py-3"
                                 >
                                     All countries
                                 </a>
                             </div>
-                            <div className="sm:mt-0.5 md:border-l md:border-slate-200 md:pl-8 min-w-0">
-                                <div className="text-[11px] font-bold uppercase tracking-[0.14em] text-slate-500 mb-2">
+                            <div className="sm:max-md:border-l-0 md:mt-0.5 md:min-w-0 md:border-l md:border-slate-200 md:pl-6 lg:pl-8">
+                                <div className="mb-1.5 text-[10px] font-bold uppercase tracking-[0.14em] text-slate-500 md:text-[11px]">
                                     Connects to
                                 </div>
-                                <ul className="space-y-1.5 max-w-[20rem]">
+                                <ul className="max-w-[20rem] space-y-1">
                                     {country.carriers.map(carrierName => (
                                         <li
                                             key={carrierName}
-                                            className="flex items-center gap-2 text-sm font-semibold text-slate-800"
+                                            className="flex items-center gap-2 text-xs font-semibold text-slate-800 md:text-sm"
                                         >
-                                            <Wifi size={14} className="text-emerald-600 shrink-0" aria-hidden />
+                                            <Wifi size={14} className="shrink-0 text-emerald-600" aria-hidden />
                                             <span className="truncate">{carrierName}</span>
-                                            <span className="shrink-0 text-xs font-medium text-slate-500 whitespace-nowrap">
+                                            <span className="shrink-0 whitespace-nowrap text-xs font-medium text-slate-500">
                                                 · {heroNetworkGeneration}
                                             </span>
                                         </li>
@@ -562,18 +562,23 @@ const SingleCountryView: React.FC<SingleCountryViewProps> = ({
                                 </ul>
                             </div>
                         </div>
-                        <div className="flex items-center gap-2 mt-6 text-xs text-slate-500">
-                            <CheckCircle2 size={14} className="text-emerald-500" />
-                            Instant QR delivery
-                            <CheckCircle2 size={14} className="text-emerald-500 ml-2" />
-                            No SIM swap
-                            <CheckCircle2 size={14} className="text-emerald-500 ml-2" />
-                            24/7 support
+                        <div className="mt-4 flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-slate-500 md:text-xs">
+                            <span className="inline-flex items-center gap-1">
+                                <CheckCircle2 size={13} className="text-emerald-500 shrink-0" />
+                                Instant QR delivery
+                            </span>
+                            <span className="inline-flex items-center gap-1">
+                                <CheckCircle2 size={13} className="text-emerald-500 shrink-0" />
+                                No SIM swap
+                            </span>
+                            <span className="inline-flex items-center gap-1">
+                                <CheckCircle2 size={13} className="text-emerald-500 shrink-0" />
+                                24/7 support
+                            </span>
                         </div>
                     </div>
 
-                    {/* Large country visual — flagcdn only supports discrete widths (w800 → 404). */}
-                    <div className="hidden md:flex md:justify-end md:items-start">
+                    <div className="flex shrink-0 justify-center md:justify-start md:pt-0">
                         <HeroCountryBanner code={country.code} name={country.name} />
                     </div>
                 </div>
