@@ -146,6 +146,11 @@ const en = {
       'After hiding one-day prepaid SKUs there is nothing else to display here yet. Regional bundles may still cover this destination.',
     plan_networks_with_names: 'Networks · {{names}}',
     plan_networks_generic: 'Leading local networks',
+    plan_technology_4g5g: '4G/5G',
+    plan_auto_activate: 'Auto-activate',
+    plan_valid_unused_days: 'Valid {{days}}d before use',
+    plan_card_days_line: '{{count}} Days',
+    plan_specs_month_abbr: '{{count}} Mo',
     faq_strip: {
       title: 'Common questions',
       what_is_esim: 'What is an eSIM?',

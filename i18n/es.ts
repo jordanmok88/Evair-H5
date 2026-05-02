@@ -147,6 +147,11 @@ const es = {
       'Tras ocultar los planes de un solo día, no quedan filas aquí por ahora. Prueba paquetes regionales.',
     plan_networks_with_names: 'Redes · {{names}}',
     plan_networks_generic: 'Redes locales asociadas',
+    plan_technology_4g5g: '4G/5G',
+    plan_auto_activate: 'Activación automática',
+    plan_valid_unused_days: 'Válido {{days}} días antes del primer uso',
+    plan_card_days_line: '{{count}} días',
+    plan_specs_month_abbr: '{{count}} mes(es)',
     faq_strip: {
       title: 'Preguntas frecuentes',
       what_is_esim: '¿Qué es una eSIM?',

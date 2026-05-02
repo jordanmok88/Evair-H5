@@ -836,8 +836,21 @@ const ShopView: React.FC<ShopViewProps> = ({
       const pricePerGb = gb > 0 ? priceUsd / gb : priceUsd;
       const isAutoActivate = pkg.activeType === 1;
       const coveredCountries = pkg.location ? pkg.location.split(',').length : 1;
-      const networkNames = planCardNetworkLine(pkg);
-      const networkDisplay = networkNames ?? t('shop.plan_networks_generic');
+      const storefrontIso = !selectedEsimGroup.isMultiRegion ? selectedEsimGroup.flag : null;
+      const networkNames = planCardNetworkLine(pkg, storefrontIso);
+      const normSkuTxt = (s: string) => s.replace(/[\s_-]+/g, '').toUpperCase();
+      const descTrim = pkg.description?.trim();
+      const showShieldDescription =
+        !!descTrim && normSkuTxt(descTrim) !== normSkuTxt(planMarketingName);
+      const networkDisplay = networkNames
+        ? t('shop.plan_networks_with_names', { names: networkNames })
+        : t('shop.plan_networks_generic');
+
+      const durationLabel =
+        pkg.durationUnit === 'DAY'
+          ? t('shop.plan_card_days_line', { count: pkg.duration })
+          : t('shop.plan_specs_month_abbr', { count: pkg.duration });
+
       return (
         <div
           onClick={() => {
@@ -845,82 +858,85 @@ const ShopView: React.FC<ShopViewProps> = ({
             setIsProcessing(false); setOrderError(null);
             setSelectedEsimPkg(pkg);
           }}
-          className={`group relative h-full bg-white rounded-xl p-4 border shadow-sm hover:shadow-md transition-all cursor-pointer ${
-            premium ? 'border-amber-200 ring-2 ring-amber-50' : 'border-slate-100'
+          className={`group relative h-full bg-white rounded-xl px-3 py-3 border shadow-sm hover:shadow transition-all cursor-pointer ${
+            premium ? 'border-amber-200 ring-1 ring-amber-50/80' : 'border-slate-100'
           }`}
         >
-          <div className="flex justify-between items-end mb-3">
-            <div>
-              <p className="text-slate-400 font-semibold text-xs uppercase tracking-wider mb-1">{planMarketingName}</p>
-              <div className="min-h-[26px] flex flex-wrap items-center mb-1">
+          <div className="flex justify-between gap-2 items-start mb-2">
+            <div className="min-w-0 flex-1">
+              <div className="flex flex-wrap items-center gap-x-1.5 gap-y-1 mb-0.5">
                 {premiumTier != null ? (
-                  <span className="text-[9px] font-extrabold uppercase tracking-wide bg-amber-100 text-amber-950 px-1.5 py-0.5 rounded leading-none inline-flex items-center">
+                  <span className="text-[8px] font-extrabold uppercase tracking-wide bg-amber-100 text-amber-950 px-1 py-0.5 rounded leading-none shrink-0">
                     {t('shop.plan_premium_tier_compact', { tier: premiumTier.labelUpper })}
                   </span>
                 ) : null}
               </div>
-              <div className="flex items-baseline gap-1">
-                <h3 className="text-2xl font-extrabold text-slate-900 tracking-tight">{volumeStr.split(' ')[0]}</h3>
-                <span className="text-base font-bold text-slate-400">{volumeStr.split(' ')[1]}</span>
+              <p className="text-slate-400 font-semibold text-[10px] uppercase tracking-wider leading-tight line-clamp-2">
+                {planMarketingName}
+              </p>
+              <div className="flex items-baseline gap-1 mt-0.5">
+                <span className="text-xl font-extrabold text-slate-900 tracking-tight">
+                  {volumeStr.split(' ')[0]}
+                </span>
+                <span className="text-sm font-bold text-slate-400">{volumeStr.split(' ')[1]}</span>
               </div>
             </div>
-            <div className="text-right shrink-0">
-              <span className="text-xl font-bold text-brand-orange">${priceUsd.toFixed(2)}</span>
-              <p className="text-[11px] text-slate-400 mt-0.5">${pricePerGb.toFixed(2)}{t('shop.per_gb')}</p>
+            <div className="text-right shrink-0 pt-0.5">
+              <span className="text-lg font-bold text-brand-orange leading-none">${priceUsd.toFixed(2)}</span>
+              <p className="text-[10px] text-slate-400 mt-0.5">${pricePerGb.toFixed(2)}{t('shop.per_gb')}</p>
             </div>
           </div>
 
-          <div className="grid grid-cols-3 gap-2 mb-2">
-            <div className="bg-slate-50 rounded-xl py-2.5 px-2 flex flex-col items-center justify-center gap-1 border border-slate-100">
-              <Calendar size={16} className="text-slate-500" />
-              <span className="font-semibold text-slate-700 text-xs">{pkg.duration} {pkg.durationUnit === 'DAY' ? t('shop.days') : 'Mo'}</span>
-            </div>
-            <div className="bg-slate-50 rounded-xl py-2.5 px-2 flex flex-col items-center justify-center gap-1 border border-slate-100">
-              <Signal size={16} className="text-slate-500" />
-              <span className="font-semibold text-slate-700 text-xs">4G/5G</span>
-            </div>
-            <div className="bg-slate-50 rounded-xl py-2.5 px-2 flex flex-col items-center justify-center gap-1 border border-slate-100">
-              <Wifi size={16} className="text-slate-500" />
-              <span className="font-semibold text-slate-700 text-xs">{t('shop.hotspot')}</span>
-            </div>
-          </div>
+          <p
+            className={`text-[11px] leading-snug mb-2 line-clamp-2 ${networkNames ? 'font-semibold text-slate-900' : 'text-slate-500 font-medium'}`}
+          >
+            {networkDisplay}
+          </p>
 
-          <div className="flex items-start gap-2 rounded-xl border border-slate-100 bg-slate-50/80 px-2.5 py-2 mb-3">
-            <Radio size={14} className="text-slate-500 shrink-0 mt-0.5" aria-hidden />
-            <p className="text-[11px] leading-snug text-slate-700 font-medium">
-              {t('shop.plan_networks_with_names', { names: networkDisplay })}
-            </p>
-          </div>
+          <p className="text-[10px] text-slate-600 mb-2">
+            <span>{durationLabel}</span>
+            <span className="text-slate-300 mx-1.5">·</span>
+            <span>{t('shop.plan_technology_4g5g')}</span>
+            <span className="text-slate-300 mx-1.5">·</span>
+            <span>{t('shop.hotspot')}</span>
+          </p>
 
-          <div className="flex flex-wrap gap-x-4 gap-y-1 mb-3 text-[11px]">
-            {isAutoActivate && (
-              <span className="flex items-center gap-1 text-emerald-600 font-medium">
-                <Zap size={12} /> Auto-activate
-              </span>
-            )}
-            {pkg.unusedValidTime > 0 && (
-              <span className="flex items-center gap-1 text-slate-500 font-medium">
-                <Clock size={12} /> Valid {pkg.unusedValidTime}d before use
-              </span>
-            )}
-            {coveredCountries > 1 && (
-              <span className="flex items-center gap-1 text-blue-500 font-medium">
-                <Globe size={12} /> {coveredCountries} countries
-              </span>
-            )}
-            {pkg.description && (
-              <span className="flex items-center gap-1 text-slate-400 font-medium">
-                <Shield size={12} /> {pkg.description.length > 40 ? pkg.description.slice(0, 40) + '…' : pkg.description}
-              </span>
-            )}
-          </div>
+          {(isAutoActivate ||
+            pkg.unusedValidTime > 0 ||
+            coveredCountries > 1 ||
+            showShieldDescription) && (
+            <div className="flex flex-wrap gap-x-3 gap-y-1 mb-2 text-[10px] text-slate-500">
+              {isAutoActivate && (
+                <span className="flex items-center gap-1 text-emerald-600 font-semibold">
+                  <Zap size={11} aria-hidden /> {t('shop.plan_auto_activate')}
+                </span>
+              )}
+              {pkg.unusedValidTime > 0 && (
+                <span className="flex items-center gap-1 text-slate-500 font-medium">
+                  <Clock size={11} aria-hidden /> {t('shop.plan_valid_unused_days', { days: pkg.unusedValidTime })}
+                </span>
+              )}
+              {coveredCountries > 1 && (
+                <span className="flex items-center gap-1 text-blue-600 font-medium">
+                  <Globe size={11} aria-hidden /> {coveredCountries} {t('shop.countries')}
+                </span>
+              )}
+              {showShieldDescription && (
+                <span className="flex items-center gap-1 text-slate-400 font-medium min-w-0">
+                  <Shield size={11} className="shrink-0" aria-hidden />
+                  <span className="truncate">{descTrim}</span>
+                </span>
+              )}
+            </div>
+          )}
 
           <button
             type="button"
-            className="w-full py-3 rounded-xl font-bold text-sm transition-all active:scale-[0.98] flex items-center justify-center gap-2 bg-slate-50 border border-slate-200 text-slate-700 hover:bg-slate-100 hover:border-slate-300"
+            tabIndex={-1}
+            className="w-full py-2 rounded-lg font-bold text-xs transition-all active:scale-[0.98] flex items-center justify-center gap-1.5 bg-slate-900 text-white hover:bg-slate-800 lg:pointer-events-none"
           >
             {t('shop.choose')} {volumeStr}
-            <ChevronRight size={16} className="opacity-60" />
+            <ChevronRight size={14} className="opacity-80 shrink-0" />
           </button>
         </div>
       );
@@ -1001,13 +1017,13 @@ const ShopView: React.FC<ShopViewProps> = ({
         {/* Content */}
         <div className="flex-1 min-h-0 overflow-y-auto no-scrollbar pb-6 px-4 md:px-8 lg:px-4 pt-5">
           {/* Country header */}
-          <div className="flex items-center gap-4 mb-5">
+          <div className="flex items-center gap-3 mb-4">
             <FlagIcon
               countryCode={selectedEsimGroup.isMultiRegion ? selectedEsimGroup.countries[0] ?? '' : selectedEsimGroup.flag}
               size="lg"
             />
             <div>
-              <h2 className="text-2xl font-bold text-slate-900 tracking-tight">{selectedEsimGroup.locationName}</h2>
+              <h2 className="text-xl font-bold text-slate-900 tracking-tight">{selectedEsimGroup.locationName}</h2>
               <p className="text-sm text-slate-400 mt-0.5">
                 {selectedEsimGroup.isMultiRegion ? t('shop.multi_region') : t('shop.single_country')}
                 {' · '}{t(eligiblePlanCount === 1 ? 'shop.plan_list_count_one' : 'shop.plan_list_count_other', { count: eligiblePlanCount })}
@@ -1023,14 +1039,14 @@ const ShopView: React.FC<ShopViewProps> = ({
               {t('shop.plan_long_stay_notice')}
             </div>
           ) : (
-          <div className="space-y-8 pb-4">
+          <div className="space-y-5 pb-4">
             {presentationSegments.map((seg, segIdx) =>
               seg.kind === 'multi' ? (
               <section
                 key={`${seg.bucket.durationUnit}-${seg.bucket.duration}-multi`}
                 aria-labelledby={`plan-validity-${seg.bucket.sortOrder}-${seg.bucket.durationUnit}-${seg.bucket.duration}`}
               >
-                <h4 id={`plan-validity-${seg.bucket.sortOrder}-${seg.bucket.durationUnit}-${seg.bucket.duration}`} className="mb-3 pb-2 border-b border-slate-200">
+                <h4 id={`plan-validity-${seg.bucket.sortOrder}-${seg.bucket.durationUnit}-${seg.bucket.duration}`} className="mb-2 pb-2 border-b border-slate-200">
                   {isMostPopularRetailBucket(seg.bucket) && (
                     <p className="text-[10px] font-extrabold uppercase tracking-[0.1em] text-brand-orange mb-1">
                       {t('shop.plan_section_most_popular')}
@@ -1045,7 +1061,7 @@ const ShopView: React.FC<ShopViewProps> = ({
                     <span className="text-xs font-semibold text-slate-400">({seg.bucket.packages.length})</span>
                   </span>
                 </h4>
-                <div className="space-y-3 md:grid md:grid-cols-2 md:gap-3 md:space-y-0 lg:block lg:space-y-3">
+                <div className="space-y-2 md:grid md:grid-cols-2 md:gap-2 md:space-y-0 lg:block lg:space-y-2">
                   {seg.bucket.packages.map(pkg => (
                     <React.Fragment key={pkg.packageCode}>{renderTierCard(pkg)}</React.Fragment>
                   ))}
@@ -1057,7 +1073,7 @@ const ShopView: React.FC<ShopViewProps> = ({
                 buckets={seg.buckets}
                 ariaLabel={t('travel_esim_grid.singleton_roll_aria')}
                 renderColumnHeader={bucket => (
-                  <div className="mb-3 pb-2 border-b border-slate-200">
+                  <div className="mb-2 pb-2 border-b border-slate-200">
                     {isMostPopularRetailBucket(bucket) && (
                       <p className="text-[10px] font-extrabold uppercase tracking-[0.1em] text-brand-orange mb-1">
                         {t('shop.plan_section_most_popular')}

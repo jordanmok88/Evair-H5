@@ -33,6 +33,18 @@ describe('retailPackageNetworks', () => {
         expect(line).toContain('·');
     });
 
+    it('falls back to storefront ISO when package metadata omits usable coverage', () => {
+        const pkg = minimalPkg({
+            coverageCodes: [],
+            location: '',
+            name: 'Mexico Tourist',
+            networkPartnerSummary: '',
+        });
+        const line = planCardNetworkLine(pkg, 'MX');
+        expect(line).toContain('Telcel');
+        expect(line).toContain('·');
+    });
+
     it('prefers supplierRegionName for multi-country packages', () => {
         const line = planCardNetworkLine(
             minimalPkg({

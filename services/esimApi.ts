@@ -263,7 +263,22 @@ export function getContinent(code: string): string {
   return CONTINENT_MAP[code.toUpperCase()] ?? 'Other';
 }
 
-export const POPULAR_COUNTRY_CODES = ['MX', 'CA', 'JP', 'GB', 'FR', 'IT', 'KR', 'TH', 'DO', 'DE', 'ES', 'CO'];
+/** Homepage / shop “pins” order (single-country facets). USA first — then frequent buyer destinations for US travelers & neighbors. */
+export const POPULAR_COUNTRY_CODES = [
+  'US',
+  'MX',
+  'CA',
+  'JP',
+  'GB',
+  'FR',
+  'IT',
+  'KR',
+  'TH',
+  'DO',
+  'DE',
+  'ES',
+  'CO',
+];
 
 /**
  * Group packages by location (country code or supplier region code).

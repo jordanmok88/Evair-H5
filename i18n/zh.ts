@@ -143,6 +143,11 @@ const zh = {
       '在隐藏“1 天”极短包后，暂时没有更多可展示的条目。可尝试区域套餐是否仍含该目的地。',
     plan_networks_with_names: '网络 · {{names}}',
     plan_networks_generic: '当地主流合作网络',
+    plan_technology_4g5g: '4G/5G',
+    plan_auto_activate: '自动激活',
+    plan_valid_unused_days: '首次使用前 {{days}} 天内有效',
+    plan_card_days_line: '{{count}} 天',
+    plan_specs_month_abbr: '{{count}} 个月',
     faq_strip: {
       title: '常见问题',
       what_is_esim: '什么是 eSIM？',
