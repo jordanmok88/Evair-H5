@@ -60,7 +60,10 @@ export const packageService = {
    * @param params 筛选参数
    */
   async getPackages(params?: PackageListParams): Promise<{ packages: PackageDto[] }> {
-    return get<{ packages: PackageDto[] }>(ENDPOINTS.PACKAGES, params as Record<string, unknown>);
+    // Storefront catalogue — public; omit Bearer so stale tokens never empty the grid.
+    return get<{ packages: PackageDto[] }>(ENDPOINTS.PACKAGES, params as Record<string, unknown>, {
+      skipAuth: true,
+    });
   },
 
   /**
@@ -68,7 +71,7 @@ export const packageService = {
    * @param limit 返回数量
    */
   async getHotPackages(limit?: number): Promise<{ packages: PackageDto[] }> {
-    return get<{ packages: PackageDto[] }>(ENDPOINTS.HOT_PACKAGES, { limit });
+    return get<{ packages: PackageDto[] }>(ENDPOINTS.HOT_PACKAGES, { limit }, { skipAuth: true });
   },
 
   /**
@@ -86,7 +89,7 @@ export const packageService = {
   ): Promise<{ packages: PackageDto[] }> {
     const params: Record<string, unknown> = { iccid };
     if (supplierType) params.supplier_type = supplierType;
-    return get<{ packages: PackageDto[] }>(ENDPOINTS.RECHARGE_PACKAGES, params);
+    return get<{ packages: PackageDto[] }>(ENDPOINTS.RECHARGE_PACKAGES, params, { skipAuth: true });
   },
 
   /**

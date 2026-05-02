@@ -47,6 +47,11 @@ import { finalizeShopCatalogPackages } from './catalogPresentation';
 // ─── Backend API ────────────────────────────────────────────────────
 
 import { packageService, esimService } from './api';
+import type { PackageLocationsResponse } from './api/types';
+import {
+  EMBEDDED_CATALOG_LOCATION_FACETS_SNAPSHOT,
+  EMBEDDED_MIN_SINGLE_COUNTRY_FACETS,
+} from '../data/catalogLocationFacetsEmbed';
 
 // ─── Data normalization: backend PackageDto → supplier EsimPackage ───
 //
@@ -204,6 +209,13 @@ interface FacetsCache {
   data: EsimCountryGroup[];
 }
 
+/** Ignore tiny/partial caches (never expose the abandoned ~50-country marketing subset). */
+const MIN_TRUSTED_SINGLE_FACET_GROUPS = Math.min(100, EMBEDDED_MIN_SINGLE_COUNTRY_FACETS - 10);
+
+function countSingleFacetRows(groups: EsimCountryGroup[]): number {
+  return groups.filter(g => !g.isMultiRegion).length;
+}
+
 function getCachedFacets(): EsimCountryGroup[] | null {
   try {
     const raw = localStorage.getItem(FACETS_CACHE_KEY);
@@ -213,7 +225,12 @@ function getCachedFacets(): EsimCountryGroup[] | null {
       localStorage.removeItem(FACETS_CACHE_KEY);
       return null;
     }
-    return cache.data;
+    const data = cache.data;
+    if (!Array.isArray(data) || countSingleFacetRows(data) < MIN_TRUSTED_SINGLE_FACET_GROUPS) {
+      localStorage.removeItem(FACETS_CACHE_KEY);
+      return null;
+    }
+    return data;
   } catch {
     return null;
   }
@@ -226,32 +243,37 @@ function setCachedFacets(data: EsimCountryGroup[]): void {
   } catch { /* localStorage 满了忽略 */ }
 }
 
-/**
- * 拉取 Shop 首屏 facets 索引并转换为 EsimCountryGroup[] 形态。
- *
- * 返回的每个 group 满足：
- *   - 单国：locationCode = ISO 码，flag = ISO 码，continent 由 getContinent 算
- *   - 多国：locationCode = supplier region code（如 "NA-3"），flag = countries[0]，
- *           continent = "Multi-Region"
- *   - packages 暂为空数组；进入详情时由 fetchPackagesForGroup() 填充
- *   - minPrice / packageCount 直接来自后端聚合，卡片渲染立即可用
- *
- * `force=true` 会绕过本地缓存（用于 Shop 页面的下拉刷新）。
- */
-export async function fetchLocationFacets(force = false): Promise<EsimCountryGroup[]> {
-  if (!force) {
-    const cached = getCachedFacets();
-    if (cached) return cached;
-  }
+function facetSleep(ms: number): Promise<void> {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
 
-  const resp = await packageService.getLocations();
+async function tryFetchLocationsFromApi(): Promise<PackageLocationsResponse | null> {
+  const attempts = 3;
+  let lastErr: unknown;
+  for (let i = 0; i < attempts; i++) {
+    try {
+      return await packageService.getLocations();
+    } catch (e) {
+      lastErr = e;
+      if (i < attempts - 1) await facetSleep(320 * (i + 1));
+    }
+  }
+  console.warn('[dataService] /app/packages/locations failed after retries:', lastErr);
+  return null;
+}
+
+function locationsResponseToGroups(resp: PackageLocationsResponse): EsimCountryGroup[] {
   const singles = resp.singleCountries || [];
   const multis = resp.multiCountries || [];
-
   const groups: EsimCountryGroup[] = [];
 
   for (const s of singles) {
     const code = s.code.toUpperCase();
+    const minPrice = typeof s.minPrice === 'number' && Number.isFinite(s.minPrice) ? s.minPrice : 0;
+    const packageCount =
+      typeof s.packageCount === 'number' && Number.isFinite(s.packageCount) && s.packageCount >= 0
+        ? s.packageCount
+        : 0;
     groups.push({
       locationCode: code,
       locationName: s.name,
@@ -260,13 +282,18 @@ export async function fetchLocationFacets(force = false): Promise<EsimCountryGro
       continent: getContinent(code),
       isMultiRegion: false,
       countries: [code],
-      minPrice: s.minPrice,
-      packageCount: s.packageCount,
+      minPrice,
+      packageCount,
     });
   }
 
   for (const m of multis) {
     const countries = (m.countries || []).map((c) => c.toUpperCase());
+    const minPrice = typeof m.minPrice === 'number' && Number.isFinite(m.minPrice) ? m.minPrice : 0;
+    const packageCount =
+      typeof m.packageCount === 'number' && Number.isFinite(m.packageCount) && m.packageCount >= 0
+        ? m.packageCount
+        : 0;
     groups.push({
       locationCode: m.code,
       locationName: m.name,
@@ -275,15 +302,78 @@ export async function fetchLocationFacets(force = false): Promise<EsimCountryGro
       continent: 'Multi-Region',
       isMultiRegion: true,
       countries,
-      minPrice: m.minPrice,
-      packageCount: m.packageCount,
+      minPrice,
+      packageCount,
     });
   }
 
-  // 与旧 groupPackagesByLocation 保持一致的字典序排序，便于网格定位国家
   groups.sort((a, b) => a.locationName.localeCompare(b.locationName));
+  return groups;
+}
 
-  setCachedFacets(groups);
+export type FetchLocationFacetsResult = {
+  groups: EsimCountryGroup[];
+  /**
+   * True when live API failed or returned too few countries — built-in snapshot is used so the
+   * shop/travel catalogue still lists the full stocked universe (pricing may lag the server).
+   */
+  usedEmbeddedFallback: boolean;
+};
+
+/**
+ * Same as {@link fetchLocationFacets}, plus whether the bundled snapshot substituted for API data.
+ */
+export async function fetchLocationFacetsDetailed(
+  force = false,
+): Promise<FetchLocationFacetsResult> {
+  try {
+    if (!force) {
+      const cached = getCachedFacets();
+      if (cached) return { groups: cached, usedEmbeddedFallback: false };
+    }
+
+    const live = await tryFetchLocationsFromApi();
+    const liveSingles = live?.singleCountries?.length ?? 0;
+    const liveOk =
+      live !== null && liveSingles >= MIN_TRUSTED_SINGLE_FACET_GROUPS;
+
+    const usedEmbed = !liveOk;
+    const resp = liveOk ? live! : EMBEDDED_CATALOG_LOCATION_FACETS_SNAPSHOT;
+
+    if (usedEmbed && live !== null) {
+      console.warn(
+        '[dataService] Facets payload too thin from API;',
+        liveSingles,
+        'countries — using embedded snapshot',
+      );
+    }
+
+    const groups = locationsResponseToGroups(resp);
+    setCachedFacets(groups);
+
+    return { groups, usedEmbeddedFallback: usedEmbed };
+  } catch (e) {
+    console.error('[dataService] fetchLocationFacetsDetailed failed — embedding snapshot:', e);
+    const groups = locationsResponseToGroups(EMBEDDED_CATALOG_LOCATION_FACETS_SNAPSHOT);
+    try {
+      setCachedFacets(groups);
+    } catch {
+      /* ignore */
+    }
+    return { groups, usedEmbeddedFallback: true };
+  }
+}
+
+/**
+ * 拉取 Shop 首屏 facets 索引并转换为 EsimCountryGroup[] 形态。
+ *
+ * `force=true` 会绕过本地缓存（用于 Shop 页面的下拉刷新）。
+ *
+ * NEVER returns only the tiny static SEO `/travel-esim` subset: retries + bundled snapshot fallback
+ * keep parity with Laravel's stocked catalogue (~179+ singles as of last embed regenerate).
+ */
+export async function fetchLocationFacets(force = false): Promise<EsimCountryGroup[]> {
+  const { groups } = await fetchLocationFacetsDetailed(force);
   return groups;
 }
 

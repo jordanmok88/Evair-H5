@@ -13,6 +13,7 @@
     "save": "bash scripts/save.sh",
     "daily-pull": "bash scripts/daily-pull-report.sh",
     "carriers:pull": "node scripts/fetch-redtea-carriers.mjs",
+    "catalog:embed-facets": "node scripts/generate-embed-catalog-facets.mjs",
     "save:all": "bash '/Users/jordanmok/Desktop/iCloud Drive/Cursor Codes/save-all.sh'"
   },
   "dependencies": {

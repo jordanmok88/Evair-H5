@@ -35,7 +35,8 @@
  * inside the grid + drawer themselves.
  *
  * @see data/travelEsimCountries.ts — curated blurbs/carriers only; catalogue
- *   index pulls live facets via `fetchLocationFacets()` so every sold country appears.
+ *   index lists every stocked country via `fetchLocationFacets()` (live API +
+ *   bundled snapshot fallback — never the small static SEO subset).
  * @see hooks/useEsimCheckoutFlow.ts
  * @see components/desktop/EsimPlanGrid.tsx
  * @see components/desktop/DesktopEsimCheckoutDrawer.tsx
@@ -56,13 +57,13 @@ import {
     Zap,
 } from 'lucide-react';
 import {
-    TRAVEL_COUNTRIES,
     findCountry,
-    groupByRegion,
     type TravelCountry,
 } from '../data/travelEsimCountries';
 import { CUSTOMER_SERVICE_EMAIL } from '../constants';
 import { retailCarrierRowForIso } from '../utils/retailCarrierLookup';
+import { fetchLocationFacetsDetailed } from '../services/dataService';
+import { getContinent } from '../services/esimApi';
 import type { EsimCountryGroup } from '../types';
 import SiteHeader from '../components/marketing/SiteHeader';
 import SiteFooter from '../components/marketing/SiteFooter';
@@ -113,20 +114,6 @@ function buildShelfRowsSingleCountries(groups: EsimCountryGroup[]): Record<strin
     return out;
 }
 
-function shelfRowsFromStaticTravelCountries(): Record<string, ShelfRow[]> {
-    const byRegion = groupByRegion();
-    const out: Record<string, ShelfRow[]> = {};
-    for (const [region, list] of Object.entries(byRegion)) {
-        const rows = list.map(c => ({
-            code: c.code,
-            name: c.name,
-            priceFromUsd: c.priceFromUsd,
-        }));
-        out[region] = sortRowsForShelf(region, rows);
-    }
-    return out;
-}
-
 type DynamicCountryState =
     | { kind: 'unset' }
     | { kind: 'loading' }
@@ -151,7 +138,7 @@ const TravelEsimPage: React.FC<TravelEsimPageProps> = ({ countryCode }) => {
         let cancel = false;
         (async () => {
             try {
-                const facets = await fetchLocationFacets(true);
+                const { groups: facets } = await fetchLocationFacetsDetailed(true);
                 if (cancel) return;
                 const g = facets.find(
                     f =>
@@ -655,34 +642,22 @@ const CatalogueIndexView: React.FC = () => {
               kind: 'ready';
               grouped: Record<string, ShelfRow[]>;
               singleCountryCount: number;
-              source: 'facets' | 'fallback';
+              source: 'live' | 'embed';
           }
     >({ kind: 'loading' });
 
     useEffect(() => {
         let cancel = false;
         (async () => {
-            try {
-                const facets = await fetchLocationFacets(true);
-                const singles = facets.filter(f => !f.isMultiRegion);
-                if (cancel) return;
-                setFacetState({
-                    kind: 'ready',
-                    grouped: buildShelfRowsSingleCountries(singles),
-                    singleCountryCount: singles.length,
-                    source: 'facets',
-                });
-            } catch (e) {
-                console.warn('[TravelEsim] catalogue facets failed:', e);
-                if (!cancel) {
-                    setFacetState({
-                        kind: 'ready',
-                        grouped: shelfRowsFromStaticTravelCountries(),
-                        singleCountryCount: TRAVEL_COUNTRIES.length,
-                        source: 'fallback',
-                    });
-                }
-            }
+            const { groups, usedEmbeddedFallback } = await fetchLocationFacetsDetailed(true);
+            if (cancel) return;
+            const singles = groups.filter(f => !f.isMultiRegion);
+            setFacetState({
+                kind: 'ready',
+                grouped: buildShelfRowsSingleCountries(singles),
+                singleCountryCount: singles.length,
+                source: usedEmbeddedFallback ? 'embed' : 'live',
+            });
         })();
         return () => {
             cancel = true;
@@ -753,10 +728,10 @@ const CatalogueIndexView: React.FC = () => {
                         arrive.
                     </span>
                 </p>
-                {facetState.kind === 'ready' && facetState.source === 'fallback' && (
-                    <div className="mt-6 max-w-2xl mx-auto rounded-xl bg-amber-50 border border-amber-100 px-4 py-3 text-sm text-amber-950">
-                        Live catalogue is temporarily unavailable — showing a shortened list. Open the app
-                        for the full catalogue, or retry in a minute.
+                {facetState.kind === 'ready' && facetState.source === 'embed' && (
+                    <div className="mt-6 max-w-2xl mx-auto rounded-xl bg-sky-50 border border-sky-100 px-4 py-3 text-sm text-sky-950">
+                        Full destination list loaded from cache while we reconnect — prices refresh as soon as
+                        the live catalogue is reachable again.
                     </div>
                 )}
             </section>
