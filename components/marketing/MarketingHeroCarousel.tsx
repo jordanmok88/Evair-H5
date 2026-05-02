@@ -19,8 +19,8 @@ const PLAN_HREF_PHONE = '/sim/phone#plans';
 const PLAN_HREF_IOT = '/sim/iot#plans';
 const PLAN_HREF_CAMERA = '/sim/camera#plans';
 
-/** 3px `#FF6600` frame — Tailwind `brand-orange` / app.css `--color-brand-orange`. */
-const HERO_ART_FRAME_CLASS = 'overflow-hidden rounded-2xl border-[3px] border-brand-orange';
+/** Rounded frame only — border removed for cleaner photography presentation. */
+const HERO_ART_FRAME_CLASS = 'overflow-hidden rounded-2xl';
 
 function nextSlideDelayMs(): number {
     const r = SLIDE_INTERVAL_MIN_MS + Math.random() * (SLIDE_INTERVAL_MAX_MS - SLIDE_INTERVAL_MIN_MS);
@@ -44,8 +44,14 @@ function usePrefersReducedMotion(): boolean {
  * Hero product tiles: IoT (01–04, 06), mobile/tablet/hotspot hero art, then camera (07–09).
  * Headline copy groups: `Math.floor(slideIndex / 3)` maps to three marketing message sets.
  * `planHref` jumps to each device landing «Pick a plan» block.
- * Imagery fills the orange frame with **`object-cover`** (landscape **16:10** box) so narrow
+ * Imagery fills the frame with **`object-cover`** (landscape **16:10** box) so narrow
  * viewports do not show side letterboxing; captions match mobile (**gradient + bottom-left**).
+ *
+ * Batch photos use filenames **`N-uuid.png` (N = 1 … 9)**. To replace art, copy those files
+ * into **`public/marketing/`** as follows (keeps captions / device landings aligned): **1 →
+ * `hero-mobile-tablet-hotspot.png`**, **2 → `device-built-for/cell-01.png`**, **3 → cell-07**, **4 →
+ * cell-02**, **5 → cell-03**, **6 → cell-08**, **7 → cell-09**, **8 → cell-06**, **9 → cell-04**
+ * (`cell-05` is POS-only on `/sim/iot` and is not in this carousel).
  */
 export const MARKETING_HERO_VISUAL_SLIDES = [
     {

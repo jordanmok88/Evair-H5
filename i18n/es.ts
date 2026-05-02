@@ -221,7 +221,7 @@ const es = {
     hero_slide_caption_6: 'Robots cortacésped',
     hero_slide_caption_7: 'Cámaras de seguridad',
     hero_slide_caption_8: 'Cámaras de caza / sendero',
-    hero_slide_caption_9: 'Monitores de campo',
+    hero_slide_caption_9: 'Monitores IoT médicos',
     hero_slide_mobile_img_alt_1:
       'Golden retriever en el césped con un módulo GPS rectangular en el collar.',
     hero_slide_mobile_img_alt_2:
@@ -240,7 +240,7 @@ const es = {
     hero_slide_mobile_img_alt_8:
       'Cámara camuflada en tronco de árbol en bosque.',
     hero_slide_mobile_img_alt_9:
-      'Telemetría de campo en poste con panel solar e indicadores de cobertura.',
+      'Habitación hospitalaria con monitor de signos y dispositivo IoT celular en la mesita, mostrando LTE conectado.',
     home_open_app: 'ABRIR APP',
     home_open_app_aria: 'Abrir la aplicación de cliente Evair',
     home_stories_title: 'Clientes satisfechos',

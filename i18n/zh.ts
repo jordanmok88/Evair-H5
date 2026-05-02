@@ -215,7 +215,7 @@ const zh = {
     hero_slide_caption_6: '割草机器人',
     hero_slide_caption_7: '安防摄像头',
     hero_slide_caption_8: '户外 / 打猎相机',
-    hero_slide_caption_9: '户外监测终端',
+    hero_slide_caption_9: '医疗物联网监测设备',
     hero_slide_mobile_img_alt_1: '草坪上的金毛犬佩戴带矩形 GPS 模块的项圈。',
     hero_slide_mobile_img_alt_2: '户外手腕上的智能手表显示导航地图。',
     hero_slide_mobile_img_alt_3: '室内双手持电子墨水屏阅读器翻阅书页。',
@@ -227,7 +227,7 @@ const zh = {
     hero_slide_mobile_img_alt_7: '屋檐下白色半球安防摄像头与天线。',
     hero_slide_mobile_img_alt_8: '森林树干上固定的伪装户外相机。',
     hero_slide_mobile_img_alt_9:
-      '立杆上的野外遥测盒子与太阳能板，显示墒情与联网状态。',
+      '病房内生命体征监视器与床头物联网蜂窝网关，显示 LTE 连接状态。',
     home_open_app: '打开应用',
     home_open_app_aria: '打开 Evair 客户应用',
     home_stories_title: '我们的用户',

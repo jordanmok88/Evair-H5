@@ -92,6 +92,20 @@ const DeviceLandingPage: React.FC<DeviceLandingPageProps> = ({ category }) => {
                             US support.
                         </span>
                     </div>
+                    {category === 'phone' && (
+                        <figure className="relative mt-8 hidden w-full max-w-2xl lg:block">
+                            <div className="relative aspect-[16/10] w-full overflow-hidden rounded-2xl bg-slate-100 shadow-lg ring-1 ring-slate-200/80">
+                                <img
+                                    src="/marketing/hero-mobile-tablet-hotspot.png"
+                                    alt="EvairSIM on smartphone, tablet dashboard, and pocket 5G hotspot on a table"
+                                    className="absolute inset-0 h-full w-full object-cover object-center"
+                                    decoding="async"
+                                    loading="lazy"
+                                    sizes="(min-width: 1024px) 42rem, 100vw"
+                                />
+                            </div>
+                        </figure>
+                    )}
                 </div>
             </section>
 

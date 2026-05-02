@@ -250,11 +250,11 @@ export const DEVICE_CONTENT: Record<DeviceCategory, DeviceContent> = {
             },
             {
                 icon: Shield,
-                label: 'Outdoor monitors',
+                label: 'Medical IoT monitors',
                 productPhotoUrl: '/marketing/device-built-for/cell-09.png',
                 productPhotoAlt:
-                    'Field IoT telemetry box on a pole with solar panel displaying soil moisture and connectivity status',
-                productPhotoObjectPosition: '68% 46%',
+                    'Hospital room with bedside monitor and compact IoT cellular gateway displaying LTE connectivity',
+                productPhotoObjectPosition: '48% 48%',
             },
         ],
         plans: [

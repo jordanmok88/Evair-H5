@@ -220,7 +220,7 @@ const en = {
     hero_slide_caption_6: 'Robotic mowers',
     hero_slide_caption_7: 'Security cameras',
     hero_slide_caption_8: 'Trail / hunting cameras',
-    hero_slide_caption_9: 'Outdoor monitors',
+    hero_slide_caption_9: 'Medical IoT monitors',
     hero_slide_mobile_img_alt_1:
       'Golden retriever on a lawn wearing a collar with a rectangular GPS tracker module.',
     hero_slide_mobile_img_alt_2:
@@ -239,7 +239,7 @@ const en = {
     hero_slide_mobile_img_alt_8:
       'Camouflaged trail camera mounted on a tree trunk in a forest setting.',
     hero_slide_mobile_img_alt_9:
-      'Field telemetry box on a pole with solar panel showing soil moisture and connectivity status.',
+      'Hospital room vitals monitor and bedside IoT cellular device showing LTE connection status.',
     home_open_app: 'OPEN APP',
     home_open_app_aria: 'Open the Evair customer app',
     home_stories_title: 'Our Happy Customers',
