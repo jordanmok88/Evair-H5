@@ -280,7 +280,7 @@ const es = {
     home_ready_title: 'Listo en dos toques.',
     home_ready_sub: 'Elige tu viaje, dispositivo o estancia. Nosotros nos encargamos de la conexión.',
     home_ready_get_started: 'Empezar',
-    home_ready_talk: 'Hablar con ventas',
+    home_ready_talk: 'Chat en vivo',
     home_footer_tagline: 'Conectividad para viajeros, residentes y quienes están en el medio.',
     home_footer_made: 'Hecho para quienes viajan y quienes se quedan.',
     home_footer_copyright: '© {{year}} Evair Digital. Todos los derechos reservados.',

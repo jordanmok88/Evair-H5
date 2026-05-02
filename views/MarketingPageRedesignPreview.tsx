@@ -6,7 +6,7 @@
 
 import React, { useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
-import { ArrowRight, CheckCircle2, ChevronRight, Star } from 'lucide-react';
+import { CheckCircle2, ChevronRight, Star } from 'lucide-react';
 import { applyPageSeo } from '../utils/seoHead';
 import { isMobileDevice } from '../utils/device';
 import { FooterWordmarkLink } from '../components/marketing/FooterWordmarkLink';
@@ -17,6 +17,7 @@ import { useMobileSignInGate } from '../hooks/useMobileSignInGate';
 import { AMAZON_SIM_PRIMARY_PRODUCT_URL, AMAZON_SIM_STOREFRONT_URL } from '../constants';
 
 const APP_PATH = '/app';
+const APP_SUPPORT_CHAT_HREF = '/app#contact';
 const ACTIVATE_PATH = '/activate';
 const TRAVEL_ESIM_LANDING = '/travel-esim';
 
@@ -396,13 +397,18 @@ const MarketingPageRedesignPreview: React.FC = () => {
                             onClick={signInGate.gateClick}
                             className="inline-flex min-h-12 items-center justify-center gap-2 rounded-xl bg-[#F27420] px-6 py-3.5 text-sm font-bold text-white transition hover:brightness-105 sm:min-h-14 sm:px-8 sm:py-4 sm:text-base"
                         >
-                            Get started <ArrowRight className="h-4 w-4 sm:h-[18px] sm:w-[18px]" />
+                            Get started{' '}
+                            <ChevronRight
+                                className="h-5 w-5 shrink-0 opacity-95 sm:h-[1.375rem] sm:w-[1.375rem]"
+                                strokeWidth={2.5}
+                                aria-hidden
+                            />
                         </a>
                         <a
-                            href="mailto:service@evairdigital.com"
+                            href={APP_SUPPORT_CHAT_HREF}
                             className="inline-flex min-h-12 items-center justify-center gap-2 rounded-xl border-2 border-white bg-transparent px-6 py-3.5 text-sm font-bold text-white transition hover:bg-white/10 sm:min-h-14 sm:px-8 sm:py-4 sm:text-base"
                         >
-                            Talk to sales
+                            {t('marketing.home_ready_talk')}
                         </a>
                     </div>
                 </div>

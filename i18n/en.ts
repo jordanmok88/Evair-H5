@@ -279,7 +279,7 @@ const en = {
     home_ready_title: 'Ready in two taps.',
     home_ready_sub: "Pick your trip, your device, or your stay. We'll handle the connection.",
     home_ready_get_started: 'Get started',
-    home_ready_talk: 'Talk to sales',
+    home_ready_talk: 'Live chat',
     home_footer_tagline: 'Connectivity for travelers, residents, and the people in between.',
     home_footer_made: 'Made for travelers and the people who stay.',
     home_footer_copyright: '© {{year}} Evair Digital. All rights reserved.',

@@ -265,7 +265,7 @@ const zh = {
     home_ready_title: '两步就绪。',
     home_ready_sub: '无论你出行、选设备或长住，连接交给我们。',
     home_ready_get_started: '开始',
-    home_ready_talk: '联系销售',
+    home_ready_talk: '在线客服',
     home_footer_tagline: '为旅人、居民与介于两者之间的你而连接。',
     home_footer_made: '为旅人与留下的人而做。',
     home_footer_copyright: '© {{year}} Evair Digital. 保留所有权利。',
