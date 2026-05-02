@@ -223,7 +223,7 @@ const MarketingPage: React.FC = () => {
                                         width={400}
                                         height={240}
                                         sizes="(max-width: 640px) 82vw, 240px"
-                                        className="h-full w-full object-contain object-center transition duration-500 group-hover:scale-[1.03]"
+                                        className="h-full w-full object-cover object-center transition duration-500 group-hover:scale-[1.03]"
                                         loading="lazy"
                                         decoding="async"
                                     />
