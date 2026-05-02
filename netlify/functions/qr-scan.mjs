@@ -1,16 +1,24 @@
 /**
  * QR Scan Tracker — Netlify Function
  *
- * QR code → GET /r?src=amazon → log scan to Supabase → 302 redirect to H5 app
+ * QR code → GET /r?src=amazon → log scan to Supabase → 302 redirect to production app
  *
- * Env vars required (set in Netlify dashboard):
+ * Important: The redirect target must be the **public domain** (www.evairdigital.com),
+ * never the raw *.netlify.app host — otherwise customers see the staging URL in Safari
+ * after scanning packaging / print QRs that encode https://www.evairdigital.com/r
+ *
+ * Optional env (Netlify dashboard): QR_SCAN_REDIRECT_URL — full URL, e.g.
+ * https://www.evairdigital.com/app or https://evairdigital.com/app
+ *
+ * Env vars required for logging (optional — redirect still works without):
  *   SUPABASE_URL          — e.g. https://xxxxx.supabase.co
  *   SUPABASE_SERVICE_KEY   — service_role key (server-side only)
  *
  * Supabase table: qr_scans (see SQL in docs/)
  */
 
-const H5_APP_URL = 'https://evair-h5.netlify.app';
+const DEFAULT_PUBLIC_APP = 'https://www.evairdigital.com/app';
+const H5_APP_URL = (process.env.QR_SCAN_REDIRECT_URL || DEFAULT_PUBLIC_APP).replace(/\/$/, '');
 
 function parseDevice(ua) {
   if (!ua) return 'unknown';
