@@ -104,12 +104,10 @@ const zh = {
     amazon_family_group_label: '实体 SIM 分类',
     plan_duration_section_days: '{{days}} 天套餐',
     plan_duration_section_months: '{{months}} 个月套餐',
-    plan_duration_group_hint:
-      '按计划有效天数分段展示。七日以下的极短行程套餐不在此列表。',
-    plan_premium_badge: '尊享',
-    plan_premium_hint_short: '美国 IP——海外使用美国流媒体与本地应用体验更佳。',
+    plan_duration_group_hint: '按计划有效天数分段展示。仅“1 天”极短包会隐藏。',
+    plan_premium_tier_compact: '尊享 {{tier}}',
     plan_long_stay_notice:
-      '当前暂无「≥7 天」档位的备货套餐展示。极短途套餐按政策不在此列表。',
+      '在隐藏“1 天”极短包后，暂时没有更多可展示的条目。可尝试区域套餐是否仍含该目的地。',
   },
   amazonSim: {
     plan_line: '{{gb}} GB · {{days}} 天',

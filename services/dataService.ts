@@ -102,7 +102,7 @@ function backendPkgToEsimPackage(dto: PackageDto): EsimPackage {
 // `supplierRegionCode` and `supplierRegionName` so the frontend no longer
 // needs a separate /packages/locations request or regex extraction.
 
-const CACHE_KEY = 'evair_esim_packages_v7';
+const CACHE_KEY = 'evair_esim_packages_v8';
 const CACHE_TTL_MS = 30 * 60 * 1000; // 30 minutes
 
 interface PackageCache {

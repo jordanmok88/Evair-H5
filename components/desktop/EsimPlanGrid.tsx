@@ -6,8 +6,8 @@
  * and renders large, readable cards with the plan's data, validity, and
  * USD price.
  *
- * Presentation: validity sections (≥7 approximate days only) stacked on one
- * scrollable page — no tabs. Premium US IP breakout tiers are labeled.
+ * Presentation: validity sections (one-day prepaid hidden) stacked on one
+ * scrollable page — no tabs. Breakout IP tiers show a combined premium label.
  */
 
 import React, { useEffect, useMemo, useState } from 'react';
@@ -21,7 +21,8 @@ import {
 import type { EsimPackage } from '../../types';
 import {
     bucketPlansByValidity,
-    isPremiumUsIpPlan,
+    inferRetailPremiumSkuTier,
+    sanitizedRetailPlanMarketingName,
 } from '../../utils/travelEsimPlanBuckets';
 
 interface EsimPlanGridProps {
@@ -159,7 +160,6 @@ const EsimPlanGrid: React.FC<EsimPlanGridProps> = ({ countryCode, countryName, o
                                 <PlanCard
                                     key={pkg.packageCode}
                                     pkg={pkg}
-                                    isPremium={isPremiumUsIpPlan(pkg)}
                                     onSelect={onSelect}
                                     t={t}
                                 />
@@ -194,17 +194,18 @@ const SectionHeader: React.FC<{
 
 const PlanCard: React.FC<{
     pkg: EsimPackage;
-    isPremium: boolean;
     onSelect: (pkg: EsimPackage) => void;
     t: ReturnType<typeof useTranslation>['t'];
 }> = ({
     pkg,
-    isPremium,
     onSelect,
     t,
 }) => {
+    const tier = inferRetailPremiumSkuTier(pkg);
+    const isPremium = tier !== null;
     const priceUsd = packagePriceUsd(pkg);
     const volumeLabel = formatVolume(pkg.volume);
+    const displayName = sanitizedRetailPlanMarketingName(pkg);
     const perGB = pkg.volume > 0
         ? (priceUsd / (pkg.volume / (1024 * 1024 * 1024)))
         : null;
@@ -232,22 +233,17 @@ const PlanCard: React.FC<{
                 <div className="min-w-0">
                     <div className="flex flex-wrap items-center gap-2 mb-1">
                         <span className="text-xs font-bold text-slate-400 uppercase tracking-wider break-words">
-                            {pkg.name}
+                            {displayName}
                         </span>
-                        {isPremium && (
+                        {tier != null && (
                             <span className="shrink-0 text-[10px] font-extrabold uppercase tracking-wide bg-amber-100 text-amber-900 px-2 py-0.5 rounded-md">
-                                {t('shop.plan_premium_badge')}
+                                {t('shop.plan_premium_tier_compact', { tier: tier.labelUpper })}
                             </span>
                         )}
                     </div>
                     <div className="text-3xl font-extrabold text-slate-900">
                         {volumeLabel}
                     </div>
-                    {isPremium && (
-                        <p className="text-[11px] text-amber-800/90 mt-1 leading-snug">
-                            {t('shop.plan_premium_hint_short')}
-                        </p>
-                    )}
                 </div>
                 <div className="text-right shrink-0">
                     <div className="text-2xl font-extrabold text-orange-600">

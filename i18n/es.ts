@@ -105,11 +105,10 @@ const es = {
     plan_duration_section_days: 'Planes de {{days}} días',
     plan_duration_section_months: 'Planes de {{months}} meses',
     plan_duration_group_hint:
-      'Agrupadas por vigencia activa en días; los planes de menos de siete días no aparecen aquí.',
-    plan_premium_badge: 'Premium',
-    plan_premium_hint_short: 'IP estadounidense — ideal para apps y streaming desde EE.UU.',
+      'Agrupamos por vigencia; los planes de solo 1 día naturales quedan fuera.',
+    plan_premium_tier_compact: 'Premium {{tier}}',
     plan_long_stay_notice:
-      'No hay planes de siete días o más en este momento. Ocultamos viajes muy cortos a propósito.',
+      'Tras ocultar los planes de un solo día, no quedan filas aquí por ahora. Prueba paquetes regionales.',
   },
   amazonSim: {
     plan_line: '{{gb}} GB · {{days}} días',

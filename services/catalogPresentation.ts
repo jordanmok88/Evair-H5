@@ -5,8 +5,9 @@
  * Rules (product – US outbound retail):
  *  1. Drop plans under 1 GiB (binary – matches `EsimPackage.volume` in bytes).
  *  2. Within each market (single-country ISO set or supplier region ID),
- *     collapse duplicate-shaped plans (same data volume + duration) to the
- *     cheapest SKU by authoritative `packagePriceUsd` **before** snapping.
+ *     collapse duplicate-shaped plans (same data volume + duration + breakout/IP
+ *     tier inferred from SKU name/description) to the cheapest SKU — **tier is
+ *     intentional**: e.g. 7-day 1 GB standard vs USIP must both surface.
  *  3. Snap each surviving SKU’s retail USD to `⌊usd⌋ + 0.99` so displayed
  *     and Stripe-posted totals match after `dataService` rewrites micro-cents.
  *
@@ -17,6 +18,7 @@
 
 import type { EsimPackage } from '../types';
 import { packagePriceUsd } from './esimApi';
+import { shopDedupePremiumSuffix } from './retailPremiumSkuTier';
 
 /** 1 GiB — minimum data shown in purchase flows (top-up catalogue bypasses). */
 export const MIN_SHOP_CATALOG_VOLUME_BYTES = 1024 ** 3;
@@ -52,9 +54,14 @@ function planShapeKey(p: EsimPackage): string {
     return `${p.volume}|${p.duration}|${p.durationUnit}`;
 }
 
-/** Composite key — duplicates only collapse within the same market + shape. */
+/**
+ * Duplicate-shaped plans collapse to the cheapest **only within the same
+ * breakout/IP tier**. Standard vs US IP (same GB × days) must stay separate.
+ */
 function dedupeCompositeKey(p: EsimPackage): string {
-    return `${marketDedupeKey(p)}#${planShapeKey(p)}`;
+    const tier = shopDedupePremiumSuffix(p);
+    const tierSeg = tier ? `|t:${tier}` : '';
+    return `${marketDedupeKey(p)}#${planShapeKey(p)}${tierSeg}`;
 }
 
 /**

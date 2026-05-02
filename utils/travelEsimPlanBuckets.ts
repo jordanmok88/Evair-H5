@@ -1,34 +1,32 @@
 /**
- * Presentation helpers for retail travel eSIM plan lists — duration sections,
- * minimum validity cutoff, and "Premium" SKU detection (US IP breakout tiers).
+ * Presentation helpers for travel eSIM retail plan lists — validity sections,
+ * 1-calendar-day SKU hide, and breakout-tier badges (delegated).
  */
 
 import type { EsimPackage } from '../types';
 import { packagePriceUsd } from '../services/dataService';
+import { isPremiumRetailSku } from '../services/retailPremiumSkuTier';
 
-/** Omit very short-trip SKUs (< 7 approximate days). */
-export const TRAVEL_RETAIL_MIN_APPROX_DAYS = 7;
+export { inferRetailPremiumSkuTier, sanitizedRetailPlanMarketingName } from '../services/retailPremiumSkuTier';
 
-const PREMIUM_NAME_RE =
-    /\b(USIP|NONHKIP|NON-HK\s*IP|USA\s*BREAKOUT|US\s*IP\b|US-IP\b|US\s*區域)/i;
+/** @deprecated Prefer `isPremiumRetailSku` — kept so older imports keep working */
+export function isPremiumUsIpPlan(pkg: EsimPackage): boolean {
+    return isPremiumRetailSku(pkg);
+}
 
-/** Approximate calendar length for grouping / filtering (months → days). */
+/** True for single-day prepaid SKUs (`durationUnit === DAY` + `duration === 1`). */
+export function hidesOneCalendarDayRetailPlan(p: EsimPackage): boolean {
+    return p.durationUnit === 'DAY' && p.duration === 1;
+}
+
+export function passesRetailTravelPlanListingFilter(p: EsimPackage): boolean {
+    return !hidesOneCalendarDayRetailPlan(p);
+}
+
+/** Approximate calendar length for grouping (months → approximate days). */
 export function approximateValidityDays(p: EsimPackage): number {
     if (p.durationUnit === 'MONTH') return p.duration * 30;
     return p.duration;
-}
-
-export function passesTravelRetailMinValidity(
-    p: EsimPackage,
-    minApproxDays = TRAVEL_RETAIL_MIN_APPROX_DAYS,
-): boolean {
-    return approximateValidityDays(p) >= minApproxDays;
-}
-
-/** Premium tier (US breakout IP plans — typically higher SKU price). */
-export function isPremiumUsIpPlan(pkg: EsimPackage): boolean {
-    const hay = `${pkg.name || ''}\n${pkg.description || ''}`;
-    return PREMIUM_NAME_RE.test(hay);
 }
 
 export interface EsimValidityBucket {
@@ -40,7 +38,7 @@ export interface EsimValidityBucket {
 }
 
 export function bucketPlansByValidity(packages: EsimPackage[]): EsimValidityBucket[] {
-    const eligible = packages.filter(passesTravelRetailMinValidity);
+    const eligible = packages.filter(passesRetailTravelPlanListingFilter);
 
     const byKey = new Map<string, EsimPackage[]>();
 

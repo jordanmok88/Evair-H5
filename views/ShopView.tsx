@@ -23,7 +23,7 @@ import {
   formatGB,
   POPULAR_COUNTRY_CODES,
 } from '../services/dataService';
-import { bucketPlansByValidity, isPremiumUsIpPlan } from '../utils/travelEsimPlanBuckets';
+import { bucketPlansByValidity, inferRetailPremiumSkuTier, sanitizedRetailPlanMarketingName } from '../utils/travelEsimPlanBuckets';
 import { orderService } from '../services/api';
 import { pollEsimOrderUntilProvisioned } from '../services/api/order';
 import type { OrderDetailDto } from '../services/api/types';
@@ -921,9 +921,11 @@ const ShopView: React.FC<ShopViewProps> = ({
                 </h4>
           <div className="space-y-3 md:grid md:grid-cols-2 md:gap-3 md:space-y-0 lg:block lg:space-y-3">
             {bucket.packages.map((pkg) => {
-              const premium = isPremiumUsIpPlan(pkg);
+              const premiumTier = inferRetailPremiumSkuTier(pkg);
+              const premium = premiumTier !== null;
               const priceUsd = packagePriceUsd(pkg);
               const volumeStr = formatVolume(pkg.volume);
+              const planMarketingName = sanitizedRetailPlanMarketingName(pkg);
               const gb = pkg.volume / (1024 * 1024 * 1024);
               const pricePerGb = gb > 0 ? priceUsd / gb : priceUsd;
               const isAutoActivate = pkg.activeType === 1;
@@ -943,10 +945,10 @@ const ShopView: React.FC<ShopViewProps> = ({
                   <div className="flex justify-between items-end mb-3">
                     <div>
                       <div className="flex flex-wrap gap-2 items-center mb-1">
-                        <p className="text-slate-400 font-semibold text-xs uppercase tracking-wider">{pkg.name}</p>
-                        {premium && (
+                        <p className="text-slate-400 font-semibold text-xs uppercase tracking-wider">{planMarketingName}</p>
+                        {premiumTier != null && (
                           <span className="text-[9px] font-extrabold uppercase tracking-wide bg-amber-100 text-amber-950 px-1.5 py-0.5 rounded">
-                            {t('shop.plan_premium_badge')}
+                            {t('shop.plan_premium_tier_compact', { tier: premiumTier.labelUpper })}
                           </span>
                         )}
                       </div>
@@ -954,9 +956,6 @@ const ShopView: React.FC<ShopViewProps> = ({
                         <h3 className="text-2xl font-extrabold text-slate-900 tracking-tight">{volumeStr.split(' ')[0]}</h3>
                         <span className="text-base font-bold text-slate-400">{volumeStr.split(' ')[1]}</span>
                       </div>
-                      {premium && (
-                        <p className="text-[10px] text-amber-900/85 mt-0.5 leading-snug">{t('shop.plan_premium_hint_short')}</p>
-                      )}
                     </div>
                     <div className="text-right shrink-0">
                       <span className="text-xl font-bold text-brand-orange">${priceUsd.toFixed(2)}</span>

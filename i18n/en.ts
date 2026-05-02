@@ -104,11 +104,13 @@ const en = {
     amazon_family_group_label: 'Physical SIM categories',
     plan_duration_section_days: '{{days}}-day plans',
     plan_duration_section_months: '{{months}}-month plans',
-    plan_duration_group_hint: 'Grouped by how long service stays active. Trips shorter than seven days stay hidden.',
+    plan_duration_group_hint:
+      'Grouped by validity. Single-calendar-day prepaid plans stay hidden so multi-day trips are easier to scan.',
     plan_premium_badge: 'Premium',
     plan_premium_hint_short: 'US IP — optimized for US apps abroad',
+    plan_premium_tier_compact: 'Premium {{tier}}',
     plan_long_stay_notice:
-      'No plans at seven days or longer are available for this listing right now. Shorter-trip SKUs stay hidden.',
+      'After hiding one-day prepaid SKUs there is nothing else to display here yet. Regional bundles may still cover this destination.',
   },
   amazonSim: {
     plan_line: '{{gb}} GB · {{days}} days',
