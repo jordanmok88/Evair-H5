@@ -41,24 +41,33 @@ function usePrefersReducedMotion(): boolean {
 }
 
 /**
- * Hero product tiles: IoT (01–04, 06), mobile/tablet/hotspot hero art, then camera (07–09).
- * Headline copy groups: `Math.floor(slideIndex / 3)` maps to three marketing message sets.
- * `planHref` jumps to each device landing «Pick a plan» block.
- * Imagery fills the frame with **`object-cover`** (landscape **16:10** box) so narrow
- * viewports do not show side letterboxing; captions match mobile (**gradient + bottom-left**).
+ * Carousel order matches **`N-uuid.png` batch numbering (N = 1 … 9)**: trio first, then
+ * `cell-01`→`cell-09` skips by content (see filenames → paths map below).
+ * Caption / alt **`_1` … `_9`** keys always match **image subject**, not array index.
+ * Headline bands: `Math.floor(slideIndex / 3)` cycles three homepage marketing lines.
  *
- * Batch photos use filenames **`N-uuid.png` (N = 1 … 9)**. To replace art, copy those files
- * into **`public/marketing/`** as follows (keeps captions / device landings aligned): **1 →
- * `hero-mobile-tablet-hotspot.png`**, **2 → `device-built-for/cell-01.png`**, **3 → cell-07**, **4 →
- * cell-02**, **5 → cell-03**, **6 → cell-08**, **7 → cell-09**, **8 → cell-06**, **9 → cell-04**
- * (`cell-05` is POS-only on `/sim/iot` and is not in this carousel).
+ * Filename → `public/marketing/` paths: **1** `hero-mobile-tablet-hotspot.png`; **2** `device-built-for/cell-01.png`;
+ * **3** cell-07; **4** cell-02; **5** cell-03; **6** cell-08; **7** cell-09; **8** cell-06; **9** cell-04
+ * (`cell-05` is POS-only on `/sim/iot`, not shown here).
  */
 export const MARKETING_HERO_VISUAL_SLIDES = [
+    {
+        src: '/marketing/hero-mobile-tablet-hotspot.png',
+        altKey: 'marketing.hero_slide_mobile_img_alt_5' as const,
+        captionKey: 'marketing.hero_slide_caption_5' as const,
+        planHref: PLAN_HREF_PHONE,
+    },
     {
         src: '/marketing/device-built-for/cell-01.png',
         altKey: 'marketing.hero_slide_mobile_img_alt_1' as const,
         captionKey: 'marketing.hero_slide_caption_1' as const,
         planHref: PLAN_HREF_IOT,
+    },
+    {
+        src: '/marketing/device-built-for/cell-07.png',
+        altKey: 'marketing.hero_slide_mobile_img_alt_7' as const,
+        captionKey: 'marketing.hero_slide_caption_7' as const,
+        planHref: PLAN_HREF_CAMERA,
     },
     {
         src: '/marketing/device-built-for/cell-02.png',
@@ -73,30 +82,6 @@ export const MARKETING_HERO_VISUAL_SLIDES = [
         planHref: PLAN_HREF_IOT,
     },
     {
-        src: '/marketing/hero-mobile-tablet-hotspot.png',
-        altKey: 'marketing.hero_slide_mobile_img_alt_5' as const,
-        captionKey: 'marketing.hero_slide_caption_5' as const,
-        planHref: PLAN_HREF_PHONE,
-    },
-    {
-        src: '/marketing/device-built-for/cell-04.png',
-        altKey: 'marketing.hero_slide_mobile_img_alt_4' as const,
-        captionKey: 'marketing.hero_slide_caption_4' as const,
-        planHref: PLAN_HREF_IOT,
-    },
-    {
-        src: '/marketing/device-built-for/cell-06.png',
-        altKey: 'marketing.hero_slide_mobile_img_alt_6' as const,
-        captionKey: 'marketing.hero_slide_caption_6' as const,
-        planHref: PLAN_HREF_IOT,
-    },
-    {
-        src: '/marketing/device-built-for/cell-07.png',
-        altKey: 'marketing.hero_slide_mobile_img_alt_7' as const,
-        captionKey: 'marketing.hero_slide_caption_7' as const,
-        planHref: PLAN_HREF_CAMERA,
-    },
-    {
         src: '/marketing/device-built-for/cell-08.png',
         altKey: 'marketing.hero_slide_mobile_img_alt_8' as const,
         captionKey: 'marketing.hero_slide_caption_8' as const,
@@ -107,6 +92,18 @@ export const MARKETING_HERO_VISUAL_SLIDES = [
         altKey: 'marketing.hero_slide_mobile_img_alt_9' as const,
         captionKey: 'marketing.hero_slide_caption_9' as const,
         planHref: PLAN_HREF_CAMERA,
+    },
+    {
+        src: '/marketing/device-built-for/cell-06.png',
+        altKey: 'marketing.hero_slide_mobile_img_alt_6' as const,
+        captionKey: 'marketing.hero_slide_caption_6' as const,
+        planHref: PLAN_HREF_IOT,
+    },
+    {
+        src: '/marketing/device-built-for/cell-04.png',
+        altKey: 'marketing.hero_slide_mobile_img_alt_4' as const,
+        captionKey: 'marketing.hero_slide_caption_4' as const,
+        planHref: PLAN_HREF_IOT,
     },
 ] as const;
 
