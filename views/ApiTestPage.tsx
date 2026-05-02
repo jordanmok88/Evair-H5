@@ -32,7 +32,8 @@ import type {
   BindSimRequest,
   UpdateProfileRequest,
   CreateAddressRequest,
-  OrderStatus,
+  AppOrderStatus,
+  AppOrderType,
 } from '../services/api/types';
 
 // 服务模块配置
@@ -606,13 +607,24 @@ async function executeOrderMethod(method: string, params: Record<string, string>
           country: params.country || DEFAULT_PARAMS.country,
         },
       } as CreatePhysicalOrderRequest);
-    case 'getOrders':
+    case 'getOrders': {
+      const rawType = params.type?.trim();
+      const type: AppOrderType | undefined =
+        rawType === 'ESIM'
+          ? 'package'
+          : rawType === 'PHYSICAL'
+            ? 'physical'
+            : rawType === 'package' || rawType === 'physical'
+              ? rawType
+              : undefined;
+      const status = params.status?.toLowerCase() as AppOrderStatus | undefined;
       return orderService.getOrders({
-        status: params.status as OrderStatus | undefined,
-        type: params.type as 'ESIM' | 'PHYSICAL',
+        status,
+        type,
         page: params.page ? parseInt(params.page) : undefined,
         size: params.size ? parseInt(params.size) : undefined,
       });
+    }
     case 'getOrderDetail':
       return orderService.getOrderDetail(params.orderNo || DEFAULT_PARAMS.orderNo);
     case 'cancelOrder':
