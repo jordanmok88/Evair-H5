@@ -401,8 +401,8 @@ const HeroCountryBanner: React.FC<{ code: string; name: string }> = ({ code, nam
                   )
                 : '🌐';
         return (
-            <div className="relative flex aspect-[4/5] w-[min(260px,72vw)] shrink-0 flex-col items-center justify-center gap-2 overflow-hidden rounded-2xl border border-slate-200 bg-gradient-to-br from-slate-100 to-orange-50 p-5 shadow-lg md:w-[272px] md:aspect-[4/5] md:p-6 lg:w-[292px] lg:rounded-3xl lg:shadow-xl">
-                <span className="text-6xl leading-none md:text-7xl" aria-hidden>
+            <div className="relative flex aspect-[5/3] w-[min(300px,88vw)] shrink-0 flex-col items-center justify-center gap-2 overflow-hidden rounded-2xl border border-slate-200 bg-gradient-to-br from-slate-100 to-orange-50 p-4 shadow-lg md:w-[320px] md:p-5 lg:rounded-3xl lg:shadow-xl">
+                <span className="text-5xl leading-none md:text-6xl" aria-hidden>
                     {glyph}
                 </span>
                 <span className="text-xs font-bold text-slate-600 md:text-sm">{name}</span>
@@ -414,13 +414,17 @@ const HeroCountryBanner: React.FC<{ code: string; name: string }> = ({ code, nam
         tier === 'w640' ? `https://flagcdn.com/w640/${iso}.png` : `https://flagcdn.com/w320/${iso}.png`;
 
     return (
-        <div className="relative aspect-[4/5] w-[min(260px,72vw)] shrink-0 overflow-hidden rounded-2xl border border-slate-200 bg-slate-100 shadow-lg md:w-[272px] md:aspect-[4/5] lg:w-[292px] lg:rounded-3xl lg:shadow-xl">
+        <div className="relative flex aspect-[5/3] w-[min(300px,88vw)] shrink-0 items-center justify-center overflow-hidden rounded-2xl border border-slate-200 bg-slate-100 p-3 shadow-lg md:w-[320px] md:p-4 lg:rounded-3xl lg:shadow-xl">
+            {/*
+              Never use object-cover on national flags: wide ratios (CA, CH, …) get cropped
+              to the center charge only. object-contain keeps the full flag correct.
+            */}
             <img
                 src={src}
                 alt=""
-                className="absolute inset-0 h-full w-full object-cover"
+                className="h-full w-full object-contain object-center"
                 width={640}
-                height={512}
+                height={384}
                 loading="lazy"
                 decoding="async"
                 onError={() => setTier((t) => (t === 'w640' ? 'w320' : 'emoji'))}

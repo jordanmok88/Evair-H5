@@ -39,6 +39,7 @@ const shellStyle = (width: number, height: number): React.CSSProperties => ({
   borderRadius: 4,
   border: '1px solid #e5e7eb',
   boxShadow: '0 1px 2px 0 rgb(0 0 0 / 0.05)',
+  backgroundColor: '#f3f4f6',
 });
 
 const FlagIcon: React.FC<FlagIconProps> = ({ countryCode, size = 'md', className = '' }) => {
@@ -86,7 +87,9 @@ const FlagIcon: React.FC<FlagIconProps> = ({ countryCode, size = 'md', className
         style={{
           width: '100%',
           height: '100%',
-          objectFit: 'cover',
+          // `cover` crops wide flags (CA, CH, …) to the center charge only — wrong.
+          objectFit: 'contain',
+          objectPosition: 'center',
         }}
       />
     </span>
