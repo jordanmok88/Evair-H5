@@ -130,6 +130,7 @@ i18n/               — Translation files (en.ts, zh.ts, es.ts)
 - GitHub `main` branch → Netlify auto-deploy
 - Site: `evair-h5.netlify.app`
 - Environment variables set in Netlify dashboard: `ESIM_ACCESS_CODE`, `ESIM_SECRET`, `RESEND_API_KEY`, `RESEND_FROM`
+- **Production:** do **not** set `VITE_DEMO_ESIM=1` on Netlify. When unset, `services/esimApi.ts` `DEMO_MODE` is false and order/top-up calls hit the real supplier. Set `VITE_DEMO_ESIM=1` only on branch previews or local `.env` when you need fake order success without charging.
 
 ## Engineering Constraints
 

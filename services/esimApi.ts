@@ -15,12 +15,11 @@ import type {
 const PROXY_URL = '/api/esim';
 
 /**
- * Pre-launch demo mode: when true, order and top-up calls return
- * simulated success without hitting the supplier API.
- * Browsing packages / checking usage still works against the real API.
- * Flip to `false` when ready to go live.
+ * Demo mode: when true, order and top-up calls return simulated success
+ * without hitting the supplier API. Production must leave `VITE_DEMO_ESIM`
+ * unset (or not `1`).
  */
-export const DEMO_MODE = true;
+export const DEMO_MODE = import.meta.env.VITE_DEMO_ESIM === '1';
 
 async function call<T>(endpoint: string, payload: Record<string, unknown> = {}): Promise<EsimApiResponse<T>> {
   const res = await fetch(PROXY_URL, {

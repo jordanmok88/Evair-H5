@@ -1,6 +1,6 @@
-import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
+import React, { useState, useEffect, useRef, useCallback, useMemo, lazy, Suspense } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Zap } from 'lucide-react';
+import { Loader2, Zap } from 'lucide-react';
 import BottomNav from './components/BottomNav';
 import SupportFab from './components/SupportFab';
 import ProductTab from './views/ProductTab';
@@ -11,15 +11,15 @@ import DialerView from './views/DialerView';
 import ContactUsView from './views/ContactUsView';
 import InboxView from './views/InboxView';
 import ApiTestPage from './views/ApiTestPage';
-import ActivatePage from './views/ActivatePage';
-import TopUpPage from './views/TopUpPage';
-import MarketingPage from './views/MarketingPage';
-import MarketingPageRedesignPreview from './views/MarketingPageRedesignPreview';
-import DeviceLandingPage from './views/DeviceLandingPage';
-import TravelEsimPage from './views/TravelEsimPage';
-import HelpCenterPage from './views/HelpCenterPage';
-import BlogPage from './views/BlogPage';
-import LegalPage from './views/LegalPage';
+const ActivatePage = lazy(() => import('./views/ActivatePage'));
+const TopUpPage = lazy(() => import('./views/TopUpPage'));
+const MarketingPage = lazy(() => import('./views/MarketingPage'));
+const MarketingPageRedesignPreview = lazy(() => import('./views/MarketingPageRedesignPreview'));
+const DeviceLandingPage = lazy(() => import('./views/DeviceLandingPage'));
+const TravelEsimPage = lazy(() => import('./views/TravelEsimPage'));
+const HelpCenterPage = lazy(() => import('./views/HelpCenterPage'));
+const BlogPage = lazy(() => import('./views/BlogPage'));
+const LegalPage = lazy(() => import('./views/LegalPage'));
 import { Tab, ActiveSim, SimType, User, AppNotification, EsimProfileResult } from './types';
 import { Lock } from 'lucide-react';
 import { MOCK_COUNTRIES, MOCK_PLANS_US, MOCK_ACTIVE_SIMS, MOCK_NOTIFICATIONS } from './constants';
@@ -53,6 +53,14 @@ function navigateToAppSupport() {
 function showGlobalSupportFabForRoute(kind: Route['kind']): boolean {
   /** 与 `CustomerApp` 互斥：`app` 路由内用内嵌 FAB；其余（含 apiTest / 营销 / activate 等）用全屏 fixed FAB */
   return kind !== 'app';
+}
+
+function RouteSuspenseFallback() {
+  return (
+    <div className="min-h-[50vh] flex flex-col items-center justify-center gap-3 bg-white text-slate-500">
+      <Loader2 className="animate-spin text-brand-orange" size={32} aria-hidden />
+    </div>
+  );
 }
 
 function App() {
@@ -151,7 +159,7 @@ function App() {
       {showGlobalSupportFabForRoute(route.kind) && (
         <SupportFab layout="fixed" visible onClick={navigateToAppSupport} />
       )}
-      {appBody}
+      <Suspense fallback={<RouteSuspenseFallback />}>{appBody}</Suspense>
     </>
   );
 }

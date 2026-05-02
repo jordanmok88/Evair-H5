@@ -11,6 +11,38 @@ const en = {
     inbox: 'Inbox',
     profile: 'Profile',
   },
+  travel_page: {
+    trust_heading: 'Why travelers choose EvairSIM',
+    trust_speed_title: '5G up to 650 Mbps',
+    trust_speed_body:
+      'Phone and tablet plans advertise real peak speeds on supported networks — faster than most travel eSIMs publish.',
+    trust_us_ip_title: 'US IP where it matters',
+    trust_us_ip_body:
+      'Premium routes keep US apps and banking behaving like home when you pick a US-IP plan for your destination.',
+    trust_apn_title: 'Auto APN',
+    trust_apn_body:
+      'No manual APN fields to hunt down — install the profile and connect like a local line.',
+    faq_heading: 'Common questions',
+    faq_q1: 'When does my plan start?',
+    faq_a1:
+      'Data usually begins when you first connect to a supported network in the destination country (not at purchase). Check your plan details for any exceptions.',
+    faq_q2: 'Can I get a refund?',
+    faq_a2_before_link: 'eSIM purchases follow our ',
+    faq_refund_link: 'refund policy',
+    faq_a2_after_link: '.',
+    faq_q3: 'How do renewals and auto-top-up work?',
+    faq_a3_before_link: 'Many plans support top-ups in the app. Auto-renew is optional and can be turned off anytime — see ',
+    faq_autorenew_link: 'cancel auto-renew',
+    faq_a3_after_link: '.',
+    faq_q4: 'Will my phone work?',
+    faq_a4:
+      'You need an unlocked device with eSIM support (iPhone XS or newer; most flagship Android phones). Step-by-step install guides:',
+    faq_install_iphone: 'iPhone',
+    faq_install_android: 'Android',
+    faq_q5: 'How long does installation take?',
+    faq_a5:
+      'After purchase you get a QR code. Scanning and adding the profile usually takes about one minute on Wi-Fi before you travel.',
+  },
   shop: {
     hello: 'Hello',
     new_friend: 'New Friend',
@@ -114,6 +146,14 @@ const en = {
       'After hiding one-day prepaid SKUs there is nothing else to display here yet. Regional bundles may still cover this destination.',
     plan_networks_with_names: 'Networks · {{names}}',
     plan_networks_generic: 'Leading local networks',
+    faq_strip: {
+      title: 'Common questions',
+      what_is_esim: 'What is an eSIM?',
+      install_iphone: 'Install on iPhone',
+      install_android: 'Install on Android',
+      topup: 'Top up data',
+      refund: 'Refunds',
+    },
   },
   amazonSim: {
     plan_line: '{{gb}} GB · {{days}} days',

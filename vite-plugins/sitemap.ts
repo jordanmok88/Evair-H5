@@ -30,6 +30,7 @@
 
 import type { Plugin } from 'vite';
 import { TRAVEL_COUNTRIES } from '../data/travelEsimCountries';
+import { EMBEDDED_CATALOG_LOCATION_FACETS_SNAPSHOT } from '../data/catalogLocationFacetsEmbed';
 import { HELP_ARTICLES } from '../data/helpArticles';
 import { POSTS_NEWEST_FIRST } from '../data/blogPosts';
 
@@ -83,10 +84,19 @@ export function sitemapPlugin(opts: SitemapPluginOptions): Plugin {
         generateBundle() {
             const urls: SitemapEntry[] = [...STATIC_URLS];
 
-            // Travel eSIM country pages — one per country in the catalogue.
+            // Travel eSIM country pages — union curated SEO list + full stocked ISO list
+            // from embedded catalogue snapshot (matches live /app/packages/locations singles).
+            const travelPaths = new Set<string>();
             for (const country of TRAVEL_COUNTRIES) {
+                travelPaths.add(`/travel-esim/${country.code.toLowerCase()}`);
+            }
+            for (const row of EMBEDDED_CATALOG_LOCATION_FACETS_SNAPSHOT.singleCountries) {
+                const code = (row.code || '').toLowerCase();
+                if (/^[a-z]{2}$/.test(code)) travelPaths.add(`/travel-esim/${code}`);
+            }
+            for (const path of travelPaths) {
                 urls.push({
-                    path: `/travel-esim/${country.code}`,
+                    path,
                     changefreq: 'weekly',
                     priority: 0.8,
                 });

@@ -11,6 +11,36 @@ const zh = {
     inbox: '消息',
     profile: '我的',
   },
+  travel_page: {
+    trust_heading: '为什么选择 EvairSIM',
+    trust_speed_title: '5G 最高约 650 Mbps',
+    trust_speed_body:
+      '手机与平板套餐在支持网络上公布真实峰值速度，高于多数旅行 eSIM 的公开指标。',
+    trust_us_ip_title: '关键场景保留美国 IP',
+    trust_us_ip_body:
+      '尊享线路可在目的地使用美国出口 IP，让常用美国应用与网银更像在家使用（需选择含 US IP 的套餐）。',
+    trust_apn_title: '自动 APN',
+    trust_apn_body: '无需手动填写 APN — 安装描述文件后即可像本地卡一样上网。',
+    faq_heading: '常见问题',
+    faq_q1: '套餐从什么时候开始计费？',
+    faq_a1:
+      '流量一般从您在目的地首次接入合作网络时开始（非下单瞬间）。具体以套餐说明为准。',
+    faq_q2: '可以退款吗？',
+    faq_a2_before_link: 'eSIM 购买适用我们的',
+    faq_refund_link: '退款政策',
+    faq_a2_after_link: '。',
+    faq_q3: '续费与自动充值如何运作？',
+    faq_a3_before_link: '多数套餐可在 App 内充值。自动续费为可选，可随时关闭 — 参见',
+    faq_autorenew_link: '关闭自动续费',
+    faq_a3_after_link: '。',
+    faq_q4: '我的手机能用吗？',
+    faq_a4:
+      '需已解锁且支持 eSIM 的设备（iPhone XS 及以上；多数安卓旗舰）。分步安装指南：',
+    faq_install_iphone: 'iPhone',
+    faq_install_android: 'Android',
+    faq_q5: '安装需要多久？',
+    faq_a5: '付款后获得二维码。在出行前连 Wi‑Fi 扫码添加，通常约一分钟即可完成。',
+  },
   shop: {
     hello: '你好',
     new_friend: '新朋友',
@@ -111,6 +141,14 @@ const zh = {
       '在隐藏“1 天”极短包后，暂时没有更多可展示的条目。可尝试区域套餐是否仍含该目的地。',
     plan_networks_with_names: '网络 · {{names}}',
     plan_networks_generic: '当地主流合作网络',
+    faq_strip: {
+      title: '常见问题',
+      what_is_esim: '什么是 eSIM？',
+      install_iphone: '在 iPhone 上安装',
+      install_android: '在 Android 上安装',
+      topup: '充值流量',
+      refund: '退款说明',
+    },
   },
   amazonSim: {
     plan_line: '{{gb}} GB · {{days}} 天',

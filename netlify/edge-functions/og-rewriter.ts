@@ -95,7 +95,7 @@ function resolveMeta(pathname: string): OgMeta | null {
         const article = HELP_ARTICLES.find(a => a.slug === slug);
         if (!article) return helpIndexMeta();
         return {
-            title: `${article.title} — Evair Help`,
+            title: `${article.title} — EvairSIM Help`,
             description: article.summary,
             image: `${SITE_ORIGIN}/og-image.png`,
             type: 'article',
@@ -110,7 +110,7 @@ function resolveMeta(pathname: string): OgMeta | null {
         const post = BLOG_POSTS.find(p => p.slug === slug);
         if (!post) return blogIndexMeta();
         return {
-            title: `${post.title} — Evair Blog`,
+            title: `${post.title} — EvairSIM Blog`,
             description: post.summary,
             image: `${SITE_ORIGIN}/og-image.png`,
             type: 'article',
@@ -125,7 +125,7 @@ function resolveMeta(pathname: string): OgMeta | null {
         const country = TRAVEL_COUNTRIES.find(c => c.code === code);
         if (!country) return travelIndexMeta();
         return {
-            title: `${country.name} eSIM — from $${country.priceFromUsd} | Evair`,
+            title: `${country.name} eSIM — from $${country.priceFromUsd} | EvairSIM`,
             description: country.blurb,
             image: `${SITE_ORIGIN}/og-image.png`,
             type: 'website',
@@ -140,7 +140,7 @@ function resolveMeta(pathname: string): OgMeta | null {
     // can't bundle without a custom import map.
     if (pathname === '/sim/phone') {
         return {
-            title: 'Mobile & tablet SIM cards — Evair',
+            title: 'Mobile & tablet SIM cards — EvairSIM',
             description:
                 'Honest US SIM cards for mobiles, tablets, hotspots, and laptops. 5G up to 650 Mbps; 9 GB high-speed then 10 Mbps. Plug-and-play APN.',
             type: 'website',
@@ -148,7 +148,7 @@ function resolveMeta(pathname: string): OgMeta | null {
     }
     if (pathname === '/sim/camera') {
         return {
-            title: 'Trail & security camera SIMs — Evair',
+            title: 'Trail & security camera SIMs — EvairSIM',
             description:
                 'Reliable cellular SIMs for trail cams, security cameras, and outdoor monitoring. 1.5 Mbps cap all month, no hidden throttle. From $4.99/mo.',
             type: 'website',
@@ -156,7 +156,7 @@ function resolveMeta(pathname: string): OgMeta | null {
     }
     if (pathname === '/sim/iot') {
         return {
-            title: 'IoT & smart device SIMs — Evair',
+            title: 'IoT & smart device SIMs — EvairSIM',
             description:
                 'GPS trackers, walkie-talkies, POS terminals, smart watches, e-readers, robotic mowers. 500 Kbps low-data plans built for telemetry.',
             type: 'website',
@@ -168,7 +168,7 @@ function resolveMeta(pathname: string): OgMeta | null {
 
 function helpIndexMeta(): OgMeta {
     return {
-        title: 'Help center — Evair',
+        title: 'Help center — EvairSIM',
         description:
             'Setup guides, troubleshooting, billing, and refunds. Find an answer or open a chat with us.',
         type: 'website',
@@ -177,7 +177,7 @@ function helpIndexMeta(): OgMeta {
 
 function blogIndexMeta(): OgMeta {
     return {
-        title: 'Evair Blog — Travel eSIMs, US SIMs, IoT',
+        title: 'EvairSIM Blog — Travel eSIMs, US SIMs, IoT',
         description:
             'Honest guides on travel eSIMs, US SIMs, IoT data plans, and how to actually save money on mobile data.',
         type: 'website',
@@ -186,7 +186,7 @@ function blogIndexMeta(): OgMeta {
 
 function travelIndexMeta(): OgMeta {
     return {
-        title: 'Travel eSIMs for 200+ countries — Evair',
+        title: 'Travel eSIMs for 200+ countries — EvairSIM',
         description:
             'Buy travel eSIMs for Japan, the UK, Mexico, and 200+ destinations. Install at home, connect when you land. From $4.99.',
         type: 'website',

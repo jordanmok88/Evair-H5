@@ -1623,6 +1623,58 @@ const ShopView: React.FC<ShopViewProps> = ({
                   </div>
                 )}
 
+                {!searchQuery && (
+                  <div className="mb-4 rounded-xl border border-slate-100 bg-slate-50/90 px-3 py-2.5">
+                    <p className="mb-1.5 text-[11px] font-bold uppercase tracking-wide text-slate-500">
+                      {t('shop.faq_strip.title')}
+                    </p>
+                    <nav className="flex flex-wrap gap-x-3 gap-y-1 text-xs" aria-label={t('shop.faq_strip.title')}>
+                      <a
+                        href="/help/what-is-an-esim"
+                        className="font-semibold text-brand-orange hover:underline underline-offset-2"
+                      >
+                        {t('shop.faq_strip.what_is_esim')}
+                      </a>
+                      <span className="text-slate-300" aria-hidden>
+                        ·
+                      </span>
+                      <a
+                        href="/help/install-esim-iphone"
+                        className="font-semibold text-brand-orange hover:underline underline-offset-2"
+                      >
+                        {t('shop.faq_strip.install_iphone')}
+                      </a>
+                      <span className="text-slate-300" aria-hidden>
+                        ·
+                      </span>
+                      <a
+                        href="/help/install-esim-android"
+                        className="font-semibold text-brand-orange hover:underline underline-offset-2"
+                      >
+                        {t('shop.faq_strip.install_android')}
+                      </a>
+                      <span className="text-slate-300" aria-hidden>
+                        ·
+                      </span>
+                      <a
+                        href="/help/top-up-data"
+                        className="font-semibold text-brand-orange hover:underline underline-offset-2"
+                      >
+                        {t('shop.faq_strip.topup')}
+                      </a>
+                      <span className="text-slate-300" aria-hidden>
+                        ·
+                      </span>
+                      <a
+                        href="/help/refund-policy"
+                        className="font-semibold text-brand-orange hover:underline underline-offset-2"
+                      >
+                        {t('shop.faq_strip.refund')}
+                      </a>
+                    </nav>
+                  </div>
+                )}
+
                 {/* ── Continent Filter Tabs (only in country mode) ── */}
                 {!searchQuery && browseMode === 'country' && (
                   <div className="flex gap-2 overflow-x-auto no-scrollbar pb-3 -mx-4 px-4 md:mx-0 md:px-0 md:flex-wrap lg:-mx-4 lg:px-4 lg:flex-nowrap lg:overflow-x-auto mb-3">

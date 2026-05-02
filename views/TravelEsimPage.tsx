@@ -44,6 +44,7 @@
  */
 
 import React, { useEffect, useMemo, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
     AlertTriangle,
     ArrowRight,
@@ -80,6 +81,121 @@ import type { EsimPackage } from '../types';
 import type { UserDto } from '../services/api/types';
 import i18n from '../i18n';
 import { sortRowsForShelf } from '../utils/travelEsimCatalogRank';
+
+const TravelTrustPillarsBlock: React.FC = () => {
+    const { t } = useTranslation();
+    return (
+        <section
+            className="rounded-2xl border border-slate-200 bg-slate-50/60 p-5 md:p-6"
+            aria-labelledby="travel-trust-heading"
+        >
+            <h2 id="travel-trust-heading" className="sr-only">
+                {t('travel_page.trust_heading')}
+            </h2>
+            <div className="grid gap-4 sm:grid-cols-3">
+                <div className="rounded-xl border border-slate-100 bg-white p-4 text-left">
+                    <div className="mb-2 flex h-9 w-9 items-center justify-center rounded-lg bg-orange-50 text-orange-600">
+                        <Zap size={20} aria-hidden />
+                    </div>
+                    <h3 className="text-sm font-bold text-slate-900">{t('travel_page.trust_speed_title')}</h3>
+                    <p className="mt-1.5 text-xs leading-relaxed text-slate-600">
+                        {t('travel_page.trust_speed_body')}
+                    </p>
+                </div>
+                <div className="rounded-xl border border-slate-100 bg-white p-4 text-left">
+                    <div className="mb-2 flex h-9 w-9 items-center justify-center rounded-lg bg-orange-50 text-orange-600">
+                        <Globe size={20} aria-hidden />
+                    </div>
+                    <h3 className="text-sm font-bold text-slate-900">{t('travel_page.trust_us_ip_title')}</h3>
+                    <p className="mt-1.5 text-xs leading-relaxed text-slate-600">
+                        {t('travel_page.trust_us_ip_body')}
+                    </p>
+                </div>
+                <div className="rounded-xl border border-slate-100 bg-white p-4 text-left">
+                    <div className="mb-2 flex h-9 w-9 items-center justify-center rounded-lg bg-orange-50 text-orange-600">
+                        <Wifi size={20} aria-hidden />
+                    </div>
+                    <h3 className="text-sm font-bold text-slate-900">{t('travel_page.trust_apn_title')}</h3>
+                    <p className="mt-1.5 text-xs leading-relaxed text-slate-600">
+                        {t('travel_page.trust_apn_body')}
+                    </p>
+                </div>
+            </div>
+        </section>
+    );
+};
+
+const TravelMiniFaqBlock: React.FC = () => {
+    const { t } = useTranslation();
+    const itemClass =
+        'group rounded-xl border border-slate-200 bg-white px-4 py-3 open:border-orange-200 open:bg-orange-50/30';
+    const summaryClass =
+        'cursor-pointer list-none text-sm font-semibold text-slate-900 [&::-webkit-details-marker]:hidden';
+    const bodyClass = 'mt-2 border-t border-slate-100 pt-2 text-xs leading-relaxed text-slate-600';
+
+    return (
+        <section className="rounded-2xl border border-slate-200 bg-white p-5 md:p-6" aria-labelledby="travel-faq-heading">
+            <h2 id="travel-faq-heading" className="mb-3 text-base font-bold text-slate-900">
+                {t('travel_page.faq_heading')}
+            </h2>
+            <div className="space-y-2">
+                <details className={itemClass}>
+                    <summary className={summaryClass}>{t('travel_page.faq_q1')}</summary>
+                    <p className={bodyClass}>{t('travel_page.faq_a1')}</p>
+                </details>
+                <details className={itemClass}>
+                    <summary className={summaryClass}>{t('travel_page.faq_q2')}</summary>
+                    <p className={bodyClass}>
+                        {t('travel_page.faq_a2_before_link')}
+                        <a
+                            href="/legal/refund"
+                            className="font-semibold text-orange-600 underline underline-offset-2 hover:text-orange-700"
+                        >
+                            {t('travel_page.faq_refund_link')}
+                        </a>
+                        {t('travel_page.faq_a2_after_link')}
+                    </p>
+                </details>
+                <details className={itemClass}>
+                    <summary className={summaryClass}>{t('travel_page.faq_q3')}</summary>
+                    <p className={bodyClass}>
+                        {t('travel_page.faq_a3_before_link')}
+                        <a
+                            href="/help/cancel-auto-renew"
+                            className="font-semibold text-orange-600 underline underline-offset-2 hover:text-orange-700"
+                        >
+                            {t('travel_page.faq_autorenew_link')}
+                        </a>
+                        {t('travel_page.faq_a3_after_link')}
+                    </p>
+                </details>
+                <details className={itemClass}>
+                    <summary className={summaryClass}>{t('travel_page.faq_q4')}</summary>
+                    <p className={bodyClass}>
+                        {t('travel_page.faq_a4')}{' '}
+                        <a
+                            href="/help/install-esim-iphone"
+                            className="font-semibold text-orange-600 underline underline-offset-2 hover:text-orange-700"
+                        >
+                            {t('travel_page.faq_install_iphone')}
+                        </a>
+                        {' · '}
+                        <a
+                            href="/help/install-esim-android"
+                            className="font-semibold text-orange-600 underline underline-offset-2 hover:text-orange-700"
+                        >
+                            {t('travel_page.faq_install_android')}
+                        </a>
+                    </p>
+                </details>
+                <details className={itemClass}>
+                    <summary className={summaryClass}>{t('travel_page.faq_q5')}</summary>
+                    <p className={bodyClass}>{t('travel_page.faq_a5')}</p>
+                </details>
+            </div>
+        </section>
+    );
+};
 
 /** Maps ISO codes to catalogue shelf headers (marketing index). */
 const MIDDLE_EAST_SHELF = new Set([
@@ -448,6 +564,11 @@ const SingleCountryView: React.FC<SingleCountryViewProps> = ({
                 </div>
             )}
 
+            <div className="space-y-6 px-4 md:px-8 max-w-6xl mx-auto pb-2">
+                <TravelTrustPillarsBlock />
+                <TravelMiniFaqBlock />
+            </div>
+
             {/* Live plan grid (desktop checkout entry point) */}
             <EsimPlanGrid
                 countryCode={country.code}
@@ -484,16 +605,6 @@ const SingleCountryView: React.FC<SingleCountryViewProps> = ({
                             body={`Your mobile connects to ${country.carriers[0] ?? 'a local network'} the moment you land. No setup.`}
                         />
                     </div>
-                </div>
-            </section>
-
-            {/* Trust strip */}
-            <section className="px-4 md:px-8 py-10 max-w-5xl mx-auto">
-                <div className="bg-white rounded-2xl border border-slate-200 p-6 grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
-                    <Trust label="Compatible iPhones" value="XS or newer" />
-                    <Trust label="Compatible Androids" value="Pixel 3+ / S20+" />
-                    <Trust label="Coverage" value={`${country.carriers.length} carriers`} />
-                    <Trust label="Activation" value="QR scan, 1 min" />
                 </div>
             </section>
 
@@ -747,6 +858,11 @@ const CatalogueIndexView: React.FC = () => {
                 )}
             </section>
 
+            <div className="space-y-6 px-4 md:px-8 max-w-6xl mx-auto pb-8">
+                <TravelTrustPillarsBlock />
+                <TravelMiniFaqBlock />
+            </div>
+
             <section
                 id="popular-destinations"
                 className="px-4 md:px-8 pt-4 md:pt-6 pb-16 max-w-6xl mx-auto"
@@ -902,13 +1018,6 @@ const Step: React.FC<{ num: number; icon: React.ReactNode; title: string; body: 
         </div>
         <h3 className="font-bold text-lg mb-1">{title}</h3>
         <p className="text-slate-600 text-sm leading-relaxed">{body}</p>
-    </div>
-);
-
-const Trust: React.FC<{ label: string; value: string }> = ({ label, value }) => (
-    <div>
-        <div className="text-xs text-slate-500 mb-1">{label}</div>
-        <div className="font-bold text-slate-900">{value}</div>
     </div>
 );
 

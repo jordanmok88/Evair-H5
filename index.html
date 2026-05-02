@@ -2,7 +2,7 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5, viewport-fit=cover" />
 
     <!-- Primary Meta Tags -->
     <title>EvairSIM – Buy Travel eSIM & SIM Cards | 190+ Countries, Instant Activation</title>
@@ -56,18 +56,13 @@
     }
     </script>
 
-    <!-- JSON-LD Structured Data: WebSite (enables sitelinks search) -->
+    <!-- JSON-LD Structured Data: WebSite (no SearchAction — site has no /?q= search handler) -->
     <script type="application/ld+json">
     {
       "@context": "https://schema.org",
       "@type": "WebSite",
       "name": "EvairSIM",
-      "url": "https://evairdigital.com",
-      "potentialAction": {
-        "@type": "SearchAction",
-        "target": "https://evairdigital.com/?q={search_term_string}",
-        "query-input": "required name=search_term_string"
-      }
+      "url": "https://evairdigital.com"
     }
     </script>
 
@@ -179,9 +174,6 @@
         document.getElementById('root').innerHTML =
           '<pre style="padding:20px;color:red;font-size:12px;">Error: ' + msg + '\n' + url + ':' + line + '</pre>';
       };
-      document.addEventListener('touchstart', function(e) { if (e.touches.length > 1) e.preventDefault(); }, { passive: false });
-      document.addEventListener('gesturestart', function(e) { e.preventDefault(); });
-      document.addEventListener('gesturechange', function(e) { e.preventDefault(); });
     </script>
   </body>
 </html>

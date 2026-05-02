@@ -11,6 +11,39 @@ const es = {
     inbox: 'Buzón',
     profile: 'Perfil',
   },
+  travel_page: {
+    trust_heading: 'Por qué viajeros eligen EvairSIM',
+    trust_speed_title: '5G hasta 650 Mbps',
+    trust_speed_body:
+      'Los planes para móvil y tablet muestran picos reales en redes compatibles, más altos que muchos eSIM de viaje.',
+    trust_us_ip_title: 'IP de EE. UU. cuando importa',
+    trust_us_ip_body:
+      'Las rutas premium mantienen apps y banca con IP estadounidense al elegir un plan con IP de EE. UU. para tu destino.',
+    trust_apn_title: 'APN automático',
+    trust_apn_body:
+      'Sin buscar campos APN a mano: instala el perfil y conéctate como una línea local.',
+    faq_heading: 'Preguntas frecuentes',
+    faq_q1: '¿Cuándo empieza mi plan?',
+    faq_a1:
+      'Los datos suelen iniciar al conectarte por primera vez a una red compatible en el país de destino (no al comprar). Revisa los detalles del plan.',
+    faq_q2: '¿Puedo obtener un reembolso?',
+    faq_a2_before_link: 'Las compras de eSIM siguen nuestra ',
+    faq_refund_link: 'política de reembolsos',
+    faq_a2_after_link: '.',
+    faq_q3: '¿Cómo funcionan las recargas y la renovación automática?',
+    faq_a3_before_link:
+      'Muchos planes permiten recargas en la app. La renovación automática es opcional y se puede apagar en cualquier momento — ver ',
+    faq_autorenew_link: 'cancelar renovación automática',
+    faq_a3_after_link: '.',
+    faq_q4: '¿Funcionará en mi teléfono?',
+    faq_a4:
+      'Necesitas un dispositivo desbloqueado con eSIM (iPhone XS o posterior; muchos Android tope de gama). Guías paso a paso:',
+    faq_install_iphone: 'iPhone',
+    faq_install_android: 'Android',
+    faq_q5: '¿Cuánto tarda la instalación?',
+    faq_a5:
+      'Tras la compra recibes un código QR. Escanear y añadir el perfil suele llevar un minuto en Wi-Fi antes de viajar.',
+  },
   shop: {
     hello: 'Hola',
     new_friend: 'Nuevo Amigo',
@@ -112,6 +145,14 @@ const es = {
       'Tras ocultar los planes de un solo día, no quedan filas aquí por ahora. Prueba paquetes regionales.',
     plan_networks_with_names: 'Redes · {{names}}',
     plan_networks_generic: 'Redes locales asociadas',
+    faq_strip: {
+      title: 'Preguntas frecuentes',
+      what_is_esim: '¿Qué es una eSIM?',
+      install_iphone: 'Instalar en iPhone',
+      install_android: 'Instalar en Android',
+      topup: 'Recargar datos',
+      refund: 'Reembolsos',
+    },
   },
   amazonSim: {
     plan_line: '{{gb}} GB · {{days}} días',
