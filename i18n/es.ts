@@ -165,6 +165,7 @@ const es = {
   },
   amazonSim: {
     plan_line: '{{gb}} GB · {{days}} días',
+    sku_section_title: 'Elige un plan · abre Amazon',
     from_price: 'Desde ${{price}}',
     view_on_amazon: 'Ver en Amazon',
     family: {

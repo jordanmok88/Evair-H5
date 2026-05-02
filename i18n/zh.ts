@@ -160,6 +160,7 @@ const zh = {
   },
   amazonSim: {
     plan_line: '{{gb}} GB · {{days}} 天',
+    sku_section_title: '选择套餐 · 跳转亚马逊',
     from_price: '约 ${{price}} 起',
     view_on_amazon: '前往亚马逊',
     family: {

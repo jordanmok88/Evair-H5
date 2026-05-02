@@ -1,6 +1,6 @@
 import React, { useCallback, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { ChevronRight, ExternalLink, ShoppingBag } from 'lucide-react';
+import { Camera, ChevronDown, Cpu, ExternalLink, Smartphone, type LucideIcon } from 'lucide-react';
 import {
     AMAZON_SIM_FAMILIES,
     type AmazonSimFamilyId,
@@ -19,8 +19,14 @@ function useOpenExternalAmazon(): (url: string) => (e: React.MouseEvent) => void
     }, []);
 }
 
+const FAMILY_ICON: Record<AmazonSimFamilyId, LucideIcon> = {
+    phone_tablet: Smartphone,
+    trail_camera: Camera,
+    iot_light: Cpu,
+};
+
 /**
- * Physical SIM discovery: compact intro + three category tiles, then SKU list for the chosen family.
+ * Physical SIM → Amazon SKUs: full-width accordion rows so the shop reads correctly on narrow WebView widths.
  */
 const AmazonPhysicalSimPicker: React.FC = () => {
     const { t } = useTranslation();
@@ -28,103 +34,100 @@ const AmazonPhysicalSimPicker: React.FC = () => {
     const onExternal = useOpenExternalAmazon();
 
     return (
-        <div className="relative mb-5 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
-            <div className="p-5">
-                <header className="mb-4 flex gap-4">
-                    <div
-                        className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl"
-                        style={{ background: 'linear-gradient(135deg, #FF9900 0%, #FFB84D 100%)' }}
-                        aria-hidden
-                    >
-                        <ShoppingBag size={22} className="text-white" />
-                    </div>
-                    <div className="min-w-0 flex-1">
-                        <p className="text-[11px] font-bold uppercase tracking-wider text-slate-500">
-                            {t('shop.amazon_family_group_label')}
-                        </p>
-                        <h2 className="mt-1 text-lg font-bold tracking-tight text-slate-900">{t('shop.buy_on_amazon')}</h2>
-                        <p className="mt-1 text-sm leading-snug text-slate-600">{t('shop.amazon_picker_intro_short')}</p>
-                    </div>
-                </header>
-
-                <div
-                    className="grid grid-cols-1 gap-3 sm:grid-cols-3"
-                    role="group"
-                    aria-label={t('shop.amazon_family_group_label')}
-                >
+        <div>
+            <div
+                className="overflow-hidden rounded-2xl border border-slate-100 bg-white shadow-[0_1px_3px_rgb(15_23_42/0.06)]"
+                role="group"
+                aria-label={t('shop.amazon_family_group_label')}
+            >
+                <ul className="divide-y divide-slate-100">
                     {AMAZON_SIM_FAMILIES.map(({ id }) => {
-                        const sel = family === id;
+                        const Icon = FAMILY_ICON[id];
+                        const open = family === id;
                         return (
-                            <button
-                                key={id}
-                                type="button"
-                                onClick={() => setFamily(sel ? null : id)}
-                                aria-pressed={sel}
-                                aria-expanded={sel}
-                                className={`flex min-h-[5.75rem] flex-col items-start rounded-2xl border-2 px-3.5 py-3 text-left transition focus:outline-none focus-visible:ring-2 focus-visible:ring-orange-400 focus-visible:ring-offset-2 sm:min-h-[6rem] sm:px-4 ${
-                                    sel
-                                        ? 'border-brand-orange bg-orange-50/60 shadow-sm shadow-orange-500/10'
-                                        : 'border-slate-200 bg-white hover:border-slate-300 hover:bg-slate-50 active:scale-[0.99]'
-                                }`}
-                            >
-                                <span className="text-sm font-extrabold leading-snug text-slate-900">
-                                    {t(`amazonSim.family.${id}.title`)}
-                                </span>
-                                <span className="mt-2 flex-1 text-[11px] font-medium leading-snug text-slate-500">
-                                    {t(`amazonSim.family.${id}.subtitle`)}
-                                </span>
-                                <ChevronRight
-                                    size={16}
-                                    strokeWidth={2.5}
-                                    className={`mt-2 shrink-0 text-slate-300 transition-transform ${sel ? 'rotate-90 text-brand-orange' : ''}`}
-                                    aria-hidden
-                                />
-                            </button>
+                            <li key={id} className="bg-white">
+                                <button
+                                    type="button"
+                                    onClick={() => setFamily(open ? null : id)}
+                                    aria-expanded={open}
+                                    className={`flex w-full min-h-[4.75rem] items-center gap-3 px-4 py-3.5 text-left transition focus:outline-none focus-visible:ring-2 focus-visible:ring-orange-400 focus-visible:ring-offset-2 focus-visible:ring-offset-white sm:gap-4 sm:px-4 sm:py-4 ${
+                                        open ? 'bg-orange-50/80' : 'active:bg-slate-50 hover:bg-slate-50/80'
+                                    }`}
+                                >
+                                    <div
+                                        className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-xl sm:h-12 sm:w-12 ${
+                                            open
+                                                ? 'bg-gradient-to-br from-orange-500 to-amber-500 text-white shadow-sm shadow-orange-500/25'
+                                                : 'bg-slate-100 text-slate-700'
+                                        }`}
+                                        aria-hidden
+                                    >
+                                        <Icon className="h-5 w-5 sm:h-[22px] sm:w-[22px]" strokeWidth={2} />
+                                    </div>
+                                    <div className="min-w-0 flex-1 pr-2">
+                                        <p className="text-[13px] font-semibold leading-snug text-slate-900 sm:text-sm">
+                                            {t(`amazonSim.family.${id}.title`)}
+                                        </p>
+                                        <p className="mt-0.5 text-[11px] leading-snug text-slate-500 sm:text-xs">
+                                            {t(`amazonSim.family.${id}.subtitle`)}
+                                        </p>
+                                    </div>
+                                    <ChevronDown
+                                        aria-hidden
+                                        className={`h-5 w-5 shrink-0 text-slate-400 transition-transform duration-200 ${open ? 'rotate-180 text-brand-orange' : ''}`}
+                                        strokeWidth={2.25}
+                                    />
+                                </button>
+
+                                {open && (
+                                    <div className="border-t border-slate-100 bg-slate-50/60 px-3 py-3 sm:px-4">
+                                        <p className="mb-3 px-1 text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                                            {t('amazonSim.sku_section_title')}
+                                        </p>
+                                        <ul className="flex flex-col gap-2">
+                                            {listingsForFamily(id).map((p) => {
+                                                const href = buildAmazonUrlForProduct(p);
+                                                return (
+                                                    <li
+                                                        key={p.id}
+                                                        className="flex flex-col gap-2.5 rounded-xl border border-white bg-white px-3 py-3 shadow-sm shadow-slate-200/60 sm:flex-row sm:items-center sm:justify-between sm:gap-3 sm:px-4"
+                                                    >
+                                                        <div className="min-w-0">
+                                                            <div className="text-sm font-semibold leading-snug text-slate-900">
+                                                                {t('amazonSim.plan_line', {
+                                                                    gb: p.gbs,
+                                                                    days: p.validityDays,
+                                                                })}
+                                                            </div>
+                                                            <div className="mt-0.5 text-xs text-slate-500">
+                                                                {t('amazonSim.from_price', { price: p.sellingPrice.toFixed(2) })}
+                                                            </div>
+                                                        </div>
+                                                        <a
+                                                            href={href}
+                                                            target="_blank"
+                                                            rel="noopener noreferrer"
+                                                            onClick={onExternal(href)}
+                                                            className="inline-flex w-full shrink-0 items-center justify-center gap-1.5 rounded-xl bg-brand-orange px-4 py-2.5 text-xs font-bold text-white shadow-sm shadow-orange-500/20 transition active:scale-[0.98] sm:w-auto focus:outline-none focus-visible:ring-2 focus-visible:ring-orange-400 focus-visible:ring-offset-2"
+                                                        >
+                                                            {t('amazonSim.view_on_amazon')}
+                                                            <ExternalLink className="h-3.5 w-3.5" aria-hidden />
+                                                        </a>
+                                                    </li>
+                                                );
+                                            })}
+                                        </ul>
+                                    </div>
+                                )}
+                            </li>
                         );
                     })}
-                </div>
-
-                {family && (
-                    <ul className="mt-4 space-y-2 border-t border-slate-100 pt-4" aria-live="polite">
-                        <li className="mb-1 text-[11px] font-semibold uppercase tracking-wide text-slate-400">
-                            {t(`amazonSim.family.${family}.subtitle`)}
-                        </li>
-                        {listingsForFamily(family).map((p) => {
-                            const href = buildAmazonUrlForProduct(p);
-                            return (
-                                <li
-                                    key={p.id}
-                                    className="flex items-center justify-between gap-3 rounded-xl border border-slate-100 bg-slate-50/80 px-3 py-2.5"
-                                >
-                                    <div className="min-w-0">
-                                        <div className="truncate text-sm font-bold text-slate-900">
-                                            {t('amazonSim.plan_line', {
-                                                gb: p.gbs,
-                                                days: p.validityDays,
-                                            })}
-                                        </div>
-                                        <div className="text-xs text-slate-500">
-                                            {t('amazonSim.from_price', { price: p.sellingPrice.toFixed(2) })}
-                                        </div>
-                                    </div>
-                                    <a
-                                        href={href}
-                                        target="_blank"
-                                        rel="noopener noreferrer"
-                                        onClick={onExternal(href)}
-                                        className="inline-flex shrink-0 items-center gap-1 rounded-lg bg-slate-900 px-3 py-2 text-xs font-bold text-white transition active:scale-[0.98] focus:outline-none focus-visible:ring-2 focus-visible:ring-orange-400 focus-visible:ring-offset-2"
-                                    >
-                                        {t('amazonSim.view_on_amazon')}
-                                        <ExternalLink size={12} aria-hidden />
-                                    </a>
-                                </li>
-                            );
-                        })}
-                    </ul>
-                )}
-
-                <p className="mt-5 text-center text-[11px] text-slate-400">{t('shop.amazon_leave_notice')}</p>
+                </ul>
             </div>
+
+            <p className="mx-auto mt-4 max-w-sm text-center text-[11px] leading-relaxed text-slate-400">
+                {t('shop.amazon_leave_notice')}
+            </p>
         </div>
     );
 };

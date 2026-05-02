@@ -1560,10 +1560,15 @@ const ShopView: React.FC<ShopViewProps> = ({
             needed. */}
         {simType === 'PHYSICAL' && !searchQuery && (
             <>
-              <h3 className="text-lg font-bold text-slate-900 mb-3 tracking-tight">{t('shop.purchase_sim_cards')}</h3>
+              <div className="mb-5">
+                <p className="text-[11px] font-bold uppercase tracking-wider text-slate-500">
+                  {t('shop.amazon_family_group_label')}
+                </p>
+                <h3 className="mt-1 text-lg font-bold tracking-tight text-slate-900">{t('shop.purchase_sim_cards')}</h3>
+                <p className="mt-2 text-sm leading-snug text-slate-600">{t('shop.amazon_picker_intro_short')}</p>
+              </div>
 
-              {/* Amazon — category picker + per-SKU search links (see
-                  `data/amazonPhysicalSimCatalog.ts`, rows mirror admin catalogue). */}
+              {/* Amazon — category accordion + per-SKU search links (`data/amazonPhysicalSimCatalog.ts`). */}
               <AmazonPhysicalSimPicker />
             </>
         )}
