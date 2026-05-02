@@ -385,26 +385,28 @@ const SingleCountryView: React.FC<SingleCountryViewProps> = ({
                         </div>
                     </div>
 
-                    {/* Destination flag + partner networks */}
-                    <div className="hidden md:block">
-                        <div className="relative aspect-[5/4] rounded-3xl overflow-hidden shadow-2xl border border-slate-200 bg-slate-100">
-                            <img
-                                src={`https://flagcdn.com/w1280/${country.code.toLowerCase()}.png`}
-                                alt={country.name}
-                                className="absolute inset-0 w-full h-full object-cover"
-                                width={640}
-                                height={512}
-                                loading="lazy"
-                                decoding="async"
-                            />
-                            <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/88 via-black/45 to-transparent pt-28 pb-6 px-6 text-white">
-                                <div className="text-[11px] font-bold uppercase tracking-[0.14em] text-white/65 mb-2">
+                    {/* Destination flag + partner networks (flag ~50% column width; carriers below, not overlaid) */}
+                    <div className="hidden md:flex md:justify-end md:items-start">
+                        <div className="flex flex-col items-start gap-4 w-full max-w-xl">
+                            <div className="relative w-1/2 max-w-[280px] aspect-[5/4] rounded-3xl overflow-hidden shadow-xl border border-slate-200 bg-slate-100 shrink-0">
+                                <img
+                                    src={`https://flagcdn.com/w640/${country.code.toLowerCase()}.png`}
+                                    alt={country.name}
+                                    className="absolute inset-0 w-full h-full object-cover"
+                                    width={320}
+                                    height={256}
+                                    loading="lazy"
+                                    decoding="async"
+                                />
+                            </div>
+                            <div className="w-1/2 max-w-[280px] text-left">
+                                <div className="text-[11px] font-bold uppercase tracking-[0.14em] text-slate-500 mb-2">
                                     Connects to
                                 </div>
                                 <ul className="space-y-1.5">
                                     {country.carriers.map(c => (
-                                        <li key={c} className="flex items-center gap-2 text-sm font-medium">
-                                            <Wifi size={14} className="text-emerald-400 shrink-0" />
+                                        <li key={c} className="flex items-center gap-2 text-sm font-semibold text-slate-800">
+                                            <Wifi size={14} className="text-emerald-600 shrink-0" aria-hidden />
                                             <span>{c}</span>
                                         </li>
                                     ))}
