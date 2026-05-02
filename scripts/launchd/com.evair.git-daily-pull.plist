@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN"
+ "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>Label</key>
+    <string>com.evair.git-daily-pull</string>
+    <key>RunAtLoad</key>
+    <false/>
+    <key>StandardOutPath</key>
+    <string>/Users/jordanmok/Library/Logs/Evair/launchd-daily-pull.stdout.log</string>
+    <key>StandardErrorPath</key>
+    <string>/Users/jordanmok/Library/Logs/Evair/launchd-daily-pull.stderr.log</string>
+    <key>StartCalendarInterval</key>
+    <dict>
+        <key>Hour</key>
+        <integer>9</integer>
+        <key>Minute</key>
+        <integer>5</integer>
+    </dict>
+    <key>ProgramArguments</key>
+    <array>
+        <string>/bin/bash</string>
+        <string>-lc</string>
+        <string>mkdir -p '/Users/jordanmok/Library/Logs/Evair' ; bash '/Users/jordanmok/Desktop/iCloud Drive/Cursor Codes/Evair-H5/scripts/daily-pull-report.sh'</string>
+    </array>
+</dict>
+</plist>

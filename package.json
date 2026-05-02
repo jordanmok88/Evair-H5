@@ -11,6 +11,7 @@
     "test:watch": "vitest",
     "autopush": "bash scripts/autopush.sh",
     "save": "bash scripts/save.sh",
+    "daily-pull": "bash scripts/daily-pull-report.sh",
     "save:all": "bash '/Users/jordanmok/Desktop/iCloud Drive/Cursor Codes/save-all.sh'"
   },
   "dependencies": {
