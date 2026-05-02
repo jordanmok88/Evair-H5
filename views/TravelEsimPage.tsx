@@ -47,6 +47,7 @@ import {
     AlertTriangle,
     ArrowRight,
     CheckCircle2,
+    CircleX,
     Globe,
     Loader2,
     QrCode,
@@ -75,6 +76,7 @@ import { isMobileDevice } from '../utils/device';
 import { applyPageSeo } from '../utils/seoHead';
 import type { EsimPackage } from '../types';
 import type { UserDto } from '../services/api/types';
+import { CUSTOMER_SERVICE_EMAIL } from '../constants';
 import { sortRowsForShelf } from '../utils/travelEsimCatalogRank';
 
 /** Maps ISO codes to catalogue shelf headers (marketing index). */
@@ -563,7 +565,7 @@ const ErrorView: React.FC<{ message: string | null; onDismiss: () => void }> = (
                 Back to plans
             </button>
             <a
-                href="mailto:support@evairdigital.com"
+                href={`mailto:${CUSTOMER_SERVICE_EMAIL}`}
                 className="bg-white text-slate-900 font-semibold px-5 py-3 rounded-xl border border-slate-300"
             >
                 Email support
@@ -768,8 +770,18 @@ const CatalogueIndexView: React.FC = () => {
                                 placeholder="Search by country…"
                                 value={catalogueSearch}
                                 onChange={e => setCatalogueSearch(e.target.value)}
-                                className="w-full rounded-xl border border-slate-200 bg-white pl-10 pr-4 py-3 text-slate-900 placeholder:text-slate-400 shadow-sm focus:border-orange-400 focus:ring-2 focus:ring-orange-200 outline-none transition"
+                                className={`w-full rounded-xl border border-slate-200 bg-white py-3 text-slate-900 placeholder:text-slate-400 shadow-sm focus:border-orange-400 focus:ring-2 focus:ring-orange-200 outline-none transition ${catalogueSearch.trim() ? 'pl-10 pr-11' : 'pl-10 pr-4'}`}
                             />
+                            {catalogueSearch.trim().length > 0 && (
+                                <button
+                                    type="button"
+                                    className="absolute right-2 top-1/2 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-lg text-slate-400 hover:bg-slate-100 hover:text-slate-700"
+                                    aria-label="Clear search"
+                                    onClick={() => setCatalogueSearch('')}
+                                >
+                                    <CircleX size={18} aria-hidden />
+                                </button>
+                            )}
                         </div>
                         {catalogueSearch.trim() && (
                             <p className="mt-2 text-center text-sm text-slate-500">

@@ -76,6 +76,9 @@ export const AMAZON_SIM_STOREFRONT_URL =
 /** Canonical Amazon PDP — marketing “Pick a plan” buttons + `/sim/*` tier CTAs (physical SIM checkout via Amazon for now). */
 export const AMAZON_SIM_PRIMARY_PRODUCT_URL = 'https://www.amazon.com/dp/B0GZ2BVB1F';
 
+/** Shown on marketing, legal, and error surfaces — must match canonical support inbox. */
+export const CUSTOMER_SERVICE_EMAIL = 'service@evairdigital.com';
+
 export const MOCK_PLANS_US: Plan[] = MOCK_COUNTRIES.find(c => c.countryCode === 'US')?.plans ?? [];
 
 export const MOCK_ORDERS: Order[] = [

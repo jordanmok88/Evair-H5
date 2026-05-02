@@ -24,11 +24,11 @@
 import React from 'react';
 import SiteHeader from '../components/marketing/SiteHeader';
 import SiteFooter from '../components/marketing/SiteFooter';
+import { CUSTOMER_SERVICE_EMAIL } from '../constants';
 import type { LegalSlug } from '../utils/routing';
 import { applyPageSeo } from '../utils/seoHead';
 
 const LAST_UPDATED = 'April 25, 2026';
-const SUPPORT_EMAIL = 'support@evairdigital.com';
 
 interface LegalPageProps {
     slug: LegalSlug;
@@ -70,10 +70,10 @@ const LegalPage: React.FC<LegalPageProps> = ({ slug }) => {
                 <footer className="mt-12 pt-8 border-t border-slate-200 text-sm text-slate-500">
                     Questions? Email{' '}
                     <a
-                        href={`mailto:${SUPPORT_EMAIL}`}
+                        href={`mailto:${CUSTOMER_SERVICE_EMAIL}`}
                         className="text-orange-600 hover:underline"
                     >
-                        {SUPPORT_EMAIL}
+                        {CUSTOMER_SERVICE_EMAIL}
                     </a>{' '}
                     and a real human will get back to you within one business day.
                 </footer>
@@ -264,7 +264,7 @@ const PrivacyBody: React.FC = () => (
             correct, export, or delete your information; to opt out of
             certain processing; and to lodge a complaint with a privacy
             regulator. Email{' '}
-            <a href={`mailto:${SUPPORT_EMAIL}`}>{SUPPORT_EMAIL}</a> with
+            <a href={`mailto:${CUSTOMER_SERVICE_EMAIL}`}>{CUSTOMER_SERVICE_EMAIL}</a> with
             your request and we will respond within 30 days.
         </p>
 
@@ -333,7 +333,7 @@ const RefundBody: React.FC = () => (
 
         <h2>How to request</h2>
         <ol>
-            <li>Open the app → Profile → Support → Request a refund. <em>Or</em> email <a href={`mailto:${SUPPORT_EMAIL}`}>{SUPPORT_EMAIL}</a> with your order ID.</li>
+            <li>Open the app → Profile → Support → Request a refund. <em>Or</em> email <a href={`mailto:${CUSTOMER_SERVICE_EMAIL}`}>{CUSTOMER_SERVICE_EMAIL}</a> with your order ID.</li>
             <li>You'll get a decision within 2 business days.</li>
             <li>Approved refunds land back on the original card in 5–10 business days.</li>
         </ol>
