@@ -279,6 +279,7 @@ const zh = {
     footer_link_mx: '墨西哥 eSIM',
     footer_link_topup: '充值流量',
     nav_local_travel_esim: '本地与旅行 eSIM',
+    nav_local_travel_esim_short: '本地与旅行 eSIM',
     nav_mobile: '手机 SIM',
     nav_camera_sim: '摄像机 SIM',
     nav_iot_sim: 'IoT SIM',

@@ -293,6 +293,7 @@ const en = {
     footer_link_mx: 'Mexico eSIM',
     footer_link_topup: 'Top up data',
     nav_local_travel_esim: 'Local and travel eSIM',
+    nav_local_travel_esim_short: 'Local & travel eSIM',
     nav_mobile: 'Mobile SIM',
     nav_camera_sim: 'Camera SIM',
     nav_iot_sim: 'IoT SIM',

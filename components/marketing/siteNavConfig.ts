@@ -11,9 +11,17 @@ export type MarketingNavKey =
 export const MARKETING_NAV_ITEMS: readonly {
     key: MarketingNavKey;
     href: string;
+    /** Compact label for top headers (desktop/tablet). */
     labelKey: `marketing.${string}`;
+    /** Fuller label for slim `SiteFooter` link row when set (e.g. “and” vs “&”). */
+    footerLabelKey?: `marketing.${string}`;
 }[] = [
-    { key: 'travel', href: '/travel-esim', labelKey: 'marketing.nav_local_travel_esim' },
+    {
+        key: 'travel',
+        href: '/travel-esim',
+        labelKey: 'marketing.nav_local_travel_esim_short',
+        footerLabelKey: 'marketing.nav_local_travel_esim',
+    },
     { key: 'phone', href: '/sim/phone', labelKey: 'marketing.nav_mobile' },
     { key: 'camera', href: '/sim/camera', labelKey: 'marketing.nav_camera_sim' },
     { key: 'iot', href: '/sim/iot', labelKey: 'marketing.nav_iot_sim' },

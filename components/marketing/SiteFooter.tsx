@@ -17,7 +17,7 @@ const SiteFooter: React.FC = () => {
         () => [
             { label: t('marketing.footer_flat_home'), href: '/welcome' as const },
             ...MARKETING_NAV_ITEMS.map((item) => ({
-                label: t(item.labelKey),
+                label: t(item.footerLabelKey ?? item.labelKey),
                 href: `${item.href}` as const,
             })),
             { label: t('marketing.footer_flat_refunds'), href: '/legal/refund' as const },

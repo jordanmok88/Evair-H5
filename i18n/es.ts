@@ -294,6 +294,7 @@ const es = {
     footer_link_mx: 'eSIM México',
     footer_link_topup: 'Recargar datos',
     nav_local_travel_esim: 'eSIM local y de viaje',
+    nav_local_travel_esim_short: 'eSIM local y viaje',
     nav_mobile: 'SIM móvil',
     nav_camera_sim: 'SIM para cámara',
     nav_iot_sim: 'SIM IoT',
