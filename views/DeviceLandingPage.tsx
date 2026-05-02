@@ -104,38 +104,38 @@ const DeviceLandingPage: React.FC<DeviceLandingPageProps> = ({ category }) => {
                 <p className="mx-auto mb-8 max-w-lg text-center text-slate-600">
                     All plans renew monthly. Cancel any time, no fees.
                 </p>
-                <div className="grid gap-4 md:grid-cols-3">
+                <div className="grid gap-4 md:grid-cols-3 md:items-stretch">
                     {content.plans.map(plan => (
                         <div
                             key={plan.name}
-                            className={`rounded-2xl p-6 border-2 ${
+                            className={`flex h-full min-w-0 flex-col rounded-2xl border-2 p-6 shadow-sm ${
                                 plan.highlight
-                                    ? 'border-orange-500 bg-orange-50/40 shadow-xl shadow-orange-500/10'
+                                    ? 'border-[#F27420] bg-orange-50/40 shadow-lg shadow-orange-500/15 ring-2 ring-[#F27420]/30'
                                     : 'border-slate-200 bg-white'
                             }`}
                         >
-                            <div className="mb-2 flex items-baseline gap-2">
-                                <span className="text-2xl font-bold">{plan.name}</span>
+                            <div className="mb-2 flex flex-wrap items-baseline gap-2">
+                                <span className="text-2xl font-bold text-[#0A1128]">{plan.name}</span>
                                 {plan.highlight && (
-                                    <span className="rounded bg-orange-500 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-white">
+                                    <span className="shrink-0 rounded-full bg-[#F27420] px-2 py-0.5 text-[9px] font-bold uppercase tracking-wide text-white sm:text-[10px]">
                                         Most popular
                                     </span>
                                 )}
                             </div>
                             <div className="mb-3 flex items-end gap-1">
-                                <span className="text-4xl font-extrabold">${plan.priceUsd}</span>
+                                <span className="text-4xl font-extrabold text-[#0A1128]">${plan.priceUsd}</span>
                                 <span className="mb-1 text-sm text-slate-500">/ month</span>
                             </div>
-                            <p className="mb-5 text-sm leading-relaxed text-slate-600">{plan.summary}</p>
+                            <p className="mb-5 flex-1 text-sm leading-relaxed text-slate-600">{plan.summary}</p>
                             <a
                                 href={content.ctaHref}
                                 {...(ctaOpensExternal
                                     ? { target: '_blank', rel: 'noopener noreferrer' }
                                     : {})}
-                                className={`block rounded-xl py-2.5 text-center font-bold ${
+                                className={`mt-auto block min-h-11 rounded-xl py-2.5 text-center text-sm font-bold transition sm:min-h-12 sm:py-3 ${
                                     plan.highlight
-                                        ? 'bg-orange-500 text-white'
-                                        : 'bg-slate-900 text-white'
+                                        ? 'bg-[#F27420] text-white shadow-lg shadow-orange-500/25 hover:brightness-105 active:scale-[0.99]'
+                                        : 'bg-[#0A1128] text-white shadow-lg shadow-slate-900/20 hover:bg-[#121f45] active:scale-[0.99]'
                                 }`}
                             >
                                 Get {plan.name}
