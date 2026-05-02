@@ -8,13 +8,14 @@
 [functions]
   directory = "netlify/functions"
 
-# Edge: no-index Netlify subdomain deploy previews (duplicate-content guard).
+# Edge: 301 prod Netlify subdomain → www (before other edge logic).
+# Preview deploy hostnames (*.netlify.app with extra segment) are unaffected.
 [[edge_functions]]
   function = "staging-robots"
   path = "/*"
 
-# Edge functions run on Deno Deploy in front of the CDN. Used here
-# for per-route OG / Twitter Card rewriting so social scrapers
+# Edge functions run on Deno Deploy in front of the CDN.
+# For per-route OG / Twitter Card rewriting so social scrapers
 # (Twitter, Slack, iMessage, Facebook, LinkedIn) get correct link
 # previews — the SPA's client-side <title>/meta updates don't reach
 # them. See netlify/edge-functions/og-rewriter.ts for details.
