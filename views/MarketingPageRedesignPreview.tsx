@@ -108,7 +108,7 @@ const MarketingPageRedesignPreview: React.FC = () => {
                     </a>
                     <nav className="hidden min-w-0 flex-wrap items-center justify-end gap-x-5 gap-y-2 text-[0.9375rem] font-semibold leading-snug text-gray-800 md:flex lg:gap-x-7 lg:text-base">
                         <a href="/travel-esim" className="transition-colors hover:text-gray-950">
-                            Travel eSIM
+                            Global eSIM
                         </a>
                         <a href="/sim/phone" className="transition-colors hover:text-gray-950">
                             {t('marketing.nav_mobile')}
@@ -148,7 +148,7 @@ const MarketingPageRedesignPreview: React.FC = () => {
                             href={TRAVEL_ESIM_LANDING}
                             className="inline-flex min-h-12 items-center justify-center rounded-xl bg-[#F27420] px-5 py-3.5 text-center text-sm font-bold text-white shadow-lg shadow-orange-500/25 transition hover:brightness-105 active:scale-[0.99] sm:min-h-14 sm:px-6 sm:text-base"
                         >
-                            Travel eSIM
+                            Global eSIM
                         </a>
                         <a
                             href={AMAZON_SIM_STOREFRONT_URL}
@@ -423,7 +423,7 @@ const MarketingPageRedesignPreview: React.FC = () => {
                         <FooterColumn
                             title="Travel"
                             links={[
-                                { label: 'Travel eSIM', href: '/travel-esim' },
+                                { label: 'Global eSIM', href: '/travel-esim' },
                                 { label: 'Japan eSIM', href: '/travel-esim/jp' },
                                 { label: 'UK eSIM', href: '/travel-esim/gb' },
                                 { label: 'Mexico eSIM', href: '/travel-esim/mx' },
