@@ -20,7 +20,7 @@ const TravelEsimPage = lazy(() => import('./views/TravelEsimPage'));
 const HelpCenterPage = lazy(() => import('./views/HelpCenterPage'));
 const BlogPage = lazy(() => import('./views/BlogPage'));
 const LegalPage = lazy(() => import('./views/LegalPage'));
-import { Tab, ActiveSim, SimType, User, AppNotification, EsimProfileResult } from './types';
+import { Tab, ActiveSim, Country, SimType, User, AppNotification, EsimProfileResult } from './types';
 import { Lock } from 'lucide-react';
 import { MOCK_COUNTRIES, MOCK_PLANS_US, MOCK_ACTIVE_SIMS, MOCK_NOTIFICATIONS } from './constants';
 import { retailCarrierRowForIso } from './utils/retailCarrierLookup';
@@ -42,8 +42,12 @@ import { useViewportMinWidth } from './hooks/useViewportMinWidth';
 import { useCustomerAppDesktopQr } from './hooks/useMobileSignInGate';
 import MobileOnlyNotice from './components/marketing/MobileOnlyNotice';
 
+/** Laravel `SupplierSeeder` default ordering: PCCW = 1, ESIMACCESS = 2. See Evair-Laravel `docs/ops/STAGING_PREVIEW_BINDINGS_JORDAN.md`. */
+const LARAVEL_SUPPLIER_ID_PCCW = 1;
+
 /** Matches Tailwind `--breakpoint-md` (`48rem`): tablet / windowed Safari and up use full `/app` chrome (no centred phone mock). */
 const APP_WIDE_LAYOUT_MIN_PX = 768;
+
 
 function navigateToAppSupport() {
   if (typeof window === 'undefined') return;
@@ -385,23 +389,39 @@ function CustomerApp() {
   // (iccid, msisdn, status, supplierId). Plan/usage details come from
   // the live usage fetch (checkDataUsage) that runs immediately after.
   const convertUserSimToActiveSim = (userSim: UserSimDto): ActiveSim => {
+    const physical = userSim.sim.supplierId === LARAVEL_SUPPLIER_ID_PCCW;
+    const countryPhysical: Country = {
+      id: 'us',
+      name: 'United States',
+      flag: '',
+      countryCode: 'US',
+      region: '',
+      startPrice: 0,
+      networkCount: 0,
+      networks: [],
+      vpmn: '',
+      vpn: true,
+      plans: [],
+      isPopular: false,
+    };
+    const countryEsim: Country = {
+      id: '',
+      name: 'Travel eSIM',
+      flag: '\u{1F30D}',
+      countryCode: '',
+      region: '',
+      startPrice: 0,
+      networkCount: 0,
+      networks: [],
+      vpmn: '',
+      vpn: true,
+      plans: [],
+      isPopular: false,
+    };
     return {
       id: String(userSim.id),
       iccid: userSim.sim.iccid,
-      country: {
-        id: '',
-        name: 'Unknown',
-        flag: '\u{1F30D}',
-        countryCode: '',
-        region: '',
-        startPrice: 0,
-        networkCount: 0,
-        networks: [],
-        vpmn: '',
-        vpn: true,
-        plans: [],
-        isPopular: false,
-      },
+      country: physical ? countryPhysical : countryEsim,
       plan: {
         id: String(userSim.id),
         name: '',
@@ -410,7 +430,7 @@ function CustomerApp() {
         price: 0,
         features: [],
       },
-      type: 'ESIM',
+      type: physical ? 'PHYSICAL' : 'ESIM',
       activationDate: userSim.boundAt || new Date().toISOString(),
       expiryDate: '',
       dataTotalGB: 0,

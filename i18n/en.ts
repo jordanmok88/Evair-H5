@@ -133,6 +133,8 @@ const en = {
     amazon_leave_notice: 'You will leave EvairSIM and continue on amazon.com',
     amazon_picker_intro:
       'Pick the card category that matches your device (same groupings as our stock sheet), then tap Amazon for the plan size you want.',
+    amazon_picker_intro_short:
+      'Choose a category, then open Amazon for your plan size. Same catalogue as EvairSIM.',
     amazon_family_group_label: 'Physical SIM categories',
     plan_duration_section_days: '{{days}}-day plans',
     plan_duration_section_months: '{{months}}-month plans',

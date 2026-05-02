@@ -134,6 +134,8 @@ const es = {
     amazon_leave_notice: 'Saldrás de EvairSIM y continuarás en amazon.com',
     amazon_picker_intro:
       'Elige la categoría de tarjeta que coincide con tu dispositivo (mismos grupos que nuestra hoja de stock) y abre el listado de Amazon del tamaño de plan que quieras.',
+    amazon_picker_intro_short:
+      'Elige una categoría y abre Amazon para el tamaño de plan que necesites.',
     amazon_family_group_label: 'Categorías de SIM física',
     plan_duration_section_days: 'Planes de {{days}} días',
     plan_duration_section_months: 'Planes de {{months}} meses',

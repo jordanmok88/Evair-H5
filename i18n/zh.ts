@@ -131,6 +131,7 @@ const zh = {
     amazon_leave_notice: '将离开 EvairSIM，前往 amazon.com',
     amazon_picker_intro:
       '先选择与设备匹配的卡类型（与库存表分组一致），再打开对应流量档位的亚马逊商品。',
+    amazon_picker_intro_short: '先选类别，再按需打开亚马逊对应档位，与后台目录一致。',
     amazon_family_group_label: '实体 SIM 分类',
     plan_duration_section_days: '{{days}} 天套餐',
     plan_duration_section_months: '{{months}} 个月套餐',

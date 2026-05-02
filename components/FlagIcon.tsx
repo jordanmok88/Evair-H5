@@ -28,6 +28,7 @@ function emojiFlag(iso2: string): string {
   return String.fromCodePoint(0x1f1e6 + (a - 65), 0x1f1e6 + (b - 65));
 }
 
+/** Raster + emoji hoists edge-to-edge — no gray matte tray (avoid “postage stamp” look). */
 const shellStyle = (width: number, height: number): React.CSSProperties => ({
   display: 'inline-flex',
   alignItems: 'center',
@@ -36,10 +37,7 @@ const shellStyle = (width: number, height: number): React.CSSProperties => ({
   width,
   height,
   overflow: 'hidden',
-  borderRadius: 4,
-  border: '1px solid #e5e7eb',
-  boxShadow: '0 1px 2px 0 rgb(0 0 0 / 0.05)',
-  backgroundColor: '#f3f4f6',
+  borderRadius: 6,
 });
 
 const FlagIcon: React.FC<FlagIconProps> = ({ countryCode, size = 'md', className = '' }) => {
