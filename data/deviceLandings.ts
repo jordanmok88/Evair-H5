@@ -24,7 +24,7 @@ import {
     Shield,
     Watch,
     BookOpen,
-    CreditCard,
+    Activity,
     Radio,
     Map,
     DollarSign,
@@ -249,12 +249,8 @@ export const DEVICE_CONTENT: Record<DeviceCategory, DeviceContent> = {
                 productPhotoObjectPosition: '52% 48%',
             },
             {
-                icon: Shield,
-                label: 'Medical IoT monitors',
-                productPhotoUrl: '/marketing/device-built-for/cell-09.png',
-                productPhotoAlt:
-                    'Hospital room with bedside monitor and compact IoT cellular gateway displaying LTE connectivity',
-                productPhotoObjectPosition: '48% 48%',
+                icon: Camera,
+                label: 'Wyze Cellular & other LTE cams',
             },
         ],
         plans: [
@@ -301,7 +297,7 @@ export const DEVICE_CONTENT: Record<DeviceCategory, DeviceContent> = {
         category: 'iot',
         heroTitle: 'Low-bandwidth SIMs for IoT & smart devices',
         heroSubtitle:
-            'GPS trackers, smartwatches, e-readers, walkie-talkies, mowers, POS terminals — devices that need to be online but not fast.',
+            'GPS trackers, smartwatches, e-readers, walkie-talkies, medical telemetry hubs, robotic mowers — devices that need to be online but not fast.',
         speedHeadline: 'Up to 500 Kbps',
         throttleNote:
             'Tuned for tiny periodic uploads (location pings, sensor data, transactions). Not suitable for streaming or browsing — for that, use our phone plans.',
@@ -355,12 +351,12 @@ export const DEVICE_CONTENT: Record<DeviceCategory, DeviceContent> = {
                 productPhotoObjectPosition: '50% 46%',
             },
             {
-                icon: CreditCard,
-                label: 'POS terminals',
-                productPhotoUrl: '/marketing/device-built-for/cell-05.png',
+                icon: Activity,
+                label: 'Medical telemetry & bedside IoT',
+                productPhotoUrl: '/marketing/device-built-for/cell-09.png',
                 productPhotoAlt:
-                    'Handheld touchscreen POS terminal showing a successful payment in a café',
-                productPhotoObjectPosition: '50% 48%',
+                    'Hospital room with bedside monitor and compact cellular gateway displaying LTE connectivity',
+                productPhotoObjectPosition: '48% 48%',
             },
             {
                 icon: Wrench,
