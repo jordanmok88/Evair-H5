@@ -331,6 +331,9 @@ const SingleCountryView: React.FC<SingleCountryViewProps> = ({
         if (selectedPkg) setDrawerOpen(true);
     };
 
+    const heroNetworkGeneration =
+        retailCarrierRowForIso(country.code.toUpperCase())?.network?.trim() || '4G/5G';
+
     return (
         <>
             {/* Hero */}
@@ -360,20 +363,41 @@ const SingleCountryView: React.FC<SingleCountryViewProps> = ({
                                 </span>
                             )}
                         </div>
-                        <div className="flex flex-wrap gap-3">
-                            <a
-                                href={`/app/travel-esim/${country.code}`}
-                                onClick={handleHeroCta}
-                                className="inline-flex items-center justify-center gap-2 bg-orange-500 text-white font-bold px-5 py-3 rounded-xl shadow-lg shadow-orange-500/20 active:scale-[0.98] transition-transform"
-                            >
-                                See {country.name} plans <ArrowRight size={18} />
-                            </a>
-                            <a
-                                href="/travel-esim"
-                                className="inline-flex items-center justify-center gap-2 bg-white text-slate-900 font-semibold px-5 py-3 rounded-xl border border-slate-300"
-                            >
-                                All countries
-                            </a>
+                        <div className="flex flex-col gap-4 sm:flex-row sm:flex-wrap sm:items-start sm:gap-x-8 md:gap-x-10">
+                            <div className="flex flex-wrap gap-3 shrink-0">
+                                <a
+                                    href={`/app/travel-esim/${country.code}`}
+                                    onClick={handleHeroCta}
+                                    className="inline-flex items-center justify-center gap-2 bg-orange-500 text-white font-bold px-5 py-3 rounded-xl shadow-lg shadow-orange-500/20 active:scale-[0.98] transition-transform"
+                                >
+                                    See {country.name} plans <ArrowRight size={18} />
+                                </a>
+                                <a
+                                    href="/travel-esim"
+                                    className="inline-flex items-center justify-center gap-2 bg-white text-slate-900 font-semibold px-5 py-3 rounded-xl border border-slate-300"
+                                >
+                                    All countries
+                                </a>
+                            </div>
+                            <div className="sm:mt-0.5 md:border-l md:border-slate-200 md:pl-8 min-w-0">
+                                <div className="text-[11px] font-bold uppercase tracking-[0.14em] text-slate-500 mb-2">
+                                    Connects to
+                                </div>
+                                <ul className="space-y-1.5 max-w-[20rem]">
+                                    {country.carriers.map(carrierName => (
+                                        <li
+                                            key={carrierName}
+                                            className="flex items-center gap-2 text-sm font-semibold text-slate-800"
+                                        >
+                                            <Wifi size={14} className="text-emerald-600 shrink-0" aria-hidden />
+                                            <span className="truncate">{carrierName}</span>
+                                            <span className="shrink-0 text-xs font-medium text-slate-500 whitespace-nowrap">
+                                                · {heroNetworkGeneration}
+                                            </span>
+                                        </li>
+                                    ))}
+                                </ul>
+                            </div>
                         </div>
                         <div className="flex items-center gap-2 mt-6 text-xs text-slate-500">
                             <CheckCircle2 size={14} className="text-emerald-500" />
@@ -385,33 +409,18 @@ const SingleCountryView: React.FC<SingleCountryViewProps> = ({
                         </div>
                     </div>
 
-                    {/* Destination flag + partner networks (flag ~50% column width; carriers below, not overlaid) */}
+                    {/* Destination flag only (partner networks live beside CTAs above) */}
                     <div className="hidden md:flex md:justify-end md:items-start">
-                        <div className="flex flex-col items-start gap-4 w-full max-w-xl">
-                            <div className="relative w-1/2 max-w-[280px] aspect-[5/4] rounded-3xl overflow-hidden shadow-xl border border-slate-200 bg-slate-100 shrink-0">
-                                <img
-                                    src={`https://flagcdn.com/w640/${country.code.toLowerCase()}.png`}
-                                    alt={country.name}
-                                    className="absolute inset-0 w-full h-full object-cover"
-                                    width={320}
-                                    height={256}
-                                    loading="lazy"
-                                    decoding="async"
-                                />
-                            </div>
-                            <div className="w-1/2 max-w-[280px] text-left">
-                                <div className="text-[11px] font-bold uppercase tracking-[0.14em] text-slate-500 mb-2">
-                                    Connects to
-                                </div>
-                                <ul className="space-y-1.5">
-                                    {country.carriers.map(c => (
-                                        <li key={c} className="flex items-center gap-2 text-sm font-semibold text-slate-800">
-                                            <Wifi size={14} className="text-emerald-600 shrink-0" aria-hidden />
-                                            <span>{c}</span>
-                                        </li>
-                                    ))}
-                                </ul>
-                            </div>
+                        <div className="relative w-full max-w-[364px] aspect-[5/4] rounded-3xl overflow-hidden shadow-xl border border-slate-200 bg-slate-100 shrink-0">
+                            <img
+                                src={`https://flagcdn.com/w800/${country.code.toLowerCase()}.png`}
+                                alt={country.name}
+                                className="absolute inset-0 w-full h-full object-cover"
+                                width={400}
+                                height={320}
+                                loading="lazy"
+                                decoding="async"
+                            />
                         </div>
                     </div>
                 </div>
