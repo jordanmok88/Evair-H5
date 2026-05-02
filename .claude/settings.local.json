@@ -32,7 +32,9 @@
       "Bash(ls:*)",
       "Bash(npx vite:*)",
       "Bash(git status:*)",
-      "Bash(git push -u origin fix/pccw-recharge-flow)"
+      "Bash(git push -u origin fix/pccw-recharge-flow)",
+      "Bash(git -C \"/Users/jordanmok/Desktop/iCloud Drive/Cursor Codes/Evair-H5\" log --oneline --diff-filter=A -- \".env\")",
+      "Bash(git -C \"/Users/jordanmok/Desktop/iCloud Drive/Cursor Codes/Evair-H5\" log --all --oneline -- \".env\")"
     ]
   }
 }

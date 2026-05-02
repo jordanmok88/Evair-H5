@@ -19,7 +19,6 @@ import {
   retailPrice,
   packagePriceUsd,
   orderEsim,
-  CONTINENT_TABS,
   type ContinentTab,
   formatGB,
   POPULAR_COUNTRY_CODES,
@@ -33,6 +32,17 @@ import { useSwipeBack } from '../hooks/useSwipeBack';
 
 import { Bell, UserCircle } from 'lucide-react';
 import { AppNotification } from '../types';
+
+/** eSIM shop filter row: single-country tabs + Multi-Country (`Multi-Region` in facets). */
+const ESIM_LOCATION_FILTER_TABS: ContinentTab[] = [
+  'All',
+  'Multi-Region',
+  'Asia',
+  'Europe',
+  'Americas',
+  'Africa',
+  'Oceania',
+];
 
 interface ShopViewProps {
   testMode?: boolean;
@@ -227,7 +237,6 @@ const ShopView: React.FC<ShopViewProps> = ({
   const [orderError, setOrderError] = useState<string | null>(null);
   const [emailSent, setEmailSent] = useState(false);
   const [continentTab, setContinentTab] = useState<ContinentTab>('All');
-  const [browseMode, setBrowseMode] = useState<'country' | 'region'>('country');
   // 后端返回的地区数据 (多国区域 + 单国家)
   const [multiCountryRegions, setMultiCountryRegions] = useState<MultiCountryRegion[]>([]);
   const [singleCountries, setSingleCountries] = useState<SingleCountry[]>([]);
@@ -370,9 +379,9 @@ const ShopView: React.FC<ShopViewProps> = ({
       g.locationCode.toLowerCase().includes(searchQuery.toLowerCase());
     if (!matchesSearch) return false;
     if (searchQuery) return true;
-    const matchesBrowseMode = browseMode === 'region' ? g.isMultiRegion : !g.isMultiRegion;
-    const matchesTab = browseMode === 'region' || continentTab === 'All' || g.continent === continentTab;
-    return matchesBrowseMode && matchesTab;
+    if (continentTab === 'Multi-Region') return g.isMultiRegion;
+    if (!g.isMultiRegion) return continentTab === 'All' || g.continent === continentTab;
+    return false;
   });
   const popularSet = new Set(POPULAR_COUNTRY_CODES.map(c => c.toUpperCase()));
   const popularOrder = new Map(POPULAR_COUNTRY_CODES.map((c, i) => [c.toUpperCase(), i]));
@@ -1592,40 +1601,6 @@ const ShopView: React.FC<ShopViewProps> = ({
                   />
                 </div>
 
-                {/* ── Browse Mode Toggle: Single Country / Multi-Country ── */}
-                {!searchQuery && (
-                  <div className="flex gap-2 mb-5">
-                    <button
-                      onClick={() => { setBrowseMode('country'); setShowAllCountries(false); }}
-                      className={`flex-1 flex flex-col items-center justify-center gap-0.5 py-3.5 rounded-xl border transition-all duration-200 ${
-                        browseMode === 'country'
-                          ? 'bg-orange-50 border-orange-200 shadow-sm shadow-orange-100'
-                          : 'bg-white border-slate-200 hover:border-slate-300'
-                      }`}
-                    >
-                      <div className="flex items-center gap-1.5">
-                        <MapPin size={14} strokeWidth={2.5} className={browseMode === 'country' ? 'text-brand-orange' : 'text-slate-400'} />
-                        <span className={`text-[13px] font-bold tracking-wide ${browseMode === 'country' ? 'text-orange-800' : 'text-slate-400'}`}>{t('shop.single_country')}</span>
-                      </div>
-                      <span className={`text-[10px] font-medium ${browseMode === 'country' ? 'text-orange-500/70' : 'text-slate-300'}`}>{t('shop.single_country_sub')}</span>
-                    </button>
-                    <button
-                      onClick={() => { setBrowseMode('region'); setShowAllCountries(false); }}
-                      className={`flex-1 flex flex-col items-center justify-center gap-0.5 py-3.5 rounded-xl border transition-all duration-200 ${
-                        browseMode === 'region'
-                          ? 'bg-blue-50 border-blue-200 shadow-sm shadow-blue-100'
-                          : 'bg-white border-slate-200 hover:border-slate-300'
-                      }`}
-                    >
-                      <div className="flex items-center gap-1.5">
-                        <Globe size={14} strokeWidth={2.5} className={browseMode === 'region' ? 'text-blue-600' : 'text-slate-400'} />
-                        <span className={`text-[13px] font-bold tracking-wide ${browseMode === 'region' ? 'text-blue-800' : 'text-slate-400'}`}>{t('shop.multi_country')}</span>
-                      </div>
-                      <span className={`text-[10px] font-medium ${browseMode === 'region' ? 'text-blue-500/70' : 'text-slate-300'}`}>{t('shop.multi_country_sub')}</span>
-                    </button>
-                  </div>
-                )}
-
                 {!searchQuery && (
                   <div className="mb-4 rounded-xl border border-slate-100 bg-slate-50/90 px-3 py-2.5">
                     <p className="mb-1.5 text-[11px] font-bold uppercase tracking-wide text-slate-500">
@@ -1678,10 +1653,10 @@ const ShopView: React.FC<ShopViewProps> = ({
                   </div>
                 )}
 
-                {/* ── Continent Filter Tabs (only in country mode) ── */}
-                {!searchQuery && browseMode === 'country' && (
+                {/* ── Region filter: single-country continents + Multi-Country (multi-region plans) ── */}
+                {!searchQuery && (
                   <div className="flex gap-2 overflow-x-auto no-scrollbar pb-3 -mx-4 px-4 md:mx-0 md:px-0 md:flex-wrap lg:-mx-4 lg:px-4 lg:flex-nowrap lg:overflow-x-auto mb-3">
-                    {CONTINENT_TABS.filter(tab => tab !== 'Multi-Region').map((tab) => (
+                    {ESIM_LOCATION_FILTER_TABS.map((tab) => (
                       <button
                         key={tab}
                         onClick={() => { setContinentTab(tab); setShowAllCountries(false); }}
@@ -1691,8 +1666,11 @@ const ShopView: React.FC<ShopViewProps> = ({
                             : 'bg-white text-slate-500 border border-slate-200 hover:bg-slate-50'
                         }`}
                       >
-                        {tab === 'All' ? t('shop.all')
-                          : t(`shop.continent_${tab.toLowerCase()}`)}
+                        {tab === 'All'
+                          ? t('shop.all')
+                          : tab === 'Multi-Region'
+                            ? t('shop.multi_country')
+                            : t(`shop.continent_${tab.toLowerCase()}`)}
                       </button>
                     ))}
                   </div>
@@ -1702,7 +1680,7 @@ const ShopView: React.FC<ShopViewProps> = ({
                 <div className="flex items-baseline gap-2 mb-4">
                   <h3 className="text-base font-extrabold text-slate-900 tracking-tight">
                     {searchQuery ? t('shop.search_results')
-                      : browseMode === 'region' ? t('shop.multi_country_plans')
+                      : continentTab === 'Multi-Region' ? t('shop.multi_country_plans')
                       : t('shop.single_country_esims')}
                   </h3>
                   <span className="text-xs font-semibold text-slate-400 tabular-nums">({sortedEsimGroups.length})</span>
@@ -1783,7 +1761,7 @@ const ShopView: React.FC<ShopViewProps> = ({
                     onClick={() => setShowAllCountries(true)}
                     className="w-full py-3 rounded-xl bg-slate-900 text-white font-semibold text-sm shadow-lg shadow-slate-200 active:scale-[0.98] transition-transform mb-5"
                   >
-                    {browseMode === 'region' ? t('shop.view_all_regions') : t('shop.view_all_countries')} ({hiddenEsimCount} {t('shop.more')})
+                    {continentTab === 'Multi-Region' ? t('shop.view_all_regions') : t('shop.view_all_countries')} ({hiddenEsimCount} {t('shop.more')})
                   </button>
                 )}
               </>
