@@ -46,6 +46,11 @@ export interface FetchPackagesParams {
   iccid?: string;
   /** 服务端范围限定（传给 /app/packages?scope=...） */
   scope?: 'single' | 'multi' | 'any';
+  /**
+   * When true, skip MIN 1 GiB filtering, SKU dedupe, and .99 retail snapping.
+   * Used for recharge fallbacks that still call `/app/packages`; purchase UI defaults to rules on.
+   */
+  omitShopPresentation?: boolean;
 }
 
 // ─── Order eSIM ──────────────────────────────────────────────────────

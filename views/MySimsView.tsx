@@ -192,7 +192,8 @@ const MySimsView: React.FC<MySimsViewProps> = ({ activeSims, onNavigate, filterT
     setTopUpPackages([]);
     setSelectedTopUp(null);
     const fallbackLocation = currentSim.locationCode || currentSim.country.countryCode;
-    const locationFallback = () => fetchPackages({ locationCode: fallbackLocation });
+    const locationFallback = () =>
+      fetchPackages({ locationCode: fallbackLocation, omitShopPresentation: true });
     // Recharge catalogue resolution by SIM type:
     //
     //   • ESIM        → EsimAccess / Red Tea top-up templates keyed to

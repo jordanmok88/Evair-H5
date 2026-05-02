@@ -42,6 +42,7 @@ import {
   type ContinentTab,
   type ActiveSimStatus,
 } from './esimApi';
+import { finalizeShopCatalogPackages } from './catalogPresentation';
 
 // ─── Backend API ────────────────────────────────────────────────────
 
@@ -101,7 +102,7 @@ function backendPkgToEsimPackage(dto: PackageDto): EsimPackage {
 // `supplierRegionCode` and `supplierRegionName` so the frontend no longer
 // needs a separate /packages/locations request or regex extraction.
 
-const CACHE_KEY = 'evair_esim_packages_v6';
+const CACHE_KEY = 'evair_esim_packages_v7';
 const CACHE_TTL_MS = 30 * 60 * 1000; // 30 minutes
 
 interface PackageCache {
@@ -135,7 +136,12 @@ let _prefetchPromise: Promise<EsimPackage[]> | null = null;
 let _prefetchTimestamp = 0;
 
 export async function fetchPackages(params: FetchPackagesParams = {}): Promise<EsimPackage[]> {
-  const isFullList = !params.locationCode && !params.type && !params.packageCode && !params.iccid;
+  const { omitShopPresentation, ...fetchParams } = params;
+  const isFullList =
+    !fetchParams.locationCode &&
+    !fetchParams.type &&
+    !fetchParams.packageCode &&
+    !fetchParams.iccid;
 
   if (isFullList) {
     const cached = getCachedPackages();
@@ -143,18 +149,22 @@ export async function fetchPackages(params: FetchPackagesParams = {}): Promise<E
   }
 
   const resp = await packageService.getPackages({
-    locationCode: params.locationCode,
-    type: params.type,
-    scope: params.scope,
+    locationCode: fetchParams.locationCode,
+    type: fetchParams.type,
+    scope: fetchParams.scope,
     size: 5000,
     page: 1,
   });
 
   const dtos = resp.packages || [];
-  const filtered = params.type
+  const filtered = fetchParams.type
     ? dtos
     : dtos.filter(d => (d.type ?? 'BASE') !== 'TOPUP');
-  const packages = filtered.map(backendPkgToEsimPackage);
+  let packages = filtered.map(backendPkgToEsimPackage);
+
+  if (!omitShopPresentation) {
+    packages = finalizeShopCatalogPackages(packages);
+  }
 
   if (isFullList) {
     setCachedPackages(packages);
