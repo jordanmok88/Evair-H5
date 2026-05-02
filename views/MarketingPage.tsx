@@ -338,12 +338,7 @@ const MarketingPage: React.FC = () => {
                             onClick={signInGate.gateClick}
                             className="inline-flex min-h-12 items-center justify-center gap-2 rounded-xl bg-[#F27420] px-6 py-3.5 text-sm font-bold text-white transition hover:brightness-105 sm:min-h-14 sm:px-8 sm:py-4 sm:text-base"
                         >
-                            {t('marketing.home_ready_get_started')}{' '}
-                            <ChevronRight
-                                className="h-5 w-5 shrink-0 opacity-95 sm:h-[1.375rem] sm:w-[1.375rem]"
-                                strokeWidth={2.5}
-                                aria-hidden
-                            />
+                            {t('marketing.home_ready_get_started')}
                         </a>
                         <a
                             href={APP_SUPPORT_CHAT_HREF}
