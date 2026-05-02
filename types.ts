@@ -158,6 +158,9 @@ export interface EsimPackage {
    * longer needs a separate /packages/locations request for region names.
    */
   supplierRegionName?: string;
+
+  /** Red Tea-derived operator line via Laravel sync; optional. */
+  networkPartnerSummary?: string;
 }
 
 export interface EsimApiResponse<T> {

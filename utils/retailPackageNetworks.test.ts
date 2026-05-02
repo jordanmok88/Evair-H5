@@ -43,4 +43,30 @@ describe('retailPackageNetworks', () => {
         );
         expect(line).toBe('North America (multi)');
     });
+
+    it('prefers backend network_partner_summary when set', () => {
+        expect(
+            planCardNetworkLine(
+                minimalPkg({
+                    coverageCodes: ['JP'],
+                    location: 'JP',
+                    supplierRegionName: 'Unused',
+                    networkPartnerSummary: 'SoftBank / au',
+                }),
+            ),
+        ).toBe('SoftBank · au');
+    });
+
+    it('supports backend summary on multi-country cards', () => {
+        expect(
+            planCardNetworkLine(
+                minimalPkg({
+                    location: 'US,CA',
+                    coverageCodes: ['US', 'CA'],
+                    supplierRegionName: 'North America',
+                    networkPartnerSummary: 'AT&T / Bell',
+                }),
+            ),
+        ).toBe('AT&T · Bell');
+    });
 });

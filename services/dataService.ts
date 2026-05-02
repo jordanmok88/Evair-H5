@@ -91,6 +91,7 @@ function backendPkgToEsimPackage(dto: PackageDto): EsimPackage {
     // 否则单国套餐会被错判成多国并被跳过（root cause of "Single Country empty"）。
     supplierRegionCode: dto.supplierRegionCode ?? undefined,
     supplierRegionName: dto.supplierRegionName ?? undefined,
+    networkPartnerSummary: dto.networkPartnerSummary?.trim() || undefined,
   };
 }
 

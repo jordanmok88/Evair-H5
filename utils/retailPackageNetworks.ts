@@ -1,6 +1,11 @@
 import { CARRIER_MAP } from '../constants';
 import type { EsimPackage } from '../types';
 
+/** Match plan-card typography (`CARRIER_MAP` uses middle dots between carriers). */
+function formatNetworkPhrase(text: string): string {
+    return text.replace(/\s*\/\s*/g, ' · ').trim();
+}
+
 /** Primary ISO-2 for single-country retail cards. */
 export function primaryIso2FromPackage(pkg: EsimPackage): string | null {
     const cc = pkg.coverageCodes?.filter(Boolean);
@@ -20,6 +25,11 @@ export function packageCoversMultipleIso2(pkg: EsimPackage): boolean {
  * packages; regional/global uses `supplierRegionName` when present.
  */
 export function planCardNetworkLine(pkg: EsimPackage): string | null {
+    const fromBackend = pkg.networkPartnerSummary?.trim();
+    if (fromBackend) {
+        return formatNetworkPhrase(fromBackend);
+    }
+
     if (packageCoversMultipleIso2(pkg)) {
         return pkg.supplierRegionName?.trim() || null;
     }
@@ -27,5 +37,5 @@ export function planCardNetworkLine(pkg: EsimPackage): string | null {
     if (!iso) return null;
     const row = CARRIER_MAP[iso];
     if (!row?.carrier) return null;
-    return row.carrier.replace(/\s*\/\s*/g, ' · ');
+    return formatNetworkPhrase(row.carrier);
 }

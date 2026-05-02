@@ -311,6 +311,8 @@ export interface PackageDto {
    * **`null`** for single-country plans.
    */
   supplierRegionName?: string | null;
+  /** Operator line parsed from supplier `raw_data` when present (`esimaccess:sync-products`). */
+  networkPartnerSummary?: string | null;
 }
 
 export interface PackageListParams {
