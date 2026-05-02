@@ -102,7 +102,12 @@ export const packageService = {
    * @see PackageLocationsResponse 字段定义见 types.ts
    */
   async getLocations(): Promise<PackageLocationsResponse> {
-    return get<PackageLocationsResponse>(ENDPOINTS.PACKAGE_LOCATIONS);
+    // Public catalogue facets — never send Authorization. A stale app token
+    // would trigger 401→refresh churn and strand marketing pages (e.g.
+    // /travel-esim) on the 50-country static fallback.
+    return get<PackageLocationsResponse>(ENDPOINTS.PACKAGE_LOCATIONS, undefined, {
+      skipAuth: true,
+    });
   },
 };
 
