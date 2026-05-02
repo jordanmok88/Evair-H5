@@ -37,6 +37,34 @@ export interface EsimValidityBucket {
     packages: EsimPackage[];
 }
 
+/** Canonical “hero” dwell length — surfaced first under “Most popular”. */
+export const RETAIL_POPULAR_DAY_DURATION = 30;
+
+export function isMostPopularRetailBucket(bucket: EsimValidityBucket): boolean {
+    return bucket.durationUnit === 'DAY' && bucket.duration === RETAIL_POPULAR_DAY_DURATION;
+}
+
+function compareValidityBuckets(a: EsimValidityBucket, b: EsimValidityBucket): number {
+    if (a.sortOrder !== b.sortOrder) return a.sortOrder - b.sortOrder;
+    const unitRank = (u: 'DAY' | 'MONTH') => (u === 'DAY' ? 0 : 1);
+    const ur = unitRank(a.durationUnit) - unitRank(b.durationUnit);
+    if (ur !== 0) return ur;
+    return a.duration - b.duration;
+}
+
+/** Puts exactly-one 30‑DAY bucket first (“most popular”), then every other validity ascending. */
+export function sortRetailBucketsMostPopularFirst(buckets: EsimValidityBucket[]): EsimValidityBucket[] {
+    const popular: EsimValidityBucket[] = [];
+    const rest: EsimValidityBucket[] = [];
+    for (const b of buckets) {
+        if (isMostPopularRetailBucket(b)) popular.push(b);
+        else rest.push(b);
+    }
+    popular.sort(compareValidityBuckets);
+    rest.sort(compareValidityBuckets);
+    return [...popular, ...rest];
+}
+
 export function bucketPlansByValidity(packages: EsimPackage[]): EsimValidityBucket[] {
     const eligible = packages.filter(passesRetailTravelPlanListingFilter);
 
@@ -72,13 +100,7 @@ export function bucketPlansByValidity(packages: EsimPackage[]): EsimValidityBuck
         });
     }
 
-    buckets.sort((a, b) => {
-        if (a.sortOrder !== b.sortOrder) return a.sortOrder - b.sortOrder;
-        const unitRank = (u: 'DAY' | 'MONTH') => (u === 'DAY' ? 0 : 1);
-        const ur = unitRank(a.durationUnit) - unitRank(b.durationUnit);
-        if (ur !== 0) return ur;
-        return a.duration - b.duration;
-    });
+    buckets.sort(compareValidityBuckets);
 
     return buckets;
 }

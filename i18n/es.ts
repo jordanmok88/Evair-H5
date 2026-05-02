@@ -104,6 +104,7 @@ const es = {
     amazon_family_group_label: 'Categorías de SIM física',
     plan_duration_section_days: 'Planes de {{days}} días',
     plan_duration_section_months: 'Planes de {{months}} meses',
+    plan_section_most_popular: 'Más populares',
     plan_duration_group_hint:
       'Agrupamos por vigencia; los planes de solo 1 día naturales quedan fuera.',
     plan_premium_tier_compact: 'Premium {{tier}}',

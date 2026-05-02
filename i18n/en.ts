@@ -104,6 +104,7 @@ const en = {
     amazon_family_group_label: 'Physical SIM categories',
     plan_duration_section_days: '{{days}}-day plans',
     plan_duration_section_months: '{{months}}-month plans',
+    plan_section_most_popular: 'Most popular',
     plan_duration_group_hint:
       'Grouped by validity. Single-calendar-day prepaid plans stay hidden so multi-day trips are easier to scan.',
     plan_premium_badge: 'Premium',

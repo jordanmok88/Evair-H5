@@ -22,7 +22,9 @@ import type { EsimPackage } from '../../types';
 import {
     bucketPlansByValidity,
     inferRetailPremiumSkuTier,
+    isMostPopularRetailBucket,
     sanitizedRetailPlanMarketingName,
+    sortRetailBucketsMostPopularFirst,
 } from '../../utils/travelEsimPlanBuckets';
 
 interface EsimPlanGridProps {
@@ -74,7 +76,7 @@ const EsimPlanGrid: React.FC<EsimPlanGridProps> = ({ countryCode, countryName, o
 
     const buckets = useMemo(() => {
         if (!packages) return [];
-        return bucketPlansByValidity(packages);
+        return sortRetailBucketsMostPopularFirst(bucketPlansByValidity(packages));
     }, [packages]);
 
     const totalEligible = useMemo(() => buckets.reduce((a, b) => a + b.packages.length, 0), [buckets]);
@@ -147,14 +149,21 @@ const EsimPlanGrid: React.FC<EsimPlanGridProps> = ({ countryCode, countryName, o
                         key={`${bucket.durationUnit}-${bucket.duration}`}
                         id={`plans-${bucket.sortOrder}-${bucket.durationUnit}-${bucket.duration}`}
                     >
-                        <h3 className="text-xl font-bold text-slate-900 tracking-tight mb-4 pb-2 border-b border-slate-200">
-                            {bucket.durationUnit === 'MONTH'
-                                ? t('shop.plan_duration_section_months', { months: bucket.duration })
-                                : t('shop.plan_duration_section_days', { days: bucket.duration })}
-                            <span className="ml-2 text-sm font-semibold text-slate-400">
-                                ({bucket.packages.length})
-                            </span>
-                        </h3>
+                        <div className="mb-4 pb-2 border-b border-slate-200">
+                            {isMostPopularRetailBucket(bucket) && (
+                                <p className="text-[11px] font-extrabold uppercase tracking-[0.12em] text-orange-600 mb-1">
+                                    {t('shop.plan_section_most_popular')}
+                                </p>
+                            )}
+                            <h3 className="text-xl font-bold text-slate-900 tracking-tight">
+                                {bucket.durationUnit === 'MONTH'
+                                    ? t('shop.plan_duration_section_months', { months: bucket.duration })
+                                    : t('shop.plan_duration_section_days', { days: bucket.duration })}
+                                <span className="ml-2 text-sm font-semibold text-slate-400">
+                                    ({bucket.packages.length})
+                                </span>
+                            </h3>
+                        </div>
                         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-5">
                             {bucket.packages.map(pkg => (
                                 <PlanCard
@@ -231,15 +240,15 @@ const PlanCard: React.FC<{
         >
             <div className="flex items-start justify-between mb-4 gap-2">
                 <div className="min-w-0">
-                    <div className="flex flex-wrap items-center gap-2 mb-1">
-                        <span className="text-xs font-bold text-slate-400 uppercase tracking-wider break-words">
-                            {displayName}
-                        </span>
-                        {tier != null && (
-                            <span className="shrink-0 text-[10px] font-extrabold uppercase tracking-wide bg-amber-100 text-amber-900 px-2 py-0.5 rounded-md">
+                    <span className="block text-xs font-bold text-slate-400 uppercase tracking-wider break-words mb-1">
+                        {displayName}
+                    </span>
+                    <div className="min-h-[26px] flex flex-wrap items-center gap-2 mb-1">
+                        {tier != null ? (
+                            <span className="shrink-0 text-[10px] font-extrabold uppercase tracking-wide bg-amber-100 text-amber-900 px-2 py-0.5 rounded-md leading-none inline-flex items-center">
                                 {t('shop.plan_premium_tier_compact', { tier: tier.labelUpper })}
                             </span>
-                        )}
+                        ) : null}
                     </div>
                     <div className="text-3xl font-extrabold text-slate-900">
                         {volumeLabel}
