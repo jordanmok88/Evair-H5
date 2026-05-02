@@ -65,6 +65,8 @@ const en = {
     load_error: 'Could not load plans. Tap to retry.',
     retry: 'Retry',
     plans_count: '{{count}} Plans',
+    plan_list_count_one: '{{count}} plan',
+    plan_list_count_other: '{{count}} plans',
     per_gb: '/GB',
     validity: '{{days}} Days',
     order_esim: 'Order eSIM',
@@ -100,6 +102,13 @@ const en = {
     amazon_picker_intro:
       'Pick the card category that matches your device (same groupings as our stock sheet), then tap Amazon for the plan size you want.',
     amazon_family_group_label: 'Physical SIM categories',
+    plan_duration_section_days: '{{days}}-day plans',
+    plan_duration_section_months: '{{months}}-month plans',
+    plan_duration_group_hint: 'Grouped by how long service stays active. Trips shorter than seven days stay hidden.',
+    plan_premium_badge: 'Premium',
+    plan_premium_hint_short: 'US IP — optimized for US apps abroad',
+    plan_long_stay_notice:
+      'No plans at seven days or longer are available for this listing right now. Shorter-trip SKUs stay hidden.',
   },
   amazonSim: {
     plan_line: '{{gb}} GB · {{days}} days',
@@ -631,6 +640,26 @@ const en = {
   activate: {
     invalid_iccid: "That doesn't look like a valid ICCID. Check the digits on your box (15-22 characters).",
     preview_failed: "We couldn't reach the activation service. Please check your connection and try again.",
+  },
+  travel_esim_grid: {
+    choose_plan_title: 'Choose your {{country}} eSIM plan',
+    subtitle_loading: 'Live plans from local carriers, instant QR delivery.',
+    subtitle_live_grouped_one: '{{count}} live plan grouped by validity. Instant QR delivery.',
+    subtitle_live_grouped_other: '{{count}} live plans grouped by validity. Instant QR delivery.',
+    loading: 'Loading live plans…',
+    error_load: 'We could not load live plans right now. Please try again in a moment.',
+    empty_headline: "We don't have plans for {{country}} stocked yet.",
+    empty_try_regional_other: 'Try our regional bundles instead — many include {{country}}.',
+    browse_regional: 'Browse regional bundles',
+    footer_disclaimer:
+      'Prices in USD. Plans activate on first data use and are valid for the listed number of days. Hotspot / personal hotspot supported. No SIM swap required.',
+    validity_days_one: '{{count}} day validity',
+    validity_days_other: '{{count}} days validity',
+    validity_months_one: '{{count}} month validity',
+    validity_months_other: '{{count}} months validity',
+    choose_volume: 'Choose {{volume}}',
+    feature_speed: '4G / 5G where available',
+    feature_hotspot: 'Personal hotspot supported',
   },
   referral: {
     title: 'Refer & earn',

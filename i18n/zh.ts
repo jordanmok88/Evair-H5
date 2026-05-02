@@ -65,6 +65,8 @@ const zh = {
     load_error: '无法加载套餐。点击重试。',
     retry: '重试',
     plans_count: '{{count}} 个套餐',
+    plan_list_count_one: '{{count}} 个套餐',
+    plan_list_count_other: '{{count}} 个套餐',
     per_gb: '/GB',
     validity: '{{days}} 天',
     order_esim: '购买eSIM',
@@ -100,6 +102,14 @@ const zh = {
     amazon_picker_intro:
       '先选择与设备匹配的卡类型（与库存表分组一致），再打开对应流量档位的亚马逊商品。',
     amazon_family_group_label: '实体 SIM 分类',
+    plan_duration_section_days: '{{days}} 天套餐',
+    plan_duration_section_months: '{{months}} 个月套餐',
+    plan_duration_group_hint:
+      '按计划有效天数分段展示。七日以下的极短行程套餐不在此列表。',
+    plan_premium_badge: '尊享',
+    plan_premium_hint_short: '美国 IP——海外使用美国流媒体与本地应用体验更佳。',
+    plan_long_stay_notice:
+      '当前暂无「≥7 天」档位的备货套餐展示。极短途套餐按政策不在此列表。',
   },
   amazonSim: {
     plan_line: '{{gb}} GB · {{days}} 天',
@@ -609,6 +619,26 @@ const zh = {
   activate: {
     invalid_iccid: 'ICCID 格式无效，请检查包装盒上的数字（15-22 位）。',
     preview_failed: '无法连接激活服务，请检查网络后重试。',
+  },
+  travel_esim_grid: {
+    choose_plan_title: '请选择 {{country}} eSIM',
+    subtitle_loading: '与当地运营商同款实时资费，扫码秒收卡。',
+    subtitle_live_grouped_one: '{{count}} 档实时套餐 · 按时长分组 · 扫码取卡。',
+    subtitle_live_grouped_other: '{{count}} 档实时套餐 · 按时长分组 · 扫码取卡。',
+    loading: '正在加载实时资费…',
+    error_load: '暂时无法加载实时套餐，请稍后再试。',
+    empty_headline: '暂时没有 {{country}} 的备货套餐。',
+    empty_try_regional_other: '不妨试试区域流量包 —— 许多国家已包含在内。',
+    browse_regional: '浏览区域套餐',
+    footer_disclaimer:
+      '标价为 USD。套餐自首次启用数据后开始计时并覆盖所示天数；支持热点分享；无须换 SIM。',
+    validity_days_one: '{{count}} 天有效期',
+    validity_days_other: '{{count}} 天有效期',
+    validity_months_one: '{{count}} 个月有效期',
+    validity_months_other: '{{count}} 个月有效期',
+    choose_volume: '选择 {{volume}}',
+    feature_speed: '当地的 4G / 5G 网络（取决于覆盖）',
+    feature_hotspot: '支持手持设备热点与他人共享上网',
   },
   referral: {
     title: '推荐好友',

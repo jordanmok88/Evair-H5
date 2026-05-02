@@ -23,6 +23,7 @@ import {
   formatGB,
   POPULAR_COUNTRY_CODES,
 } from '../services/dataService';
+import { bucketPlansByValidity, isPremiumUsIpPlan } from '../utils/travelEsimPlanBuckets';
 import { orderService } from '../services/api';
 import { pollEsimOrderUntilProvisioned } from '../services/api/order';
 import type { OrderDetailDto } from '../services/api/types';
@@ -810,6 +811,9 @@ const ShopView: React.FC<ShopViewProps> = ({
 
   // --- eSIM COUNTRY DETAIL: Package list for selected country group ---
   if (selectedEsimGroup) {
+    const planBuckets = bucketPlansByValidity(selectedEsimGroup.packages);
+    const eligiblePlanCount = planBuckets.reduce((acc, b) => acc + b.packages.length, 0);
+
     return (
       <div className="lg:h-full flex flex-col relative bg-[#F2F4F7]">
         {/* eSIM Checkout Modal */}
@@ -891,15 +895,33 @@ const ShopView: React.FC<ShopViewProps> = ({
               <h2 className="text-2xl font-bold text-slate-900 tracking-tight">{selectedEsimGroup.locationName}</h2>
               <p className="text-sm text-slate-400 mt-0.5">
                 {selectedEsimGroup.isMultiRegion ? t('shop.multi_region') : t('shop.single_country')}
-                {' · '}{selectedEsimGroup.packages.length} {selectedEsimGroup.packages.length === 1 ? 'Plan' : 'Plans'}
+                {' · '}{t(eligiblePlanCount === 1 ? 'shop.plan_list_count_one' : 'shop.plan_list_count_other', { count: eligiblePlanCount })}
               </p>
             </div>
           </div>
 
-          <h3 className="text-lg font-bold text-slate-900 mb-3 tracking-tight">{t('shop.select_plan')}</h3>
+          <h3 className="text-lg font-bold text-slate-900 mb-2 tracking-tight">{t('shop.select_plan')}</h3>
+          <p className="text-xs text-slate-500 mb-4 leading-relaxed">{t('shop.plan_duration_group_hint')}</p>
 
+          {eligiblePlanCount === 0 ? (
+            <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-6 text-center text-sm text-slate-600 mb-6">
+              {t('shop.plan_long_stay_notice')}
+            </div>
+          ) : (
+          <div className="space-y-8 pb-4">
+            {planBuckets.map(bucket => (
+              <section key={`${bucket.durationUnit}-${bucket.duration}`} aria-labelledby={`plan-validity-${bucket.sortOrder}-${bucket.durationUnit}-${bucket.duration}`}>
+                <h4 id={`plan-validity-${bucket.sortOrder}-${bucket.durationUnit}-${bucket.duration}`} className="text-base font-bold text-slate-900 mb-3 flex items-center gap-2 pb-2 border-b border-slate-200">
+                  <span>
+                    {bucket.durationUnit === 'MONTH'
+                      ? t('shop.plan_duration_section_months', { months: bucket.duration })
+                      : t('shop.plan_duration_section_days', { days: bucket.duration })}
+                  </span>
+                  <span className="text-xs font-semibold text-slate-400">({bucket.packages.length})</span>
+                </h4>
           <div className="space-y-3 md:grid md:grid-cols-2 md:gap-3 md:space-y-0 lg:block lg:space-y-3">
-            {selectedEsimGroup.packages.map((pkg) => {
+            {bucket.packages.map((pkg) => {
+              const premium = isPremiumUsIpPlan(pkg);
               const priceUsd = packagePriceUsd(pkg);
               const volumeStr = formatVolume(pkg.volume);
               const gb = pkg.volume / (1024 * 1024 * 1024);
@@ -914,17 +936,29 @@ const ShopView: React.FC<ShopViewProps> = ({
                     setIsProcessing(false); setOrderError(null);
                     setSelectedEsimPkg(pkg);
                   }}
-                  className="group relative bg-white rounded-xl p-4 border border-slate-100 shadow-sm hover:shadow-md transition-all cursor-pointer"
+                  className={`group relative bg-white rounded-xl p-4 border shadow-sm hover:shadow-md transition-all cursor-pointer ${
+                      premium ? 'border-amber-200 ring-2 ring-amber-50' : 'border-slate-100'
+                  }`}
                 >
                   <div className="flex justify-between items-end mb-3">
                     <div>
-                      <p className="text-slate-400 font-semibold text-xs uppercase tracking-wider mb-1">{pkg.name}</p>
+                      <div className="flex flex-wrap gap-2 items-center mb-1">
+                        <p className="text-slate-400 font-semibold text-xs uppercase tracking-wider">{pkg.name}</p>
+                        {premium && (
+                          <span className="text-[9px] font-extrabold uppercase tracking-wide bg-amber-100 text-amber-950 px-1.5 py-0.5 rounded">
+                            {t('shop.plan_premium_badge')}
+                          </span>
+                        )}
+                      </div>
                       <div className="flex items-baseline gap-1">
                         <h3 className="text-2xl font-extrabold text-slate-900 tracking-tight">{volumeStr.split(' ')[0]}</h3>
                         <span className="text-base font-bold text-slate-400">{volumeStr.split(' ')[1]}</span>
                       </div>
+                      {premium && (
+                        <p className="text-[10px] text-amber-900/85 mt-0.5 leading-snug">{t('shop.plan_premium_hint_short')}</p>
+                      )}
                     </div>
-                    <div className="text-right">
+                    <div className="text-right shrink-0">
                       <span className="text-xl font-bold text-brand-orange">${priceUsd.toFixed(2)}</span>
                       <p className="text-[11px] text-slate-400 mt-0.5">${pricePerGb.toFixed(2)}{t('shop.per_gb')}</p>
                     </div>
@@ -980,6 +1014,10 @@ const ShopView: React.FC<ShopViewProps> = ({
               );
             })}
           </div>
+              </section>
+            ))}
+          </div>
+          )}
 
           <div className="mt-6 text-center pb-4">
             <p className="text-slate-400 text-sm flex items-center justify-center gap-1">

@@ -65,6 +65,8 @@ const es = {
     load_error: 'No se pudieron cargar los planes. Toca para reintentar.',
     retry: 'Reintentar',
     plans_count: '{{count}} Planes',
+    plan_list_count_one: '{{count}} plan',
+    plan_list_count_other: '{{count}} planes',
     per_gb: '/GB',
     validity: '{{days}} Días',
     order_esim: 'Pedir eSIM',
@@ -100,6 +102,14 @@ const es = {
     amazon_picker_intro:
       'Elige la categoría de tarjeta que coincide con tu dispositivo (mismos grupos que nuestra hoja de stock) y abre el listado de Amazon del tamaño de plan que quieras.',
     amazon_family_group_label: 'Categorías de SIM física',
+    plan_duration_section_days: 'Planes de {{days}} días',
+    plan_duration_section_months: 'Planes de {{months}} meses',
+    plan_duration_group_hint:
+      'Agrupadas por vigencia activa en días; los planes de menos de siete días no aparecen aquí.',
+    plan_premium_badge: 'Premium',
+    plan_premium_hint_short: 'IP estadounidense — ideal para apps y streaming desde EE.UU.',
+    plan_long_stay_notice:
+      'No hay planes de siete días o más en este momento. Ocultamos viajes muy cortos a propósito.',
   },
   amazonSim: {
     plan_line: '{{gb}} GB · {{days}} días',
@@ -623,6 +633,28 @@ const es = {
   activate: {
     invalid_iccid: 'Ese ICCID no parece válido. Revisa los dígitos en la caja (15-22 caracteres).',
     preview_failed: 'No pudimos contactar el servicio de activación. Comprueba tu conexión e inténtalo de nuevo.',
+  },
+  travel_esim_grid: {
+    choose_plan_title: 'Elige tu eSIM para {{country}}',
+    subtitle_loading: 'Planes en vivo desde operadores locales, entrega QR al instante.',
+    subtitle_live_grouped_one:
+      '{{count}} plan en vivo, agrupado por vigencia. Entrega QR al instante.',
+    subtitle_live_grouped_other:
+      '{{count}} planes en vivo, agrupados por vigencia. Entrega QR al instante.',
+    loading: 'Cargando planes en vivo…',
+    error_load: 'No pudimos cargar los planes ahora. Inténtalo de nuevo en unos minutos.',
+    empty_headline: 'Aún no tenemos planes en stock para {{country}}.',
+    empty_try_regional_other: 'Prueba nuestros paquetes regionales — muchos incluyen {{country}}.',
+    browse_regional: 'Ver paquetes regionales',
+    footer_disclaimer:
+      'Precios en USD. Los planes se activan con el primer uso de datos y son válidos por los días indicados. Compatible con zona personal. Sin cambiar la SIM física.',
+    validity_days_one: '{{count}} día de vigencia',
+    validity_days_other: '{{count}} días de vigencia',
+    validity_months_one: '{{count}} mes de vigencia',
+    validity_months_other: '{{count}} meses de vigencia',
+    choose_volume: 'Elegir {{volume}}',
+    feature_speed: '4G / 5G donde haya cobertura',
+    feature_hotspot: 'Compatible con zona personal',
   },
   referral: {
     title: 'Invita y gana',
