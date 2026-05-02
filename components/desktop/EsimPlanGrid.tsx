@@ -24,10 +24,9 @@ import {
     bucketPlansByValidity,
     inferRetailPremiumSkuTier,
     isMostPopularRetailBucket,
-    partitionRetailBucketsByCardinality,
     sanitizedRetailPlanMarketingName,
+    segmentRetailBucketsForPresentation,
     sortRetailBucketsMostPopularFirst,
-    sortSingletonBucketsForDurationRoll,
 } from '../../utils/travelEsimPlanBuckets';
 
 interface EsimPlanGridProps {
@@ -82,14 +81,9 @@ const EsimPlanGrid: React.FC<EsimPlanGridProps> = ({ countryCode, countryName, o
         return sortRetailBucketsMostPopularFirst(bucketPlansByValidity(packages));
     }, [packages]);
 
-    const { multiPlan, singletonPlan } = useMemo(
-        () => partitionRetailBucketsByCardinality(buckets),
+    const presentationSegments = useMemo(
+        () => segmentRetailBucketsForPresentation(buckets),
         [buckets],
-    );
-
-    const singletonRoll = useMemo(
-        () => sortSingletonBucketsForDurationRoll(singletonPlan),
-        [singletonPlan],
     );
 
     const totalEligible = useMemo(() => buckets.reduce((a, b) => a + b.packages.length, 0), [buckets]);
@@ -157,28 +151,29 @@ const EsimPlanGrid: React.FC<EsimPlanGridProps> = ({ countryCode, countryName, o
             />
 
             <div className="space-y-12">
-                {multiPlan.map(bucket => (
+                {presentationSegments.map((seg, segIdx) =>
+                    seg.kind === 'multi' ? (
                     <div
-                        key={`${bucket.durationUnit}-${bucket.duration}-multi`}
-                        id={`plans-${bucket.sortOrder}-${bucket.durationUnit}-${bucket.duration}`}
+                        key={`${seg.bucket.durationUnit}-${seg.bucket.duration}-multi`}
+                        id={`plans-${seg.bucket.sortOrder}-${seg.bucket.durationUnit}-${seg.bucket.duration}`}
                     >
                         <div className="mb-4 pb-2 border-b border-slate-200">
-                            {isMostPopularRetailBucket(bucket) && (
+                            {isMostPopularRetailBucket(seg.bucket) && (
                                 <p className="text-[11px] font-extrabold uppercase tracking-[0.12em] text-orange-600 mb-1">
                                     {t('shop.plan_section_most_popular')}
                                 </p>
                             )}
                             <h3 className="text-xl font-bold text-slate-900 tracking-tight">
-                                {bucket.durationUnit === 'MONTH'
-                                    ? t('shop.plan_duration_section_months', { months: bucket.duration })
-                                    : t('shop.plan_duration_section_days', { days: bucket.duration })}
+                                {seg.bucket.durationUnit === 'MONTH'
+                                    ? t('shop.plan_duration_section_months', { months: seg.bucket.duration })
+                                    : t('shop.plan_duration_section_days', { days: seg.bucket.duration })}
                                 <span className="ml-2 text-sm font-semibold text-slate-400">
-                                    ({bucket.packages.length})
+                                    ({seg.bucket.packages.length})
                                 </span>
                             </h3>
                         </div>
                         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-5">
-                            {bucket.packages.map(pkg => (
+                            {seg.bucket.packages.map(pkg => (
                                 <PlanCard
                                     key={pkg.packageCode}
                                     pkg={pkg}
@@ -189,11 +184,10 @@ const EsimPlanGrid: React.FC<EsimPlanGridProps> = ({ countryCode, countryName, o
                             ))}
                         </div>
                     </div>
-                ))}
-
-                {singletonRoll.length > 0 && (
+                    ) : (
                     <RetailSingletonDurationRoll
-                        buckets={singletonRoll}
+                        key={`singleton-roll-${segIdx}-${seg.buckets.map(b => `${b.durationUnit}-${b.duration}`).join('-')}`}
+                        buckets={seg.buckets}
                         ariaLabel={t('travel_esim_grid.singleton_roll_aria')}
                         renderColumnHeader={bucket => (
                             <div className="pb-2 border-b border-slate-200">
@@ -219,6 +213,7 @@ const EsimPlanGrid: React.FC<EsimPlanGridProps> = ({ countryCode, countryName, o
                             ) : null;
                         }}
                     />
+                    )
                 )}
             </div>
 

@@ -83,6 +83,42 @@ export function sortSingletonBucketsForDurationRoll(buckets: EsimValidityBucket[
     return [...hero, ...tail];
 }
 
+/** One merged horizontal strip (`RetailSingletonDurationRoll`) or one multi-tier section */
+export type RetailPlanPresentationSegment =
+    | { kind: 'singletonRoll'; buckets: EsimValidityBucket[] }
+    | { kind: 'multi'; bucket: EsimValidityBucket };
+
+/**
+ * Walk buckets in **`sortRetailBucketsMostPopularFirst` order** while merging consecutive
+ * one-plan tiers into a single singleton roll — so shorter singleton runs (e.g. 7/15/60
+ * days) stay **above** later multi tiers (90/180) instead of flushing all singletons to
+ * the bottom after every multi section.
+ */
+export function segmentRetailBucketsForPresentation(sortedBuckets: EsimValidityBucket[]): RetailPlanPresentationSegment[] {
+    const segments: RetailPlanPresentationSegment[] = [];
+    let i = 0;
+    const n = sortedBuckets.length;
+
+    while (i < n) {
+        const b = sortedBuckets[i];
+        if (b.packages.length > 1) {
+            segments.push({ kind: 'multi', bucket: b });
+            i += 1;
+            continue;
+        }
+        const run: EsimValidityBucket[] = [];
+        while (i < n && sortedBuckets[i].packages.length === 1) {
+            run.push(sortedBuckets[i]);
+            i += 1;
+        }
+        if (run.length > 0) {
+            segments.push({ kind: 'singletonRoll', buckets: sortSingletonBucketsForDurationRoll(run) });
+        }
+    }
+
+    return segments;
+}
+
 export function bucketPlansByValidity(packages: EsimPackage[]): EsimValidityBucket[] {
     const eligible = packages.filter(passesRetailTravelPlanListingFilter);
 

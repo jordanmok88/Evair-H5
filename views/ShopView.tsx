@@ -24,7 +24,7 @@ import {
   formatGB,
   POPULAR_COUNTRY_CODES,
 } from '../services/dataService';
-import { bucketPlansByValidity, inferRetailPremiumSkuTier, isMostPopularRetailBucket, partitionRetailBucketsByCardinality, sanitizedRetailPlanMarketingName, sortRetailBucketsMostPopularFirst, sortSingletonBucketsForDurationRoll } from '../utils/travelEsimPlanBuckets';
+import { bucketPlansByValidity, inferRetailPremiumSkuTier, isMostPopularRetailBucket, sanitizedRetailPlanMarketingName, segmentRetailBucketsForPresentation, sortRetailBucketsMostPopularFirst } from '../utils/travelEsimPlanBuckets';
 import { orderService } from '../services/api';
 import { pollEsimOrderUntilProvisioned } from '../services/api/order';
 import type { OrderDetailDto } from '../services/api/types';
@@ -814,8 +814,7 @@ const ShopView: React.FC<ShopViewProps> = ({
   if (selectedEsimGroup) {
     const planBuckets = sortRetailBucketsMostPopularFirst(bucketPlansByValidity(selectedEsimGroup.packages));
     const eligiblePlanCount = planBuckets.reduce((acc, b) => acc + b.packages.length, 0);
-    const { multiPlan, singletonPlan } = partitionRetailBucketsByCardinality(planBuckets);
-    const singletonRoll = sortSingletonBucketsForDurationRoll(singletonPlan);
+    const presentationSegments = segmentRetailBucketsForPresentation(planBuckets);
 
     const renderTierCard = (pkg: EsimPackage): React.ReactNode => {
       const premiumTier = inferRetailPremiumSkuTier(pkg);
@@ -1003,34 +1002,37 @@ const ShopView: React.FC<ShopViewProps> = ({
             </div>
           ) : (
           <div className="space-y-8 pb-4">
-            {multiPlan.map(bucket => (
-              <section key={`${bucket.durationUnit}-${bucket.duration}-multi`} aria-labelledby={`plan-validity-${bucket.sortOrder}-${bucket.durationUnit}-${bucket.duration}`}>
-                <h4 id={`plan-validity-${bucket.sortOrder}-${bucket.durationUnit}-${bucket.duration}`} className="mb-3 pb-2 border-b border-slate-200">
-                  {isMostPopularRetailBucket(bucket) && (
+            {presentationSegments.map((seg, segIdx) =>
+              seg.kind === 'multi' ? (
+              <section
+                key={`${seg.bucket.durationUnit}-${seg.bucket.duration}-multi`}
+                aria-labelledby={`plan-validity-${seg.bucket.sortOrder}-${seg.bucket.durationUnit}-${seg.bucket.duration}`}
+              >
+                <h4 id={`plan-validity-${seg.bucket.sortOrder}-${seg.bucket.durationUnit}-${seg.bucket.duration}`} className="mb-3 pb-2 border-b border-slate-200">
+                  {isMostPopularRetailBucket(seg.bucket) && (
                     <p className="text-[10px] font-extrabold uppercase tracking-[0.1em] text-brand-orange mb-1">
                       {t('shop.plan_section_most_popular')}
                     </p>
                   )}
                   <span className="text-base font-bold text-slate-900 flex flex-wrap items-center gap-2">
                     <span>
-                      {bucket.durationUnit === 'MONTH'
-                        ? t('shop.plan_duration_section_months', { months: bucket.duration })
-                        : t('shop.plan_duration_section_days', { days: bucket.duration })}
+                      {seg.bucket.durationUnit === 'MONTH'
+                        ? t('shop.plan_duration_section_months', { months: seg.bucket.duration })
+                        : t('shop.plan_duration_section_days', { days: seg.bucket.duration })}
                     </span>
-                    <span className="text-xs font-semibold text-slate-400">({bucket.packages.length})</span>
+                    <span className="text-xs font-semibold text-slate-400">({seg.bucket.packages.length})</span>
                   </span>
                 </h4>
                 <div className="space-y-3 md:grid md:grid-cols-2 md:gap-3 md:space-y-0 lg:block lg:space-y-3">
-                  {bucket.packages.map(pkg => (
+                  {seg.bucket.packages.map(pkg => (
                     <React.Fragment key={pkg.packageCode}>{renderTierCard(pkg)}</React.Fragment>
                   ))}
                 </div>
               </section>
-            ))}
-
-            {singletonRoll.length > 0 && (
+              ) : (
               <RetailSingletonDurationRoll
-                buckets={singletonRoll}
+                key={`singleton-roll-${segIdx}-${seg.buckets.map(b => `${b.durationUnit}-${b.duration}`).join('-')}`}
+                buckets={seg.buckets}
                 ariaLabel={t('travel_esim_grid.singleton_roll_aria')}
                 renderColumnHeader={bucket => (
                   <div className="mb-3 pb-2 border-b border-slate-200">
@@ -1055,6 +1057,7 @@ const ShopView: React.FC<ShopViewProps> = ({
                   return <React.Fragment key={pkg.packageCode}>{renderTierCard(pkg)}</React.Fragment>;
                 }}
               />
+              )
             )}
           </div>
           )}
