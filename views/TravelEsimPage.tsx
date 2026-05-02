@@ -383,6 +383,53 @@ const TravelEsimPage: React.FC<TravelEsimPageProps> = ({ countryCode }) => {
 
 // ─── single country mode ─────────────────────────────────────────────
 
+/**
+ * Hero visual uses flagcdn.com — widths like w800 are not served (always 404;
+ * Safari shows the blue broken-image glyph). Cascades to w640 → w320 → emoji.
+ */
+const HeroCountryBanner: React.FC<{ code: string; name: string }> = ({ code, name }) => {
+    const iso = code.trim().toLowerCase();
+    const [tier, setTier] = useState<'w640' | 'w320' | 'emoji'>('w640');
+
+    if (tier === 'emoji') {
+        const u = iso.toUpperCase();
+        const glyph =
+            u.length === 2 && /^[A-Z]{2}$/.test(u)
+                ? String.fromCodePoint(
+                      0x1f1e6 + u.charCodeAt(0)! - 65,
+                      0x1f1e6 + u.charCodeAt(1)! - 65,
+                  )
+                : '🌐';
+        return (
+            <div className="relative flex h-full min-h-[200px] w-full max-w-[364px] shrink-0 flex-col items-center justify-center gap-2 overflow-hidden rounded-3xl border border-slate-200 bg-gradient-to-br from-slate-100 to-orange-50 p-6 shadow-xl aspect-[5/4]">
+                <span className="text-7xl leading-none" aria-hidden>
+                    {glyph}
+                </span>
+                <span className="text-sm font-bold text-slate-600">{name}</span>
+            </div>
+        );
+    }
+
+    const src =
+        tier === 'w640' ? `https://flagcdn.com/w640/${iso}.png` : `https://flagcdn.com/w320/${iso}.png`;
+
+    return (
+        <div className="relative aspect-[5/4] w-full max-w-[364px] shrink-0 overflow-hidden rounded-3xl border border-slate-200 bg-slate-100 shadow-xl">
+            <img
+                src={src}
+                alt=""
+                className="absolute inset-0 h-full w-full object-cover"
+                width={640}
+                height={512}
+                loading="lazy"
+                decoding="async"
+                onError={() => setTier((t) => (t === 'w640' ? 'w320' : 'emoji'))}
+            />
+            <span className="sr-only">{name}</span>
+        </div>
+    );
+};
+
 interface SingleCountryViewProps {
     country: TravelCountry;
     showCancelledBanner: boolean;
@@ -525,19 +572,9 @@ const SingleCountryView: React.FC<SingleCountryViewProps> = ({
                         </div>
                     </div>
 
-                    {/* Destination flag only (partner networks live beside CTAs above) */}
+                    {/* Large country visual — flagcdn only supports discrete widths (w800 → 404). */}
                     <div className="hidden md:flex md:justify-end md:items-start">
-                        <div className="relative w-full max-w-[364px] aspect-[5/4] rounded-3xl overflow-hidden shadow-xl border border-slate-200 bg-slate-100 shrink-0">
-                            <img
-                                src={`https://flagcdn.com/w800/${country.code.toLowerCase()}.png`}
-                                alt={country.name}
-                                className="absolute inset-0 w-full h-full object-cover"
-                                width={400}
-                                height={320}
-                                loading="lazy"
-                                decoding="async"
-                            />
-                        </div>
+                        <HeroCountryBanner code={country.code} name={country.name} />
                     </div>
                 </div>
             </section>
