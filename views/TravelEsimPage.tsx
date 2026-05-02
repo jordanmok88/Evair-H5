@@ -616,7 +616,6 @@ const SingleCountryView: React.FC<SingleCountryViewProps> = ({
 
             <div className="space-y-6 px-4 md:px-8 max-w-6xl mx-auto pb-2">
                 <TravelTrustPillarsBlock />
-                <TravelMiniFaqBlock />
             </div>
 
             {/* Live plan grid (desktop checkout entry point) */}
@@ -674,6 +673,10 @@ const SingleCountryView: React.FC<SingleCountryViewProps> = ({
                     See {country.name} plans <ArrowRight size={18} />
                 </a>
             </section>
+
+            <div className="space-y-6 px-4 md:px-8 max-w-6xl mx-auto pb-12 md:pb-16">
+                <TravelMiniFaqBlock />
+            </div>
 
             {/* Modals / drawers — mounted at the section root so they
                 overlay the page chrome, but only render when open. */}
@@ -908,9 +911,8 @@ const CatalogueIndexView: React.FC = () => {
                 )}
             </section>
 
-            <div className="space-y-6 px-4 md:px-8 max-w-6xl mx-auto pb-8">
+            <div className="space-y-6 px-4 md:px-8 max-w-6xl mx-auto pb-4">
                 <TravelTrustPillarsBlock />
-                <TravelMiniFaqBlock />
             </div>
 
             <section
@@ -1047,6 +1049,10 @@ const CatalogueIndexView: React.FC = () => {
                         );
                     })}
             </section>
+
+            <div className="space-y-6 px-4 md:px-8 max-w-6xl mx-auto pb-12 md:pb-16 pt-8">
+                <TravelMiniFaqBlock />
+            </div>
         </>
     );
 };
