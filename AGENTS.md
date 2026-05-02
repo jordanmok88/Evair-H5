@@ -4,6 +4,8 @@ Jordan asked that **every new agent receives full project instructions without m
 
 Cursor loads **all** `.cursor/rules/*.mdc` files tagged `alwaysApply: true` whenever this workspace is open.
 
+Optional **Agent Skills** (topic playbooks Cursor may load when a task matches) live under **`.cursor/skills/*/SKILL.md`** — layout, SEO, and WebView shell notes live there alongside rules.
+
 ## Start here
 
 1. Read **`.cursor/rules/00-agent-start-here.mdc`** — master checklist and read order for every rule file.
