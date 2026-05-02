@@ -46,8 +46,9 @@ import { BLOG_POSTS } from '../../data/blogPosts.ts';
 import { TRAVEL_COUNTRIES } from '../../data/travelEsimCountries.ts';
 
 const SITE_ORIGIN = 'https://evairdigital.com';
-/** Default OG image — used unless a surface defines its own. */
-const DEFAULT_OG_IMAGE = `${SITE_ORIGIN}/og-image.png`;
+const DEFAULT_OG_IMAGE = `${SITE_ORIGIN}/og-image.jpg`;
+const OG_IMAGE_WIDTH = '1200';
+const OG_IMAGE_HEIGHT = '630';
 
 interface OgMeta {
     title: string;
@@ -97,7 +98,7 @@ function resolveMeta(pathname: string): OgMeta | null {
         return {
             title: `${article.title} — EvairSIM Help`,
             description: article.summary,
-            image: `${SITE_ORIGIN}/og-image.png`,
+            image: DEFAULT_OG_IMAGE,
             type: 'article',
         };
     }
@@ -112,7 +113,7 @@ function resolveMeta(pathname: string): OgMeta | null {
         return {
             title: `${post.title} — EvairSIM Blog`,
             description: post.summary,
-            image: `${SITE_ORIGIN}/og-image.png`,
+            image: DEFAULT_OG_IMAGE,
             type: 'article',
         };
     }
@@ -127,7 +128,7 @@ function resolveMeta(pathname: string): OgMeta | null {
         return {
             title: `${country.name} eSIM — from $${country.priceFromUsd} | EvairSIM`,
             description: country.blurb,
-            image: `${SITE_ORIGIN}/og-image.png`,
+            image: DEFAULT_OG_IMAGE,
             type: 'website',
         };
     }
@@ -251,6 +252,14 @@ function rewrite(html: string, meta: OgMeta, canonicalUrl: string): string {
     out = out.replace(
         /<meta\s+property="og:image"[^>]*>/i,
         `<meta property="og:image" content="${image}" />`,
+    );
+    out = out.replace(
+        /<meta\s+property="og:image:width"[^>]*>/i,
+        `<meta property="og:image:width" content="${OG_IMAGE_WIDTH}" />`,
+    );
+    out = out.replace(
+        /<meta\s+property="og:image:height"[^>]*>/i,
+        `<meta property="og:image:height" content="${OG_IMAGE_HEIGHT}" />`,
     );
 
     // Twitter tags

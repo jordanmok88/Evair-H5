@@ -145,7 +145,7 @@ const DEFAULT_PARAMS: Record<string, string> = {
   conversationId: '1',
   content: 'hello from api test page',
   skuCode: 'SKU-001',
-  fileUrl: '/logo.png',
+  fileUrl: '/evairsim-logo.png',
   successUrl: 'https://evairsim.com/order/success',
   cancelUrl: 'https://evairsim.com/order/cancel',
   reason: 'Test reason',

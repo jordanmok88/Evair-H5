@@ -1,11 +1,5 @@
-function corsHeaders() {
-  return {
-    'Content-Type': 'application/json',
-    'Access-Control-Allow-Origin': '*',
-    'Access-Control-Allow-Methods': 'POST, OPTIONS',
-    'Access-Control-Allow-Headers': 'Content-Type',
-  };
-}
+import { resolveCors, jsonHeaders } from './cors.mjs';
+import { rateLimitExceeded, sendEmailLimits } from './rate-limit.mjs';
 
 const BRAND_ORANGE = '#FF6600';
 const BRAND_DARK = '#0F172A';
@@ -162,18 +156,41 @@ function buildHtml({ qrCodeUrl, smdpAddress, activationCode, lpaString, orderNo,
 </body></html>`;
 }
 
-export async function handler(event) {
-  if (event.httpMethod === 'OPTIONS') {
-    return { statusCode: 204, headers: corsHeaders(), body: '' };
+export default async (req) => {
+  const { allowOrigin, rejectCrossOriginBrowser } = resolveCors(req);
+  const headers = jsonHeaders(allowOrigin);
+
+  if (req.method === 'OPTIONS') {
+    if (rejectCrossOriginBrowser) {
+      return new Response(null, { status: 403, headers });
+    }
+    return new Response(null, { status: 204, headers });
   }
 
-  if (event.httpMethod !== 'POST') {
-    return { statusCode: 405, headers: corsHeaders(), body: JSON.stringify({ error: 'Method not allowed' }) };
+  if (rejectCrossOriginBrowser) {
+    return new Response(JSON.stringify({ error: 'Forbidden origin' }), { status: 403, headers });
+  }
+
+  if (req.method !== 'POST') {
+    return new Response(JSON.stringify({ error: 'Method not allowed' }), {
+      status: 405,
+      headers,
+    });
+  }
+
+  if (rateLimitExceeded(req, sendEmailLimits())) {
+    return new Response(JSON.stringify({ error: 'Too many requests' }), {
+      status: 429,
+      headers,
+    });
   }
 
   const apiKey = process.env.RESEND_API_KEY;
   if (!apiKey) {
-    return { statusCode: 500, headers: corsHeaders(), body: JSON.stringify({ error: 'Email service not configured' }) };
+    return new Response(JSON.stringify({ error: 'Email service not configured' }), {
+      status: 500,
+      headers,
+    });
   }
 
   try {
@@ -181,10 +198,14 @@ export async function handler(event) {
     // "Manage your eSIM" CTA in the email deep-link straight to the
     // customer's SIM in /app/my-sims. Mobile ShopView doesn't send it
     // yet but the field is optional, so old payloads keep working.
-    const { email, qrCodeUrl, smdpAddress, activationCode, lpaString, orderNo, packageName, iccid } = JSON.parse(event.body || '{}');
+    const { email, qrCodeUrl, smdpAddress, activationCode, lpaString, orderNo, packageName, iccid } =
+      await req.json();
 
     if (!email) {
-      return { statusCode: 400, headers: corsHeaders(), body: JSON.stringify({ error: 'Email is required' }) };
+      return new Response(JSON.stringify({ error: 'Email is required' }), {
+        status: 400,
+        headers,
+      });
     }
 
     const html = buildHtml({ qrCodeUrl, smdpAddress, activationCode, lpaString, orderNo, packageName, iccid });
@@ -204,12 +225,21 @@ export async function handler(event) {
 
     if (!res.ok) {
       console.error('Resend error:', result);
-      return { statusCode: res.status, headers: corsHeaders(), body: JSON.stringify({ error: result.message || 'Email send failed' }) };
+      return new Response(JSON.stringify({ error: result.message || 'Email send failed' }), {
+        status: res.status,
+        headers,
+      });
     }
 
-    return { statusCode: 200, headers: corsHeaders(), body: JSON.stringify({ success: true, id: result.id }) };
+    return new Response(JSON.stringify({ success: true, id: result.id }), {
+      status: 200,
+      headers,
+    });
   } catch (err) {
     console.error('send-esim-email error:', err);
-    return { statusCode: 500, headers: corsHeaders(), body: JSON.stringify({ error: err.message || 'Internal error' }) };
+    return new Response(JSON.stringify({ error: err.message || 'Internal error' }), {
+      status: 500,
+      headers,
+    });
   }
-}
+};

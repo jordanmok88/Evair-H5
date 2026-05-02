@@ -1,15 +1,8 @@
 import { createHmac, randomUUID } from 'crypto';
+import { resolveCors, jsonHeaders } from './cors.mjs';
+import { rateLimitExceeded, esimProxyLimits } from './rate-limit.mjs';
 
 const API_BASE = 'https://api.esimaccess.com/api/v1/open';
-
-function corsHeaders() {
-  return {
-    'Content-Type': 'application/json',
-    'Access-Control-Allow-Origin': '*',
-    'Access-Control-Allow-Methods': 'POST, OPTIONS',
-    'Access-Control-Allow-Headers': 'Content-Type',
-  };
-}
 
 function makeAuthHeaders(bodyString) {
   const accessCode = process.env.ESIM_ACCESS_CODE;
@@ -19,7 +12,6 @@ function makeAuthHeaders(bodyString) {
   const timestamp = Date.now().toString();
   const requestId = randomUUID();
 
-  // Sign data = timestamp + requestId + accessCode + requestBody
   const signData = timestamp + requestId + accessCode + bodyString;
   const signature = createHmac('sha256', secret)
     .update(signData)
@@ -61,23 +53,34 @@ async function proxyRequest(endpoint, body) {
   return data;
 }
 
-const ALLOWED_ENDPOINTS = [
-  '/package/list',
-  '/esim/order',
-  '/esim/query',
-  '/esim/topup',
-  '/esim/usage',
-];
+const ALLOWED_ENDPOINTS = ['/package/list', '/esim/order', '/esim/query', '/esim/topup', '/esim/usage'];
 
 export default async (req) => {
+  const { allowOrigin, rejectCrossOriginBrowser } = resolveCors(req);
+  const headers = jsonHeaders(allowOrigin);
+
   if (req.method === 'OPTIONS') {
-    return new Response(null, { status: 204, headers: corsHeaders() });
+    if (rejectCrossOriginBrowser) {
+      return new Response(null, { status: 403, headers });
+    }
+    return new Response(null, { status: 204, headers });
+  }
+
+  if (rejectCrossOriginBrowser) {
+    return new Response(JSON.stringify({ error: 'Forbidden origin' }), { status: 403, headers });
   }
 
   if (req.method !== 'POST') {
     return new Response(JSON.stringify({ error: 'Method not allowed' }), {
       status: 405,
-      headers: corsHeaders(),
+      headers,
+    });
+  }
+
+  if (rateLimitExceeded(req, esimProxyLimits())) {
+    return new Response(JSON.stringify({ error: 'Too many requests' }), {
+      status: 429,
+      headers,
     });
   }
 
@@ -87,7 +90,7 @@ export default async (req) => {
     if (!endpoint || !ALLOWED_ENDPOINTS.includes(endpoint)) {
       return new Response(
         JSON.stringify({ error: 'Invalid endpoint', allowed: ALLOWED_ENDPOINTS }),
-        { status: 400, headers: corsHeaders() }
+        { status: 400, headers },
       );
     }
 
@@ -95,13 +98,13 @@ export default async (req) => {
 
     return new Response(JSON.stringify(data), {
       status: 200,
-      headers: corsHeaders(),
+      headers,
     });
   } catch (err) {
     console.error('eSIM proxy error:', err);
     return new Response(
       JSON.stringify({ error: 'eSIM API proxy error', detail: err.message }),
-      { status: 502, headers: corsHeaders() }
+      { status: 502, headers },
     );
   }
 };

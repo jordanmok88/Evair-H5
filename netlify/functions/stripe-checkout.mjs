@@ -1,23 +1,33 @@
 import Stripe from 'stripe';
-
-function corsHeaders() {
-  return {
-    'Content-Type': 'application/json',
-    'Access-Control-Allow-Origin': '*',
-    'Access-Control-Allow-Methods': 'POST, OPTIONS',
-    'Access-Control-Allow-Headers': 'Content-Type',
-  };
-}
+import { resolveCors, jsonHeaders } from './cors.mjs';
+import { rateLimitExceeded, stripeCheckoutLimits } from './rate-limit.mjs';
 
 export default async (req) => {
+  const { allowOrigin, rejectCrossOriginBrowser } = resolveCors(req);
+  const headers = jsonHeaders(allowOrigin);
+
   if (req.method === 'OPTIONS') {
-    return new Response(null, { status: 204, headers: corsHeaders() });
+    if (rejectCrossOriginBrowser) {
+      return new Response(null, { status: 403, headers });
+    }
+    return new Response(null, { status: 204, headers });
+  }
+
+  if (rejectCrossOriginBrowser) {
+    return new Response(JSON.stringify({ error: 'Forbidden origin' }), { status: 403, headers });
   }
 
   if (req.method !== 'POST') {
     return new Response(JSON.stringify({ error: 'Method not allowed' }), {
       status: 405,
-      headers: corsHeaders(),
+      headers,
+    });
+  }
+
+  if (rateLimitExceeded(req, stripeCheckoutLimits())) {
+    return new Response(JSON.stringify({ error: 'Too many requests' }), {
+      status: 429,
+      headers,
     });
   }
 
@@ -25,7 +35,7 @@ export default async (req) => {
   if (!secretKey) {
     return new Response(JSON.stringify({ error: 'Stripe not configured' }), {
       status: 500,
-      headers: corsHeaders(),
+      headers,
     });
   }
 
@@ -63,27 +73,31 @@ export default async (req) => {
     if (!packageName || !priceUsd || !packageCode) {
       return new Response(
         JSON.stringify({ error: 'Missing required fields: packageName, priceUsd, packageCode' }),
-        { status: 400, headers: corsHeaders() }
+        { status: 400, headers },
       );
     }
 
     const stripe = new Stripe(secretKey);
 
-    const origin = req.headers.get('origin') || 'https://evair-h5.netlify.app';
+    const callerOrigin =
+      allowOrigin ||
+      req.headers.get('Origin') ||
+      req.headers.get('Referer')?.split('/').slice(0, 3).join('/') ||
+      'https://evairdigital.com';
 
     // Defence in depth: only accept caller-supplied return URLs that
     // start with our own origin. Stripe will refuse anything that
     // doesn't include a literal `{CHECKOUT_SESSION_ID}` placeholder
     // for `success_url`, but we still avoid being a redirect oracle.
     const isSafeReturn = (url) =>
-      typeof url === 'string' && url.length < 2048 && url.startsWith(origin);
+      typeof url === 'string' && url.length < 2048 && url.startsWith(callerOrigin);
 
     const safeSuccessUrl = isSafeReturn(successUrl)
       ? successUrl
-      : `${origin}/?stripe_status=success&session_id={CHECKOUT_SESSION_ID}`;
+      : `${callerOrigin}/?stripe_status=success&session_id={CHECKOUT_SESSION_ID}`;
     const safeCancelUrl = isSafeReturn(cancelUrl)
       ? cancelUrl
-      : `${origin}/?stripe_status=cancelled`;
+      : `${callerOrigin}/?stripe_status=cancelled`;
 
     const flagUrl = countryCode
       ? `https://wsrv.nl/?url=flagcdn.com/w320/${countryCode.toLowerCase()}.png&w=324&h=217&fit=contain&we&cbg=d0d3d8`
@@ -143,13 +157,13 @@ export default async (req) => {
 
     return new Response(
       JSON.stringify({ sessionId: session.id, url: session.url }),
-      { status: 200, headers: corsHeaders() }
+      { status: 200, headers },
     );
   } catch (err) {
     console.error('Stripe checkout error:', err);
     return new Response(
       JSON.stringify({ error: 'Failed to create checkout session', detail: err.message }),
-      { status: 500, headers: corsHeaders() }
+      { status: 500, headers },
     );
   }
 };

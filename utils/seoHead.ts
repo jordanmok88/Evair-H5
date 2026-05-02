@@ -7,7 +7,7 @@
  */
 
 const SITE_ORIGIN = 'https://evairdigital.com';
-const DEFAULT_OG_IMAGE = `${SITE_ORIGIN}/og-image.png`;
+const DEFAULT_OG_IMAGE = `${SITE_ORIGIN}/og-image.jpg`;
 
 function upsertMeta(attr: 'name' | 'property', key: string, content: string): void {
     const sel = attr === 'name' ? `meta[name="${key}"]` : `meta[property="${key}"]`;
@@ -58,6 +58,8 @@ export function applyPageSeo(opts: PageSeoOptions): void {
     upsertMeta('property', 'og:type', opts.ogType ?? 'website');
     upsertMeta('property', 'og:site_name', 'EvairSIM');
     upsertMeta('property', 'og:image', DEFAULT_OG_IMAGE);
+    upsertMeta('property', 'og:image:width', '1200');
+    upsertMeta('property', 'og:image:height', '630');
     upsertMeta('property', 'og:locale', 'en_US');
 
     upsertMeta('name', 'twitter:card', 'summary_large_image');

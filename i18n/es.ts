@@ -141,6 +141,8 @@ const es = {
     plan_duration_group_hint:
       'Agrupamos por vigencia; los planes de solo 1 día naturales quedan fuera.',
     plan_premium_tier_compact: 'Premium {{tier}}',
+    plan_premium_badge: 'Premium',
+    plan_premium_hint_short: 'IP EE. UU.: apps de EE. UU. mejor optimizadas en el exterior',
     plan_long_stay_notice:
       'Tras ocultar los planes de un solo día, no quedan filas aquí por ahora. Prueba paquetes regionales.',
     plan_networks_with_names: 'Redes · {{names}}',

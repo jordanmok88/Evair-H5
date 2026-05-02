@@ -137,6 +137,8 @@ const zh = {
     plan_section_most_popular: '最受欢迎',
     plan_duration_group_hint: '按计划有效天数分段展示。仅“1 天”极短包会隐藏。',
     plan_premium_tier_compact: '尊享 {{tier}}',
+    plan_premium_badge: '尊享',
+    plan_premium_hint_short: '美国 IP — 优化海外美国应用访问',
     plan_long_stay_notice:
       '在隐藏“1 天”极短包后，暂时没有更多可展示的条目。可尝试区域套餐是否仍含该目的地。',
     plan_networks_with_names: '网络 · {{names}}',

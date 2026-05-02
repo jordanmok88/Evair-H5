@@ -67,7 +67,9 @@ const DesktopEsimSuccess: React.FC<DesktopEsimSuccessProps> = ({
             document.body.removeChild(a);
             URL.revokeObjectURL(url);
         } catch (err) {
-            console.error('[DesktopEsimSuccess] QR download failed', err);
+            if (import.meta.env.DEV) {
+                console.error('[DesktopEsimSuccess] QR download failed', err);
+            }
         }
     };
 
@@ -106,7 +108,7 @@ const DesktopEsimSuccess: React.FC<DesktopEsimSuccessProps> = ({
                         {result.qrCodeUrl ? (
                             <img
                                 src={result.qrCodeUrl}
-                                alt="eSIM QR Code"
+                                alt="QR code to install this eSIM — scan with your phone camera"
                                 width={240}
                                 height={240}
                                 className="w-60 h-60 rounded-xl object-contain"

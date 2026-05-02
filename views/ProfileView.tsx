@@ -1168,7 +1168,7 @@ const HelpCenterView = ({ onBack }: { onBack: () => void }) => {
                  {/* Footer Mimic */}
                  <div className="mt-12 pt-12 border-t border-gray-200 flex flex-col items-center gap-6 opacity-60 pb-10">
                       <div className="flex gap-4">
-                          <img src="/logo.png" alt="EvairSIM logo" loading="lazy" width={100} height={40} style={{ height: 40, objectFit: 'contain' }} />
+                          <img src="/evairsim-logo.png" alt="EvairSIM logo" loading="lazy" width={100} height={40} style={{ height: 40, objectFit: 'contain' }} />
                       </div>
                       <p className="text-sm font-medium">©2026 EVAIR SIM</p>
                       <div className="flex flex-wrap justify-center gap-4 text-[12px] text-slate-500 font-bold uppercase tracking-wider">

@@ -3,10 +3,15 @@
   publish = "dist"
 
 [build.environment]
-  NODE_VERSION = "20"
+  NODE_VERSION = "22"
 
 [functions]
   directory = "netlify/functions"
+
+# Edge: no-index Netlify subdomain deploy previews (duplicate-content guard).
+[[edge_functions]]
+  function = "staging-robots"
+  path = "/*"
 
 # Edge functions run on Deno Deploy in front of the CDN. Used here
 # for per-route OG / Twitter Card rewriting so social scrapers
@@ -70,3 +75,13 @@
   from = "/*"
   to = "/index.html"
   status = 200
+
+# Content-Security-Policy — defer until script/connect/frame-src allowlist passes QA (Stripe, Laravel API, WS, CDN).
+
+[[headers]]
+  for = "/*"
+  [headers.values]
+    Strict-Transport-Security = "max-age=31536000; includeSubDomains; preload"
+    X-Content-Type-Options = "nosniff"
+    Referrer-Policy = "strict-origin-when-cross-origin"
+    Permissions-Policy = "accelerometer=(), camera=(), geolocation=(), gyroscope=(), magnetometer=(), microphone=(), payment=(self https://js.stripe.com https://hooks.stripe.com), usb=()"

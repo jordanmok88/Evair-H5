@@ -15,57 +15,59 @@ const devTitlePlugin = {
   },
 };
 
+/** Default: local `netlify dev` (:functions). Override with VITE_NETLIFY_FUNCTIONS_PROXY_TARGET — never point at prod by default. */
+const DEFAULT_NETLIFY_FUNCTIONS_PROXY = 'http://127.0.0.1:8888';
+
 export default defineConfig(({ mode }) => {
-    const env = loadEnv(mode, '.', '');
-    return {
-      server: {
-        port: 3000,
-        host: '0.0.0.0',
-        proxy: {
-          '/api/track': {
-            target: 'https://evair-h5.netlify.app',
-            changeOrigin: true,
-          },
-          '/api/esim': {
-            target: 'https://evair-h5.netlify.app',
-            changeOrigin: true,
-          },
-          '/api/stripe-checkout': {
-            target: 'https://evair-h5.netlify.app',
-            changeOrigin: true,
-          },
-          '/api/stripe-verify': {
-            target: 'https://evair-h5.netlify.app',
-            changeOrigin: true,
-          },
-          // Local Laravel dev proxy. Forwards `/laravel-api/*` -> `/api/*` on
-          // whichever host `VITE_LARAVEL_PROXY_TARGET` points at (defaults to
-          // `php artisan serve --host=127.0.0.1 --port=8100`).
-          '/laravel-api': {
-            target: env.VITE_LARAVEL_PROXY_TARGET || 'http://127.0.0.1:8100',
-            changeOrigin: true,
-            rewrite: (p: string) => p.replace(/^\/laravel-api/, '/api'),
-          },
+  const env = loadEnv(mode, '.', '');
+  const netlifyFnTarget =
+    env.VITE_NETLIFY_FUNCTIONS_PROXY_TARGET || DEFAULT_NETLIFY_FUNCTIONS_PROXY;
+
+  return {
+    server: {
+      port: 3000,
+      host: '0.0.0.0',
+      proxy: {
+        '/api/track': {
+          target: netlifyFnTarget,
+          changeOrigin: true,
+        },
+        '/api/esim': {
+          target: netlifyFnTarget,
+          changeOrigin: true,
+        },
+        '/api/stripe-checkout': {
+          target: netlifyFnTarget,
+          changeOrigin: true,
+        },
+        '/api/stripe-verify': {
+          target: netlifyFnTarget,
+          changeOrigin: true,
+        },
+        // Local Laravel dev proxy. Forwards `/laravel-api/*` -> `/api/*` on
+        // whichever host `VITE_LARAVEL_PROXY_TARGET` points at (defaults to
+        // `php artisan serve --host=127.0.0.1 --port=8100`).
+        '/laravel-api': {
+          target: env.VITE_LARAVEL_PROXY_TARGET || 'http://127.0.0.1:8100',
+          changeOrigin: true,
+          rewrite: (p: string) => p.replace(/^\/laravel-api/, '/api'),
         },
       },
-      plugins: [
-        react(),
-        tailwindcss(),
-        apiResponseCapture(), // API 响应捕获插件
-        devTitlePlugin,       // Dev-only: tab title -> "Evair H5"
-        // Build-time sitemap.xml — single source of truth pulls from
-        // data/{travelEsimCountries,helpArticles,blogPosts}.ts so adding
-        // a country page or article auto-lands in the next sitemap.
-        sitemapPlugin({ baseUrl: 'https://evairdigital.com' }),
-      ],
-      define: {
-        'process.env.API_KEY': JSON.stringify(env.GEMINI_API_KEY),
-        'process.env.GEMINI_API_KEY': JSON.stringify(env.GEMINI_API_KEY)
+    },
+    plugins: [
+      react(),
+      tailwindcss(),
+      apiResponseCapture(), // API 响应捕获插件
+      devTitlePlugin, // Dev-only: tab title -> "Evair H5"
+      // Build-time sitemap.xml — single source of truth pulls from
+      // data/{travelEsimCountries,helpArticles,blogPosts}.ts so adding
+      // a country page or article auto-lands in the next sitemap.
+      sitemapPlugin({ baseUrl: 'https://evairdigital.com' }),
+    ],
+    resolve: {
+      alias: {
+        '@': path.resolve(__dirname, '.'),
       },
-      resolve: {
-        alias: {
-          '@': path.resolve(__dirname, '.'),
-        }
-      }
-    };
+    },
+  };
 });
