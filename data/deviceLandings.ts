@@ -248,10 +248,6 @@ export const DEVICE_CONTENT: Record<DeviceCategory, DeviceContent> = {
                     'Camouflaged trail camera mounted on a tree trunk in a forest setting',
                 productPhotoObjectPosition: '52% 48%',
             },
-            {
-                icon: Camera,
-                label: 'Wyze Cellular & other LTE cams',
-            },
         ],
         plans: [
             {

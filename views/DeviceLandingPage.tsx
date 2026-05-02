@@ -301,14 +301,22 @@ const DeviceLandingPage: React.FC<DeviceLandingPageProps> = ({ category }) => {
                         <h2 className="mb-8 text-xs font-bold uppercase tracking-[0.2em] text-slate-500 lg:mb-10">
                             Built for
                         </h2>
-                        <ul className="grid list-none grid-cols-1 gap-4 sm:grid-cols-2 sm:gap-5 lg:grid-cols-3 lg:gap-6 [&>li]:m-0 [&>li]:p-0">
+                        <ul
+                            className={`grid list-none grid-cols-1 gap-4 sm:grid-cols-2 sm:gap-5 lg:gap-6 [&>li]:m-0 [&>li]:p-0 ${
+                                category === 'camera' ? 'lg:grid-cols-2' : 'lg:grid-cols-3'
+                            }`}
+                        >
                             {content.devices.map((d, i) => (
                                 <li
                                     key={`${category}-${d.label}-${String(i)}`}
                                     className="group overflow-hidden rounded-2xl border border-slate-200/90 bg-white shadow-sm ring-1 ring-slate-100"
                                 >
                                     {d.productPhotoUrl ? (
-                                        <figure className="relative m-0 aspect-[4/5] w-full bg-slate-200 sm:aspect-[3/4]">
+                                        <figure
+                                            className={`relative m-0 w-full bg-slate-200 aspect-[4/5] sm:aspect-[3/4] ${
+                                                category === 'camera' ? 'lg:aspect-[16/11]' : ''
+                                            }`}
+                                        >
                                             <img
                                                 src={d.productPhotoUrl}
                                                 alt={d.productPhotoAlt ?? `${d.label} — illustrative product imagery`}
@@ -319,7 +327,11 @@ const DeviceLandingPage: React.FC<DeviceLandingPageProps> = ({ category }) => {
                                                 }}
                                                 decoding="async"
                                                 loading="lazy"
-                                                sizes="(min-width: 1024px) 28vw, (min-width: 640px) 44vw, 92vw"
+                                                sizes={
+                                                    category === 'camera'
+                                                        ? '(min-width: 1024px) 46vw, (min-width: 640px) 44vw, 92vw'
+                                                        : '(min-width: 1024px) 28vw, (min-width: 640px) 44vw, 92vw'
+                                                }
                                             />
                                             <div
                                                 className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/78 via-black/15 to-transparent"
