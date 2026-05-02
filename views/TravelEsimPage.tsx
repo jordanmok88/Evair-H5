@@ -61,7 +61,8 @@ import {
     groupByRegion,
     type TravelCountry,
 } from '../data/travelEsimCountries';
-import { CARRIER_MAP, CUSTOMER_SERVICE_EMAIL } from '../constants';
+import { CUSTOMER_SERVICE_EMAIL } from '../constants';
+import { retailCarrierRowForIso } from '../utils/retailCarrierLookup';
 import type { EsimCountryGroup } from '../types';
 import SiteHeader from '../components/marketing/SiteHeader';
 import SiteFooter from '../components/marketing/SiteFooter';
@@ -164,7 +165,7 @@ const TravelEsimPage: React.FC<TravelEsimPageProps> = ({ countryCode }) => {
                 const code = g.locationCode.toLowerCase();
                 const minP = g.minPrice ?? 0;
                 const isoUpper = code.toUpperCase();
-                const cm = CARRIER_MAP[isoUpper];
+                const cm = retailCarrierRowForIso(isoUpper);
                 const carriers = cm
                     ? cm.carrier.split(/\s*\/\s*/).map(s => s.trim()).filter(Boolean)
                     : [i18n.t('travel_esim_grid.plan_network_generic')];

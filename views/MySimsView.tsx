@@ -5,7 +5,7 @@ import { ActiveSim, Tab, SimType, EsimPackage } from '../types';
 import FlagIcon from '../components/FlagIcon';
 import StripePaymentModal from '../components/StripePaymentModal';
 import AutoRenewToggle from '../components/AutoRenewToggle';
-import { CARRIER_MAP } from '../constants';
+import { retailCarrierRowForIso } from '../utils/retailCarrierLookup';
 import { topUp, fetchTopUpPackages, fetchPackages, checkDataUsage, formatVolume, formatPrice, retailPrice, packagePriceUsd, formatGB, queryProfile, mapRedTeaStatus, unbindSim } from '../services/dataService';
 import { useEdgeSwipeBack } from '../hooks/useEdgeSwipeBack';
 
@@ -334,7 +334,7 @@ const MySimsView: React.FC<MySimsViewProps> = ({ activeSims, onNavigate, filterT
   if (dataRemaining <= 0) usedSegs = totalSegs;
   const remainingSegs = totalSegs - usedSegs;
 
-  const detailCarrierInfo = CARRIER_MAP[currentSim.country.countryCode] ?? { carrier: '—', network: '' };
+  const detailCarrierInfo = retailCarrierRowForIso(currentSim.country.countryCode) ?? { carrier: '—', network: '' };
   const planDisplayLabel =
     (currentSim.plan?.name && String(currentSim.plan.name).trim()) ||
     `${formatGB(currentSim.dataTotalGB)} · ${currentSim.plan.days} ${t('my_sims.days')}`;
@@ -1008,7 +1008,7 @@ const MySimsView: React.FC<MySimsViewProps> = ({ activeSims, onNavigate, filterT
       {/* --- MODALS (Recharge, Share, Install) --- */}
       
       {isRechargeModalOpen && (() => {
-          const carrierInfo = CARRIER_MAP[currentSim.country.countryCode] || { carrier: 'Carrier', network: '4G' };
+          const carrierInfo = retailCarrierRowForIso(currentSim.country.countryCode) || { carrier: 'Carrier', network: '4G' };
           const iccid = resolveIccid(currentSim);
 
           // 打开 Stripe 支付弹窗（组件内部处理 topup + pay 请求）

@@ -1,5 +1,6 @@
-import { CARRIER_MAP } from '../constants';
 import type { EsimPackage } from '../types';
+
+import { retailCarrierRowForIso } from './retailCarrierLookup';
 
 /** Match plan-card typography (`CARRIER_MAP` uses middle dots between carriers). */
 function formatNetworkPhrase(text: string): string {
@@ -21,8 +22,9 @@ export function packageCoversMultipleIso2(pkg: EsimPackage): boolean {
 }
 
 /**
- * Line shown under “4G/5G” on plan cards. Uses {@link CARRIER_MAP} for single-country
- * packages; regional/global uses `supplierRegionName` when present.
+ * Line shown under “4G/5G” on plan cards — backend snapshot first,
+ * then Red Tea-derived static snapshot ({@link CARRIER_REDTEA_SNAPSHOT}),
+ * then handwritten map; regional/global uses `supplierRegionName` when present.
  */
 export function planCardNetworkLine(pkg: EsimPackage): string | null {
     const fromBackend = pkg.networkPartnerSummary?.trim();
@@ -35,7 +37,7 @@ export function planCardNetworkLine(pkg: EsimPackage): string | null {
     }
     const iso = primaryIso2FromPackage(pkg);
     if (!iso) return null;
-    const row = CARRIER_MAP[iso];
+    const row = retailCarrierRowForIso(iso);
     if (!row?.carrier) return null;
     return formatNetworkPhrase(row.carrier);
 }

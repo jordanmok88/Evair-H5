@@ -22,7 +22,8 @@ import BlogPage from './views/BlogPage';
 import LegalPage from './views/LegalPage';
 import { Tab, ActiveSim, SimType, User, AppNotification, EsimProfileResult } from './types';
 import { Lock } from 'lucide-react';
-import { MOCK_COUNTRIES, MOCK_PLANS_US, MOCK_ACTIVE_SIMS, MOCK_NOTIFICATIONS, CARRIER_MAP } from './constants';
+import { MOCK_COUNTRIES, MOCK_PLANS_US, MOCK_ACTIVE_SIMS, MOCK_NOTIFICATIONS } from './constants';
+import { retailCarrierRowForIso } from './utils/retailCarrierLookup';
 import { checkDataUsage, prefetchPackages, DEMO_MODE, mapRedTeaStatus, bindSim } from './services/dataService';
 import { supabaseConfigured, fetchNotifications, logSimActivation } from './services/supabase';
 import { authService, userService, type UserDto, type UserSimDto } from './services/api';
@@ -797,7 +798,7 @@ function CustomerApp() {
       }
 
       const flag = countryCode.toUpperCase().split('').map(c => String.fromCodePoint(127397 + c.charCodeAt(0))).join('');
-      const carrier = CARRIER_MAP[countryCode];
+      const carrier = retailCarrierRowForIso(countryCode);
 
       const country = {
         id: countryCode.toLowerCase(),
