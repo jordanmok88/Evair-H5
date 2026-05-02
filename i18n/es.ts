@@ -110,6 +110,8 @@ const es = {
     plan_premium_tier_compact: 'Premium {{tier}}',
     plan_long_stay_notice:
       'Tras ocultar los planes de un solo día, no quedan filas aquí por ahora. Prueba paquetes regionales.',
+    plan_networks_with_names: 'Redes · {{names}}',
+    plan_networks_generic: 'Redes locales asociadas',
   },
   amazonSim: {
     plan_line: '{{gb}} GB · {{days}} días',
@@ -655,6 +657,8 @@ const es = {
     choose_volume: 'Elegir {{volume}}',
     feature_speed: '4G / 5G donde haya cobertura',
     feature_hotspot: 'Compatible con zona personal',
+    plan_network_names: 'Redes · {{names}}',
+    plan_network_generic: 'Redes locales asociadas',
     singleton_roll_aria: 'Comparativa de opciones cuando solo hay un plan por duración',
   },
   referral: {

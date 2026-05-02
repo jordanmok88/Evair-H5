@@ -26,6 +26,7 @@
  */
 
 import React, { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
     X,
     Loader2,
@@ -34,6 +35,7 @@ import {
     ShieldCheck,
     Calendar,
     Wifi,
+    Radio,
 } from 'lucide-react';
 import type { EsimPackage } from '../../types';
 import {
@@ -42,6 +44,7 @@ import {
 } from '../../services/dataService';
 import { userService, orderService } from '../../services/api';
 import { isMobileDevice } from '../../utils/device';
+import { planCardNetworkLine } from '../../utils/retailPackageNetworks';
 
 interface DesktopEsimCheckoutDrawerProps {
     open: boolean;
@@ -61,6 +64,7 @@ const DesktopEsimCheckoutDrawer: React.FC<DesktopEsimCheckoutDrawerProps> = ({
     customerEmail,
     onClose,
 }) => {
+    const { t } = useTranslation();
     const [email, setEmail] = useState(customerEmail ?? '');
     const [agreed, setAgreed] = useState(false);
     const [submitting, setSubmitting] = useState(false);
@@ -90,6 +94,7 @@ const DesktopEsimCheckoutDrawer: React.FC<DesktopEsimCheckoutDrawerProps> = ({
     const priceUsd = packagePriceUsd(pkg);
     const volumeLabel = formatVolume(pkg.volume);
     const packageName = `${countryName} eSIM — ${volumeLabel} / ${pkg.duration} ${pkg.durationUnit === 'MONTH' ? 'Months' : 'Days'}`;
+    const networksShown = planCardNetworkLine(pkg) ?? t('travel_esim_grid.plan_network_generic');
 
     const handlePay = async () => {
         if (submitting) return;
@@ -226,6 +231,10 @@ const DesktopEsimCheckoutDrawer: React.FC<DesktopEsimCheckoutDrawerProps> = ({
                             <li className="flex items-center gap-2">
                                 <Calendar size={14} className="text-slate-400" />
                                 {pkg.duration} {pkg.durationUnit === 'MONTH' ? 'months' : 'days'} from first use
+                            </li>
+                            <li className="flex items-start gap-2">
+                                <Radio size={14} className="text-slate-400 shrink-0 mt-0.5" aria-hidden />
+                                <span>{t('travel_esim_grid.plan_network_names', { names: networksShown })}</span>
                             </li>
                             <li className="flex items-center gap-2">
                                 <ShieldCheck size={14} className="text-slate-400" />

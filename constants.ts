@@ -95,7 +95,7 @@ export const MOCK_ORDERS: Order[] = [
 ];
 
 export const CARRIER_MAP: Record<string, { carrier: string; network: string }> = {
-  'US': { carrier: 'AT&T / T-Mobile', network: '5G' },
+  'US': { carrier: 'AT&T / Verizon / T-Mobile', network: '5G' },
   'GB': { carrier: 'EE / 3', network: '5G' },
   'CA': { carrier: 'Freedom / Telus', network: '5G' },
   'JP': { carrier: 'KDDI / SoftBank', network: '4G/5G' },

@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Search, ChevronRight, ArrowLeft, Globe, Star, X, MapPin, Loader2, Smartphone, CheckCircle, Calendar, Wifi, Signal, Info, CreditCard, ArrowDown, QrCode, Copy, Check, RefreshCw, Zap, Clock, Shield, Mail } from 'lucide-react';
+import { Search, ChevronRight, ArrowLeft, Globe, Star, X, MapPin, Loader2, Smartphone, CheckCircle, Calendar, Wifi, Signal, Info, CreditCard, ArrowDown, QrCode, Copy, Check, RefreshCw, Zap, Clock, Shield, Mail, Radio } from 'lucide-react';
 import { Country, Plan, SimType, User, SimCardProduct, EsimPackage, EsimCountryGroup, EsimOrderResult, ActiveSim } from '../types';
 import { MOCK_COUNTRIES } from '../constants';
 import AmazonPhysicalSimPicker from '../components/AmazonPhysicalSimPicker';
@@ -25,6 +25,7 @@ import {
   POPULAR_COUNTRY_CODES,
 } from '../services/dataService';
 import { bucketPlansByValidity, inferRetailPremiumSkuTier, isMostPopularRetailBucket, sanitizedRetailPlanMarketingName, segmentRetailBucketsForPresentation, sortRetailBucketsMostPopularFirst } from '../utils/travelEsimPlanBuckets';
+import { planCardNetworkLine } from '../utils/retailPackageNetworks';
 import { orderService } from '../services/api';
 import { pollEsimOrderUntilProvisioned } from '../services/api/order';
 import type { OrderDetailDto } from '../services/api/types';
@@ -826,6 +827,8 @@ const ShopView: React.FC<ShopViewProps> = ({
       const pricePerGb = gb > 0 ? priceUsd / gb : priceUsd;
       const isAutoActivate = pkg.activeType === 1;
       const coveredCountries = pkg.location ? pkg.location.split(',').length : 1;
+      const networkNames = planCardNetworkLine(pkg);
+      const networkDisplay = networkNames ?? t('shop.plan_networks_generic');
       return (
         <div
           onClick={() => {
@@ -858,7 +861,7 @@ const ShopView: React.FC<ShopViewProps> = ({
             </div>
           </div>
 
-          <div className="grid grid-cols-3 gap-2 mb-3">
+          <div className="grid grid-cols-3 gap-2 mb-2">
             <div className="bg-slate-50 rounded-xl py-2.5 px-2 flex flex-col items-center justify-center gap-1 border border-slate-100">
               <Calendar size={16} className="text-slate-500" />
               <span className="font-semibold text-slate-700 text-xs">{pkg.duration} {pkg.durationUnit === 'DAY' ? t('shop.days') : 'Mo'}</span>
@@ -871,6 +874,13 @@ const ShopView: React.FC<ShopViewProps> = ({
               <Wifi size={16} className="text-slate-500" />
               <span className="font-semibold text-slate-700 text-xs">{t('shop.hotspot')}</span>
             </div>
+          </div>
+
+          <div className="flex items-start gap-2 rounded-xl border border-slate-100 bg-slate-50/80 px-2.5 py-2 mb-3">
+            <Radio size={14} className="text-slate-500 shrink-0 mt-0.5" aria-hidden />
+            <p className="text-[11px] leading-snug text-slate-700 font-medium">
+              {t('shop.plan_networks_with_names', { names: networkDisplay })}
+            </p>
           </div>
 
           <div className="flex flex-wrap gap-x-4 gap-y-1 mb-3 text-[11px]">

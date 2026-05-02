@@ -12,7 +12,7 @@
 
 import React, { useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Loader2, Wifi, Calendar, Zap, ArrowRight, Inbox } from 'lucide-react';
+import { Loader2, Wifi, Calendar, Zap, ArrowRight, Inbox, Radio } from 'lucide-react';
 import {
     fetchPackages,
     formatVolume,
@@ -28,6 +28,7 @@ import {
     segmentRetailBucketsForPresentation,
     sortRetailBucketsMostPopularFirst,
 } from '../../utils/travelEsimPlanBuckets';
+import { planCardNetworkLine } from '../../utils/retailPackageNetworks';
 
 interface EsimPlanGridProps {
     /** ISO-2 country code (e.g. "jp", "us"). Lower or upper case both fine. */
@@ -259,6 +260,8 @@ const PlanCard: React.FC<{
     const perGB = pkg.volume > 0
         ? (priceUsd / (pkg.volume / (1024 * 1024 * 1024)))
         : null;
+    const networkNames = planCardNetworkLine(pkg);
+    const networksShown = networkNames ?? t('travel_esim_grid.plan_network_generic');
 
     const validityKey =
         pkg.durationUnit === 'MONTH'
@@ -316,6 +319,12 @@ const PlanCard: React.FC<{
                 <li className="flex items-center gap-2">
                     <Zap size={14} className="text-slate-400 shrink-0" />
                     {t('travel_esim_grid.feature_speed')}
+                </li>
+                <li className="flex items-start gap-2">
+                    <Radio size={14} className="text-slate-400 shrink-0 mt-0.5" aria-hidden />
+                    <span className="leading-snug">
+                        {t('travel_esim_grid.plan_network_names', { names: networksShown })}
+                    </span>
                 </li>
                 <li className="flex items-center gap-2">
                     <Wifi size={14} className="text-slate-400 shrink-0" />

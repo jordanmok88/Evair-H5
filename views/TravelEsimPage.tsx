@@ -58,14 +58,14 @@ import {
 import {
     TRAVEL_COUNTRIES,
     findCountry,
-    flagEmoji,
     groupByRegion,
     type TravelCountry,
 } from '../data/travelEsimCountries';
-import { fetchLocationFacets, getContinent } from '../services/dataService';
+import { CARRIER_MAP, CUSTOMER_SERVICE_EMAIL } from '../constants';
 import type { EsimCountryGroup } from '../types';
 import SiteHeader from '../components/marketing/SiteHeader';
 import SiteFooter from '../components/marketing/SiteFooter';
+import FlagIcon from '../components/FlagIcon';
 import EsimPlanGrid from '../components/desktop/EsimPlanGrid';
 import DesktopEsimCheckoutDrawer from '../components/desktop/DesktopEsimCheckoutDrawer';
 import DesktopEsimSuccess from '../components/desktop/DesktopEsimSuccess';
@@ -76,7 +76,7 @@ import { isMobileDevice } from '../utils/device';
 import { applyPageSeo } from '../utils/seoHead';
 import type { EsimPackage } from '../types';
 import type { UserDto } from '../services/api/types';
-import { CUSTOMER_SERVICE_EMAIL } from '../constants';
+import i18n from '../i18n';
 import { sortRowsForShelf } from '../utils/travelEsimCatalogRank';
 
 /** Maps ISO codes to catalogue shelf headers (marketing index). */
@@ -163,13 +163,18 @@ const TravelEsimPage: React.FC<TravelEsimPageProps> = ({ countryCode }) => {
                 }
                 const code = g.locationCode.toLowerCase();
                 const minP = g.minPrice ?? 0;
+                const isoUpper = code.toUpperCase();
+                const cm = CARRIER_MAP[isoUpper];
+                const carriers = cm
+                    ? cm.carrier.split(/\s*\/\s*/).map(s => s.trim()).filter(Boolean)
+                    : [i18n.t('travel_esim_grid.plan_network_generic')];
                 setDynamic({
                     kind: 'ok',
                     country: {
                         code,
                         name: g.locationName,
                         region: shelfRegionForIso2(code),
-                        carriers: ['Leading local networks'],
+                        carriers,
                         priceFromUsd: minP > 0 ? minP.toFixed(2) : '—',
                         blurb: `Data-only travel eSIM for ${g.locationName}. Pick a plan below — instant QR delivery, no SIM swap.`,
                     },
@@ -348,9 +353,6 @@ const SingleCountryView: React.FC<SingleCountryViewProps> = ({
                             <Globe size={12} /> {country.region}
                         </div>
                         <h1 className="text-4xl md:text-5xl font-extrabold leading-tight tracking-tight mb-5">
-                            <span className="mr-3 text-5xl md:text-6xl align-middle">
-                                {flagEmoji(country.code)}
-                            </span>
                             {country.name} eSIM
                         </h1>
                         <p className="text-lg text-slate-600 mb-6 max-w-xl leading-relaxed">
@@ -395,21 +397,31 @@ const SingleCountryView: React.FC<SingleCountryViewProps> = ({
                         </div>
                     </div>
 
-                    {/* Decorative carrier card */}
+                    {/* Destination flag + partner networks */}
                     <div className="hidden md:block">
-                        <div className="bg-gradient-to-br from-slate-900 to-slate-700 rounded-3xl p-8 text-white shadow-2xl">
-                            <div className="text-7xl mb-4">{flagEmoji(country.code)}</div>
-                            <div className="text-sm uppercase tracking-wider text-slate-400 mb-2">
-                                Connects to
+                        <div className="relative aspect-[5/4] rounded-3xl overflow-hidden shadow-2xl border border-slate-200 bg-slate-100">
+                            <img
+                                src={`https://flagcdn.com/w1280/${country.code.toLowerCase()}.png`}
+                                alt={country.name}
+                                className="absolute inset-0 w-full h-full object-cover"
+                                width={640}
+                                height={512}
+                                loading="lazy"
+                                decoding="async"
+                            />
+                            <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/88 via-black/45 to-transparent pt-28 pb-6 px-6 text-white">
+                                <div className="text-[11px] font-bold uppercase tracking-[0.14em] text-white/65 mb-2">
+                                    Connects to
+                                </div>
+                                <ul className="space-y-1.5">
+                                    {country.carriers.map(c => (
+                                        <li key={c} className="flex items-center gap-2 text-sm font-medium">
+                                            <Wifi size={14} className="text-emerald-400 shrink-0" />
+                                            <span>{c}</span>
+                                        </li>
+                                    ))}
+                                </ul>
                             </div>
-                            <ul className="space-y-2">
-                                {country.carriers.map(c => (
-                                    <li key={c} className="flex items-center gap-2 text-sm">
-                                        <Wifi size={14} className="text-emerald-400" />
-                                        {c}
-                                    </li>
-                                ))}
-                            </ul>
                         </div>
                     </div>
                 </div>
@@ -851,7 +863,7 @@ const CatalogueIndexView: React.FC = () => {
                                             href={`/travel-esim/${c.code}`}
                                             className="bg-white border border-slate-200 hover:border-orange-300 hover:shadow-md transition-all rounded-2xl p-4 flex items-center gap-3"
                                         >
-                                            <span className="text-3xl">{flagEmoji(c.code)}</span>
+                                            <FlagIcon countryCode={c.code} size="md" className="shrink-0 shadow-sm" />
                                             <div className="flex-1 min-w-0">
                                                 <div className="font-bold text-slate-900 truncate">
                                                     {c.name}

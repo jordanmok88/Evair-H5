@@ -112,6 +112,8 @@ const en = {
     plan_premium_tier_compact: 'Premium {{tier}}',
     plan_long_stay_notice:
       'After hiding one-day prepaid SKUs there is nothing else to display here yet. Regional bundles may still cover this destination.',
+    plan_networks_with_names: 'Networks · {{names}}',
+    plan_networks_generic: 'Leading local networks',
   },
   amazonSim: {
     plan_line: '{{gb}} GB · {{days}} days',
@@ -663,6 +665,8 @@ const en = {
     choose_volume: 'Choose {{volume}}',
     feature_speed: '4G / 5G where available',
     feature_hotspot: 'Personal hotspot supported',
+    plan_network_names: 'Networks · {{names}}',
+    plan_network_generic: 'Leading local networks',
     singleton_roll_aria: 'Plans with one offering per validity length compared side by side',
   },
   referral: {

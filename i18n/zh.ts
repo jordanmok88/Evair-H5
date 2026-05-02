@@ -109,6 +109,8 @@ const zh = {
     plan_premium_tier_compact: '尊享 {{tier}}',
     plan_long_stay_notice:
       '在隐藏“1 天”极短包后，暂时没有更多可展示的条目。可尝试区域套餐是否仍含该目的地。',
+    plan_networks_with_names: '网络 · {{names}}',
+    plan_networks_generic: '当地主流合作网络',
   },
   amazonSim: {
     plan_line: '{{gb}} GB · {{days}} 天',
@@ -638,6 +640,8 @@ const zh = {
     choose_volume: '选择 {{volume}}',
     feature_speed: '当地的 4G / 5G 网络（取决于覆盖）',
     feature_hotspot: '支持手持设备热点与他人共享上网',
+    plan_network_names: '网络 · {{names}}',
+    plan_network_generic: '当地主流合作网络',
     singleton_roll_aria: '每种有效天数仅一档套餐时并排对比',
   },
   referral: {
