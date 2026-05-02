@@ -314,6 +314,21 @@ const en = {
     footer_link_privacy: 'Privacy Policy',
     footer_link_refund: 'Refund Policy',
   },
+  topup_page: {
+    header_tagline: 'Add data to your line',
+    idle_title: 'Top up your EvairSIM',
+    idle_body:
+      'Works with US SIM cards and global eSIMs: scan your box QR or enter the ICCID (Settings → Cellular or SIM Manager). Same flow for both.',
+    idle_chip_us_sim: 'US SIM card',
+    idle_chip_global_esim: 'Global eSIM',
+    idle_scan_cta: 'Scan QR code',
+    idle_or: 'or',
+    idle_manual_label: 'Enter ICCID manually',
+    idle_submit: 'Show top-up plans',
+    idle_iccid_invalid:
+      "That doesn't look like a valid ICCID (15–22 alphanumeric characters). Check your box.",
+    loading_catalog: 'Loading top-up plans…',
+  },
   my_sims: {
     title_esims: 'My eSIMs',
     title_sims: 'My SIMs',

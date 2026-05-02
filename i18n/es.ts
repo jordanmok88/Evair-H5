@@ -315,6 +315,21 @@ const es = {
     footer_link_privacy: 'Política de privacidad',
     footer_link_refund: 'Política de reembolso',
   },
+  topup_page: {
+    header_tagline: 'Añade datos a tu línea',
+    idle_title: 'Recarga tu EvairSIM',
+    idle_body:
+      'Sirve para SIM física EE. UU. y eSIM global: escanea el QR de la caja o escribe el ICCID (Ajustes → Cellular o Administrador SIM). Mismo proceso para ambas.',
+    idle_chip_us_sim: 'SIM EE. UU.',
+    idle_chip_global_esim: 'eSIM global',
+    idle_scan_cta: 'Escanear código QR',
+    idle_or: 'o',
+    idle_manual_label: 'Introduce el ICCID manualmente',
+    idle_submit: 'Ver planes de recarga',
+    idle_iccid_invalid:
+      'Ese ICCID no parece válido (15–22 caracteres alfanuméricos). Revisa la caja.',
+    loading_catalog: 'Cargando planes de recarga…',
+  },
   my_sims: {
     title_esims: 'Mis eSIMs',
     title_sims: 'Mis SIMs',

@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import {
     BadgeCheck,
     CheckCircle2,
+    Coins,
     Globe,
     ShoppingCart,
     Star,
@@ -360,24 +361,31 @@ export function MarketingHeroCarousel(props: MarketingHeroCarouselProps) {
                             <Globe className="h-[18px] w-[18px] shrink-0" />
                             {t('marketing.home_travel_esim')}
                         </a>
-                        <div className="mt-2.5 grid grid-cols-1 gap-2.5 sm:mt-3 sm:grid-cols-2 sm:gap-3">
+                        <div className="mt-2.5 grid grid-cols-1 gap-2.5 sm:mt-3 sm:grid-cols-3 sm:gap-3">
                             <a
                                 href={amazonUrl}
                                 target="_blank"
                                 rel="noopener noreferrer"
-                                className="flex min-h-11 items-center justify-center gap-2 rounded-xl bg-slate-900 px-4 py-2.5 text-sm font-bold text-white shadow-lg shadow-slate-900/20 transition active:scale-[0.98] sm:min-h-12 sm:py-3 sm:text-base"
+                                className="flex min-h-11 items-center justify-center gap-2 rounded-xl border-2 border-[#FF6600] bg-white px-4 py-2.5 text-sm font-bold text-slate-800 shadow-sm shadow-orange-500/15 outline-none ring-offset-white transition hover:bg-orange-50/70 active:scale-[0.98] focus-visible:ring-2 focus-visible:ring-[#2563eb] focus-visible:ring-offset-2 sm:min-h-12 sm:py-3 sm:text-base"
                                 aria-label={t('marketing.buy_sim_card_aria')}
                             >
-                                <ShoppingCart className="h-[18px] w-[18px] shrink-0" />
+                                <ShoppingCart className="h-[18px] w-[18px] shrink-0 text-orange-600" />
                                 {t('marketing.buy_sim_card')}
                             </a>
                             <a
                                 href={activatePath}
                                 onClick={onActivateClick}
-                                className="flex min-h-11 items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-bold text-slate-900 shadow-sm transition active:scale-[0.98] sm:min-h-12 sm:py-3 sm:text-base"
+                                className="flex min-h-11 items-center justify-center gap-2 rounded-xl border border-orange-200 bg-gradient-to-br from-orange-50 to-amber-50 px-4 py-2.5 text-sm font-bold text-orange-950 shadow-sm outline-none ring-offset-white transition hover:from-orange-50 hover:to-amber-100/90 active:scale-[0.98] focus-visible:ring-2 focus-visible:ring-[#2563eb] focus-visible:ring-offset-2 sm:min-h-12 sm:py-3 sm:text-base"
                             >
-                                <BadgeCheck className="h-[18px] w-[18px] shrink-0" />
+                                <BadgeCheck className="h-[18px] w-[18px] shrink-0 text-orange-700" />
                                 {t('marketing.home_activate')}
+                            </a>
+                            <a
+                                href="/top-up"
+                                className="flex min-h-11 items-center justify-center gap-2 rounded-xl border-2 border-[#FF6600] bg-white px-4 py-2.5 text-sm font-bold text-slate-800 shadow-sm shadow-orange-500/15 outline-none ring-offset-white transition hover:bg-orange-50/70 active:scale-[0.98] focus-visible:ring-2 focus-visible:ring-[#2563eb] focus-visible:ring-offset-2 sm:min-h-12 sm:py-3 sm:text-base"
+                            >
+                                <Coins className="h-[18px] w-[18px] shrink-0 text-orange-600" />
+                                {t('marketing.footer_link_topup')}
                             </a>
                         </div>
                     </div>

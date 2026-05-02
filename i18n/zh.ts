@@ -300,6 +300,20 @@ const zh = {
     footer_link_privacy: '隐私政策',
     footer_link_refund: '退款政策',
   },
+  topup_page: {
+    header_tagline: '为已开通的 SIM / eSIM 充值',
+    idle_title: '为 EvairSIM 充值',
+    idle_body:
+      '美国实体 SIM 与全球 eSIM 通用：扫描包装盒二维码，或手动输入 ICCID（手机设置 → 蜂窝网络 / SIM 管理器）。流程一致。',
+    idle_chip_us_sim: '美国 SIM 卡',
+    idle_chip_global_esim: '全球 eSIM',
+    idle_scan_cta: '扫描二维码',
+    idle_or: '或',
+    idle_manual_label: '手动输入 ICCID',
+    idle_submit: '查看充值套餐',
+    idle_iccid_invalid: 'ICC ID 应为 15–22 位字母数字，请核对包装盒上的编号。',
+    loading_catalog: '正在加载充值套餐…',
+  },
   my_sims: {
     title_esims: '我的eSIM',
     title_sims: '我的SIM卡',
