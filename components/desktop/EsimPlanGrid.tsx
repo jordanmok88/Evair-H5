@@ -19,12 +19,15 @@ import {
     packagePriceUsd,
 } from '../../services/dataService';
 import type { EsimPackage } from '../../types';
+import RetailSingletonDurationRoll from '../../components/RetailSingletonDurationRoll';
 import {
     bucketPlansByValidity,
     inferRetailPremiumSkuTier,
     isMostPopularRetailBucket,
+    partitionRetailBucketsByCardinality,
     sanitizedRetailPlanMarketingName,
     sortRetailBucketsMostPopularFirst,
+    sortSingletonBucketsForDurationRoll,
 } from '../../utils/travelEsimPlanBuckets';
 
 interface EsimPlanGridProps {
@@ -78,6 +81,16 @@ const EsimPlanGrid: React.FC<EsimPlanGridProps> = ({ countryCode, countryName, o
         if (!packages) return [];
         return sortRetailBucketsMostPopularFirst(bucketPlansByValidity(packages));
     }, [packages]);
+
+    const { multiPlan, singletonPlan } = useMemo(
+        () => partitionRetailBucketsByCardinality(buckets),
+        [buckets],
+    );
+
+    const singletonRoll = useMemo(
+        () => sortSingletonBucketsForDurationRoll(singletonPlan),
+        [singletonPlan],
+    );
 
     const totalEligible = useMemo(() => buckets.reduce((a, b) => a + b.packages.length, 0), [buckets]);
 
@@ -144,9 +157,9 @@ const EsimPlanGrid: React.FC<EsimPlanGridProps> = ({ countryCode, countryName, o
             />
 
             <div className="space-y-12">
-                {buckets.map(bucket => (
+                {multiPlan.map(bucket => (
                     <div
-                        key={`${bucket.durationUnit}-${bucket.duration}`}
+                        key={`${bucket.durationUnit}-${bucket.duration}-multi`}
                         id={`plans-${bucket.sortOrder}-${bucket.durationUnit}-${bucket.duration}`}
                     >
                         <div className="mb-4 pb-2 border-b border-slate-200">
@@ -171,11 +184,42 @@ const EsimPlanGrid: React.FC<EsimPlanGridProps> = ({ countryCode, countryName, o
                                     pkg={pkg}
                                     onSelect={onSelect}
                                     t={t}
+                                    className="h-full"
                                 />
                             ))}
                         </div>
                     </div>
                 ))}
+
+                {singletonRoll.length > 0 && (
+                    <RetailSingletonDurationRoll
+                        buckets={singletonRoll}
+                        ariaLabel={t('travel_esim_grid.singleton_roll_aria')}
+                        renderColumnHeader={bucket => (
+                            <div className="pb-2 border-b border-slate-200">
+                                {isMostPopularRetailBucket(bucket) && (
+                                    <p className="text-[11px] font-extrabold uppercase tracking-[0.12em] text-orange-600 mb-1">
+                                        {t('shop.plan_section_most_popular')}
+                                    </p>
+                                )}
+                                <h3 className="text-lg font-bold text-slate-900 tracking-tight">
+                                    {bucket.durationUnit === 'MONTH'
+                                        ? t('shop.plan_duration_section_months', { months: bucket.duration })
+                                        : t('shop.plan_duration_section_days', { days: bucket.duration })}
+                                    <span className="ml-2 text-sm font-semibold text-slate-400">
+                                        ({bucket.packages.length})
+                                    </span>
+                                </h3>
+                            </div>
+                        )}
+                        renderCard={bucket => {
+                            const pkg = bucket.packages[0];
+                            return pkg ? (
+                                <PlanCard key={pkg.packageCode} pkg={pkg} onSelect={onSelect} t={t} className="h-full w-full" />
+                            ) : null;
+                        }}
+                    />
+                )}
             </div>
 
             <p className="text-xs text-slate-500 mt-8 max-w-2xl">
@@ -205,10 +249,12 @@ const PlanCard: React.FC<{
     pkg: EsimPackage;
     onSelect: (pkg: EsimPackage) => void;
     t: ReturnType<typeof useTranslation>['t'];
+    className?: string;
 }> = ({
     pkg,
     onSelect,
     t,
+    className = '',
 }) => {
     const tier = inferRetailPremiumSkuTier(pkg);
     const isPremium = tier !== null;
@@ -236,6 +282,7 @@ const PlanCard: React.FC<{
                 ${isPremium
                 ? 'border-amber-300 ring-2 ring-amber-100 hover:border-amber-400'
                 : 'border-slate-200 hover:border-orange-300'}
+                ${className}
             `}
         >
             <div className="flex items-start justify-between mb-4 gap-2">

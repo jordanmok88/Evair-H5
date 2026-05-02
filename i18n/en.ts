@@ -663,6 +663,7 @@ const en = {
     choose_volume: 'Choose {{volume}}',
     feature_speed: '4G / 5G where available',
     feature_hotspot: 'Personal hotspot supported',
+    singleton_roll_aria: 'Plans with one offering per validity length compared side by side',
   },
   referral: {
     title: 'Refer & earn',

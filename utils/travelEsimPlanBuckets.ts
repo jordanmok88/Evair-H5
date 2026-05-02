@@ -65,6 +65,24 @@ export function sortRetailBucketsMostPopularFirst(buckets: EsimValidityBucket[])
     return [...popular, ...rest];
 }
 
+export function partitionRetailBucketsByCardinality(buckets: EsimValidityBucket[]): {
+    multiPlan: EsimValidityBucket[];
+    singletonPlan: EsimValidityBucket[];
+} {
+    const multiPlan = buckets.filter(b => b.packages.length > 1);
+    const singletonPlan = buckets.filter(b => b.packages.length === 1);
+    return { multiPlan, singletonPlan };
+}
+
+/** One-plan-per-validity strips: hero 30 D singleton first when present; then chronological. */
+export function sortSingletonBucketsForDurationRoll(buckets: EsimValidityBucket[]): EsimValidityBucket[] {
+    const hero = buckets.filter(isMostPopularRetailBucket);
+    const tail = buckets.filter(b => !isMostPopularRetailBucket(b));
+    tail.sort(compareValidityBuckets);
+    hero.sort(compareValidityBuckets);
+    return [...hero, ...tail];
+}
+
 export function bucketPlansByValidity(packages: EsimPackage[]): EsimValidityBucket[] {
     const eligible = packages.filter(passesRetailTravelPlanListingFilter);
 

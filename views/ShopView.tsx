@@ -4,6 +4,7 @@ import { Search, ChevronRight, ArrowLeft, Globe, Star, X, MapPin, Loader2, Smart
 import { Country, Plan, SimType, User, SimCardProduct, EsimPackage, EsimCountryGroup, EsimOrderResult, ActiveSim } from '../types';
 import { MOCK_COUNTRIES } from '../constants';
 import AmazonPhysicalSimPicker from '../components/AmazonPhysicalSimPicker';
+import RetailSingletonDurationRoll from '../components/RetailSingletonDurationRoll';
 import FlagIcon from '../components/FlagIcon';
 // 数据流（2026-04 重构）：
 //   - Shop 首屏只调 fetchLocationFacets() 拿轻量索引（含起价 / 套餐数）
@@ -23,7 +24,7 @@ import {
   formatGB,
   POPULAR_COUNTRY_CODES,
 } from '../services/dataService';
-import { bucketPlansByValidity, inferRetailPremiumSkuTier, isMostPopularRetailBucket, sanitizedRetailPlanMarketingName, sortRetailBucketsMostPopularFirst } from '../utils/travelEsimPlanBuckets';
+import { bucketPlansByValidity, inferRetailPremiumSkuTier, isMostPopularRetailBucket, partitionRetailBucketsByCardinality, sanitizedRetailPlanMarketingName, sortRetailBucketsMostPopularFirst, sortSingletonBucketsForDurationRoll } from '../utils/travelEsimPlanBuckets';
 import { orderService } from '../services/api';
 import { pollEsimOrderUntilProvisioned } from '../services/api/order';
 import type { OrderDetailDto } from '../services/api/types';
@@ -813,6 +814,99 @@ const ShopView: React.FC<ShopViewProps> = ({
   if (selectedEsimGroup) {
     const planBuckets = sortRetailBucketsMostPopularFirst(bucketPlansByValidity(selectedEsimGroup.packages));
     const eligiblePlanCount = planBuckets.reduce((acc, b) => acc + b.packages.length, 0);
+    const { multiPlan, singletonPlan } = partitionRetailBucketsByCardinality(planBuckets);
+    const singletonRoll = sortSingletonBucketsForDurationRoll(singletonPlan);
+
+    const renderTierCard = (pkg: EsimPackage): React.ReactNode => {
+      const premiumTier = inferRetailPremiumSkuTier(pkg);
+      const premium = premiumTier !== null;
+      const priceUsd = packagePriceUsd(pkg);
+      const volumeStr = formatVolume(pkg.volume);
+      const planMarketingName = sanitizedRetailPlanMarketingName(pkg);
+      const gb = pkg.volume / (1024 * 1024 * 1024);
+      const pricePerGb = gb > 0 ? priceUsd / gb : priceUsd;
+      const isAutoActivate = pkg.activeType === 1;
+      const coveredCountries = pkg.location ? pkg.location.split(',').length : 1;
+      return (
+        <div
+          onClick={() => {
+            if (!isLoggedIn) { onLoginRequest(); return; }
+            setIsProcessing(false); setOrderError(null);
+            setSelectedEsimPkg(pkg);
+          }}
+          className={`group relative h-full bg-white rounded-xl p-4 border shadow-sm hover:shadow-md transition-all cursor-pointer ${
+            premium ? 'border-amber-200 ring-2 ring-amber-50' : 'border-slate-100'
+          }`}
+        >
+          <div className="flex justify-between items-end mb-3">
+            <div>
+              <p className="text-slate-400 font-semibold text-xs uppercase tracking-wider mb-1">{planMarketingName}</p>
+              <div className="min-h-[26px] flex flex-wrap items-center mb-1">
+                {premiumTier != null ? (
+                  <span className="text-[9px] font-extrabold uppercase tracking-wide bg-amber-100 text-amber-950 px-1.5 py-0.5 rounded leading-none inline-flex items-center">
+                    {t('shop.plan_premium_tier_compact', { tier: premiumTier.labelUpper })}
+                  </span>
+                ) : null}
+              </div>
+              <div className="flex items-baseline gap-1">
+                <h3 className="text-2xl font-extrabold text-slate-900 tracking-tight">{volumeStr.split(' ')[0]}</h3>
+                <span className="text-base font-bold text-slate-400">{volumeStr.split(' ')[1]}</span>
+              </div>
+            </div>
+            <div className="text-right shrink-0">
+              <span className="text-xl font-bold text-brand-orange">${priceUsd.toFixed(2)}</span>
+              <p className="text-[11px] text-slate-400 mt-0.5">${pricePerGb.toFixed(2)}{t('shop.per_gb')}</p>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-3 gap-2 mb-3">
+            <div className="bg-slate-50 rounded-xl py-2.5 px-2 flex flex-col items-center justify-center gap-1 border border-slate-100">
+              <Calendar size={16} className="text-slate-500" />
+              <span className="font-semibold text-slate-700 text-xs">{pkg.duration} {pkg.durationUnit === 'DAY' ? t('shop.days') : 'Mo'}</span>
+            </div>
+            <div className="bg-slate-50 rounded-xl py-2.5 px-2 flex flex-col items-center justify-center gap-1 border border-slate-100">
+              <Signal size={16} className="text-slate-500" />
+              <span className="font-semibold text-slate-700 text-xs">4G/5G</span>
+            </div>
+            <div className="bg-slate-50 rounded-xl py-2.5 px-2 flex flex-col items-center justify-center gap-1 border border-slate-100">
+              <Wifi size={16} className="text-slate-500" />
+              <span className="font-semibold text-slate-700 text-xs">{t('shop.hotspot')}</span>
+            </div>
+          </div>
+
+          <div className="flex flex-wrap gap-x-4 gap-y-1 mb-3 text-[11px]">
+            {isAutoActivate && (
+              <span className="flex items-center gap-1 text-emerald-600 font-medium">
+                <Zap size={12} /> Auto-activate
+              </span>
+            )}
+            {pkg.unusedValidTime > 0 && (
+              <span className="flex items-center gap-1 text-slate-500 font-medium">
+                <Clock size={12} /> Valid {pkg.unusedValidTime}d before use
+              </span>
+            )}
+            {coveredCountries > 1 && (
+              <span className="flex items-center gap-1 text-blue-500 font-medium">
+                <Globe size={12} /> {coveredCountries} countries
+              </span>
+            )}
+            {pkg.description && (
+              <span className="flex items-center gap-1 text-slate-400 font-medium">
+                <Shield size={12} /> {pkg.description.length > 40 ? pkg.description.slice(0, 40) + '…' : pkg.description}
+              </span>
+            )}
+          </div>
+
+          <button
+            type="button"
+            className="w-full py-3 rounded-xl font-bold text-sm transition-all active:scale-[0.98] flex items-center justify-center gap-2 bg-slate-50 border border-slate-200 text-slate-700 hover:bg-slate-100 hover:border-slate-300"
+          >
+            {t('shop.choose')} {volumeStr}
+            <ChevronRight size={16} className="opacity-60" />
+          </button>
+        </div>
+      );
+    };
 
     return (
       <div className="lg:h-full flex flex-col relative bg-[#F2F4F7]">
@@ -909,8 +1003,8 @@ const ShopView: React.FC<ShopViewProps> = ({
             </div>
           ) : (
           <div className="space-y-8 pb-4">
-            {planBuckets.map(bucket => (
-              <section key={`${bucket.durationUnit}-${bucket.duration}`} aria-labelledby={`plan-validity-${bucket.sortOrder}-${bucket.durationUnit}-${bucket.duration}`}>
+            {multiPlan.map(bucket => (
+              <section key={`${bucket.durationUnit}-${bucket.duration}-multi`} aria-labelledby={`plan-validity-${bucket.sortOrder}-${bucket.durationUnit}-${bucket.duration}`}>
                 <h4 id={`plan-validity-${bucket.sortOrder}-${bucket.durationUnit}-${bucket.duration}`} className="mb-3 pb-2 border-b border-slate-200">
                   {isMostPopularRetailBucket(bucket) && (
                     <p className="text-[10px] font-extrabold uppercase tracking-[0.1em] text-brand-orange mb-1">
@@ -926,102 +1020,42 @@ const ShopView: React.FC<ShopViewProps> = ({
                     <span className="text-xs font-semibold text-slate-400">({bucket.packages.length})</span>
                   </span>
                 </h4>
-          <div className="space-y-3 md:grid md:grid-cols-2 md:gap-3 md:space-y-0 lg:block lg:space-y-3">
-            {bucket.packages.map((pkg) => {
-              const premiumTier = inferRetailPremiumSkuTier(pkg);
-              const premium = premiumTier !== null;
-              const priceUsd = packagePriceUsd(pkg);
-              const volumeStr = formatVolume(pkg.volume);
-              const planMarketingName = sanitizedRetailPlanMarketingName(pkg);
-              const gb = pkg.volume / (1024 * 1024 * 1024);
-              const pricePerGb = gb > 0 ? priceUsd / gb : priceUsd;
-              const isAutoActivate = pkg.activeType === 1;
-              const coveredCountries = pkg.location ? pkg.location.split(',').length : 1;
-              return (
-                <div
-                  key={pkg.packageCode}
-                  onClick={() => {
-                    if (!isLoggedIn) { onLoginRequest(); return; }
-                    setIsProcessing(false); setOrderError(null);
-                    setSelectedEsimPkg(pkg);
-                  }}
-                  className={`group relative bg-white rounded-xl p-4 border shadow-sm hover:shadow-md transition-all cursor-pointer ${
-                      premium ? 'border-amber-200 ring-2 ring-amber-50' : 'border-slate-100'
-                  }`}
-                >
-                  <div className="flex justify-between items-end mb-3">
-                    <div>
-                      <p className="text-slate-400 font-semibold text-xs uppercase tracking-wider mb-1">{planMarketingName}</p>
-                      <div className="min-h-[26px] flex flex-wrap items-center mb-1">
-                        {premiumTier != null ? (
-                          <span className="text-[9px] font-extrabold uppercase tracking-wide bg-amber-100 text-amber-950 px-1.5 py-0.5 rounded leading-none inline-flex items-center">
-                            {t('shop.plan_premium_tier_compact', { tier: premiumTier.labelUpper })}
-                          </span>
-                        ) : null}
-                      </div>
-                      <div className="flex items-baseline gap-1">
-                        <h3 className="text-2xl font-extrabold text-slate-900 tracking-tight">{volumeStr.split(' ')[0]}</h3>
-                        <span className="text-base font-bold text-slate-400">{volumeStr.split(' ')[1]}</span>
-                      </div>
-                    </div>
-                    <div className="text-right shrink-0">
-                      <span className="text-xl font-bold text-brand-orange">${priceUsd.toFixed(2)}</span>
-                      <p className="text-[11px] text-slate-400 mt-0.5">${pricePerGb.toFixed(2)}{t('shop.per_gb')}</p>
-                    </div>
-                  </div>
-
-                  {/* Plan details grid */}
-                  <div className="grid grid-cols-3 gap-2 mb-3">
-                    <div className="bg-slate-50 rounded-xl py-2.5 px-2 flex flex-col items-center justify-center gap-1 border border-slate-100">
-                      <Calendar size={16} className="text-slate-500" />
-                      <span className="font-semibold text-slate-700 text-xs">{pkg.duration} {pkg.durationUnit === 'DAY' ? t('shop.days') : 'Mo'}</span>
-                    </div>
-                    <div className="bg-slate-50 rounded-xl py-2.5 px-2 flex flex-col items-center justify-center gap-1 border border-slate-100">
-                      <Signal size={16} className="text-slate-500" />
-                      <span className="font-semibold text-slate-700 text-xs">4G/5G</span>
-                    </div>
-                    <div className="bg-slate-50 rounded-xl py-2.5 px-2 flex flex-col items-center justify-center gap-1 border border-slate-100">
-                      <Wifi size={16} className="text-slate-500" />
-                      <span className="font-semibold text-slate-700 text-xs">{t('shop.hotspot')}</span>
-                    </div>
-                  </div>
-
-                  {/* Extra plan info from API */}
-                  <div className="flex flex-wrap gap-x-4 gap-y-1 mb-3 text-[11px]">
-                    {isAutoActivate && (
-                      <span className="flex items-center gap-1 text-emerald-600 font-medium">
-                        <Zap size={12} /> Auto-activate
-                      </span>
-                    )}
-                    {pkg.unusedValidTime > 0 && (
-                      <span className="flex items-center gap-1 text-slate-500 font-medium">
-                        <Clock size={12} /> Valid {pkg.unusedValidTime}d before use
-                      </span>
-                    )}
-                    {coveredCountries > 1 && (
-                      <span className="flex items-center gap-1 text-blue-500 font-medium">
-                        <Globe size={12} /> {coveredCountries} countries
-                      </span>
-                    )}
-                    {pkg.description && (
-                      <span className="flex items-center gap-1 text-slate-400 font-medium">
-                        <Shield size={12} /> {pkg.description.length > 40 ? pkg.description.slice(0, 40) + '…' : pkg.description}
-                      </span>
-                    )}
-                  </div>
-
-                  <button
-                    className="w-full py-3 rounded-xl font-bold text-sm transition-all active:scale-[0.98] flex items-center justify-center gap-2 bg-slate-50 border border-slate-200 text-slate-700 hover:bg-slate-100 hover:border-slate-300"
-                  >
-                    {t('shop.choose')} {volumeStr}
-                    <ChevronRight size={16} className="opacity-60" />
-                  </button>
+                <div className="space-y-3 md:grid md:grid-cols-2 md:gap-3 md:space-y-0 lg:block lg:space-y-3">
+                  {bucket.packages.map(pkg => (
+                    <React.Fragment key={pkg.packageCode}>{renderTierCard(pkg)}</React.Fragment>
+                  ))}
                 </div>
-              );
-            })}
-          </div>
               </section>
             ))}
+
+            {singletonRoll.length > 0 && (
+              <RetailSingletonDurationRoll
+                buckets={singletonRoll}
+                ariaLabel={t('travel_esim_grid.singleton_roll_aria')}
+                renderColumnHeader={bucket => (
+                  <div className="mb-3 pb-2 border-b border-slate-200">
+                    {isMostPopularRetailBucket(bucket) && (
+                      <p className="text-[10px] font-extrabold uppercase tracking-[0.1em] text-brand-orange mb-1">
+                        {t('shop.plan_section_most_popular')}
+                      </p>
+                    )}
+                    <span className="text-base font-bold text-slate-900 flex flex-wrap items-center gap-2">
+                      <span>
+                        {bucket.durationUnit === 'MONTH'
+                          ? t('shop.plan_duration_section_months', { months: bucket.duration })
+                          : t('shop.plan_duration_section_days', { days: bucket.duration })}
+                      </span>
+                      <span className="text-xs font-semibold text-slate-400">({bucket.packages.length})</span>
+                    </span>
+                  </div>
+                )}
+                renderCard={bucket => {
+                  const pkg = bucket.packages[0];
+                  if (!pkg) return null;
+                  return <React.Fragment key={pkg.packageCode}>{renderTierCard(pkg)}</React.Fragment>;
+                }}
+              />
+            )}
           </div>
           )}
 

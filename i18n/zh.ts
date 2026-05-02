@@ -638,6 +638,7 @@ const zh = {
     choose_volume: '选择 {{volume}}',
     feature_speed: '当地的 4G / 5G 网络（取决于覆盖）',
     feature_hotspot: '支持手持设备热点与他人共享上网',
+    singleton_roll_aria: '每种有效天数仅一档套餐时并排对比',
   },
   referral: {
     title: '推荐好友',

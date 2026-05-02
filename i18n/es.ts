@@ -655,6 +655,7 @@ const es = {
     choose_volume: 'Elegir {{volume}}',
     feature_speed: '4G / 5G donde haya cobertura',
     feature_hotspot: 'Compatible con zona personal',
+    singleton_roll_aria: 'Comparativa de opciones cuando solo hay un plan por duración',
   },
   referral: {
     title: 'Invita y gana',
