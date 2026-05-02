@@ -116,6 +116,23 @@ done
 
 {
   echo ""
+  echo "--- Reminder：套餐网络运营商展示 / Plan network names (Jordan + China ops) ---"
+  echo ""
+  echo "Customers see carrier text on H5/App plan cards ONLY as plain UI text (example: \"AT&T · T-Mobile\")."
+  echo "That text does NOT expose backend URLs, API keys, or database credentials — it is not a \"window\" into the server."
+  echo ""
+  echo "Shown data comes from, in order: (1) Laravel field network_partner_summary if sync ran,"
+  echo "(2) static file constants/carriersFromSupplier.generated.ts (after npm run carriers:pull on a laptop + commit),"
+  echo "(3) manual CARRIER_MAP in constants.ts. Snapshot is EMPTY until carriers:pull is run once."
+  echo ""
+  echo "china-team / 中国区：请将生产 Laravel（master）保持最新并已部署 schedule + queue。"
+  echo "建议一次性执行以便套餐 metadata 写入 network_partner_summary： php artisan esimaccess:sync-products"
+  echo "详细：Evair-Laravel routes/console.php 已每 6 小时调度 esimaccess:sync-products；H5 说明见 scripts/README-redtea-carriers.md"
+  echo ""
+} | tee -a "${SUMMARY_LAST}" "${REPORT_FULL}"
+
+{
+  echo ""
   echo "Done - repos updated: ${TOTAL_UPDATED}; errors: ${TOTAL_ERRORS}."
   echo "Full transcript: ${REPORT_FULL}"
   echo "Summary file: ${SUMMARY_LAST}"
