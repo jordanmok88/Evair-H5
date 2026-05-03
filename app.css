@@ -14,6 +14,20 @@ html, body, #root {
   background: #F2F4F7;
 }
 
+/* Contact chat: slit above iOS keyboard – JS sets --contact-vv-gap while typing */
+:root {
+  --contact-vv-gap: 0px;
+}
+
+@media (max-width: 1023px) {
+  .contact-footer-dock {
+    padding-bottom: max(
+      0.875rem,
+      calc(0.625rem + env(safe-area-inset-bottom, 0px) + var(--contact-vv-gap))
+    );
+  }
+}
+
 body {
   -webkit-tap-highlight-color: transparent;
   background-color: #F2F4F7;

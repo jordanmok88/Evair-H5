@@ -179,6 +179,36 @@ const ContactUsView: React.FC<ContactUsViewProps> = ({
     return () => clearTimeout(timer);
   }, []);
 
+  /** iOS Safari: fills the slit between composer and keyboard (layout vs visual viewport). */
+  useEffect(() => {
+    if (embedded || typeof window === 'undefined') return;
+    const root = document.documentElement;
+    const vv = window.visualViewport;
+    const mq = window.matchMedia('(min-width: 1024px)');
+    const sync = () => {
+      if (mq.matches) {
+        root.style.setProperty('--contact-vv-gap', '0px');
+        return;
+      }
+      const gapPx = vv
+        ? Math.max(0, window.innerHeight - vv.height - vv.offsetTop)
+        : 0;
+      root.style.setProperty('--contact-vv-gap', `${gapPx}px`);
+    };
+    sync();
+    mq.addEventListener('change', sync);
+    vv?.addEventListener('resize', sync);
+    vv?.addEventListener('scroll', sync);
+    window.addEventListener('resize', sync);
+    return () => {
+      mq.removeEventListener('change', sync);
+      vv?.removeEventListener('resize', sync);
+      vv?.removeEventListener('scroll', sync);
+      window.removeEventListener('resize', sync);
+      root.style.setProperty('--contact-vv-gap', '0px');
+    };
+  }, [embedded]);
+
   // 初始化 provider + 加载会话
   useEffect(() => {
     let cancelled = false;
@@ -931,7 +961,7 @@ const ContactUsView: React.FC<ContactUsViewProps> = ({
         <div
           ref={scrollContainerRef}
           onScroll={handleScroll}
-          className={`touch-pan-y min-h-0 flex-1 overflow-x-hidden overflow-y-auto overscroll-y-contain no-scrollbar pb-3 ${embedded ? 'px-3 pt-1.5 sm:px-4' : 'px-3 pt-1.5'} bg-[#ECE5DD]`}
+          className={`touch-pan-y min-h-0 flex-1 overflow-x-hidden overflow-y-auto overscroll-y-contain no-scrollbar ${embedded ? 'px-3 pt-1.5 pb-3 sm:px-4' : 'px-3 pt-1.5 lg:pb-3 max-lg:pb-[calc(0.75rem+11.75rem+env(safe-area-inset-bottom,0px)+var(--contact-vv-gap,0px))]'} bg-[#ECE5DD]`}
           style={{
             scrollBehavior: 'smooth',
             WebkitOverflowScrolling: 'touch',
@@ -1054,7 +1084,11 @@ const ContactUsView: React.FC<ContactUsViewProps> = ({
           <button
             type="button"
             onClick={() => scrollToBottom()}
-            className="pointer-events-auto absolute bottom-[calc(1rem+env(safe-area-inset-bottom,0px))] left-1/2 z-[34] flex max-w-[calc(100%-2rem)] -translate-x-1/2 touch-manipulation items-center gap-2 rounded-full border border-slate-200/90 bg-white px-5 py-2.5 text-[14px] font-semibold text-slate-800 shadow-[0_4px_16px_rgba(15,23,42,0.14)] active:scale-[0.98]"
+            className={`pointer-events-auto absolute left-1/2 z-[34] flex max-w-[calc(100%-2rem)] -translate-x-1/2 touch-manipulation items-center gap-2 rounded-full border border-slate-200/90 bg-white px-5 py-2.5 text-[14px] font-semibold text-slate-800 shadow-[0_4px_16px_rgba(15,23,42,0.14)] active:scale-[0.98] ${
+              embedded
+                ? 'bottom-[calc(1rem+env(safe-area-inset-bottom,0px))]'
+                : 'max-lg:bottom-[calc(0.75rem+11.75rem+env(safe-area-inset-bottom,0px)+var(--contact-vv-gap,0px))] lg:bottom-[calc(1rem+env(safe-area-inset-bottom,0px))]'
+            }`}
             aria-label={t('contact.jump_to_latest')}
           >
             <ArrowDown size={18} className="shrink-0 text-slate-600" aria-hidden />
@@ -1063,7 +1097,19 @@ const ContactUsView: React.FC<ContactUsViewProps> = ({
         )}
       </div>
 
-      <footer className="relative z-20 shrink-0 bg-[#F0F2F5] px-3 pb-[max(14px,calc(10px+env(safe-area-inset-bottom,0px)))] pt-3">
+      <footer
+        className={`shrink-0 bg-[#F0F2F5] px-3 pt-3 ${
+          embedded
+            ? 'relative z-20 pb-[max(14px,calc(10px+env(safe-area-inset-bottom,0px)))]'
+            : [
+                'isolate z-[32] lg:relative lg:z-20',
+                'max-lg:fixed max-lg:inset-x-0 max-lg:bottom-0',
+                'max-lg:border-t max-lg:border-slate-200/80 max-lg:shadow-[0_-8px_28px_rgba(15,23,42,0.08)]',
+                'contact-footer-dock',
+                'lg:pb-[max(14px,calc(10px+env(safe-area-inset-bottom,0px)))]',
+              ].join(' ')
+        }`}
+      >
         <div className="mx-auto flex w-full min-w-0 max-w-lg flex-col gap-2.5">
           <div
             className="flex gap-2 overflow-x-auto overscroll-x-contain py-1 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
