@@ -197,9 +197,9 @@ function HeroSlidesCrossfade({
     );
 }
 
-/** Home hero CTAs — white tiles, orange border + type (matches homepage mock). */
+/** Home hero CTAs — white tiles, orange border; hover fills brand orange + white label (desktop pointer). */
 const heroCtaBtnClass =
-    'flex touch-manipulation min-h-[2.5rem] w-full shrink-0 items-center justify-center gap-1 rounded-xl border border-brand-orange bg-white px-2 py-2 text-[11px] font-bold leading-tight text-brand-orange shadow-md shadow-orange-950/12 outline-none ring-offset-white transition-[transform,box-shadow,background-color] hover:bg-orange-50 active:scale-[0.98] focus-visible:ring-2 focus-visible:ring-brand-orange focus-visible:ring-offset-2 sm:min-h-11 sm:gap-1.5 sm:px-3 sm:text-sm';
+    'flex touch-manipulation min-h-[2.5rem] w-full shrink-0 items-center justify-center gap-1 rounded-xl border border-brand-orange bg-white px-2 py-2 text-[11px] font-bold leading-tight text-brand-orange shadow-md shadow-orange-950/12 outline-none ring-offset-white transition-[transform,box-shadow,background-color,color,border-color] hover:bg-brand-orange hover:text-white hover:shadow-orange-950/25 active:scale-[0.98] focus-visible:ring-2 focus-visible:ring-brand-orange focus-visible:ring-offset-2 sm:min-h-11 sm:gap-1.5 sm:px-3 sm:text-sm';
 
 /** Home hero: selling slides; striped indicators (jump, swipe on touch), imagery + CTAs. */
 export function MarketingHeroCarousel(props: MarketingHeroCarouselProps) {

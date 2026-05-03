@@ -226,7 +226,7 @@ const MarketingPage: React.FC = () => {
                                     <p className="mt-1.5 text-[11px] font-medium text-gray-500 sm:text-xs">{s.who}</p>
                                     <a
                                         href="/blog"
-                                        className="mt-auto inline-flex min-h-10 w-full items-center justify-center rounded-lg border border-gray-900 bg-white py-2 text-xs font-bold text-gray-900 transition hover:bg-gray-50"
+                                        className="mt-auto inline-flex min-h-10 w-full items-center justify-center rounded-lg border border-gray-900 bg-white py-2 text-xs font-bold text-gray-900 transition-[background-color,color,border-color] hover:border-brand-orange hover:bg-brand-orange hover:text-white"
                                     >
                                         {t('marketing.home_stories_cta')}
                                     </a>
