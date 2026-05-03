@@ -71,6 +71,7 @@ const MarketingProfileDrawer: React.FC<MarketingProfileDrawerProps> = ({
                     ) : (
                         <ProfileView
                             embedded
+                            marketingDrawer
                             isLoggedIn={isLoggedIn}
                             user={user}
                             onLogin={() => {

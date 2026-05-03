@@ -46,9 +46,9 @@ import { BLOG_POSTS } from '../../data/blogPosts.ts';
 import { TRAVEL_COUNTRIES } from '../../data/travelEsimCountries.ts';
 
 const SITE_ORIGIN = 'https://evairdigital.com';
-const DEFAULT_OG_IMAGE = `${SITE_ORIGIN}/og-image.jpg`;
-const OG_IMAGE_WIDTH = '1200';
-const OG_IMAGE_HEIGHT = '630';
+const DEFAULT_OG_IMAGE = `${SITE_ORIGIN}/evairsim-logo.png`;
+const OG_IMAGE_WIDTH = '512';
+const OG_IMAGE_HEIGHT = '512';
 
 interface OgMeta {
     title: string;
@@ -261,8 +261,16 @@ function rewrite(html: string, meta: OgMeta, canonicalUrl: string): string {
         /<meta\s+property="og:image:height"[^>]*>/i,
         `<meta property="og:image:height" content="${OG_IMAGE_HEIGHT}" />`,
     );
+    out = out.replace(
+        /<meta\s+property="og:image:alt"[^>]*>/i,
+        `<meta property="og:image:alt" content="${escapeAttr(meta.title)} — EvairSIM" />`,
+    );
 
-    // Twitter tags
+    // Twitter tags — match og:image square card for consistent scraper crops
+    out = out.replace(
+        /<meta\s+name="twitter:card"[^>]*>/i,
+        `<meta name="twitter:card" content="summary" />`,
+    );
     out = out.replace(
         /<meta\s+name="twitter:title"[^>]*>/i,
         `<meta name="twitter:title" content="${titleAttr}" />`,

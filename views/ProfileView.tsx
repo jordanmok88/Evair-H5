@@ -6,7 +6,13 @@ import { AppNotification } from '../types';
 import { useSwipeBack } from '../hooks/useSwipeBack';
 import { useEdgeSwipeBack } from '../hooks/useEdgeSwipeBack';
 import { userService } from '../services/api';
-import type { UserDto } from '../services/api/types';
+import {
+  ProfileMarketingDrawerContext,
+  useMarketingProfileBodyPad,
+  useMarketingProfileDrawer,
+  useMarketingProfileHeaderPad,
+  useMarketingProfileMainMenuPad,
+} from '../contexts/profileMarketingDrawerContext';
 
 interface ProfileViewProps {
   isLoggedIn: boolean;
@@ -21,6 +27,8 @@ interface ProfileViewProps {
   onUserUpdate?: (user: { name: string; role?: string; email: string }) => void;
   /** `/app` wide shell — floated panel beside the shop (`AppShellFloater`); constrain height + internal scroll */
   embedded?: boolean;
+  /** Marketing header account drawer — edge-to-edge content on phones */
+  marketingDrawer?: boolean;
 };
 
 type ProfileScreen = 'MAIN' | 'ACCOUNT' | 'INBOX' | 'ORDERS' | 'CURRENCY' | 'HELP' | 'INFO' | 'LANGUAGES' | 'REFUND' | 'TERMS' | 'ABOUT' | 'PRIVACY' | 'ACCEPTABLE' | 'COOKIE' | 'REFERRAL';
@@ -37,20 +45,37 @@ const MenuItem = ({ label, onClick, isLast = false, rightElement }: { label: str
   </button>
 );
 
-const MenuGroup = ({ children }: { children?: React.ReactNode }) => (
-    <div className="bg-white rounded-xl shadow-sm border border-slate-100 mb-5 overflow-hidden">
-        {children}
+const MenuGroup = ({ children }: { children?: React.ReactNode }) => {
+  const bleed = useMarketingProfileDrawer();
+  return (
+    <div
+      className={
+        bleed
+          ? 'mb-5 overflow-hidden border-y border-slate-100 bg-white max-md:rounded-none max-md:shadow-none md:rounded-xl md:border md:border-slate-100 md:shadow-sm'
+          : 'mb-5 overflow-hidden rounded-xl border border-slate-100 bg-white shadow-sm'
+      }
+    >
+      {children}
     </div>
-);
+  );
+};
 
-const ScreenHeader = ({ title, onBack }: { title: string, onBack: () => void }) => (
-    <div className="bg-white/90 backdrop-blur-xl pt-safe px-4 pb-3 flex items-center shrink-0 sticky top-0 z-10 border-b border-slate-100">
-        <button onClick={onBack} className="w-9 h-9 -ml-1 flex items-center justify-center rounded-full hover:bg-black/5 active:bg-black/10 transition-colors">
-            <ChevronLeft size={22} className="text-slate-900" />
-        </button>
-        <h1 className="text-lg font-bold text-slate-900 ml-2">{title}</h1>
+const ScreenHeader = ({ title, onBack }: { title: string; onBack: () => void }) => {
+  const hp = useMarketingProfileHeaderPad();
+  return (
+    <div
+      className={`bg-white/90 backdrop-blur-xl pt-safe ${hp} pb-3 flex shrink-0 items-center sticky top-0 z-10 border-b border-slate-100`}
+    >
+      <button
+        onClick={onBack}
+        className="-ml-1 flex h-9 w-9 items-center justify-center rounded-full transition-colors hover:bg-black/5 active:bg-black/10"
+      >
+        <ChevronLeft size={22} className="text-slate-900" />
+      </button>
+      <h1 className="ml-2 text-lg font-bold text-slate-900">{title}</h1>
     </div>
-);
+  );
+};
 
 // --- Sub-Views ---
 
@@ -73,6 +98,7 @@ const AccountInfoView = ({ onBack, user, onUserUpdate }: { onBack: () => void, u
     const [passwordError, setPasswordError] = useState('');
 
     const { t } = useTranslation();
+    const bodyPad = useMarketingProfileBodyPad();
 
     // Update editName when user changes
     React.useEffect(() => {
@@ -138,7 +164,7 @@ const AccountInfoView = ({ onBack, user, onUserUpdate }: { onBack: () => void, u
     return (
         <div className="lg:h-full flex flex-col bg-[#F2F4F7] lg:overflow-y-auto no-scrollbar relative">
             <ScreenHeader title={t('profile.account_info')} onBack={onBack} />
-            <div className="px-5 pb-6">
+            <div className={`${bodyPad} pb-6`}>
                 {/* Success message */}
                 {saveSuccess && (
                     <div className="bg-green-50 border border-green-100 rounded-xl px-4 py-2.5 mb-4 flex items-center gap-2">
@@ -324,10 +350,11 @@ const AccountInfoView = ({ onBack, user, onUserUpdate }: { onBack: () => void, u
 
 const OrdersView = ({ onBack }: { onBack: () => void }) => {
     const { t } = useTranslation();
+    const bodyPad = useMarketingProfileBodyPad();
     return (
     <div className="lg:h-full flex flex-col bg-[#F2F4F7] lg:overflow-y-auto no-scrollbar relative">
         <ScreenHeader title={t('profile.orders')} onBack={onBack} />
-        <div className="px-5 pb-6 pt-2">
+        <div className={`${bodyPad} pb-6 pt-2`}>
             <div className="bg-white rounded-2xl p-5 shadow-sm border border-slate-100 flex gap-4 items-start active:scale-[0.99] transition-transform">
                 <div className="text-4xl shadow-sm rounded-lg overflow-hidden">🇺🇸</div>
                 <div className="flex-1">
@@ -348,11 +375,12 @@ const CurrencyView = ({ onBack }: { onBack: () => void }) => {
     const currencies = [
         { code: 'USD', name: t('profile.usd_name'), symbol: '$' },
     ];
+    const bodyPad = useMarketingProfileBodyPad();
 
     return (
         <div className="lg:h-full flex flex-col bg-[#F2F4F7] lg:overflow-y-auto no-scrollbar relative">
             <ScreenHeader title={t('profile.currency')} onBack={onBack} />
-            <div className="px-5 pb-6">
+            <div className={`${bodyPad} pb-6`}>
                 <div className="relative mb-6">
                     <Search className="absolute left-4 top-3.5 text-slate-900" size={20} />
                     <input 
@@ -391,11 +419,12 @@ const LanguagesView = ({ onBack }: { onBack: () => void }) => {
         i18n.changeLanguage(code);
         localStorage.setItem('evair-lang', code);
     };
+    const bodyPad = useMarketingProfileBodyPad();
 
     return (
         <div className="lg:h-full flex flex-col bg-[#F2F4F7] lg:overflow-y-auto no-scrollbar relative">
             <ScreenHeader title={t('profile.languages')} onBack={onBack} />
-            <div className="px-5 pt-6 pb-6">
+            <div className={`${bodyPad} pt-6 pb-6`}>
                 <div className="bg-white rounded-xl shadow-sm border border-slate-100 overflow-hidden">
                     {languages.map((lang, idx) => (
                         <button 
@@ -415,11 +444,12 @@ const LanguagesView = ({ onBack }: { onBack: () => void }) => {
 
 const AboutEvairView = ({ onBack }: { onBack: () => void }) => {
     const { t } = useTranslation();
+    const bodyPad = useMarketingProfileBodyPad();
 
     return (
         <div className="lg:h-full flex flex-col bg-[#F2F4F7] lg:overflow-y-auto no-scrollbar relative">
             <ScreenHeader title={t('profile.about_evair')} onBack={onBack} />
-            <div className="px-5 pt-2 pb-6">
+            <div className={`${bodyPad} pt-2 pb-6`}>
 
                 {/* Hero */}
                 <div
@@ -519,11 +549,12 @@ const TermsOfUseView = ({ onBack }: { onBack: () => void }) => {
     const listItem = "text-[15px] text-slate-600 leading-relaxed pl-4 relative before:content-['•'] before:absolute before:left-0 before:text-slate-400";
     const numberedItem = "text-[15px] text-slate-600 leading-relaxed pl-5 relative";
     const numSpan = "absolute left-0 text-slate-400";
+    const bodyPad = useMarketingProfileBodyPad();
 
     return (
         <div className="lg:h-full flex flex-col bg-[#F2F4F7] lg:overflow-y-auto no-scrollbar relative">
             <ScreenHeader title={t('profile.terms_of_use')} onBack={onBack} />
-            <div className="px-5 pt-2 pb-6">
+            <div className={`${bodyPad} pt-2 pb-6`}>
                 <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-5">
 
                     <h2 className="text-lg font-bold text-slate-900 mb-1">Terms of Service</h2>
@@ -681,11 +712,12 @@ const AcceptableUsePolicyView = ({ onBack }: { onBack: () => void }) => {
     const ruleText = "text-[15px] text-slate-600 leading-relaxed pl-4 relative before:content-['•'] before:absolute before:left-0 before:text-slate-400";
     const bodyText = "text-[15px] text-slate-600 leading-relaxed";
     const sectionTitle = "text-[15px] font-bold text-slate-900 mb-2 mt-6";
+    const bodyPad = useMarketingProfileBodyPad();
 
     return (
         <div className="lg:h-full flex flex-col bg-[#F2F4F7] lg:overflow-y-auto no-scrollbar relative">
             <ScreenHeader title={t('profile.acceptable_use')} onBack={onBack} />
-            <div className="px-5 pt-2 pb-6">
+            <div className={`${bodyPad} pt-2 pb-6`}>
                 <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-5">
 
                     <h2 className="text-lg font-bold text-slate-900 mb-1">Fair Usage Policy</h2>
@@ -732,11 +764,12 @@ const PrivacyPolicyView = ({ onBack }: { onBack: () => void }) => {
     const sectionTitle = "text-[15px] font-bold text-slate-900 mb-2 mt-6";
     const bodyText = "text-[15px] text-slate-600 leading-relaxed";
     const listItem = "text-[15px] text-slate-600 leading-relaxed pl-4 relative before:content-['•'] before:absolute before:left-0 before:text-slate-400";
+    const bodyPad = useMarketingProfileBodyPad();
 
     return (
         <div className="lg:h-full flex flex-col bg-[#F2F4F7] lg:overflow-y-auto no-scrollbar relative">
             <ScreenHeader title={t('profile.privacy_policy')} onBack={onBack} />
-            <div className="px-5 pt-2 pb-6">
+            <div className={`${bodyPad} pt-2 pb-6`}>
                 <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-5">
 
                     <h2 className="text-lg font-bold text-slate-900 mb-1">Privacy Policy</h2>
@@ -905,11 +938,12 @@ const RefundPolicyView = ({ onBack }: { onBack: () => void }) => {
     const bodyText = "text-[15px] text-slate-600 leading-relaxed";
     const listItem = "text-[15px] text-slate-600 leading-relaxed pl-4 relative before:content-['•'] before:absolute before:left-0 before:text-slate-400";
     const numberedItem = "text-[15px] text-slate-600 leading-relaxed pl-5 relative";
+    const bodyPad = useMarketingProfileBodyPad();
 
     return (
         <div className="lg:h-full flex flex-col bg-[#F2F4F7] lg:overflow-y-auto no-scrollbar relative">
             <ScreenHeader title={t('profile.refund_policy')} onBack={onBack} />
-            <div className="px-5 pt-2 pb-6">
+            <div className={`${bodyPad} pt-2 pb-6`}>
                 <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-5">
 
                     <h2 className="text-lg font-bold text-slate-900 mb-1">Return & Refund Policy</h2>
@@ -1015,11 +1049,12 @@ const CookiePolicyView = ({ onBack }: { onBack: () => void }) => {
     const sectionTitle = "text-[15px] font-bold text-slate-900 mb-2 mt-6";
     const bodyText = "text-[15px] text-slate-600 leading-relaxed";
     const listItem = "text-[15px] text-slate-600 leading-relaxed pl-4 relative before:content-['•'] before:absolute before:left-0 before:text-slate-400";
+    const bodyPad = useMarketingProfileBodyPad();
 
     return (
         <div className="lg:h-full flex flex-col bg-[#F2F4F7] lg:overflow-y-auto no-scrollbar relative">
             <ScreenHeader title={t('profile.cookie_policy')} onBack={onBack} />
-            <div className="px-5 pt-2 pb-6">
+            <div className={`${bodyPad} pt-2 pb-6`}>
                 <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-5">
 
                     <h2 className="text-lg font-bold text-slate-900 mb-1">Cookie & Tracking Policy</h2>
@@ -1106,10 +1141,11 @@ const CookiePolicyView = ({ onBack }: { onBack: () => void }) => {
 
 const MoreInfoView = ({ onBack, onNavigate }: { onBack: () => void, onNavigate: (screen: ProfileScreen) => void }) => {
     const { t } = useTranslation();
+    const bodyPad = useMarketingProfileBodyPad();
     return (
     <div className="lg:h-full flex flex-col bg-[#F2F4F7] lg:overflow-y-auto no-scrollbar relative">
         <ScreenHeader title={t('profile.more_info')} onBack={onBack} />
-        <div className="px-5 pt-2">
+        <div className={`${bodyPad} pt-2`}>
             <MenuGroup>
                 <MenuItem label={t('profile.about_evair')} onClick={() => onNavigate('ABOUT')} />
                 <MenuItem label={t('profile.terms_of_use')} onClick={() => onNavigate('TERMS')} />
@@ -1125,16 +1161,18 @@ const MoreInfoView = ({ onBack, onNavigate }: { onBack: () => void, onNavigate: 
 
 const HelpCenterView = ({ onBack }: { onBack: () => void }) => {
     const { t } = useTranslation();
+    const hp = useMarketingProfileHeaderPad();
+    const menuPad = useMarketingProfileMainMenuPad();
     return (
         <div className="lg:h-full flex flex-col bg-[#F2F4F7] relative">
             
-            <div className="bg-white/90 backdrop-blur-xl px-4 pt-safe pb-3 flex justify-between items-center shrink-0 sticky top-0 z-20 border-b border-slate-100">
+            <div className={`bg-white/90 backdrop-blur-xl ${hp} pt-safe pb-3 flex justify-between items-center shrink-0 sticky top-0 z-20 border-b border-slate-100`}>
                  <button onClick={onBack} className="p-2 -ml-1 rounded-full hover:bg-black/5"><Settings size={0} className="hidden" /><ChevronLeft size={22} className="text-slate-900" /></button>
                  <span className="font-bold text-lg">{t('profile.help_center')}</span>
                  <div className="w-8"></div>
             </div>
 
-            <div className="lg:flex-1 lg:overflow-y-auto no-scrollbar px-4 pt-6 pb-6">
+            <div className={`lg:flex-1 lg:overflow-y-auto no-scrollbar pt-6 pb-6 ${menuPad}`}>
                  <h1 className="text-2xl font-bold text-slate-900 mb-5 text-center">{t('profile.how_can_help')}</h1>
                  
                  <div className="relative mb-6">
@@ -1202,7 +1240,7 @@ const HelpCenterView = ({ onBack }: { onBack: () => void }) => {
 };
 
 
-const ProfileView: React.FC<ProfileViewProps> = ({
+const ProfileViewInner: React.FC<ProfileViewProps> = ({
   isLoggedIn,
   user,
   onLogin,
@@ -1215,6 +1253,9 @@ const ProfileView: React.FC<ProfileViewProps> = ({
   onUserUpdate,
   embedded = false,
 }) => {
+  const mainMenuPad = useMarketingProfileMainMenuPad();
+  const profileHeaderPad = useMarketingProfileHeaderPad();
+  const marketingUx = useMarketingProfileDrawer();
   const [currentView, setCurrentView] = useState<ProfileScreen>('MAIN');
   const [shareToast, setShareToast] = useState(false);
   const [rateModalOpen, setRateModalOpen] = useState(false);
@@ -1288,7 +1329,7 @@ const ProfileView: React.FC<ProfileViewProps> = ({
         
         {/* Header */}
         <div
-          className={`bg-white/90 backdrop-blur-xl px-4 pb-3 flex items-center gap-2 shrink-0 sticky top-0 z-10 border-b border-slate-100 ${
+          className={`bg-white/90 backdrop-blur-xl ${profileHeaderPad} pb-3 flex items-center gap-2 shrink-0 sticky top-0 z-10 border-b border-slate-100 ${
             embedded ? 'pt-3' : 'pt-safe'
           }`}
         >
@@ -1301,7 +1342,7 @@ const ProfileView: React.FC<ProfileViewProps> = ({
         </div>
 
         <div
-          className={`px-4 pb-6 pt-4 ${
+          className={`${mainMenuPad} pb-6 pt-4 ${
             embedded ? 'flex-1 min-h-0 overflow-y-auto' : 'flex-1'
           }`}
         >
@@ -1343,7 +1384,11 @@ const ProfileView: React.FC<ProfileViewProps> = ({
                 <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
                     
                     {/* User Profile */}
-                    <div className="bg-white rounded-xl p-4 shadow-sm border border-slate-100 mb-5 flex items-center gap-3">
+                    <div
+                      className={`mb-5 flex items-center gap-3 border border-slate-100 bg-white p-4 shadow-sm ${
+                        marketingUx ? 'max-md:rounded-none max-md:border-x-0' : 'rounded-xl'
+                      }`}
+                    >
                         <div className="w-12 h-12 rounded-full bg-gradient-to-br from-red-500 to-orange-500 shadow-inner"></div>
                         <div>
                             <h2 className="text-lg font-bold text-slate-900 leading-tight">{user.name}</h2>
@@ -1487,5 +1532,11 @@ const ProfileView: React.FC<ProfileViewProps> = ({
     </div>
   );
 };
+
+const ProfileView: React.FC<ProfileViewProps> = (props) => (
+  <ProfileMarketingDrawerContext.Provider value={Boolean(props.marketingDrawer)}>
+    <ProfileViewInner {...props} />
+  </ProfileMarketingDrawerContext.Provider>
+);
 
 export default ProfileView;

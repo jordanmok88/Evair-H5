@@ -31,6 +31,10 @@ import {
     AlertCircle,
 } from 'lucide-react';
 import { useEdgeSwipeBack } from '../hooks/useEdgeSwipeBack';
+import {
+    useMarketingProfileHeaderPad,
+    useMarketingProfileMainMenuPad,
+} from '../contexts/profileMarketingDrawerContext';
 import { referralService, ReferralMeDto } from '../services/api/referrals';
 import { ApiError } from '../services/api';
 
@@ -42,6 +46,8 @@ const formatDollars = (cents: number) => `$${(cents / 100).toFixed(2)}`;
 
 const ReferralView: React.FC<ReferralViewProps> = ({ onBack }) => {
     const { t } = useTranslation();
+    const headerPad = useMarketingProfileHeaderPad();
+    const mainPad = useMarketingProfileMainMenuPad();
     useEdgeSwipeBack(onBack);
 
     const [data, setData] = useState<ReferralMeDto | null>(null);
@@ -143,7 +149,7 @@ const ReferralView: React.FC<ReferralViewProps> = ({ onBack }) => {
     return (
         <div className="lg:h-full flex flex-col bg-[#F2F4F7] lg:overflow-y-auto no-scrollbar">
             {/* Header */}
-            <div className="bg-white/90 backdrop-blur-xl pt-safe px-4 pb-3 flex items-center shrink-0 sticky top-0 z-10 border-b border-slate-100">
+            <div className={`bg-white/90 backdrop-blur-xl pt-safe ${headerPad} pb-3 flex items-center shrink-0 sticky top-0 z-10 border-b border-slate-100`}>
                 <button
                     onClick={onBack}
                     className="w-9 h-9 -ml-1 flex items-center justify-center rounded-full hover:bg-black/5 active:bg-black/10 transition-colors"
@@ -153,7 +159,7 @@ const ReferralView: React.FC<ReferralViewProps> = ({ onBack }) => {
                 <h1 className="text-lg font-bold text-slate-900 ml-2">{t('referral.title')}</h1>
             </div>
 
-            <div className="flex-1 px-4 pt-4 pb-6">
+            <div className={`flex-1 pt-4 pb-6 ${mainPad}`}>
                 {loading && (
                     <div className="flex items-center justify-center py-20 text-slate-500">
                         <Loader2 size={20} className="animate-spin mr-2" /> Loading…

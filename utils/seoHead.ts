@@ -7,7 +7,8 @@
  */
 
 const SITE_ORIGIN = 'https://evairdigital.com';
-const DEFAULT_OG_IMAGE = `${SITE_ORIGIN}/og-image.jpg`;
+/** Square brand mark — scrapers that crop to a thumbnail (WeChat, some iOS previews) behave better than a 1200×630 hero. */
+const DEFAULT_OG_IMAGE = `${SITE_ORIGIN}/evairsim-logo.png`;
 
 function upsertMeta(attr: 'name' | 'property', key: string, content: string): void {
     const sel = attr === 'name' ? `meta[name="${key}"]` : `meta[property="${key}"]`;
@@ -58,11 +59,12 @@ export function applyPageSeo(opts: PageSeoOptions): void {
     upsertMeta('property', 'og:type', opts.ogType ?? 'website');
     upsertMeta('property', 'og:site_name', 'EvairSIM');
     upsertMeta('property', 'og:image', DEFAULT_OG_IMAGE);
-    upsertMeta('property', 'og:image:width', '1200');
-    upsertMeta('property', 'og:image:height', '630');
+    upsertMeta('property', 'og:image:width', '512');
+    upsertMeta('property', 'og:image:height', '512');
+    upsertMeta('property', 'og:image:alt', 'EvairSIM logo');
     upsertMeta('property', 'og:locale', 'en_US');
 
-    upsertMeta('name', 'twitter:card', 'summary_large_image');
+    upsertMeta('name', 'twitter:card', 'summary');
     upsertMeta('name', 'twitter:title', opts.title);
     upsertMeta('name', 'twitter:description', opts.description);
     upsertMeta('name', 'twitter:image', DEFAULT_OG_IMAGE);
