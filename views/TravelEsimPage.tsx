@@ -950,7 +950,9 @@ const CatalogueIndexView: React.FC = () => {
                             <span className="sr-only">Loading how many destinations are in the catalogue.</span>
                         </>
                     ) : (
-                        <span className="tabular-nums">{headlineCount}</span>
+                        <span className="inline-block min-w-[3.75ch] text-center tabular-nums text-brand-orange drop-shadow-[0_1px_8px_rgba(255,102,0,0.35)]">
+                            {headlineCount}
+                        </span>
                     )}{' '}
                     destinations
                 </h1>
