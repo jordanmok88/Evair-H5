@@ -409,7 +409,6 @@ const MarketingPageRedesignPreview: React.FC = () => {
                             links={[
                                 { label: 'Help center', href: '/help' },
                                 { label: 'Install your eSIM', href: '/help/install-esim-iphone' },
-                                { label: 'Refund policy', href: '/help/refund-policy' },
                                 { label: 'Blog', href: '/blog' },
                             ]}
                         />

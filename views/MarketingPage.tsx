@@ -361,7 +361,6 @@ const MarketingPage: React.FC = () => {
                             links={[
                                 { label: t('marketing.footer_link_help'), href: '/help' },
                                 { label: t('marketing.footer_link_install'), href: '/help/install-esim-iphone' },
-                                { label: t('marketing.footer_link_refund_policy'), href: '/help/refund-policy' },
                                 { label: t('marketing.footer_link_blog'), href: '/blog' },
                             ]}
                         />
