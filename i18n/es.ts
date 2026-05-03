@@ -721,13 +721,14 @@ const es = {
   activate: {
     header_tagline: 'Activa tu SIM',
     scan_barcode_cta: 'Escanear código de barras ICCID',
-    idle_title: 'Activa tu SIM',
+    idle_title: 'Escanea el QR en tu tarjeta SIM',
     idle_body:
-      'Introduce tu ICCID o escanea el código de barras en la parte trasera de la SIM. También puedes usar el QR de la caja.',
+      'Necesitamos tu ICCID para activar la SIM. Escanea el QR en la tarjeta SIM, el código de barras en el reverso o escríbelo abajo.',
     idle_or: 'o',
     idle_manual_label: 'Introducir ICCID manualmente',
     idle_lookup_sim: 'Buscar SIM',
-    invalid_iccid: 'Ese ICCID no parece válido. Revisa los dígitos en la caja (15-22 caracteres).',
+    invalid_iccid:
+      'Ese ICCID no parece válido. Revisa los dígitos en tu tarjeta SIM (15-22 caracteres).',
     preview_failed: 'No pudimos contactar el servicio de activación. Comprueba tu conexión e inténtalo de nuevo.',
   },
   travel_esim_grid: {

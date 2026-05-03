@@ -233,14 +233,14 @@ const Header: React.FC = () => {
     const { t } = useTranslation();
     return (
         <header className="sticky top-0 z-10 border-b border-slate-200 bg-white px-4 py-4 md:px-6">
-            <div className="mx-auto flex max-w-md flex-col gap-1">
-                <a href="/" className="inline-block w-fit shrink-0" aria-label="EvairSIM home">
+            <div className="mx-auto flex max-w-md flex-col items-center gap-1 text-center">
+                <a href="/" className="inline-block shrink-0" aria-label="EvairSIM home">
                     <img
                         src="/evairsim-wordmark.png"
                         alt="EvairSIM"
                         width={896}
                         height={228}
-                        className="h-7 w-auto max-h-9 object-contain object-left sm:h-8"
+                        className="mx-auto h-7 w-auto max-h-9 object-contain sm:h-8"
                     />
                 </a>
                 <p className="text-xs font-medium text-slate-500">{t('activate.header_tagline')}</p>
@@ -347,7 +347,7 @@ const NotFoundState: React.FC<{ iccid: string | null; onRetry: () => void }> = (
                 )}
                 <p>
                     The ICCID you entered doesn't match any Evair SIM in our system.
-                    Double-check the digits on the inside of your box.
+                    Double-check the digits on your SIM card.
                 </p>
                 <p className="mt-3">
                     Still stuck? Contact us at{' '}

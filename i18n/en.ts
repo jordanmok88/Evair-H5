@@ -728,13 +728,14 @@ const en = {
   activate: {
     header_tagline: 'Activate your SIM',
     scan_barcode_cta: 'Scan ICCID barcode',
-    idle_title: 'Activate your SIM',
+    idle_title: 'Scan the QR on your SIM Card',
     idle_body:
-      'Enter your ICCID or scan the barcode on the back of your SIM card. You can also scan the QR on your SIM box.',
+      'We need your ICCID to activate your SIM. Scan the QR on your SIM card, or scan the barcode on the back, or enter the number manually below.',
     idle_or: 'or',
     idle_manual_label: 'Enter ICCID manually',
     idle_lookup_sim: 'Look up SIM',
-    invalid_iccid: "That doesn't look like a valid ICCID. Check the digits on your box (15-22 characters).",
+    invalid_iccid:
+      "That doesn't look like a valid ICCID. Check the digits on your SIM card (15-22 characters).",
     preview_failed: "We couldn't reach the activation service. Please check your connection and try again.",
   },
   travel_esim_grid: {

@@ -701,13 +701,13 @@ const zh = {
   activate: {
     header_tagline: '激活您的 SIM',
     scan_barcode_cta: '扫描 ICCID 条码',
-    idle_title: '激活您的 SIM',
+    idle_title: '扫描 SIM 卡上的二维码',
     idle_body:
-      '请输入 ICCID，或扫描 SIM 卡背面的条码。也可扫描包装盒上的二维码。',
+      '激活需要 ICCID。请扫描 SIM 卡上的二维码，或扫描卡背面条码，或在下方手动输入。',
     idle_or: '或',
     idle_manual_label: '手动输入 ICCID',
     idle_lookup_sim: '查询 SIM',
-    invalid_iccid: 'ICCID 格式无效，请检查包装盒上的数字（15-22 位）。',
+    invalid_iccid: 'ICCID 格式无效，请核对 SIM 卡上的数字（15-22 位）。',
     preview_failed: '无法连接激活服务，请检查网络后重试。',
   },
   travel_esim_grid: {
