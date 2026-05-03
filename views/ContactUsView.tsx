@@ -179,9 +179,12 @@ const ContactUsView: React.FC<ContactUsViewProps> = ({
     return () => clearTimeout(timer);
   }, []);
 
-  /** iOS Safari: fills the slit between composer and keyboard (layout vs visual viewport). */
+  /** iOS Safari: fills the slit between composer and keyboard (layout vs visual viewport).
+   * Runs for marketing embedded sheet too — that path previously skipped sync and had no
+   * `contact-footer-dock` padding, so the homepage could show through above the keyboard.
+   */
   useEffect(() => {
-    if (embedded || typeof window === 'undefined') return;
+    if (typeof window === 'undefined') return;
     const root = document.documentElement;
     const vv = window.visualViewport;
     const mq = window.matchMedia('(min-width: 1024px)');
@@ -207,7 +210,7 @@ const ContactUsView: React.FC<ContactUsViewProps> = ({
       window.removeEventListener('resize', sync);
       root.style.setProperty('--contact-vv-gap', '0px');
     };
-  }, [embedded]);
+  }, []);
 
   // 初始化 provider + 加载会话
   useEffect(() => {
@@ -1100,7 +1103,12 @@ const ContactUsView: React.FC<ContactUsViewProps> = ({
       <footer
         className={`shrink-0 bg-[#F0F2F5] px-3 pt-3 ${
           embedded
-            ? 'relative z-20 pb-[max(14px,calc(10px+env(safe-area-inset-bottom,0px)))]'
+            ? [
+                'relative z-20',
+                // Same iOS slit fill as standalone chat; lg: restores normal padding when
+                // `contact-footer-dock` media rule is off (wide desktop + floating card).
+                'contact-footer-dock lg:pb-[max(14px,calc(10px+env(safe-area-inset-bottom,0px)))]',
+              ].join(' ')
             : [
                 'isolate z-[32] lg:relative lg:z-20',
                 'max-lg:fixed max-lg:inset-x-0 max-lg:bottom-0',
@@ -1152,7 +1160,7 @@ const ContactUsView: React.FC<ContactUsViewProps> = ({
               rows={1}
               spellCheck
               aria-label={t('contact.type_message')}
-              className="box-border min-h-[44px] min-w-0 flex-1 resize-none overflow-hidden border-none bg-transparent px-2 py-2.5 font-sans text-[16px] leading-snug text-[#1f2937] [-webkit-appearance:none] outline-none"
+              className="box-border min-h-[44px] min-w-0 flex-1 resize-none overflow-hidden border-none bg-white px-2 py-2.5 font-sans text-[16px] leading-snug text-[#1f2937] [-webkit-appearance:none] outline-none"
               style={{
                 maxHeight: COMPOSER_MAX_INPUT_PX,
               }}
