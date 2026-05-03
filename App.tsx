@@ -38,6 +38,7 @@ import {
   stripTestModeFromUrl,
 } from './utils/testMode';
 import { getRoute, type Route } from './utils/routing';
+import { EVAIR_OPEN_MARKETING_CONTACT_EVENT } from './utils/evairMarketingEvents';
 import { BootSplash, shouldSkipBootSplash } from './components/BootSplash';
 import { useViewportMinWidth } from './hooks/useViewportMinWidth';
 import { useCustomerAppDesktopQr } from './hooks/useMobileSignInGate';
@@ -103,6 +104,16 @@ function App() {
   useEffect(() => {
     setMarketingSupportOpen(false);
   }, [route.kind]);
+
+  /** Profile drawer → Contact Us without `/app#contact` (`SiteHeaderAccountActions`). */
+  useEffect(() => {
+    const openContactDrawer = () => {
+      if (getRoute().kind === 'app') return;
+      setMarketingSupportOpen(true);
+    };
+    window.addEventListener(EVAIR_OPEN_MARKETING_CONTACT_EVENT, openContactDrawer);
+    return () => window.removeEventListener(EVAIR_OPEN_MARKETING_CONTACT_EVENT, openContactDrawer);
+  }, []);
 
   // Phone-frame scroll lock is owned by <CustomerApp/> (see its
   // own useEffect on `activeTab`). We deliberately do NOT toggle

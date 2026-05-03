@@ -2,38 +2,64 @@ import React, { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Bell, UserCircle } from 'lucide-react';
 import MarketingInboxDrawer from '@/components/marketing/MarketingInboxDrawer';
+import MarketingProfileDrawer from '@/components/marketing/MarketingProfileDrawer';
 import { useAuthSessionPresent } from '@/hooks/useAuthSessionPresent';
 import { useMarketingInboxNotifications } from '@/hooks/useMarketingInboxNotifications';
-import { userService } from '@/services/api';
+import { authService, userService } from '@/services/api';
+import { EVAIR_OPEN_MARKETING_CONTACT_EVENT } from '@/utils/evairMarketingEvents';
 
-/** Inbox (floating drawer) + gradient profile (/app#profile) — bell matches live-chat panel pattern, not full-page /app */
+/** Inbox + profile floating drawers — same panel pattern as live chat / contact; no `/app` navigation. */
 const SiteHeaderAccountActions: React.FC = () => {
     const { t } = useTranslation();
     const loggedIn = useAuthSessionPresent();
     const { notifications, onUpdateNotifications } = useMarketingInboxNotifications(loggedIn);
     const unread = notifications.filter((n) => !n.read).length;
     const [inboxOpen, setInboxOpen] = useState(false);
+    const [profileOpen, setProfileOpen] = useState(false);
     const [initial, setInitial] = useState<string | null>(null);
+    const [profileUser, setProfileUser] = useState<{ name: string; email: string } | undefined>(undefined);
+    const [profileUserLoading, setProfileUserLoading] = useState(false);
 
     useEffect(() => {
         if (!loggedIn) {
             setInitial(null);
+            setProfileUser(undefined);
+            setProfileUserLoading(false);
+            setProfileOpen(false);
             return;
         }
         let c = false;
+        setProfileUserLoading(true);
         userService
             .getProfile()
             .then((u) => {
+                if (c) return;
+                setProfileUser({ name: u.name ?? '', email: u.email ?? '' });
                 const ch = u.name?.trim().charAt(0);
-                if (!c && ch) setInitial(ch.toUpperCase());
+                if (ch) setInitial(ch.toUpperCase());
             })
-            .catch(() => {});
+            .catch(() => {
+                if (!c) setProfileUser({ name: '', email: '' });
+            })
+            .finally(() => {
+                if (!c) setProfileUserLoading(false);
+            });
         return () => {
             c = true;
         };
     }, [loggedIn]);
 
     if (!loggedIn) return null;
+
+    const openInbox = () => {
+        setProfileOpen(false);
+        setInboxOpen(true);
+    };
+
+    const openProfile = () => {
+        setInboxOpen(false);
+        setProfileOpen(true);
+    };
 
     const bellCls =
         'relative flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-slate-100 text-slate-700 shadow-sm outline-none transition-colors hover:bg-slate-200 active:scale-[0.98]';
@@ -44,7 +70,7 @@ const SiteHeaderAccountActions: React.FC = () => {
         <>
             <button
                 type="button"
-                onClick={() => setInboxOpen(true)}
+                onClick={openInbox}
                 className={bellCls}
                 aria-label={t('marketing.header_inbox_aria')}
                 aria-expanded={inboxOpen}
@@ -64,10 +90,13 @@ const SiteHeaderAccountActions: React.FC = () => {
                 notifications={notifications}
                 onUpdateNotifications={onUpdateNotifications}
             />
-            <a
-                href="/app#profile"
+            <button
+                type="button"
+                onClick={openProfile}
                 className={profileCls}
                 aria-label={t('marketing.header_profile_aria')}
+                aria-expanded={profileOpen}
+                aria-haspopup="dialog"
                 style={{
                     background: 'linear-gradient(135deg, #FF6600, #FF8A3D)',
                     WebkitTapHighlightColor: 'transparent',
@@ -78,7 +107,29 @@ const SiteHeaderAccountActions: React.FC = () => {
                 ) : (
                     <UserCircle size={20} className="text-white" aria-hidden />
                 )}
-            </a>
+            </button>
+            <MarketingProfileDrawer
+                open={profileOpen}
+                onClose={() => setProfileOpen(false)}
+                isLoggedIn
+                user={profileUser}
+                userLoading={profileOpen && profileUserLoading}
+                notifications={notifications}
+                onLogout={async () => {
+                    setProfileOpen(false);
+                    await authService.logout();
+                }}
+                onOpenInbox={openInbox}
+                onOpenDialer={() => {
+                    setProfileOpen(false);
+                    window.dispatchEvent(new CustomEvent(EVAIR_OPEN_MARKETING_CONTACT_EVENT));
+                }}
+                onUserUpdate={(updated) =>
+                    setProfileUser((prev) =>
+                        prev ? { ...prev, ...updated } : { name: updated.name, email: updated.email },
+                    )
+                }
+            />
         </>
     );
 };
