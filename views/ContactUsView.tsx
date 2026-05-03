@@ -778,65 +778,131 @@ const ContactUsView: React.FC<ContactUsViewProps> = ({
     <div
       className={
         embedded
-          ? 'relative flex h-full min-h-0 flex-col overflow-hidden bg-[#F2F4F7]'
+          ? 'relative flex h-full min-h-0 flex-col overflow-hidden bg-[#eef1f6]'
           : 'lg:h-full min-h-screen lg:min-h-0 flex flex-col bg-[#F2F4F7] relative'
       }
     >
-      {/* Header */}
-      <div className="pt-safe px-4 pb-3 sticky top-0 z-10 rounded-b-2xl shadow-md" style={{ background: 'linear-gradient(180deg, #FF6600 0%, #FF8533 100%)' }}>
-        <div className="flex items-center gap-3 mb-2">
-          <button onClick={onBack} className="w-9 h-9 rounded-full bg-white/20 flex items-center justify-center active:bg-white/30 transition-colors">
-            <ChevronLeft size={22} color="#fff" strokeWidth={2.5} />
-          </button>
-          <div className="flex-1">
-            <h1 className="text-lg font-bold text-white tracking-tight">{t('contact.title')}</h1>
-            <div className="flex items-center gap-1.5 mt-0.5">
-              <div className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
-              <span className="text-sm text-white/85 font-medium">{aiDisabled ? t('contact.agent_status') : t('contact.online_status')}</span>
-            </div>
-          </div>
-          {/* Phase 1: headphone button triggers markNeedsHuman + setAiDisabled */}
-          <button
-            onClick={handleTransferToHuman}
-            className="w-9 h-9 rounded-full bg-white/20 flex items-center justify-center active:bg-white/30 transition-colors"
-            aria-label={t('contact.talk_to_human')}
-            title={t('contact.talk_to_human')}
-          >
-            <Headphones size={18} color="#fff" strokeWidth={2.5} />
-          </button>
-        </div>
-        <div className="flex items-center gap-3 ml-12">
-          <div className="relative">
-            <div className="w-9 h-9 rounded-xl bg-white flex items-center justify-center shadow-sm">
-              {/* Phase 1: icon switches between Sparkles (AI) and Headphones (agent) */}
-              {aiDisabled
-                ? <Headphones size={16} color="#10B981" />
-                : <Sparkles size={16} color="#FF6600" />
-              }
-            </div>
-            {aiDisabled ? (
-              <div className="absolute -bottom-0.5 -right-0.5 w-4 h-4 rounded-full bg-emerald-400 border-2 border-[#FF6600] flex items-center justify-center">
-                <div className="w-2 h-2 rounded-full bg-white" />
+      {/* Header — full-screen app keeps tall chrome; embedded = compact modal bar (never shrink inside float) */}
+      {embedded ? (
+        <header className="shrink-0 border-b border-white/15 bg-gradient-to-br from-[#FF6600] via-[#FF7433] to-[#FF8533] px-4 py-3.5 shadow-md sm:py-4">
+          <div className="flex items-start gap-3">
+            <div className="relative shrink-0">
+              <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-white shadow-md ring-2 ring-white/40">
+                {aiDisabled ? (
+                  <Headphones size={19} color="#059669" strokeWidth={2.2} />
+                ) : (
+                  <Sparkles size={19} color="#FF6600" strokeWidth={2.2} />
+                )}
               </div>
-            ) : (
-              <div className="absolute -bottom-0.5 -right-0.5 w-4 h-4 rounded-full bg-emerald-400 border-2 border-[#FF6600] flex items-center justify-center">
-                <Bot size={8} color="#fff" strokeWidth={3} />
-              </div>
-            )}
+              <span
+                className="absolute -bottom-0.5 -right-0.5 flex h-[15px] w-[15px] items-center justify-center rounded-full border-2 border-[#ea580c] bg-emerald-400 shadow-sm"
+                aria-hidden
+              >
+                {aiDisabled ? (
+                  <span className="h-1.5 w-1.5 rounded-full bg-white" />
+                ) : (
+                  <Bot size={9} color="#fff" strokeWidth={2.8} />
+                )}
+              </span>
+            </div>
+            <div className="min-w-0 flex-1 pt-0.5">
+              <p className="text-[0.625rem] font-bold uppercase tracking-[0.16em] text-white/80">
+                {t('support_fab.live_chat')}
+              </p>
+              <h1 className="mt-0.5 truncate text-[1.0625rem] font-bold leading-tight tracking-tight text-white">
+                {t('contact.title')}
+              </h1>
+              <p className="mt-1.5 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-[0.6875rem] font-medium leading-snug text-white/90">
+                <span className="inline-flex items-center gap-1.5">
+                  <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-emerald-300 shadow-[0_0_0_2px_rgba(255,255,255,0.35)]" />
+                  <span>{aiDisabled ? t('contact.agent_status') : t('contact.online_status')}</span>
+                </span>
+                <span className="text-white/45" aria-hidden>
+                  ·
+                </span>
+                <span className="text-white/95">{aiDisabled ? t('contact.agent_name') : 'Evair AI Assistant'}</span>
+              </p>
+            </div>
+            <div className="flex shrink-0 items-center gap-1.5 pt-0.5">
+              <button
+                type="button"
+                onClick={handleTransferToHuman}
+                className="flex h-9 w-9 items-center justify-center rounded-full bg-white/15 text-white ring-1 ring-white/30 transition-colors hover:bg-white/25 active:bg-white/20"
+                aria-label={t('contact.talk_to_human')}
+                title={t('contact.talk_to_human')}
+              >
+                <Headphones size={17} strokeWidth={2.2} />
+              </button>
+              <button
+                type="button"
+                onClick={onBack}
+                className="flex h-9 w-9 items-center justify-center rounded-full bg-white/15 text-white ring-1 ring-white/30 transition-colors hover:bg-white/25 active:bg-white/20"
+                aria-label={t('barcode_scanner.close')}
+              >
+                <X size={18} strokeWidth={2.4} />
+              </button>
+            </div>
           </div>
-          <div>
-            {/* Phase 1: subtitle changes based on aiDisabled */}
-            <span className="text-sm font-semibold text-white">{aiDisabled ? t('contact.agent_name') : 'Evair AI Assistant'}</span>
-            <div className="flex items-center gap-1 mt-0.5">
-              <span className="text-xs text-white/70 font-medium">{aiDisabled ? t('contact.agent_status') : 'Powered by AI'}</span>
+        </header>
+      ) : (
+        <div
+          className="shrink-0 pt-safe px-4 pb-3 sticky top-0 z-10 rounded-b-2xl shadow-md"
+          style={{ background: 'linear-gradient(180deg, #FF6600 0%, #FF8533 100%)' }}
+        >
+          <div className="flex items-center gap-3 mb-2">
+            <button onClick={onBack} className="w-9 h-9 rounded-full bg-white/20 flex items-center justify-center active:bg-white/30 transition-colors">
+              <ChevronLeft size={22} color="#fff" strokeWidth={2.5} />
+            </button>
+            <div className="flex-1">
+              <h1 className="text-lg font-bold text-white tracking-tight">{t('contact.title')}</h1>
+              <div className="flex items-center gap-1.5 mt-0.5">
+                <div className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
+                <span className="text-sm text-white/85 font-medium">{aiDisabled ? t('contact.agent_status') : t('contact.online_status')}</span>
+              </div>
+            </div>
+            {/* Phase 1: headphone button triggers markNeedsHuman + setAiDisabled */}
+            <button
+              onClick={handleTransferToHuman}
+              className="w-9 h-9 rounded-full bg-white/20 flex items-center justify-center active:bg-white/30 transition-colors"
+              aria-label={t('contact.talk_to_human')}
+              title={t('contact.talk_to_human')}
+            >
+              <Headphones size={18} color="#fff" strokeWidth={2.5} />
+            </button>
+          </div>
+          <div className="flex items-center gap-3 ml-12">
+            <div className="relative">
+              <div className="w-9 h-9 rounded-xl bg-white flex items-center justify-center shadow-sm">
+                {/* Phase 1: icon switches between Sparkles (AI) and Headphones (agent) */}
+                {aiDisabled
+                  ? <Headphones size={16} color="#10B981" />
+                  : <Sparkles size={16} color="#FF6600" />
+                }
+              </div>
+              {aiDisabled ? (
+                <div className="absolute -bottom-0.5 -right-0.5 w-4 h-4 rounded-full bg-emerald-400 border-2 border-[#FF6600] flex items-center justify-center">
+                  <div className="w-2 h-2 rounded-full bg-white" />
+                </div>
+              ) : (
+                <div className="absolute -bottom-0.5 -right-0.5 w-4 h-4 rounded-full bg-emerald-400 border-2 border-[#FF6600] flex items-center justify-center">
+                  <Bot size={8} color="#fff" strokeWidth={3} />
+                </div>
+              )}
+            </div>
+            <div>
+              {/* Phase 1: subtitle changes based on aiDisabled */}
+              <span className="text-sm font-semibold text-white">{aiDisabled ? t('contact.agent_name') : 'Evair AI Assistant'}</span>
+              <div className="flex items-center gap-1 mt-0.5">
+                <span className="text-xs text-white/70 font-medium">{aiDisabled ? t('contact.agent_status') : 'Powered by AI'}</span>
+              </div>
             </div>
           </div>
         </div>
-      </div>
+      )}
 
       {/* 网络状态条：仅在非 connected 时显示 */}
       {connectionLabel && (
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, padding: '6px 12px', backgroundColor: connection === 'offline' ? '#FEF3C7' : '#FEF9C3', color: '#854D0E', fontSize: 12, fontWeight: 600 }}>
+        <div className="shrink-0" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, padding: '6px 12px', backgroundColor: connection === 'offline' ? '#FEF3C7' : '#FEF9C3', color: '#854D0E', fontSize: 12, fontWeight: 600 }}>
           {connection === 'offline' ? <WifiOff size={12} /> : <Wifi size={12} />}
           {connectionLabel}
         </div>
@@ -846,7 +912,7 @@ const ContactUsView: React.FC<ContactUsViewProps> = ({
       <div
         ref={scrollContainerRef}
         onScroll={handleScroll}
-        className="flex-1 overflow-y-auto no-scrollbar px-4 pt-5"
+        className={`flex-1 overflow-y-auto no-scrollbar ${embedded ? 'px-4 pt-4 sm:px-5' : 'px-4 pt-5'}`}
         style={{
           scrollBehavior: 'smooth',
           WebkitOverflowScrolling: 'touch',
@@ -1021,11 +1087,11 @@ const ContactUsView: React.FC<ContactUsViewProps> = ({
                 position: 'relative',
                 flexShrink: 0,
                 zIndex: 20,
-                padding: '12px 12px max(12px, env(safe-area-inset-bottom, 0px))',
-                paddingTop: 10,
+                padding: '14px 14px max(14px, env(safe-area-inset-bottom, 0px))',
+                paddingTop: 12,
                 backgroundColor: '#fff',
-                borderTop: '1px solid #f1f5f9',
-                boxShadow: '0 -2px 10px rgba(0,0,0,0.03)',
+                borderTop: '1px solid #e8ecf1',
+                boxShadow: '0 -12px 24px -18px rgba(15,23,42,0.12)',
               }
             : {
                 position: 'fixed',
