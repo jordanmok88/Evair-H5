@@ -351,6 +351,7 @@ const zh = {
     esim_list_err_title: '无法加载 SIM',
     esim_list_fetch_failed: '暂时读取不到你已保存的 SIM 清单，请稍后再试。',
     esim_retry: '重试',
+    pending_ship_back: '返回',
 
     auth_title_checkout: '登录后继续充值',
     auth_title_esim: '登录或注册账户',

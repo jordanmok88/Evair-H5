@@ -41,6 +41,7 @@ import {
     AlertCircle,
     ArrowRight,
     CheckCircle2,
+    ChevronLeft,
     ChevronRight,
     CreditCard,
     Globe,
@@ -411,7 +412,17 @@ const TopUpPage: React.FC<TopUpPageProps> = ({ iccid: initialIccid, initialTab }
                         )}
 
                         {simPhase.kind === 'pending_shipment' && (
-                            <ShippedSoonState iccid={simIccid ?? ''} />
+                            <ShippedSoonState
+                                iccid={simIccid ?? ''}
+                                onGoBack={() => {
+                                    setSimIccid(null);
+                                    setManualIccid('');
+                                    setSimPhase({ kind: 'idle' });
+                                    const url = new URL(window.location.href);
+                                    url.searchParams.delete('iccid');
+                                    window.history.replaceState(window.history.state, '', url.toString());
+                                }}
+                            />
                         )}
 
                         {simPhase.kind === 'needs_activation' && (
@@ -559,7 +570,13 @@ const TopUpPage: React.FC<TopUpPageProps> = ({ iccid: initialIccid, initialTab }
                         )}
 
                         {esimIccidSelected && esimPhase.kind === 'pending_shipment' && (
-                            <ShippedSoonState iccid={esimIccidSelected} />
+                            <ShippedSoonState
+                                iccid={esimIccidSelected}
+                                onGoBack={() => {
+                                    setEsimIccidSelected(null);
+                                    setEsimPhase({ kind: 'idle' });
+                                }}
+                            />
                         )}
 
                         {esimIccidSelected && esimPhase.kind === 'needs_activation' && (
@@ -796,23 +813,37 @@ const NotFoundState: React.FC<{ iccid: string | null; onRetry: () => void }> = (
     />
 );
 
-const ShippedSoonState: React.FC<{ iccid: string }> = ({ iccid }) => (
-    <ErrorBox
-        icon={<ShieldCheck className="w-7 h-7 text-amber-500" />}
-        title="This SIM hasn't shipped yet"
-        body={
-            <>
-                <div className="mb-3 px-3 py-2 bg-slate-100 rounded-lg font-mono text-xs text-slate-700 break-all">
-                    {iccid}
-                </div>
-                <p>
-                    Looks like this SIM is still in the warehouse. Try topping up
-                    once your Amazon order arrives.
-                </p>
-            </>
-        }
-    />
-);
+const ShippedSoonState: React.FC<{ iccid: string; onGoBack: () => void }> = ({ iccid, onGoBack }) => {
+    const { t } = useTranslation();
+    return (
+        <div className="space-y-3">
+            <button
+                type="button"
+                onClick={onGoBack}
+                className="-ml-1 flex items-center gap-1 rounded-xl px-1 py-2 text-sm font-semibold text-slate-800 transition-colors hover:bg-slate-100 active:bg-slate-200"
+                aria-label={t('topup_page.pending_ship_back')}
+            >
+                <ChevronLeft className="h-5 w-5 shrink-0" aria-hidden />
+                {t('topup_page.pending_ship_back')}
+            </button>
+            <ErrorBox
+                icon={<ShieldCheck className="w-7 h-7 text-amber-500" />}
+                title="This SIM hasn't shipped yet"
+                body={
+                    <>
+                        <div className="mb-3 break-all rounded-lg bg-slate-100 px-3 py-2 font-mono text-xs text-slate-700">
+                            {iccid}
+                        </div>
+                        <p>
+                            Looks like this SIM is still in the warehouse. Try topping up once your Amazon order
+                            arrives.
+                        </p>
+                    </>
+                }
+            />
+        </div>
+    );
+};
 
 const NeedsActivationState: React.FC<{ iccid: string }> = ({ iccid }) => (
     <ErrorBox

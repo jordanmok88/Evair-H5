@@ -368,6 +368,7 @@ const en = {
     esim_list_err_title: 'Could not load SIMs',
     esim_list_fetch_failed: 'We could not load your saved lines right now.',
     esim_retry: 'Try again',
+    pending_ship_back: 'Go back',
 
     auth_title_checkout: 'Sign in to continue',
     auth_title_esim: 'Sign in or create an account',

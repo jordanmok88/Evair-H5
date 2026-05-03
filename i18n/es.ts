@@ -369,6 +369,7 @@ const es = {
     esim_list_err_title: 'No se cargaron tus SIM',
     esim_list_fetch_failed: 'No pudimos leer tus líneas guardadas ahora mismo.',
     esim_retry: 'Intentar de nuevo',
+    pending_ship_back: 'Volver',
 
     auth_title_checkout: 'Inicia sesión para continuar',
     auth_title_esim: 'Inicia sesión o crea cuenta',
