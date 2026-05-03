@@ -59,9 +59,13 @@ const en = {
     welcome_sim: 'Welcome to SIM Shop',
     my_esims: 'My eSIMs',
     link_esim_shop_hint: 'Enter the ICCID from your order confirmation email.',
-    /** Inline count beside country flags (“3 Global eSIMs”) — matches Global eSIM product naming */
+    /** Legacy; shop wallet strip uses wallet_esim_* */
     global_esim_count_one: '{{count}} Global eSIM',
     global_esim_count_other: '{{count}} Global eSIMs',
+    wallet_esim_country_one: '1 {{country}} eSIM',
+    wallet_esim_country_other: '{{count}} {{country}} eSIMs',
+    wallet_esim_generic_one: '1 eSIM',
+    wallet_esim_generic_other: '{{count}} eSIMs',
     my_sims: 'My SIMs',
     view_all: 'View All',
     search_placeholder: 'Search country',

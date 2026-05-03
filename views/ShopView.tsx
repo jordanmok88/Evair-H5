@@ -26,6 +26,7 @@ import {
 import { snapRetailUsdToXDot99 } from '../services/catalogPresentation';
 import { bucketPlansByValidity, inferRetailPremiumSkuTier, isMostPopularRetailBucket, sanitizedRetailPlanMarketingName, segmentRetailBucketsForPresentation, sortRetailBucketsMostPopularFirst } from '../utils/travelEsimPlanBuckets';
 import { planCardNetworkLine } from '../utils/retailPackageNetworks';
+import { formatWalletEsimBannerLabel } from '../utils/walletEsimBannerLabel';
 import { orderService } from '../services/api';
 import { pollEsimOrderUntilProvisioned } from '../services/api/order';
 import type { OrderDetailDto } from '../services/api/types';
@@ -217,7 +218,7 @@ const ShopView: React.FC<ShopViewProps> = ({
   onInitialEsimDeepLinkConsumed,
   onOpenContactFromBrowseShop,
 }) => {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   /** Shop header replaces floating FAB — keep unread parity with former FAB */
   const { unread: unreadChatFromAgent } = useUnreadChat(true);
   const TOP_COUNTRY_COUNT = 10;
@@ -1501,7 +1502,7 @@ const ShopView: React.FC<ShopViewProps> = ({
                   </div>
                   <span className="text-sm font-bold text-slate-900">
                     {simType === 'ESIM'
-                      ? t(simCount === 1 ? 'shop.global_esim_count_one' : 'shop.global_esim_count_other', { count: simCount })
+                      ? formatWalletEsimBannerLabel(mySims, i18n.resolvedLanguage ?? i18n.language ?? 'en', t)
                       : `${simCount} SIM${simCount > 1 ? 's' : ''}`}
                   </span>
                   <span className="text-xs text-slate-500">· {simType === 'ESIM' ? t('shop.my_esims') : t('shop.my_sims')}</span>
