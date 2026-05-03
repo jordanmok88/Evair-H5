@@ -809,6 +809,21 @@ const CountryNotFoundView: React.FC<{ code: string }> = ({ code }) => (
  */
 const INITIAL_VISIBLE_PER_REGION = 6;
 
+/**
+ * Decorative slot-machine style counts for the catalogue hero — not real data until facets load.
+ * Mixes randomized jumps with occasional “sticky” waypoint digits so it feels chaotic but readable.
+ */
+function rollLoadingDestinationCount(): number {
+    const waypoint = (): number =>
+        ([2, 3, 11, 32, 86, 110, 138, 150, 168, 175, 178])[Math.floor(Math.random() * 11)]!;
+    const r = Math.random();
+    if (r < 0.11) return waypoint();
+    if (r < 0.23) return 1 + Math.floor(Math.random() * 12); // punchy lows
+    if (r < 0.43) return 18 + Math.floor(Math.random() * 52); // 18–69
+    if (r < 0.68) return 88 + Math.floor(Math.random() * 48); // 88–135
+    return 140 + Math.floor(Math.random() * 60); // 140–199
+}
+
 /** Americas + Asia surface first — US outbound audience. Remaining continents follow. */
 const CATALOGUE_SHELF_ORDER: TravelCountry['region'][] = [
     'Americas',
@@ -890,8 +905,28 @@ const CatalogueIndexView: React.FC = () => {
                 : String(facetState.singleCountryCount)
             : null;
 
-    /** Until facets load we must not imply a bogus count — `?? '200+'` looked like pop-up flicker vs live 179 */
     const showHeadlineCountPlaceholder = headlineCount === null;
+
+    /** Fun slot-machine ticker — stops as soon as `headlineCount` is known */
+    const [rollickCount, setRollickCount] = useState(() => rollLoadingDestinationCount());
+
+    useEffect(() => {
+        if (!showHeadlineCountPlaceholder) return;
+        let cancelled = false;
+        let tid: ReturnType<typeof setTimeout> | undefined;
+
+        const tick = () => {
+            if (cancelled) return;
+            setRollickCount(rollLoadingDestinationCount());
+            tid = window.setTimeout(tick, 70 + Math.random() * 150);
+        };
+
+        tid = window.setTimeout(tick, 45);
+        return () => {
+            cancelled = true;
+            if (tid !== undefined) window.clearTimeout(tid);
+        };
+    }, [showHeadlineCountPlaceholder]);
 
     return (
         <>
@@ -905,10 +940,15 @@ const CatalogueIndexView: React.FC = () => {
                 <h1 className="mx-auto mb-2 max-w-3xl text-3xl font-extrabold leading-tight tracking-tight text-slate-900 md:mb-3 md:text-4xl lg:text-[2.5rem]">
                     Stay connected in{' '}
                     {showHeadlineCountPlaceholder ? (
-                        <span
-                            aria-hidden="true"
-                            className="inline-block h-[0.95em] w-[4.5ch] max-w-[40%] translate-y-[0.08em] rounded-md bg-slate-200 align-middle animate-pulse"
-                        />
+                        <>
+                            <span
+                                aria-hidden="true"
+                                className="inline-block min-w-[3.75ch] text-center tabular-nums text-brand-orange drop-shadow-[0_1px_8px_rgba(255,102,0,0.35)]"
+                            >
+                                {rollickCount}
+                            </span>
+                            <span className="sr-only">Loading how many destinations are in the catalogue.</span>
+                        </>
                     ) : (
                         <span className="tabular-nums">{headlineCount}</span>
                     )}{' '}
