@@ -388,10 +388,10 @@ const MarketingPageRedesignPreview: React.FC = () => {
                         <FooterColumn
                             title="Travel"
                             links={[
-                                { label: 'Global eSIM', href: '/travel-esim' },
-                                { label: 'Japan eSIM', href: '/travel-esim/jp' },
-                                { label: 'UK eSIM', href: '/travel-esim/gb' },
-                                { label: 'Mexico eSIM', href: '/travel-esim/mx' },
+                                { label: 'Global eSIM', href: '/travel-esim', mobileHref: '/app#esim' },
+                                { label: 'Japan eSIM', href: '/travel-esim/jp', mobileHref: '/app/travel-esim/jp' },
+                                { label: 'UK eSIM', href: '/travel-esim/gb', mobileHref: '/app/travel-esim/gb' },
+                                { label: 'Mexico eSIM', href: '/travel-esim/mx', mobileHref: '/app/travel-esim/mx' },
                                 { label: 'Top up data', href: '/top-up' },
                             ]}
                         />
@@ -434,6 +434,7 @@ const MarketingPageRedesignPreview: React.FC = () => {
 interface FooterLink {
     label: string;
     href: string;
+    mobileHref?: string;
     onClick?: (e: React.MouseEvent<HTMLAnchorElement>) => void;
 }
 
@@ -443,7 +444,17 @@ const FooterColumn: React.FC<{ title: string; links: FooterLink[] }> = ({ title,
         <ul className="space-y-2">
             {links.map((l, idx) => (
                 <li key={`${title}-${l.label}-${idx}`}>
-                    <a href={l.href} onClick={l.onClick} className="text-gray-300 transition hover:text-white">
+                    <a
+                        href={l.href}
+                        onClick={(e) => {
+                            if (l.mobileHref && isMobileDevice()) {
+                                e.preventDefault();
+                                window.location.assign(l.mobileHref);
+                            }
+                            l.onClick?.(e);
+                        }}
+                        className="text-gray-300 transition hover:text-white"
+                    >
                         {l.label}
                     </a>
                 </li>

@@ -11,6 +11,8 @@ export type MarketingNavKey =
 export const MARKETING_NAV_ITEMS: readonly {
     key: MarketingNavKey;
     href: string;
+    /** Narrow / handset UAs: skip public SEO URL on tap and open H5 catalogue instead (`SiteFooter` only — header nav is md+). */
+    mobileAppHref?: string;
     /** Compact label for top headers (desktop/tablet). */
     labelKey: `marketing.${string}`;
     /** Fuller label for slim `SiteFooter` link row when set (e.g. “and” vs “&”). */
@@ -19,6 +21,7 @@ export const MARKETING_NAV_ITEMS: readonly {
     {
         key: 'travel',
         href: '/travel-esim',
+        mobileAppHref: '/app#esim',
         labelKey: 'marketing.nav_local_travel_esim_short',
         footerLabelKey: 'marketing.nav_local_travel_esim',
     },

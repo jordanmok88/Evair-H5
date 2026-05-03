@@ -9,22 +9,25 @@
 
 import React, { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
+import { isMobileDevice } from '../../utils/device';
 import { MARKETING_NAV_ITEMS } from './siteNavConfig';
+
+type FlatFooterLink = { label: string; href: string; mobileHref?: string };
 
 const SiteFooter: React.FC = () => {
     const { t } = useTranslation();
-    const footerLinks = useMemo(
-        () => [
-            { label: t('marketing.footer_flat_home'), href: '/welcome' as const },
-            ...MARKETING_NAV_ITEMS.map((item) => ({
+    const footerLinks = useMemo((): FlatFooterLink[] => {
+        return [
+            { label: t('marketing.footer_flat_home'), href: '/welcome' },
+            ...MARKETING_NAV_ITEMS.map((item): FlatFooterLink => ({
                 label: t(item.footerLabelKey ?? item.labelKey),
-                href: `${item.href}` as const,
+                href: `${item.href}`,
+                mobileHref: item.mobileAppHref,
             })),
-            { label: t('marketing.footer_flat_refunds'), href: '/legal/refund' as const },
-            { label: t('marketing.footer_flat_support'), href: 'mailto:service@evairdigital.com' as const },
-        ],
-        [t],
-    );
+            { label: t('marketing.footer_flat_refunds'), href: '/legal/refund' },
+            { label: t('marketing.footer_flat_support'), href: 'mailto:service@evairdigital.com' },
+        ];
+    }, [t]);
 
     return (
         <footer className="bg-slate-900 text-slate-400 px-4 md:px-8 py-8 text-sm">
@@ -42,8 +45,18 @@ const SiteFooter: React.FC = () => {
                     <span>© {new Date().getFullYear()}</span>
                 </div>
                 <div className="flex flex-wrap items-center gap-x-5 gap-y-2 justify-center">
-                    {footerLinks.map(link => (
-                        <a key={`${link.label}-${link.href}`} href={link.href} className="hover:text-white">
+                    {footerLinks.map((link) => (
+                        <a
+                            key={`${link.label}-${link.href}`}
+                            href={link.href}
+                            className="hover:text-white"
+                            onClick={(e) => {
+                                if (link.mobileHref && isMobileDevice()) {
+                                    e.preventDefault();
+                                    window.location.assign(link.mobileHref);
+                                }
+                            }}
+                        >
                             {link.label}
                         </a>
                     ))}

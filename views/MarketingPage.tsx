@@ -340,10 +340,10 @@ const MarketingPage: React.FC = () => {
                         <FooterColumn
                             title={t('marketing.footer_col_travel')}
                             links={[
-                                { label: t('marketing.footer_link_travel_esim'), href: '/travel-esim' },
-                                { label: t('marketing.footer_link_jp'), href: '/travel-esim/jp' },
-                                { label: t('marketing.footer_link_uk'), href: '/travel-esim/gb' },
-                                { label: t('marketing.footer_link_mx'), href: '/travel-esim/mx' },
+                                { label: t('marketing.footer_link_travel_esim'), href: '/travel-esim', mobileHref: '/app#esim' },
+                                { label: t('marketing.footer_link_jp'), href: '/travel-esim/jp', mobileHref: '/app/travel-esim/jp' },
+                                { label: t('marketing.footer_link_uk'), href: '/travel-esim/gb', mobileHref: '/app/travel-esim/gb' },
+                                { label: t('marketing.footer_link_mx'), href: '/travel-esim/mx', mobileHref: '/app/travel-esim/mx' },
                                 { label: t('marketing.footer_link_topup'), href: '/top-up' },
                             ]}
                         />
@@ -386,6 +386,8 @@ const MarketingPage: React.FC = () => {
 interface FooterLink {
     label: string;
     href: string;
+    /** When set, narrow / handset taps go to the H5 app shell (`/app#esim`, etc.) instead of public SEO URLs. */
+    mobileHref?: string;
     onClick?: (e: React.MouseEvent<HTMLAnchorElement>) => void;
 }
 
@@ -395,7 +397,17 @@ const FooterColumn: React.FC<{ title: string; links: FooterLink[] }> = ({ title,
         <ul className="space-y-2">
             {links.map((l, idx) => (
                 <li key={`${title}-${l.label}-${idx}`}>
-                    <a href={l.href} onClick={l.onClick} className="text-gray-300 transition hover:text-white">
+                    <a
+                        href={l.href}
+                        onClick={(e) => {
+                            if (l.mobileHref && isMobileDevice()) {
+                                e.preventDefault();
+                                window.location.assign(l.mobileHref);
+                            }
+                            l.onClick?.(e);
+                        }}
+                        className="text-gray-300 transition hover:text-white"
+                    >
                         {l.label}
                     </a>
                 </li>

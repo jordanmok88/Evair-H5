@@ -65,6 +65,7 @@ import {
 } from '../services/api';
 import type { PackageDto, UserSimDto } from '../services/api/types';
 import { getTopUpTabFromLocation, type TopUpTab } from '../utils/routing';
+import { isMobileDevice } from '../utils/device';
 
 /** Laravel PCCW supplier id — same rule as App.tsx bound-SIM grouping. */
 const LARAVEL_SUPPLIER_ID_PCCW = 1;
@@ -1247,12 +1248,18 @@ const EsimManualIccidCollapsible: React.FC<{
 
 const EsimEmptyLoggedIn: React.FC<{ browseHref: string }> = ({ browseHref }) => {
     const { t } = useTranslation();
+    const appBrowse = '/app#esim';
     return (
         <div>
             <h1 className="mb-2 text-2xl font-bold text-slate-900">{t('topup_page.esim_empty_title')}</h1>
             <p className="mb-6 text-sm leading-relaxed text-slate-600">{t('topup_page.esim_empty_body')}</p>
             <a
                 href={browseHref}
+                onClick={(e) => {
+                    if (!isMobileDevice()) return;
+                    e.preventDefault();
+                    window.location.assign(appBrowse);
+                }}
                 className="mb-6 flex min-h-[3.25rem] w-full items-center justify-center rounded-xl bg-brand-orange py-4 text-base font-bold text-white shadow-lg shadow-orange-500/20 transition-all active:scale-[0.98]"
             >
                 {t('topup_page.esim_browse_travel')}
@@ -1275,6 +1282,11 @@ const EsimGuestIntro: React.FC<{ onSessionChanged: () => void }> = ({ onSessionC
             <div className="flex flex-col gap-3">
                 <a
                     href="/travel-esim"
+                    onClick={(e) => {
+                        if (!isMobileDevice()) return;
+                        e.preventDefault();
+                        window.location.assign('/app#esim');
+                    }}
                     className="flex min-h-[3.25rem] w-full items-center justify-center rounded-xl bg-brand-orange py-4 text-base font-bold text-white shadow-lg shadow-orange-500/20 transition-all active:scale-[0.98]"
                 >
                     {t('topup_page.esim_browse_travel')}
