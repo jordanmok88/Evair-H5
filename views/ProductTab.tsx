@@ -53,6 +53,8 @@ interface ProductTabProps {
    * (`Profile` hides the browse subtree).
    */
   externalLinkExistingEsimNonce?: number;
+  /** Forces back from Contact to SIM/ESIM browse when header chat is used (avoids INBOX-as-previous when shell float is open). */
+  onOpenContactFromBrowseShop?: () => void;
 }
 
 const ProductTab: React.FC<ProductTabProps> = ({
@@ -199,6 +201,7 @@ const ProductTab: React.FC<ProductTabProps> = ({
             notifications={notifications}
             initialEsimLocationCode={initialEsimLocationCode}
             onInitialEsimDeepLinkConsumed={onInitialEsimDeepLinkConsumed}
+            onOpenContactFromBrowseShop={onOpenContactFromBrowseShop}
           />
        )}
        

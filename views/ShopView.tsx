@@ -64,6 +64,8 @@ interface ShopViewProps {
   /** ISO-2 from `/app/travel-esim/{xx}` — auto-open that country group. */
   initialEsimLocationCode?: string | null;
   onInitialEsimDeepLinkConsumed?: () => void;
+  /** App shell: ensures Contact back returns to storefront, not Inbox tab behind a floater. */
+  onOpenContactFromBrowseShop?: () => void;
 }
 
 // ─── 国家/地区信息映射 ────────────────────────────────────────────────
@@ -213,6 +215,7 @@ const ShopView: React.FC<ShopViewProps> = ({
   notifications = [],
   initialEsimLocationCode = null,
   onInitialEsimDeepLinkConsumed,
+  onOpenContactFromBrowseShop,
 }) => {
   const { t } = useTranslation();
   /** Shop header replaces floating FAB — keep unread parity with former FAB */
@@ -1408,7 +1411,9 @@ const ShopView: React.FC<ShopViewProps> = ({
               </div>
               <button
                   type="button"
-                  onClick={() => onNavigate?.('DIALER')}
+                  onClick={() =>
+                    onOpenContactFromBrowseShop ? onOpenContactFromBrowseShop() : onNavigate?.('DIALER')
+                  }
                   className="relative flex shrink-0 items-center gap-1 rounded-full bg-gradient-to-r from-[#FF6600] to-[#FF8A3D] px-3 py-2 text-[11px] font-extrabold uppercase tracking-wide text-white shadow-sm active:scale-[0.98] transition-transform"
                   aria-label={t('support_fab.open_chat')}
                   style={{ WebkitTapHighlightColor: 'transparent' }}

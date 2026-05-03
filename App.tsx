@@ -984,6 +984,23 @@ function CustomerApp() {
 
   const handleTabChange = useCallback(
     (tab: Tab) => {
+      // #region agent log
+      if (tab === Tab.DIALER) {
+        fetch('http://127.0.0.1:7893/ingest/14d3c5f8-7d82-4f89-8791-2a5c027b03b6', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'X-Debug-Session-Id': '243df2' },
+          body: JSON.stringify({
+            sessionId: '243df2',
+            runId: 'pre-fix',
+            hypothesisId: 'H1',
+            location: 'App.tsx:handleTabChange→DIALER',
+            message: 'Opening DIALER via handleTabChange',
+            data: { fromTab: activeTabRef.current },
+            timestamp: Date.now(),
+          }),
+        }).catch(() => {});
+      }
+      // #endregion
       previousTab.current = activeTabRef.current;
       setActiveTab(tab);
       syncAppHash(tab);
@@ -991,6 +1008,30 @@ function CustomerApp() {
     },
     [syncAppHash],
   );
+
+  /** Shop header Live Chat: `activeTab` can be INBOX/PROFILE (wide floater) while Store is visible — `handleTabChange(DIALER)` would save INBOX as previous. */
+  const openContactFromBrowseShop = useCallback(() => {
+    const backTab = currentSimType === 'PHYSICAL' ? Tab.SIM_CARD : Tab.ESIM;
+    previousTab.current = backTab;
+    // #region agent log
+    fetch('http://127.0.0.1:7893/ingest/14d3c5f8-7d82-4f89-8791-2a5c027b03b6', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'X-Debug-Session-Id': '243df2' },
+      body: JSON.stringify({
+        sessionId: '243df2',
+        runId: 'post-fix',
+        hypothesisId: 'H-fix',
+        location: 'App.tsx:openContactFromBrowseShop',
+        message: 'DIALER opened from shop header; previousTab forced to browse tab',
+        data: { backTab, refWas: activeTabRef.current },
+        timestamp: Date.now(),
+      }),
+    }).catch(() => {});
+    // #endregion
+    setActiveTab(Tab.DIALER);
+    syncAppHash(Tab.DIALER);
+    window.scrollTo(0, 0);
+  }, [currentSimType, syncAppHash]);
 
   const handleProfileLinkExistingEsim = useCallback(() => {
     if (currentSimType !== 'ESIM') return;
@@ -1033,6 +1074,7 @@ function CustomerApp() {
       onLinkedEsimRefresh={fetchUserSims}
       simWalletHydrated={simWalletHydrated}
       externalLinkExistingEsimNonce={linkEsimProfileNonce}
+      onOpenContactFromBrowseShop={openContactFromBrowseShop}
     />
   );
 
@@ -1141,7 +1183,24 @@ function CustomerApp() {
       case Tab.DIALER:
         return (
           <ContactUsView
-            onBack={() => handleTabChange(previousTab.current)}
+            onBack={() => {
+              // #region agent log
+              fetch('http://127.0.0.1:7893/ingest/14d3c5f8-7d82-4f89-8791-2a5c027b03b6', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'X-Debug-Session-Id': '243df2' },
+                body: JSON.stringify({
+                  sessionId: '243df2',
+                  runId: 'pre-fix',
+                  hypothesisId: 'H2',
+                  location: 'App.tsx:ContactUsView.onBack',
+                  message: 'Contact back invoked',
+                  data: { navigatesTo: previousTab.current },
+                  timestamp: Date.now(),
+                }),
+              }).catch(() => {});
+              // #endregion
+              handleTabChange(previousTab.current);
+            }}
             userName={user?.name}
           />
         );
@@ -1248,7 +1307,25 @@ function CustomerApp() {
         <SupportFab
           layout="inset"
           visible={activeTab === Tab.INBOX || activeTab === Tab.PROFILE}
-          onClick={() => { previousTab.current = activeTab; setActiveTab(Tab.DIALER); }}
+          onClick={() => {
+            // #region agent log
+            fetch('http://127.0.0.1:7893/ingest/14d3c5f8-7d82-4f89-8791-2a5c027b03b6', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json', 'X-Debug-Session-Id': '243df2' },
+              body: JSON.stringify({
+                sessionId: '243df2',
+                runId: 'pre-fix',
+                hypothesisId: 'H3',
+                location: 'App.tsx:SupportFab.onClick',
+                message: 'FAB opened DIALER (setActiveTab, not handleTabChange)',
+                data: { activeTabBefore: activeTab },
+                timestamp: Date.now(),
+              }),
+            }).catch(() => {});
+            // #endregion
+            previousTab.current = activeTab;
+            setActiveTab(Tab.DIALER);
+          }}
         />
 
         <LoginModal
