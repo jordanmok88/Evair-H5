@@ -158,16 +158,140 @@ export async function queryProfile(iccid: string): Promise<EsimProfileResult> {
   };
 }
 
+type RedTeaEsimRow = Record<string, unknown>;
+
+function numField(row: RedTeaEsimRow, ...keys: string[]): number {
+  for (const key of keys) {
+    const raw = row[key];
+    if (typeof raw === 'number' && Number.isFinite(raw)) return raw;
+    if (typeof raw === 'string' && raw.trim() !== '' && !Number.isNaN(Number(raw))) return Number(raw);
+  }
+  return 0;
+}
+
+function sanitizeRemainingBytes(remain: number, totalBytes: number): number | null {
+  if (!Number.isFinite(remain) || remain <= 0) return null;
+  if (totalBytes > 0) {
+    if (remain > totalBytes * 1.05) return null;
+    return remain;
+  }
+  return null;
+}
+
+function maybeGenericRemain(row: RedTeaEsimRow, totalBytes: number): number | null {
+  const raw = row.remain ?? row.Remain;
+  if (raw === undefined || raw === null) return null;
+  const remain = typeof raw === 'number' ? raw : Number(String(raw));
+  if (!Number.isFinite(remain) || remain <= 0) return null;
+
+  const durationUnit = String(row.durationUnit ?? row.duration_unit ?? '').toUpperCase();
+  if (durationUnit === 'DAY') return null;
+
+  if (totalBytes >= 1073741824 && remain <= 366 && remain === Math.floor(remain)) {
+    return null;
+  }
+
+  return sanitizeRemainingBytes(remain, totalBytes);
+}
+
+/** Aligns with Laravel `EsimAccessProvider::deriveUsedBytesFromEsimQueryRow` — CDR often lags on `orderUsage` but not `remain`. */
+function deriveUsedBytesFromRedTeaEsimRow(row: RedTeaEsimRow, totalBytes: number): number {
+  for (const key of ['usedVolume', 'usedBytes', 'usedData', 'used_volume', 'used_bytes']) {
+    const v = numField(row, key);
+    if (v > 0) return Math.max(0, totalBytes > 0 ? Math.min(totalBytes, v) : v);
+  }
+
+  const orderUsage = numField(row, 'orderUsage', 'order_usage');
+
+  const keys = [
+    'remainFlow',
+    'remainingVolume',
+    'remainVolume',
+    'remainingData',
+    'remaining_volume',
+    'restFlow',
+    'leftFlow',
+    'remain_flow',
+  ] as const;
+
+  const candidates: number[] = [];
+  for (const key of keys) {
+    const raw = row[key];
+    if (raw === undefined || raw === null || (typeof raw !== 'number' && typeof raw !== 'string')) continue;
+    const n = typeof raw === 'number' ? raw : Number(String(raw));
+    const s = sanitizeRemainingBytes(n, totalBytes);
+    if (s !== null) candidates.push(s);
+  }
+
+  const g = maybeGenericRemain(row, totalBytes);
+  if (g !== null) candidates.push(g);
+
+  if (candidates.length > 0 && totalBytes > 0) {
+    const rb = Math.min(...candidates);
+    return Math.max(0, Math.min(totalBytes, totalBytes - rb));
+  }
+
+  return Math.max(0, totalBytes > 0 ? Math.min(totalBytes, orderUsage) : orderUsage);
+}
+
+function totalBytesFromRedTeaRow(row: RedTeaEsimRow): number {
+  return Math.max(0, numField(row, 'totalVolume', 'total_volume', 'totalBytes', 'total_bytes', 'totalData'));
+}
+
 // ─── Data Usage ──────────────────────────────────────────────────────
 
 export async function checkDataUsage(iccid: string): Promise<DataUsageResult> {
-  const resp = await call<DataUsageResult>('/esim/usage', { iccid });
+  if (DEMO_MODE) {
+    return {
+      iccid,
+      totalVolume: 5 * 1024 * 1024 * 1024,
+      usedVolume: 0,
+      expiredTime: new Date(Date.now() + 86400000 * 30).toISOString(),
+    };
+  }
+
+  /** Prefer `/esim/query` row — same envelope as Laravel `getSimState`; `/esim/usage` omits `remain` frequently. */
+  const resp = await call<{ esimList?: RedTeaEsimRow[] } & RedTeaEsimRow>('/esim/query', {
+    iccid,
+    pager: { pageNum: 1, pageSize: 20 },
+  });
 
   if (!resp.success) {
     throw new Error(resp.errorMsg ?? 'Data usage check failed');
   }
 
-  return resp.obj;
+  const obj = resp.obj;
+  let row: RedTeaEsimRow | null = null;
+  if (obj && typeof obj === 'object') {
+    const list = obj.esimList;
+    if (Array.isArray(list) && list[0] && typeof list[0] === 'object') {
+      row = list[0] as RedTeaEsimRow;
+    } else if (!('esimList' in obj) && typeof obj === 'object' && obj !== null) {
+      const o = obj as RedTeaEsimRow;
+      if (o.iccid || o.esimStatus || o.status || o.esimTranNo) {
+        row = o;
+      }
+    }
+  }
+
+  if (!row) {
+    throw new Error('eSIM usage: empty esimList from supplier');
+  }
+
+  const totalVolume = totalBytesFromRedTeaRow(row);
+  const usedVolume = deriveUsedBytesFromRedTeaEsimRow(row, totalVolume);
+
+  const expRaw =
+    row.expiredTime ?? row.expireTime ?? row.expiryDate ?? row.expired_time ?? '';
+  const expiredTime =
+    typeof expRaw === 'string' ? expRaw.trim() : expRaw !== undefined ? String(expRaw) : '';
+
+  return {
+    iccid: (typeof row.iccid === 'string' && row.iccid.trim()) || iccid,
+    totalVolume,
+    usedVolume,
+    expiredTime,
+  };
 }
 
 // ─── Top Up ──────────────────────────────────────────────────────────

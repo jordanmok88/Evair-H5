@@ -470,11 +470,18 @@ function usageSnapshotHasSignal(u: DataUsageResult): boolean {
   return u.totalVolume > 0 || u.usedVolume > 0 || expOk;
 }
 
+/** After bind, Laravel `sim_assets` often keeps used_bytes at 0 while Red Tea advances CDR via `remain`. */
+const TEN_MB_BYTES = 10 * 1024 * 1024;
+/** Used bytes below this are reconciled vs supplier — catches `sim_assets` stuck at zero while Red Tea has real CDR. */
+const LOW_USED_BYTES_CEILING = 1024 * 1024;
+
 /**
- * Laravel `GET /app/sims/{iccid}/usage` reads `sim_assets` — linked eSIM rows can
- * return HTTP 200 with zeros/null expiry until a supplier sync fills the row.
- * When the snapshot carries no usable signal, re-fetch from Red Tea via Netlify
- * proxy (`supplierCheckUsage`) so wallet cards match the supplier dashboard.
+ * Laravel `GET /app/sims/{iccid}/usage` reads `sim_assets`, which may lag supplier CDR (`orderUsage` vs `remain`).
+ * We still prefer Laravel when it's already materially non-zero — avoids doubling traffic for healthy rows.
+ *
+ * Netlify `/esim/usage` fallback (`supplierCheckUsage`) matches the supplier console when Laravel is stale /
+ * pegged at zero used with a plausible total + expiry (`usageSnapshotHasSignal` alone is NOT enough — that
+ * shortcut previously hid GB-scale drift forever).
  */
 export async function checkDataUsage(iccid: string): Promise<DataUsageResult> {
   let primary: DataUsageResult;
@@ -484,20 +491,54 @@ export async function checkDataUsage(iccid: string): Promise<DataUsageResult> {
     return normalizeDataUsageDto(iccid, await supplierCheckUsage(iccid));
   }
 
-  if (usageSnapshotHasSignal(primary)) {
+  let sup: DataUsageResult | undefined;
+  try {
+    const shouldReconcile =
+      !usageSnapshotHasSignal(primary) || primary.usedVolume < LOW_USED_BYTES_CEILING;
+    if (shouldReconcile) {
+      sup = normalizeDataUsageDto(iccid, await supplierCheckUsage(iccid));
+    }
+  } catch {
+    /* keep primary — supplier unreachable or DEMO */
+  }
+
+  if (!sup) {
     return primary;
   }
 
-  try {
-    const sup = normalizeDataUsageDto(iccid, await supplierCheckUsage(iccid));
-    const supBetter =
-      sup.totalVolume > primary.totalVolume ||
-      sup.usedVolume > primary.usedVolume ||
-      (!usageSnapshotHasSignal(primary) && usageSnapshotHasSignal(sup));
-    return supBetter ? sup : primary;
-  } catch {
-    return primary;
+  const totalsRoughlyAligned =
+    primary.totalVolume > 0 &&
+    sup.totalVolume > 0 &&
+    Math.abs(sup.totalVolume - primary.totalVolume) / primary.totalVolume < 0.25;
+
+  const coherentCap = Math.max(primary.totalVolume, sup.totalVolume);
+  const supplierAhead =
+    totalsRoughlyAligned &&
+    sup.usedVolume > primary.usedVolume + TEN_MB_BYTES &&
+    sup.usedVolume <= coherentCap * 1.06;
+
+  if (supplierAhead) {
+    const mergedExpiry = ((): string => {
+      const p = primary.expiredTime?.trim() ?? '';
+      const s = sup.expiredTime?.trim() ?? '';
+      if (p && !Number.isNaN(Date.parse(p))) return primary.expiredTime;
+      if (s && !Number.isNaN(Date.parse(s))) return sup.expiredTime;
+      return primary.expiredTime || sup.expiredTime || '';
+    })();
+
+    return {
+      iccid: primary.iccid,
+      totalVolume: Math.max(primary.totalVolume, sup.totalVolume),
+      usedVolume: sup.usedVolume,
+      expiredTime: mergedExpiry,
+    };
   }
+
+  if (!usageSnapshotHasSignal(primary) && usageSnapshotHasSignal(sup)) {
+    return sup;
+  }
+
+  return primary;
 }
 
 // ─── Query Profile ───────────────────────────────────────────────────
