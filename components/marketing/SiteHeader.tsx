@@ -68,7 +68,7 @@ const SiteHeader: React.FC<SiteHeaderProps> = ({ active = null, gate: gateProp }
                         </a>
                     ))}
                 </nav>
-                <div className="flex shrink-0 items-center gap-1 sm:gap-2">
+                <div className="flex shrink-0 items-center gap-3 sm:gap-3">
                     <SiteHeaderAccountActions />
                     <OpenAppHeaderButton href="/app" onClick={signInGate.gateClick} />
                 </div>

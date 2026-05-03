@@ -68,46 +68,49 @@ const SiteHeaderAccountActions: React.FC = () => {
 
     return (
         <>
-            <button
-                type="button"
-                onClick={openInbox}
-                className={bellCls}
-                aria-label={t('marketing.header_inbox_aria')}
-                aria-expanded={inboxOpen}
-                aria-haspopup="dialog"
-                style={{ WebkitTapHighlightColor: 'transparent' }}
-            >
-                <Bell size={18} aria-hidden />
-                {unread > 0 && (
-                    <span className="absolute -right-1 -top-1 flex h-[18px] min-w-[18px] items-center justify-center rounded-full border-2 border-white bg-red-500 px-1 text-[10px] font-bold leading-none text-white shadow-sm">
-                        {unread > 9 ? '9+' : unread}
-                    </span>
-                )}
-            </button>
+            {/* Option A: explicit gap between inbox + profile; spacing before OPEN APP in SiteHeader */}
+            <div className="flex shrink-0 items-center gap-2">
+                <button
+                    type="button"
+                    onClick={openInbox}
+                    className={bellCls}
+                    aria-label={t('marketing.header_inbox_aria')}
+                    aria-expanded={inboxOpen}
+                    aria-haspopup="dialog"
+                    style={{ WebkitTapHighlightColor: 'transparent' }}
+                >
+                    <Bell size={18} aria-hidden />
+                    {unread > 0 && (
+                        <span className="absolute -right-1 -top-1 flex h-[18px] min-w-[18px] items-center justify-center rounded-full border-2 border-white bg-red-500 px-1 text-[10px] font-bold leading-none text-white shadow-sm">
+                            {unread > 9 ? '9+' : unread}
+                        </span>
+                    )}
+                </button>
+                <button
+                    type="button"
+                    onClick={openProfile}
+                    className={profileCls}
+                    aria-label={t('marketing.header_profile_aria')}
+                    aria-expanded={profileOpen}
+                    aria-haspopup="dialog"
+                    style={{
+                        background: 'linear-gradient(135deg, #FF6600, #FF8A3D)',
+                        WebkitTapHighlightColor: 'transparent',
+                    }}
+                >
+                    {initial ? (
+                        <span className="text-sm font-bold text-white">{initial}</span>
+                    ) : (
+                        <UserCircle size={20} className="text-white" aria-hidden />
+                    )}
+                </button>
+            </div>
             <MarketingInboxDrawer
                 open={inboxOpen}
                 onClose={() => setInboxOpen(false)}
                 notifications={notifications}
                 onUpdateNotifications={onUpdateNotifications}
             />
-            <button
-                type="button"
-                onClick={openProfile}
-                className={profileCls}
-                aria-label={t('marketing.header_profile_aria')}
-                aria-expanded={profileOpen}
-                aria-haspopup="dialog"
-                style={{
-                    background: 'linear-gradient(135deg, #FF6600, #FF8A3D)',
-                    WebkitTapHighlightColor: 'transparent',
-                }}
-            >
-                {initial ? (
-                    <span className="text-sm font-bold text-white">{initial}</span>
-                ) : (
-                    <UserCircle size={20} className="text-white" aria-hidden />
-                )}
-            </button>
             <MarketingProfileDrawer
                 open={profileOpen}
                 onClose={() => setProfileOpen(false)}
