@@ -890,14 +890,29 @@ const CatalogueIndexView: React.FC = () => {
                 : String(facetState.singleCountryCount)
             : null;
 
+    /** Until facets load we must not imply a bogus count — `?? '200+'` looked like pop-up flicker vs live 179 */
+    const showHeadlineCountPlaceholder = headlineCount === null;
+
     return (
         <>
-            <section className="mx-auto max-w-6xl px-4 pt-6 text-center md:px-8 md:pt-8 pb-3 md:pb-4">
+            <section
+                aria-busy={showHeadlineCountPlaceholder}
+                className="mx-auto max-w-6xl px-4 pt-6 text-center md:px-8 md:pt-8 pb-3 md:pb-4"
+            >
                 <div className="mb-2 inline-flex items-center gap-2 rounded-full bg-orange-50 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-orange-700 md:mb-2.5 md:px-3 md:py-1 md:text-xs">
                     <Globe size={12} /> Travel eSIM
                 </div>
                 <h1 className="mx-auto mb-2 max-w-3xl text-3xl font-extrabold leading-tight tracking-tight text-slate-900 md:mb-3 md:text-4xl lg:text-[2.5rem]">
-                    Stay connected in {headlineCount ?? '200+'} destinations
+                    Stay connected in{' '}
+                    {showHeadlineCountPlaceholder ? (
+                        <span
+                            aria-hidden="true"
+                            className="inline-block h-[0.95em] w-[4.5ch] max-w-[40%] translate-y-[0.08em] rounded-md bg-slate-200 align-middle animate-pulse"
+                        />
+                    ) : (
+                        <span className="tabular-nums">{headlineCount}</span>
+                    )}{' '}
+                    destinations
                 </h1>
                 <p className="mx-auto flex max-w-2xl flex-wrap items-center justify-center gap-2 text-sm leading-snug text-slate-600 md:text-base md:leading-relaxed">
                     {facetState.kind === 'loading' && (
