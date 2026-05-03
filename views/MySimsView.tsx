@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Wifi, Phone, Zap, ChevronDown, CheckCircle2, QrCode, Copy, X, Calendar, Clock, SignalHigh, Smartphone, RefreshCw, Plus, ShoppingBag, Settings, MoreHorizontal, Trash2, Check, AlertTriangle, Loader2, Globe, Database, ScanLine, ArrowLeft, PartyPopper, Sparkles, Link2 } from 'lucide-react';
 import { ActiveSim, Tab, SimType, EsimPackage } from '../types';
@@ -24,6 +24,11 @@ interface MySimsViewProps {
   // for source compatibility with existing call-sites.
   onSwitchToSetup?: (tab?: 'ACTIVATE' | 'TRACKING', trackingNumber?: string) => void;
   onUpdateSim?: (simId: string, updates: Partial<ActiveSim>) => void;
+  /**
+   * Bump this from Shop (Global eSIM) to open Link eSIM once on mount/update.
+   * Parent increments a counter — avoids duplicated opens vs a plain boolean StrictMode flicker.
+   */
+  linkEsimRequestNonce?: number;
 }
 
 const CARD_HEIGHT = 72;
@@ -61,6 +66,7 @@ const MySimsView: React.FC<MySimsViewProps> = ({
   onDeleteSim,
   onSwitchToSetup,
   onUpdateSim,
+  linkEsimRequestNonce = 0,
 }) => {
   const { t } = useTranslation();
   const swipeBack = useCallback(() => {
@@ -83,6 +89,14 @@ const MySimsView: React.FC<MySimsViewProps> = ({
 
   const [linkEsimOpen, setLinkEsimOpen] = useState(false);
   const closeLinkWizard = useCallback(() => setLinkEsimOpen(false), []);
+  const lastHandledLinkNonce = useRef(0);
+
+  useEffect(() => {
+    if (filterType !== 'ESIM') return;
+    if (!linkEsimRequestNonce || linkEsimRequestNonce === lastHandledLinkNonce.current) return;
+    lastHandledLinkNonce.current = linkEsimRequestNonce;
+    setLinkEsimOpen(true);
+  }, [linkEsimRequestNonce, filterType]);
 
   const linkWizard = (
     <LinkEsimWizard

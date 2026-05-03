@@ -59,6 +59,7 @@ const es = {
     welcome_esim: 'Bienvenido a la Tienda eSIM',
     welcome_sim: 'Bienvenido a la Tienda SIM',
     my_esims: 'Mis eSIMs',
+    link_esim_shop_hint: 'Introduce el ICCID del correo de confirmación del pedido.',
     global_esim_count_one: '{{count}} Global eSIM',
     global_esim_count_other: '{{count}} Global eSIMs',
     my_sims: 'Mis SIMs',

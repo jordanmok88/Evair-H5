@@ -56,6 +56,7 @@ const zh = {
     welcome_esim: '欢迎来到eSIM商店',
     welcome_sim: '欢迎来到SIM商店',
     my_esims: '我的eSIM',
+    link_esim_shop_hint: '请输入订单确认邮件中的 ICCID。',
     global_esim_count_one: '{{count}} 个全球 eSIM',
     global_esim_count_other: '{{count}} 个全球 eSIM',
     my_sims: '我的SIM卡',

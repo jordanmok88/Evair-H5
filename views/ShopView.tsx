@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Search, ChevronRight, ArrowLeft, Globe, Star, X, MapPin, Loader2, Smartphone, CheckCircle, Calendar, Wifi, Signal, Info, CreditCard, ArrowDown, QrCode, Copy, Check, RefreshCw, Zap, Clock, Shield, Mail, Radio } from 'lucide-react';
+import { Search, ChevronRight, ArrowLeft, Globe, Star, X, MapPin, Loader2, Smartphone, CheckCircle, Calendar, Wifi, Signal, Info, CreditCard, ArrowDown, QrCode, Copy, Check, RefreshCw, Zap, Clock, Shield, Mail, Radio, Link2 } from 'lucide-react';
 import { Country, Plan, SimType, User, SimCardProduct, EsimPackage, EsimCountryGroup, EsimOrderResult, ActiveSim } from '../types';
 import { MOCK_COUNTRIES } from '../constants';
 import AmazonPhysicalSimPicker from '../components/AmazonPhysicalSimPicker';
@@ -63,6 +63,8 @@ interface ShopViewProps {
   /** ISO-2 from `/app/travel-esim/{xx}` — auto-open that country group. */
   initialEsimLocationCode?: string | null;
   onInitialEsimDeepLinkConsumed?: () => void;
+  /** Global eSIM shop — go to My eSIMs + open ICCID link wizard */
+  onLinkExistingEsim?: () => void;
 }
 
 // ─── 国家/地区信息映射 ────────────────────────────────────────────────
@@ -212,6 +214,7 @@ const ShopView: React.FC<ShopViewProps> = ({
   notifications = [],
   initialEsimLocationCode = null,
   onInitialEsimDeepLinkConsumed,
+  onLinkExistingEsim,
 }) => {
   const { t } = useTranslation();
   const TOP_COUNTRY_COUNT = 10;
@@ -1444,6 +1447,23 @@ const ShopView: React.FC<ShopViewProps> = ({
               {t('topup_page.tab_esim')}
             </button>
           </div>
+
+          {simType === 'ESIM' && onLinkExistingEsim && (
+            <button
+              type="button"
+              onClick={() => onLinkExistingEsim()}
+              className="mt-2 w-full flex items-center gap-3 rounded-xl border border-slate-200 bg-white px-4 py-3 text-left shadow-sm active:scale-[0.99] transition-transform"
+            >
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-orange-50 text-brand-orange">
+                <Link2 size={18} strokeWidth={2.25} />
+              </div>
+              <div className="min-w-0 flex-1">
+                <p className="text-sm font-bold text-slate-900">{t('my_sims.link_esim')}</p>
+                <p className="text-[11px] text-slate-500 leading-snug mt-0.5">{t('shop.link_esim_shop_hint')}</p>
+              </div>
+              <ChevronRight size={16} className="text-brand-orange shrink-0" />
+            </button>
+          )}
 
           {/* Row 3: "My eSIMs" bar — only when user has active SIMs */}
           {(() => {

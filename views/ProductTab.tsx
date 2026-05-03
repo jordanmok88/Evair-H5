@@ -86,6 +86,8 @@ const ProductTab: React.FC<ProductTabProps> = ({
     return mySims.length > 0 ? 'MINE' : 'SHOP';
   });
   const [setupEntryPoint, setSetupEntryPoint] = useState<'SHOP' | 'MINE'>('SHOP');
+  /** Bump when user taps "Link existing eSIM" on eSIM shop — MySims opens wizard */
+  const [linkEsimFromShopNonce, setLinkEsimFromShopNonce] = useState(0);
 
   const consumeBindDeepLink = useCallback(() => {
     onBindSimDeepLinkConsumed?.();
@@ -165,6 +167,14 @@ const ProductTab: React.FC<ProductTabProps> = ({
             notifications={notifications}
             initialEsimLocationCode={initialEsimLocationCode}
             onInitialEsimDeepLinkConsumed={onInitialEsimDeepLinkConsumed}
+            onLinkExistingEsim={
+              type === 'ESIM'
+                ? () => {
+                    setLinkEsimFromShopNonce((n) => n + 1);
+                    setViewMode('MINE');
+                  }
+                : undefined
+            }
           />
        )}
        
@@ -179,6 +189,7 @@ const ProductTab: React.FC<ProductTabProps> = ({
             onUpdateSim={onUpdateSim}
             onLoginRequest={onLoginRequest}
             onLinkedEsimRefresh={onLinkedEsimRefresh}
+            linkEsimRequestNonce={type === 'ESIM' ? linkEsimFromShopNonce : 0}
           />
        )}
 

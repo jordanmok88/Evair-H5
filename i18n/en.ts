@@ -58,6 +58,7 @@ const en = {
     welcome_esim: 'Welcome to eSIM Shop',
     welcome_sim: 'Welcome to SIM Shop',
     my_esims: 'My eSIMs',
+    link_esim_shop_hint: 'Enter the ICCID from your order confirmation email.',
     /** Inline count beside country flags (“3 Global eSIMs”) — matches Global eSIM product naming */
     global_esim_count_one: '{{count}} Global eSIM',
     global_esim_count_other: '{{count}} Global eSIMs',
