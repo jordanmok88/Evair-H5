@@ -18,7 +18,6 @@ import {
     ScanLine,
     ShieldCheck,
     User as UserIcon,
-    Wifi,
 } from 'lucide-react';
 import BarcodeScanner from '../components/BarcodeScanner';
 import SetupIntentCardForm from '../components/SetupIntentCardForm';
@@ -230,19 +229,25 @@ export default ActivatePage;
 
 // ─── Subcomponents ────────────────────────────────────────────────────────
 
-const Header: React.FC = () => (
-    <header className="bg-white border-b border-slate-200 px-4 py-4 md:px-6 sticky top-0 z-10">
-        <div className="max-w-md mx-auto flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-brand-orange/10 flex items-center justify-center">
-                <Wifi className="w-5 h-5 text-brand-orange" />
+const Header: React.FC = () => {
+    const { t } = useTranslation();
+    return (
+        <header className="sticky top-0 z-10 border-b border-slate-200 bg-white px-4 py-4 md:px-6">
+            <div className="mx-auto flex max-w-md flex-col gap-1">
+                <a href="/" className="inline-block w-fit shrink-0" aria-label="EvairSIM home">
+                    <img
+                        src="/evairsim-wordmark.png"
+                        alt="EvairSIM"
+                        width={896}
+                        height={228}
+                        className="h-7 w-auto max-h-9 object-contain object-left sm:h-8"
+                    />
+                </a>
+                <p className="text-xs font-medium text-slate-500">{t('activate.header_tagline')}</p>
             </div>
-            <div className="flex-1">
-                <div className="text-sm font-bold text-slate-900">EvairSIM</div>
-                <div className="text-xs text-slate-500">Activate your SIM</div>
-            </div>
-        </div>
-    </header>
-);
+        </header>
+    );
+};
 
 const LoadingState: React.FC = () => (
     <div className="flex flex-col items-center justify-center py-16 text-slate-500">

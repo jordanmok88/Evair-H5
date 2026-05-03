@@ -691,6 +691,7 @@ const zh = {
     chinese: '中文',
   },
   activate: {
+    header_tagline: '激活您的 SIM',
     invalid_iccid: 'ICCID 格式无效，请检查包装盒上的数字（15-22 位）。',
     preview_failed: '无法连接激活服务，请检查网络后重试。',
   },

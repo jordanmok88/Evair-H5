@@ -711,6 +711,7 @@ const es = {
     chinese: 'Chino',
   },
   activate: {
+    header_tagline: 'Activa tu SIM',
     invalid_iccid: 'Ese ICCID no parece válido. Revisa los dígitos en la caja (15-22 caracteres).',
     preview_failed: 'No pudimos contactar el servicio de activación. Comprueba tu conexión e inténtalo de nuevo.',
   },
