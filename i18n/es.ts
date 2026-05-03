@@ -199,6 +199,9 @@ const es = {
     home_sub:
       'eSIM de viaje para estancias cortas. 5G en EE. UU. para largas. Solo datos, sin contratos, activación al instante.',
     home_travel_esim: 'eSIM global',
+    hero_cta_buy_sim: 'Comprar SIM',
+    hero_cta_activate_sim: 'Activar SIM',
+    hero_cta_topup_sim: 'Recargar SIM',
     home_activate: 'Activar mi SIM',
     hero_carousel_region: 'Destacados de la página de inicio. Usa la barra de avance para cambiar.',
     hero_carousel_prev: 'Diapositiva anterior',

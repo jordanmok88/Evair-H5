@@ -198,6 +198,9 @@ const en = {
     home_sub:
       'Travel eSIMs for short trips. A US 5G data plan for long stays. Data-only, no contracts, instant activation.',
     home_travel_esim: 'Global eSIM',
+    hero_cta_buy_sim: 'Buy SIM',
+    hero_cta_activate_sim: 'Activate SIM',
+    hero_cta_topup_sim: 'TopUp SIM',
     home_activate: 'Activate my SIM',
     hero_carousel_region: 'Homepage spotlight — slides advance automatically.',
     hero_carousel_prev: 'Previous slide',

@@ -1,17 +1,10 @@
 import React, { useCallback, useEffect, useId, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import {
-    BadgeCheck,
-    CheckCircle2,
-    Coins,
-    Globe,
-    ShoppingCart,
-    Star,
-} from 'lucide-react';
+import { CheckCircle2, Globe, Star } from 'lucide-react';
 
-/** Seconds between carousel steps (each advance picks a delay in this range). */
-const SLIDE_INTERVAL_MIN_MS = 3000;
-const SLIDE_INTERVAL_MAX_MS = 5000;
+/** Autoplay spacing (≥4s): each advance picks a delay in this range. */
+const SLIDE_INTERVAL_MIN_MS = 4300;
+const SLIDE_INTERVAL_MAX_MS = 5200;
 
 /** Minimum horizontal drag (px) before a touch is treated as a slide swipe (not a tap). */
 const MOBILE_SWIPE_MIN_PX = 48;
@@ -149,54 +142,64 @@ function HeroTrustStrip({
     );
 }
 
-function HeroSlideFigure({
-    visual,
-    index,
+/** Fixed-height viewport + layered images cross-fade (~900ms) so aspect variance never collapses layout. */
+function HeroSlidesCrossfade({
+    activeIndex,
     variant,
     figureClassName,
+    reducedMotion,
 }: {
-    visual: (typeof MARKETING_HERO_VISUAL_SLIDES)[number];
-    index: number;
+    activeIndex: number;
     variant: 'mobile' | 'desktop';
     figureClassName: string;
+    reducedMotion: boolean;
 }) {
     const { t } = useTranslation();
-    const keyPrefix = variant === 'mobile' ? 'm' : 'd';
-    const boxClass =
+    const fade =
+        reducedMotion ? 'transition-none duration-0' : 'transition-opacity duration-[900ms] ease-in-out';
+    const hClass =
         variant === 'mobile'
-            ? 'relative aspect-[16/10] w-full max-h-[min(17.5rem,52vmin)] sm:max-h-[min(18.75rem,56vmin)]'
-            : 'relative aspect-[16/10] w-full max-h-[min(30rem,min(65dvh,calc(100dvh-9.5rem)))]';
+            ? 'h-[240px] sm:h-[268px]'
+            : 'h-[340px] min-h-[300px] lg:h-[380px] xl:h-[408px]';
+    const activeCaption = MARKETING_HERO_VISUAL_SLIDES[activeIndex];
+    const sizesAttr =
+        variant === 'mobile' ? '100vw' : '(min-width: 1024px) min(46vw, 560px), 0px';
 
     return (
-        <figure className={figureClassName}>
-            <div className={boxClass}>
-                <img
-                    key={`${keyPrefix}-${visual.src}-${index}`}
-                    src={visual.src}
-                    alt={t(visual.altKey)}
-                    sizes={
-                        variant === 'mobile'
-                            ? '100vw'
-                            : '(min-width: 1024px) min(46vw, 560px), 0px'
-                    }
-                    className="absolute inset-0 z-0 h-full w-full object-cover object-center"
-                    decoding="async"
-                    loading="eager"
-                    fetchPriority={index === 0 ? 'high' : 'auto'}
-                />
+        <figure className={`relative ${figureClassName}`}>
+            <div className={`relative w-full shrink-0 overflow-hidden ${hClass}`}>
+                {MARKETING_HERO_VISUAL_SLIDES.map((slide, i) => (
+                    <img
+                        key={slide.src}
+                        src={slide.src}
+                        alt={i === activeIndex ? t(slide.altKey) : ''}
+                        aria-hidden={i !== activeIndex}
+                        sizes={sizesAttr}
+                        className={`pointer-events-none absolute inset-0 h-full w-full object-cover object-center ${fade} ${
+                            i === activeIndex ? 'z-[1] opacity-100' : 'z-0 opacity-0'
+                        }`}
+                        decoding="async"
+                        loading={i === 0 || i === activeIndex ? 'eager' : 'lazy'}
+                        fetchPriority={i === 0 ? 'high' : 'auto'}
+                    />
+                ))}
                 <div
-                    className="pointer-events-none absolute inset-0 z-[1] bg-gradient-to-t from-black/78 via-black/15 to-transparent"
+                    className="pointer-events-none absolute inset-0 z-[2] bg-gradient-to-t from-black/78 via-black/15 to-transparent"
                     aria-hidden
                 />
             </div>
-            <figcaption className="pointer-events-none absolute inset-x-0 bottom-0 z-[2] p-3 sm:p-4">
+            <figcaption className="pointer-events-none absolute inset-x-0 bottom-0 z-[3] p-3 sm:p-4">
                 <p className="text-left text-sm font-semibold leading-snug text-white drop-shadow-sm md:text-[15px] lg:text-base">
-                    {t(visual.captionKey)}
+                    {t(activeCaption.captionKey)}
                 </p>
             </figcaption>
         </figure>
     );
 }
+
+/** Matches headline accent + hero CTAs (`from-orange-500 to-amber-400`). */
+const heroCtaBtnClass =
+    'flex touch-manipulation min-h-[2.5rem] w-full shrink-0 items-center justify-center rounded-xl bg-gradient-to-r from-orange-500 to-amber-400 px-3 py-2 text-xs font-bold text-white shadow-md shadow-orange-500/25 outline-none ring-offset-white transition-[transform,filter] hover:brightness-105 active:scale-[0.98] focus-visible:ring-2 focus-visible:ring-[#2563eb] focus-visible:ring-offset-2 sm:min-h-11 sm:text-sm';
 
 /** Home hero: selling slides; striped indicators (jump, swipe on touch), imagery + CTAs. */
 export function MarketingHeroCarousel(props: MarketingHeroCarouselProps) {
@@ -318,11 +321,11 @@ export function MarketingHeroCarousel(props: MarketingHeroCarouselProps) {
                             aria-label={planLinkAria}
                             className="block touch-manipulation outline-none ring-offset-white focus-visible:ring-2 focus-visible:ring-[#2563eb] focus-visible:ring-offset-2"
                         >
-                            <HeroSlideFigure
-                                visual={visual}
-                                index={index}
+                            <HeroSlidesCrossfade
+                                activeIndex={index}
                                 variant="mobile"
-                                figureClassName={`relative m-0 w-full bg-transparent ${HERO_ART_FRAME_CLASS}`}
+                                reducedMotion={reducedMotion}
+                                figureClassName={`m-0 w-full bg-transparent ${HERO_ART_FRAME_CLASS}`}
                             />
                         </a>
                     </div>
@@ -343,7 +346,7 @@ export function MarketingHeroCarousel(props: MarketingHeroCarouselProps) {
                                     current: i + 1,
                                     total: SLIDE_COUNT,
                                 })}
-                                className={`h-1.5 min-h-[6px] flex-1 touch-manipulation rounded-full border-0 shadow-inner outline-none transition-colors duration-75 focus-visible:ring-2 focus-visible:ring-[#2563eb] focus-visible:ring-offset-2 sm:h-2 ${
+                                className={`h-1.5 min-h-[6px] flex-1 touch-manipulation rounded-full border-0 shadow-inner outline-none transition-colors duration-300 ease-out focus-visible:ring-2 focus-visible:ring-[#2563eb] focus-visible:ring-offset-2 sm:h-2 ${
                                     i === index
                                         ? 'cursor-default bg-gradient-to-r from-orange-500 to-amber-400 shadow-sm'
                                         : 'cursor-pointer bg-gray-200 hover:bg-gray-300'
@@ -356,56 +359,48 @@ export function MarketingHeroCarousel(props: MarketingHeroCarouselProps) {
                         <a
                             href={travelLanding}
                             onClick={onTravelClick}
-                            className="flex w-full min-h-11 items-center justify-center gap-2 rounded-xl bg-orange-500 px-4 py-2.5 text-sm font-bold text-white shadow-lg shadow-orange-500/20 transition active:scale-[0.98] sm:min-h-12 sm:px-5 sm:py-3 sm:text-base"
+                            className={`${heroCtaBtnClass} gap-2`}
                         >
-                            <Globe className="h-[18px] w-[18px] shrink-0" />
+                            <Globe className="h-4 w-4 shrink-0 opacity-95 sm:h-[18px] sm:w-[18px]" aria-hidden />
                             {t('marketing.home_travel_esim')}
                         </a>
-                        <div className="mt-2.5 grid grid-cols-3 gap-1.5 sm:mt-3 sm:gap-3">
+                        <div className="mt-2 grid grid-cols-1 gap-2 sm:mt-2.5 sm:grid-cols-3 sm:items-stretch sm:gap-2">
                             <a
                                 href={amazonUrl}
                                 target="_blank"
                                 rel="noopener noreferrer"
-                                className="flex min-h-[4.25rem] flex-col items-center justify-center gap-1 rounded-xl border-2 border-[#FF6600] bg-white px-1.5 py-2 text-center text-[0.6875rem] font-bold leading-snug text-slate-800 shadow-sm shadow-orange-500/15 outline-none ring-offset-white transition hover:bg-orange-50/70 active:scale-[0.98] focus-visible:ring-2 focus-visible:ring-[#2563eb] focus-visible:ring-offset-2 sm:min-h-12 sm:flex-row sm:gap-2 sm:px-4 sm:py-3 sm:text-base sm:leading-normal"
+                                className={heroCtaBtnClass}
                                 aria-label={t('marketing.buy_sim_card_aria')}
                             >
-                                <ShoppingCart className="h-[18px] w-[18px] shrink-0 text-orange-600" />
-                                {t('marketing.buy_sim_card')}
+                                {t('marketing.hero_cta_buy_sim')}
                             </a>
                             <a
                                 href={activatePath}
                                 onClick={onActivateClick}
-                                className="flex min-h-[4.25rem] flex-col items-center justify-center gap-1 rounded-xl border border-orange-200 bg-gradient-to-br from-orange-50 to-amber-50 px-1.5 py-2 text-center text-[0.6875rem] font-bold leading-snug text-orange-950 shadow-sm outline-none ring-offset-white transition hover:from-orange-50 hover:to-amber-100/90 active:scale-[0.98] focus-visible:ring-2 focus-visible:ring-[#2563eb] focus-visible:ring-offset-2 sm:min-h-12 sm:flex-row sm:gap-2 sm:px-4 sm:py-3 sm:text-base sm:leading-normal"
+                                className={heroCtaBtnClass}
                             >
-                                <BadgeCheck className="h-[18px] w-[18px] shrink-0 text-orange-700" />
-                                {t('marketing.home_activate')}
+                                {t('marketing.hero_cta_activate_sim')}
                             </a>
-                            <a
-                                href="/top-up"
-                                className="flex min-h-[4.25rem] flex-col items-center justify-center gap-1 rounded-xl border-2 border-[#FF6600] bg-white px-1.5 py-2 text-center text-[0.6875rem] font-bold leading-snug text-slate-800 shadow-sm shadow-orange-500/15 outline-none ring-offset-white transition hover:bg-orange-50/70 active:scale-[0.98] focus-visible:ring-2 focus-visible:ring-[#2563eb] focus-visible:ring-offset-2 sm:min-h-12 sm:flex-row sm:gap-2 sm:px-4 sm:py-3 sm:text-base sm:leading-normal"
-                            >
-                                <Coins className="h-[18px] w-[18px] shrink-0 text-orange-600" />
-                                {t('marketing.footer_link_topup')}
+                            <a href="/top-up" className={heroCtaBtnClass}>
+                                {t('marketing.hero_cta_topup_sim')}
                             </a>
                         </div>
                     </div>
                 </div>
 
-                {/* Desktop: same 16:10 crop + bottom-left captions as mobile; orange frame via sticky wrapper. */}
+                {/* Desktop: fixed-height crossfade + bottom-left captions; frame via sticky wrapper. */}
                 <div className="relative hidden w-full min-w-0 lg:block">
-                    <div
-                        className={`sticky top-[4.25rem] w-full bg-transparent ${HERO_ART_FRAME_CLASS}`}
-                    >
+                    <div className={`sticky top-[4.25rem] w-full bg-transparent ${HERO_ART_FRAME_CLASS}`}>
                         <a
                             href={visual.planHref}
                             aria-label={planLinkAria}
                             className="block w-full outline-none ring-offset-white focus-visible:ring-2 focus-visible:ring-[#2563eb] focus-visible:ring-offset-4"
                         >
-                            <HeroSlideFigure
-                                visual={visual}
-                                index={index}
+                            <HeroSlidesCrossfade
+                                activeIndex={index}
                                 variant="desktop"
-                                figureClassName="relative m-0 w-full"
+                                reducedMotion={reducedMotion}
+                                figureClassName="m-0 w-full"
                             />
                         </a>
                     </div>
