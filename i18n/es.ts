@@ -9,9 +9,6 @@ const es = {
     title: 'Escanear código de barras ICCID',
     hint:
       'Apunta al código en la parte trasera de tu SIM — buena luz, mano firme y acerca la cámara si hace falta. Los QR de la caja también funcionan.',
-    esim_link_title: 'Escanear código QR',
-    esim_link_hint:
-      'Usa un QR que incluya tu ICCID o enlace del pedido. Los QR sólo para instalar pertenecen en Ajustes — pega tu ICCID aquí si tienes dudas.',
     permission_error: 'Permiso de cámara denegado. Permítelo en el navegador e inténtalo de nuevo.',
     camera_error: 'No pudimos iniciar la cámara. Cierra otras apps que la usen e inténtalo de nuevo.',
     close: 'Cerrar',
@@ -408,10 +405,9 @@ const es = {
       'Compra un plan en la tienda o introduce el ICCID del correo de confirmación para verlo aquí.',
     link_esim_sheet_lead: '¿Ya compraste un plan?',
     link_esim_hint:
-      'Introduce el ICCID del correo de pedido o escanea un QR sólo si incluye tu ICCID o enlace del pedido.',
+      'Busca el ICCID en tu correo de EvairSIM y escrívelo aquí. El código QR del correo sirve sólo para instalar en el teléfono.',
     link_esim_iccid_placeholder: 'ICCID de 15–22 caracteres',
     link_esim_iccid_invalid: 'Introduce un ICCID válido (15–22 letras o números).',
-    link_esim_scan_qr: 'Escanear código QR',
     link_esim_lookup: 'Consultar',
     link_esim_lookup_loading: 'Consultando…',
     link_esim_not_found: 'No encontramos ese ICCID. Revísalo e inténtalo de nuevo.',

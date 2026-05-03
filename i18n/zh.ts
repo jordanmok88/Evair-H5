@@ -9,9 +9,6 @@ const zh = {
     title: '扫描 ICCID 条码',
     hint:
       '对准 SIM 卡背面条码——光线充足、拿稳设备，必要时拉近镜头。包装盒上的二维码也可扫描。',
-    esim_link_title: '扫描二维码（仅含 ICCID）',
-    esim_link_hint:
-      '二维码需包含 ICCID 或订单链接；若仅为安装 QR（SM-DP+），请在手机里安装，或直接在此粘贴邮件中的 ICCID。',
     permission_error: '未获得摄像头权限，请在浏览器设置中允许后重试。',
     camera_error: '无法启动摄像头，请关闭占用摄像头的其它应用后再试。',
     close: '关闭',
@@ -385,13 +382,12 @@ const zh = {
     no_evairsim_yet: '暂无 EvairSIM',
     link_esim: '关联已有 eSIM',
     link_esim_title: '关联 eSIM',
-    link_esim_empty_hint: '在商店选购套餐，或输入确认邮件里的 ICCID 以在此显示。',
+    link_esim_empty_hint: '在商店购买套餐，或输入订单邮件中的 ICCID，即可在此处显示。',
     link_esim_sheet_lead: '已购买套餐？',
     link_esim_hint:
-      '请输入订单邮件中的 ICCID；仅当二维码内包含 ICCID 或订单链接时再扫码（不是纯安装 QR）。',
+      '请在下单邮件中找到 ICCID 并输入下方。邮件中的二维码仅用于在手机上安装 eSIM。',
     link_esim_iccid_placeholder: '15–22 位 ICCID',
     link_esim_iccid_invalid: '请输入有效 ICCID（15–22 位字母或数字）。',
-    link_esim_scan_qr: '扫描二维码',
     link_esim_lookup: '查询',
     link_esim_lookup_loading: '查询中…',
     link_esim_not_found: '未找到该 ICCID，请核对后重试。',

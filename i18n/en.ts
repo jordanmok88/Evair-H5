@@ -9,9 +9,6 @@ const en = {
     title: 'Scan ICCID barcode',
     hint:
       'Aim at the barcode on the back of your SIM card — use bright light, hold steady, and move closer if needed. QR codes on your box work too.',
-    esim_link_title: 'Scan QR code',
-    esim_link_hint:
-      'Use a QR that includes your ICCID or order URL. Plain install QR codes (sm‑dp+) only belong in Settings — paste your ICCID here if unsure.',
     permission_error: 'Camera permission denied. Please allow camera access and try again.',
     camera_error: 'Could not start camera. Make sure no other app is using it.',
     close: 'Close',
@@ -404,13 +401,12 @@ const en = {
     link_esim: 'Link existing eSIM',
     link_esim_title: 'Link eSIM',
     link_esim_empty_hint:
-      'Shop for a plan or enter an ICCID from a confirmation email to show it here.',
+      'Buy a plan in the shop, or enter the ICCID from your order email to show it here.',
     link_esim_sheet_lead: 'Already bought a plan?',
     link_esim_hint:
-      'Enter the ICCID from your order confirmation, or scan a QR code only if it includes your ICCID or order link.',
+      'Find the ICCID in your EvairSIM order email and type it below. Use the QR in that email only to install on your phone.',
     link_esim_iccid_placeholder: '15–22 digit ICCID',
     link_esim_iccid_invalid: 'Enter a valid ICCID (15–22 letters or digits).',
-    link_esim_scan_qr: 'Scan QR code',
     link_esim_lookup: 'Look up',
     link_esim_lookup_loading: 'Looking up…',
     link_esim_not_found: 'We could not find this ICCID. Check the number and try again.',
