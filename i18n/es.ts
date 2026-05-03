@@ -652,7 +652,7 @@ const es = {
     suggestion_chips_label: 'Temas rápidos',
     header_mode_agent_live: 'Agente en vivo',
     header_mode_ai_assistant: 'Asistente IA Evair',
-    menu_ai_assistant_default: 'Asistente IA Evair (predeterminado)',
+    menu_ai_assistant_default: 'Asistente IA Evair',
     sim_activation: 'Activación SIM',
     data_topup: 'Recarga de Datos',
     billing_issue: 'Problemas de facturación',

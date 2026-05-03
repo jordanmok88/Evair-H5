@@ -658,7 +658,7 @@ const en = {
     suggestion_chips_label: 'Quick topics',
     header_mode_agent_live: 'Agent is live',
     header_mode_ai_assistant: 'Evair AI Assistant',
-    menu_ai_assistant_default: 'Evair AI Assistant (By Default)',
+    menu_ai_assistant_default: 'Evair AI Assistant',
     sim_activation: 'SIM Activation',
     data_topup: 'Data Top Up',
     billing_issue: 'Billing Issues',

@@ -628,7 +628,7 @@ const zh = {
     suggestion_chips_label: '快捷话题',
     header_mode_agent_live: '人工客服在线',
     header_mode_ai_assistant: 'Evair AI 助手',
-    menu_ai_assistant_default: 'Evair AI 助手（默认）',
+    menu_ai_assistant_default: 'Evair AI 助手',
     sim_activation: 'SIM激活',
     data_topup: '流量充值',
     billing_issue: '账单问题',
