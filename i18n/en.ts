@@ -62,9 +62,9 @@ const en = {
     /** Legacy; shop wallet strip uses wallet_esim_* */
     global_esim_count_one: '{{count}} Global eSIM',
     global_esim_count_other: '{{count}} Global eSIMs',
-    wallet_esim_country_one: '1 {{country}} eSIM',
+    wallet_esim_country_one: '{{country}} eSIM',
     wallet_esim_country_other: '{{count}} {{country}} eSIMs',
-    wallet_esim_generic_one: '1 eSIM',
+    wallet_esim_generic_one: 'eSIM',
     wallet_esim_generic_other: '{{count}} eSIMs',
     my_sims: 'My SIMs',
     view_all: 'View All',
