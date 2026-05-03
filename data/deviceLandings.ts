@@ -286,7 +286,7 @@ export const DEVICE_CONTENT: Record<DeviceCategory, DeviceContent> = {
             },
         ],
         ctaHref: AMAZON_SIM_PRIMARY_PRODUCT_URL,
-        ctaLabel: 'Get a camera SIM',
+        ctaLabel: 'Get a Camera SIM',
     },
 
     iot: {
