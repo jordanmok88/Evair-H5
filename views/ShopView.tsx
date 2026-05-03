@@ -1440,7 +1440,7 @@ const ShopView: React.FC<ShopViewProps> = ({
               className={`relative z-10 flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-lg text-sm font-bold transition-colors duration-300 ${simType === 'ESIM' ? 'text-white' : 'text-slate-500'}`}
             >
               <Smartphone size={15} />
-              eSIM
+              {t('topup_page.tab_esim')}
             </button>
           </div>
 
@@ -1477,7 +1477,9 @@ const ShopView: React.FC<ShopViewProps> = ({
                     )}
                   </div>
                   <span className="text-sm font-bold text-slate-900">
-                    {simCount} {simType === 'ESIM' ? 'eSIM' : 'SIM'}{simCount > 1 ? 's' : ''}
+                    {simType === 'ESIM'
+                      ? t(simCount === 1 ? 'shop.global_esim_count_one' : 'shop.global_esim_count_other', { count: simCount })
+                      : `${simCount} SIM${simCount > 1 ? 's' : ''}`}
                   </span>
                   <span className="text-xs text-slate-500">· {simType === 'ESIM' ? t('shop.my_esims') : t('shop.my_sims')}</span>
                 </div>
