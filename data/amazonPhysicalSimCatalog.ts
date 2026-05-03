@@ -50,7 +50,7 @@ export function listingsForFamily(family: AmazonSimFamilyId): SimCardProduct[] {
  */
 export function buildAmazonUrlForProduct(product: SimCardProduct): string {
     const envUrl = (import.meta.env.VITE_AMAZON_SIM_STOREFRONT_URL as string | undefined)?.trim();
-    if (envUrl && !envUrl.includes('PLACEHOLDER')) {
+    if (envUrl && !envUrl.includes('PLACEHOLDER') && /^https?:\/\//i.test(envUrl)) {
         return envUrl;
     }
     const q = `EvairSIM US data ${product.gbs} GB ${product.validityDays} days`;

@@ -66,12 +66,27 @@ export const SIM_CARD_PRODUCTS: SimCardProduct[] = [
 
 /**
  * Physical SIM purchase: points to Amazon (storefront URL or search).
- * Set `VITE_AMAZON_SIM_STOREFRONT_URL` when a flagship store is live;
- * default is Amazon.com search for “EvairSIM”.
+ * Set `VITE_AMAZON_SIM_STOREFRONT_URL` when a flagship store / ASIN landing is live
+ * — must be a full `http(s)` URL. Empty, relative, `#`, placeholder, or bad env values
+ * fall back so marketing “Buy SIM” always opens Amazon with EvairSIM search.
  */
-export const AMAZON_SIM_STOREFRONT_URL =
-  (import.meta.env.VITE_AMAZON_SIM_STOREFRONT_URL as string | undefined) ||
-  'https://www.amazon.com/s?k=EvairSIM';
+const DEFAULT_AMAZON_SIM_SEARCH_URL = `https://www.amazon.com/s?k=${encodeURIComponent('EvairSIM')}`;
+
+function resolveAmazonSimStorefrontUrl(): string {
+  const raw = (import.meta.env.VITE_AMAZON_SIM_STOREFRONT_URL as string | undefined)?.trim() ?? '';
+  if (!raw || raw === '#' || /^javascript:/i.test(raw)) {
+    return DEFAULT_AMAZON_SIM_SEARCH_URL;
+  }
+  if (raw.includes('PLACEHOLDER')) {
+    return DEFAULT_AMAZON_SIM_SEARCH_URL;
+  }
+  if (/^https?:\/\//i.test(raw)) {
+    return raw;
+  }
+  return DEFAULT_AMAZON_SIM_SEARCH_URL;
+}
+
+export const AMAZON_SIM_STOREFRONT_URL = resolveAmazonSimStorefrontUrl();
 
 /** Canonical Amazon PDP — marketing “Pick a plan” buttons + `/sim/*` tier CTAs (physical SIM checkout via Amazon for now). */
 export const AMAZON_SIM_PRIMARY_PRODUCT_URL = 'https://www.amazon.com/dp/B0GZ2BVB1F';
