@@ -332,7 +332,7 @@ const es = {
   topup_page: {
     header_tagline: 'Añade datos a tu línea',
     tab_sim: 'Tarjeta SIM',
-    tab_esim: 'eSIM',
+    tab_esim: 'Global eSIM',
     tabs_aria: 'Elige recarga SIM física o eSIM de viaje',
     idle_title: 'Recarga tu EvairSIM',
     idle_body_sim:

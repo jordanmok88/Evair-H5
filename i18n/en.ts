@@ -331,7 +331,7 @@ const en = {
   topup_page: {
     header_tagline: 'Add data to your line',
     tab_sim: 'SIM Card',
-    tab_esim: 'eSIM',
+    tab_esim: 'Global eSIM',
     tabs_aria: 'Choose physical SIM card or travel eSIM',
     idle_title: 'Top up your EvairSIM',
     idle_body_sim:

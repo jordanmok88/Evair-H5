@@ -316,7 +316,7 @@ const zh = {
   topup_page: {
     header_tagline: '为已开通的 SIM / eSIM 充值',
     tab_sim: 'SIM 卡',
-    tab_esim: 'eSIM',
+    tab_esim: '全球 eSIM',
     tabs_aria: '切换实体 SIM 卡或境外旅游 eSIM 充值页',
     idle_title: '为 EvairSIM 充值',
     idle_body_sim:
