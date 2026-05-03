@@ -163,7 +163,7 @@ function App() {
     <>
       {showGlobalSupportFabForRoute(route.kind) && (
         <>
-          <SupportFab layout="fixed" visible onClick={() => setMarketingSupportOpen(true)} />
+          <SupportFab layout="fixed" visible={!marketingSupportOpen} onClick={() => setMarketingSupportOpen(true)} />
           <MarketingContactDrawer open={marketingSupportOpen} onClose={() => setMarketingSupportOpen(false)} />
         </>
       )}

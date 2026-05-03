@@ -778,7 +778,7 @@ const ContactUsView: React.FC<ContactUsViewProps> = ({
     <div
       className={
         embedded
-          ? 'flex h-full min-h-0 max-h-[100dvh] flex-col bg-[#F2F4F7] relative'
+          ? 'relative flex h-full min-h-0 flex-col overflow-hidden bg-[#F2F4F7]'
           : 'lg:h-full min-h-screen lg:min-h-0 flex flex-col bg-[#F2F4F7] relative'
       }
     >
@@ -842,8 +842,17 @@ const ContactUsView: React.FC<ContactUsViewProps> = ({
         </div>
       )}
 
-      {/* Messages Area — pb accounts for the fixed input bar (~88px) */}
-      <div ref={scrollContainerRef} onScroll={handleScroll} className="flex-1 overflow-y-auto no-scrollbar px-4 pt-5" style={{ scrollBehavior: 'smooth', WebkitOverflowScrolling: 'touch', paddingBottom: 96 }}>
+      {/* Messages Area — pb: full-page uses fixed composer (~96px); embedded keeps composer in-flow */}
+      <div
+        ref={scrollContainerRef}
+        onScroll={handleScroll}
+        className="flex-1 overflow-y-auto no-scrollbar px-4 pt-5"
+        style={{
+          scrollBehavior: 'smooth',
+          WebkitOverflowScrolling: 'touch',
+          paddingBottom: embedded ? 16 : 96,
+        }}
+      >
         {/* IntersectionObserver sentinel for infinite scroll up */}
         <div ref={sentinelRef} style={{ height: 1 }} />
 
@@ -981,15 +990,56 @@ const ContactUsView: React.FC<ContactUsViewProps> = ({
       {showJumpToLatest && (
         <button
           onClick={() => scrollToBottom()}
-          style={{ position: 'absolute', right: 16, bottom: 104, width: 36, height: 36, borderRadius: '50%', backgroundColor: '#fff', border: '1px solid #e2e8f0', boxShadow: '0 4px 12px rgba(0,0,0,0.08)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', zIndex: 15, transition: 'transform 0.2s, opacity 0.2s' }}
+          style={{
+            position: 'absolute',
+            right: embedded ? 12 : 16,
+            bottom: embedded ? 92 : 104,
+            width: 36,
+            height: 36,
+            borderRadius: '50%',
+            backgroundColor: '#fff',
+            border: '1px solid #e2e8f0',
+            boxShadow: '0 4px 12px rgba(0,0,0,0.08)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            cursor: 'pointer',
+            zIndex: 15,
+            transition: 'transform 0.2s, opacity 0.2s',
+          }}
           aria-label="jump to latest"
         >
           <ArrowDown size={18} color="#475569" />
         </button>
       )}
 
-      {/* Phase 3: Input Area — fixed to viewport bottom */}
-      <div style={{ position: 'fixed', bottom: 0, left: 0, right: 0, zIndex: 20, padding: '12px 16px 32px', backgroundColor: '#fff', borderTop: '1px solid #f1f5f9', boxShadow: '0 -2px 10px rgba(0,0,0,0.03)' }}>
+      {/* Phase 3: Input — viewport-fixed in-app; embedded = in-flow inside marketing widget */}
+      <div
+        style={
+          embedded
+            ? {
+                position: 'relative',
+                flexShrink: 0,
+                zIndex: 20,
+                padding: '12px 12px max(12px, env(safe-area-inset-bottom, 0px))',
+                paddingTop: 10,
+                backgroundColor: '#fff',
+                borderTop: '1px solid #f1f5f9',
+                boxShadow: '0 -2px 10px rgba(0,0,0,0.03)',
+              }
+            : {
+                position: 'fixed',
+                bottom: 0,
+                left: 0,
+                right: 0,
+                zIndex: 20,
+                padding: '12px 16px 32px',
+                backgroundColor: '#fff',
+                borderTop: '1px solid #f1f5f9',
+                boxShadow: '0 -2px 10px rgba(0,0,0,0.03)',
+              }
+        }
+      >
         <div style={{ display: 'flex', alignItems: 'flex-end', gap: 10, backgroundColor: '#f8fafc', borderRadius: 20, padding: '6px 6px 6px 16px', border: '1px solid #e2e8f0' }}>
           {/* Phase 2: Paperclip opens attach menu, disabled only when uploading */}
           <button
