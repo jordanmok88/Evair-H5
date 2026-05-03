@@ -64,10 +64,10 @@ const HAPPY_STORIES = [
     },
 ] as const;
 
-function StarRow({ compact }: { compact?: boolean }) {
+function StarRow({ compact, center }: { compact?: boolean; center?: boolean }) {
     const size = compact ? 11 : 14;
     return (
-        <div className="flex gap-0.5 text-amber-400" aria-hidden>
+        <div className={`flex gap-0.5 text-amber-400${center ? ' justify-center' : ''}`} aria-hidden>
             {Array.from({ length: 5 }, (_, i) => (
                 <Star key={i} size={size} className="fill-current" strokeWidth={0} />
             ))}
@@ -218,18 +218,24 @@ const MarketingPage: React.FC = () => {
                                         decoding="async"
                                     />
                                 </div>
-                                <div className="flex min-h-0 flex-1 flex-col p-3.5 sm:p-4">
-                                    <StarRow compact />
-                                    <p className="mt-2 min-h-[4.25rem] text-[0.8125rem] font-semibold leading-snug text-gray-800 [overflow-wrap:anywhere] sm:min-h-[4.5rem] sm:text-sm">
-                                        &ldquo;{s.quote}&rdquo;
-                                    </p>
-                                    <p className="mt-1.5 text-[11px] font-medium text-gray-500 sm:text-xs">{s.who}</p>
-                                    <a
-                                        href="/blog"
-                                        className="mt-auto inline-flex min-h-10 w-full items-center justify-center rounded-lg border border-gray-900 bg-white py-2 text-xs font-bold text-gray-900 transition-[background-color,color,border-color] hover:border-brand-orange hover:bg-brand-orange hover:text-white"
-                                    >
-                                        {t('marketing.home_stories_cta')}
-                                    </a>
+                                <div className="flex min-h-0 flex-1 flex-col">
+                                    <div className="flex flex-1 flex-col items-center px-4 py-5 text-center sm:px-5 sm:py-6">
+                                        <StarRow compact center />
+                                        <p className="mt-4 min-h-[4.25rem] text-[0.8125rem] font-semibold leading-snug text-gray-900 [overflow-wrap:anywhere] sm:min-h-[4.5rem] sm:text-sm">
+                                            &ldquo;{s.quote}&rdquo;
+                                        </p>
+                                        <p className="mt-3 max-w-[16rem] text-[11px] font-medium leading-snug text-gray-500 sm:text-xs">
+                                            {s.who}
+                                        </p>
+                                    </div>
+                                    <div className="border-t border-gray-100 px-4 pb-4 pt-4 sm:px-5 sm:pb-5">
+                                        <a
+                                            href="/blog"
+                                            className="inline-flex min-h-10 w-full items-center justify-center rounded-lg border border-gray-900 bg-white py-2.5 text-xs font-bold text-gray-900 transition-[background-color,color,border-color] hover:border-brand-orange hover:bg-brand-orange hover:text-white"
+                                        >
+                                            {t('marketing.home_stories_cta')}
+                                        </a>
+                                    </div>
                                 </div>
                             </article>
                         ))}
