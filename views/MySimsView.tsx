@@ -333,7 +333,18 @@ const MySimsView: React.FC<MySimsViewProps> = ({
   // EMPTY STATE
   if (!currentSim) {
     if (filterType === 'ESIM' && esimsMineWizardDefer) {
-      return <>{linkWizard}</>;
+      return (
+        <>
+          {/*
+            Slot-0 anchor: defer opens with zero SIMs and only the wizard. After bind,
+            fetchUserSims fills the wallet and we render main Mine + wizard as the *second*
+            child. Without this spacer, wizard moves child[0]→child[1], React remounts it,
+            phase resets to ICCID screen, and success / congrats never show.
+          */}
+          <div className="sr-only select-none" aria-hidden />
+          {linkWizard}
+        </>
+      );
     }
 
     if (filterType === 'ESIM') {
