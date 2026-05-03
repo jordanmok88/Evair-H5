@@ -335,7 +335,7 @@ const en = {
     footer_link_refund: 'Refund Policy',
   },
   topup_page: {
-    header_tagline: 'Add data to your line',
+    header_tagline: 'Add data to your SIM card and eSIM',
     tab_sim: 'SIM Card',
     tab_esim: 'Global eSIM',
     tabs_aria: 'Choose physical SIM card or travel eSIM',

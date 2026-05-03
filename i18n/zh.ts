@@ -319,7 +319,7 @@ const zh = {
     footer_link_refund: '退款政策',
   },
   topup_page: {
-    header_tagline: '为已开通的 SIM / eSIM 充值',
+    header_tagline: '为您的 SIM 卡与 eSIM 充值',
     tab_sim: 'SIM 卡',
     tab_esim: '全球 eSIM',
     tabs_aria: '切换实体 SIM 卡或境外旅游 eSIM 充值页',

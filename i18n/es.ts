@@ -335,7 +335,7 @@ const es = {
     footer_link_refund: 'Política de reembolso',
   },
   topup_page: {
-    header_tagline: 'Añade datos a tu línea',
+    header_tagline: 'Añade datos a tu tarjeta SIM y eSIM',
     tab_sim: 'Tarjeta SIM',
     tab_esim: 'Global eSIM',
     tabs_aria: 'Elige recarga SIM física o eSIM de viaje',
