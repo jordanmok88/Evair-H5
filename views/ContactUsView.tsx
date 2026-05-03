@@ -1,6 +1,6 @@
-import React, { useState, useRef, useEffect, useMemo, useCallback } from 'react';
+import React, { useState, useRef, useEffect, useLayoutEffect, useMemo, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
-import { ChevronLeft, Send, Paperclip, CheckCheck, Bot, Sparkles, AlertCircle, ArrowDown, Wifi, WifiOff, Headphones, ImagePlus, FileText, Loader2, X, Package, Receipt, Download } from 'lucide-react';
+import { ChevronLeft, Send, Paperclip, CheckCheck, Bot, Sparkles, AlertCircle, ArrowDown, ArrowUp, Wifi, WifiOff, Headphones, ImagePlus, FileText, Loader2, X, Package, Receipt, Download } from 'lucide-react';
 import { getMultilingualResponse } from '../ai/evairAssistant';
 import { useEdgeSwipeBack } from '../hooks/useEdgeSwipeBack';
 import { chatService, newClientMsgId } from '../services/api/chat';
@@ -37,6 +37,10 @@ const HUMAN_KEYWORDS = /\b(human|agent|real person|speak to someone|talk to pers
 
 const DRAFT_KEY = 'evair-chat-draft';
 const SCROLL_FOLLOW_THRESHOLD_PX = 80;
+const SCROLL_JUMP_TOP_SHOW_PX = 80;
+
+const COMPOSER_MIN_INPUT_PX = 44;
+const COMPOSER_MAX_INPUT_PX = 132;
 
 const formatTime = (date: Date) => date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 
@@ -111,6 +115,7 @@ const ContactUsView: React.FC<ContactUsViewProps> = ({
   const [isTyping, setIsTyping] = useState(false);
   const [connection, setConnection] = useState<ConnectionState>('idle');
   const [showJumpToLatest, setShowJumpToLatest] = useState(false);
+  const [showJumpToTop, setShowJumpToTop] = useState(false);
   const [lightboxUrl, setLightboxUrl] = useState<string | null>(null);
   const [detailSheet, setDetailSheet] = useState<{
     type: 'product' | 'order';
@@ -290,6 +295,31 @@ const ContactUsView: React.FC<ContactUsViewProps> = ({
     setShowJumpToLatest(false);
   }, []);
 
+  const scrollToTop = useCallback((behavior: ScrollBehavior = 'smooth') => {
+    scrollContainerRef.current?.scrollTo({ top: 0, behavior });
+  }, []);
+
+  const adjustComposerHeight = useCallback(() => {
+    const ta = inputRef.current;
+    if (!ta) return;
+    ta.style.height = `${COMPOSER_MIN_INPUT_PX}px`;
+    ta.style.overflowY = 'hidden';
+    const next = Math.min(COMPOSER_MAX_INPUT_PX, Math.max(COMPOSER_MIN_INPUT_PX, ta.scrollHeight));
+    ta.style.height = `${next}px`;
+    ta.style.overflowY = next >= COMPOSER_MAX_INPUT_PX ? 'auto' : 'hidden';
+  }, []);
+
+  const handleComposerFocus = useCallback(() => {
+    adjustComposerHeight();
+    if (isNearBottom()) {
+      requestAnimationFrame(() => scrollToBottom('smooth'));
+    }
+  }, [adjustComposerHeight, isNearBottom, scrollToBottom]);
+
+  useLayoutEffect(() => {
+    adjustComposerHeight();
+  }, [input, adjustComposerHeight]);
+
   useEffect(() => {
     if (isNearBottom()) {
       scrollToBottom();
@@ -380,6 +410,9 @@ const ContactUsView: React.FC<ContactUsViewProps> = ({
   }, [loadingMore, hasMore, loadOlderMessages]);
 
   const handleScroll = () => {
+    const el = scrollContainerRef.current;
+    if (el && el.scrollTop > SCROLL_JUMP_TOP_SHOW_PX) setShowJumpToTop(true);
+    else setShowJumpToTop(false);
     if (isNearBottom()) setShowJumpToLatest(false);
   };
 
@@ -1071,46 +1104,65 @@ const ContactUsView: React.FC<ContactUsViewProps> = ({
           <div ref={messagesEndRef} />
         </div>
 
+        {showJumpToTop && (
+          <button
+            type="button"
+            onClick={() => scrollToTop()}
+            className="pointer-events-auto absolute left-4 top-3 z-[35] flex h-11 w-11 items-center justify-center rounded-full border border-slate-200 bg-white shadow-lg transition hover:bg-slate-50"
+            aria-label={t('contact.jump_to_top')}
+          >
+            <ArrowUp size={20} color="#475569" />
+          </button>
+        )}
         {showJumpToLatest && (
           <button
             type="button"
             onClick={() => scrollToBottom()}
-            className="pointer-events-auto absolute bottom-3 right-4 z-[30] flex h-9 w-9 items-center justify-center rounded-full border border-slate-200 bg-white shadow-lg transition hover:bg-slate-50"
-            aria-label="jump to latest"
+            className="pointer-events-auto absolute bottom-3 right-4 z-[35] flex h-11 w-11 items-center justify-center rounded-full border border-slate-200 bg-white shadow-lg transition hover:bg-slate-50"
+            aria-label={t('contact.jump_to_latest')}
           >
-            <ArrowDown size={18} color="#475569" />
+            <ArrowDown size={20} color="#475569" />
           </button>
         )}
       </div>
 
       {/* Phase 3: Input — flex footer (not position:fixed) so header/messages/composer don’t fight page scroll */}
       <div
-        className={`relative z-20 shrink-0 touch-manipulation border-t border-slate-200/90 bg-white pt-2 shadow-[0_-8px_24px_-12px_rgba(15,23,42,0.08)] ${embedded ? 'px-3.5 pb-[max(10px,env(safe-area-inset-bottom,0px))]' : 'px-4 pb-[max(12px,env(safe-area-inset-bottom,0px))]'}`}
+        className={`relative z-20 shrink-0 touch-manipulation border-t border-slate-200/90 bg-white shadow-[0_-8px_24px_-12px_rgba(15,23,42,0.08)] supports-[padding:max(0px)]:pb-[max(14px,env(safe-area-inset-bottom,0px))] ${embedded ? 'px-3.5 pb-3 pt-2' : 'px-4 pb-3 pt-2'}`}
       >
-        <div className="flex min-h-[48px] w-full min-w-0 items-end gap-2 rounded-[20px] border border-[#e2e8f0] bg-[#f8fafc] p-2 pl-4 md:gap-3">
+        <div className="flex w-full min-w-0 items-end gap-2 rounded-[22px] border border-[#e2e8f0] bg-[#f8fafc] p-2 pl-3 pr-2">
           <button
             type="button"
             onClick={() => setAttachMenuOpen(true)}
             disabled={uploading}
-            className="-mb-0.5 flex h-11 min-h-[44px] w-11 shrink-0 items-center justify-center rounded-full border-none bg-transparent transition-opacity disabled:cursor-not-allowed disabled:opacity-40"
+            className="mb-px flex h-11 w-11 shrink-0 touch-manipulation items-center justify-center rounded-full border-none bg-transparent transition-opacity disabled:cursor-not-allowed disabled:opacity-40"
           >
-            <Paperclip size={20} color="#94a3b8" />
+            <Paperclip size={20} color="#94a3b8" strokeWidth={2} />
           </button>
           <textarea
             ref={inputRef}
             value={input}
-            onChange={e => setInput(e.target.value)}
+            enterKeyHint="send"
+            onChange={e => {
+              setInput(e.target.value);
+              requestAnimationFrame(adjustComposerHeight);
+            }}
             onKeyDown={handleKeyDown}
+            onFocus={handleComposerFocus}
             placeholder={t('contact.type_message')}
-            rows={2}
-            className="min-h-[44px] min-w-0 flex-1 resize-none border-none bg-transparent py-2 font-sans text-[15px] leading-normal text-[#1e293b] outline-none"
-            style={{ maxHeight: 100 }}
+            rows={1}
+            spellCheck
+            aria-label={t('contact.type_message')}
+            className="box-border min-h-[44px] min-w-0 flex-1 resize-none overflow-hidden border-none bg-transparent px-0.5 py-2.5 font-sans text-[15px] leading-snug text-[#1e293b] [-webkit-appearance:none] outline-none"
+            style={{
+              maxHeight: COMPOSER_MAX_INPUT_PX,
+            }}
           />
           <button
             type="button"
             onClick={handleSend}
             disabled={!input.trim() || uploading}
-            className="flex h-11 min-h-[44px] w-11 shrink-0 items-center justify-center rounded-full border-none transition-colors"
+            className="mb-px flex h-11 w-11 shrink-0 touch-manipulation items-center justify-center rounded-full border-none transition-colors"
             style={{
               backgroundColor: input.trim() && !uploading ? '#FF6600' : '#e2e8f0',
               cursor: input.trim() && !uploading ? 'pointer' : 'default',

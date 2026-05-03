@@ -660,6 +660,8 @@ const zh = {
     live_staff_modal_confirm: '继续',
     live_staff_modal_cancel: '取消',
     live_staff_request_note: '请为本会话分配一名在线人工客服。',
+    jump_to_top: '回到对话开头',
+    jump_to_latest: '跳到最新消息',
     product_detail: '套餐详情',
     buy_now: '立即购买',
     order_detail: '订单详情',

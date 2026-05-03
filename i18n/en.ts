@@ -690,6 +690,8 @@ const en = {
     live_staff_modal_confirm: 'Continue',
     live_staff_modal_cancel: 'Cancel',
     live_staff_request_note: 'Please assign a live support agent to this conversation.',
+    jump_to_top: 'Scroll to beginning',
+    jump_to_latest: 'Scroll to latest messages',
     product_detail: 'Plan Details',
     buy_now: 'Buy Now',
     order_detail: 'Order Details',

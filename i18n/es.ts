@@ -684,6 +684,8 @@ const es = {
     live_staff_modal_confirm: 'Continuar',
     live_staff_modal_cancel: 'Cancelar',
     live_staff_request_note: 'Asigne un agente de soporte humano a esta conversación.',
+    jump_to_top: 'Ir al inicio del chat',
+    jump_to_latest: 'Ir a los últimos mensajes',
     product_detail: 'Detalles del plan',
     buy_now: 'Comprar ahora',
     order_detail: 'Detalles del pedido',
