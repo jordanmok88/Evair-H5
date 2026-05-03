@@ -28,6 +28,8 @@ interface InboxViewProps {
   onUpdateNotifications: (updater: (prev: AppNotification[]) => AppNotification[]) => void;
   onNavigate?: (tab: string) => void;
   onBack?: () => void;
+  /** Marketing floating drawer — compact chrome + in-flow scroll (see `MarketingInboxDrawer`). */
+  embedded?: boolean;
 }
 
 const resolveText = (key: string, t: (k: string, opts?: Record<string, string>) => string, opts?: Record<string, string>): string => {
@@ -35,7 +37,13 @@ const resolveText = (key: string, t: (k: string, opts?: Record<string, string>) 
   return t(key, opts);
 };
 
-const InboxView: React.FC<InboxViewProps> = ({ notifications, onUpdateNotifications, onNavigate, onBack }) => {
+const InboxView: React.FC<InboxViewProps> = ({
+  notifications,
+  onUpdateNotifications,
+  onNavigate,
+  onBack,
+  embedded = false,
+}) => {
   const { t } = useTranslation();
   const [filter, setFilter] = useState<InboxFilter>('all');
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
@@ -79,9 +87,15 @@ const InboxView: React.FC<InboxViewProps> = ({ notifications, onUpdateNotificati
   const deleteTarget = deleteConfirmId ? notifications.find(n => n.id === deleteConfirmId) : null;
 
   return (
-    <div className="lg:h-full flex flex-col bg-[#F2F4F7] relative">
+    <div
+      className={`flex flex-col bg-[#F2F4F7] relative ${embedded ? 'h-full min-h-0' : 'lg:h-full'}`}
+    >
       {/* Header */}
-      <div className="bg-white/90 backdrop-blur-xl pt-safe px-4 pb-3 shrink-0 sticky top-0 z-10 flex items-center gap-2 border-b border-slate-100">
+      <div
+        className={`bg-white/90 backdrop-blur-xl shrink-0 sticky top-0 z-10 flex items-center gap-2 border-b border-slate-100 px-4 pb-3 ${
+          embedded ? 'pt-3' : 'pt-safe'
+        }`}
+      >
         {onBack && (
           <button onClick={onBack} className="w-9 h-9 -ml-1 rounded-full flex items-center justify-center hover:bg-black/5 active:bg-black/10 transition-colors">
             <ArrowLeft size={22} className="text-slate-900" />
@@ -90,7 +104,13 @@ const InboxView: React.FC<InboxViewProps> = ({ notifications, onUpdateNotificati
         <h1 className="text-lg font-bold tracking-tight text-slate-900">{t('profile.inbox')}</h1>
       </div>
 
-      <div className="lg:flex-1 lg:min-h-0 lg:overflow-y-auto no-scrollbar px-4 md:px-8 lg:px-4 pb-6 pt-4">
+      <div
+        className={`no-scrollbar pb-6 pt-4 ${
+          embedded
+            ? 'flex-1 min-h-0 overflow-y-auto px-4'
+            : 'lg:flex-1 lg:min-h-0 lg:overflow-y-auto px-4 md:px-8 lg:px-4'
+        }`}
+      >
         {/* Unread count & mark all read */}
         {unreadCount > 0 && (
           <div className="flex items-center justify-between mb-3">

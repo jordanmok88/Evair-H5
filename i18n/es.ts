@@ -318,7 +318,7 @@ const es = {
     nav_help: 'Ayuda',
     nav_blog: 'Blog',
     footer_flat_home: 'Inicio',
-    header_inbox_aria: 'Abrir buzón en la app Evair',
+    header_inbox_aria: 'Abrir buzón',
     header_profile_aria: 'Abrir perfil en la app Evair',
     footer_flat_refunds: 'Reembolsos',
     footer_flat_support: 'Soporte',

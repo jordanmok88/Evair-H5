@@ -1,15 +1,18 @@
 import React, { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Bell, UserCircle } from 'lucide-react';
+import MarketingInboxDrawer from '@/components/marketing/MarketingInboxDrawer';
 import { useAuthSessionPresent } from '@/hooks/useAuthSessionPresent';
-import { useMarketingHeaderUnreadCount } from '@/hooks/useMarketingHeaderUnreadCount';
+import { useMarketingInboxNotifications } from '@/hooks/useMarketingInboxNotifications';
 import { userService } from '@/services/api';
 
-/** Bell (/app#inbox) + gradient profile (/app#profile) — visual parity `@see ShopView.tsx` ~1407–1421 */
+/** Inbox (floating drawer) + gradient profile (/app#profile) — bell matches live-chat panel pattern, not full-page /app */
 const SiteHeaderAccountActions: React.FC = () => {
     const { t } = useTranslation();
     const loggedIn = useAuthSessionPresent();
-    const unread = useMarketingHeaderUnreadCount(loggedIn);
+    const { notifications, onUpdateNotifications } = useMarketingInboxNotifications(loggedIn);
+    const unread = notifications.filter((n) => !n.read).length;
+    const [inboxOpen, setInboxOpen] = useState(false);
     const [initial, setInitial] = useState<string | null>(null);
 
     useEffect(() => {
@@ -39,10 +42,13 @@ const SiteHeaderAccountActions: React.FC = () => {
 
     return (
         <>
-            <a
-                href="/app#inbox"
+            <button
+                type="button"
+                onClick={() => setInboxOpen(true)}
                 className={bellCls}
                 aria-label={t('marketing.header_inbox_aria')}
+                aria-expanded={inboxOpen}
+                aria-haspopup="dialog"
                 style={{ WebkitTapHighlightColor: 'transparent' }}
             >
                 <Bell size={18} aria-hidden />
@@ -51,7 +57,13 @@ const SiteHeaderAccountActions: React.FC = () => {
                         {unread > 9 ? '9+' : unread}
                     </span>
                 )}
-            </a>
+            </button>
+            <MarketingInboxDrawer
+                open={inboxOpen}
+                onClose={() => setInboxOpen(false)}
+                notifications={notifications}
+                onUpdateNotifications={onUpdateNotifications}
+            />
             <a
                 href="/app#profile"
                 className={profileCls}
