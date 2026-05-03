@@ -652,6 +652,8 @@ const es = {
   },
   profile: {
     title: 'Perfil',
+    sheet_auth_title: 'Inicia sesión o crea una cuenta',
+    sheet_auth_body: 'Usa el mismo correo que en tus compras. Solo unos segundos — sin código QR en escritorio.',
     log_in: 'Iniciar Sesión',
     sign_up: 'Registrarse',
     log_out: 'Cerrar Sesión',

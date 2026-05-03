@@ -630,6 +630,8 @@ const zh = {
   },
   profile: {
     title: '我的',
+    sheet_auth_title: '登录或注册账号',
+    sheet_auth_body: '请使用与您订单一致的邮箱。几秒钟即可完成——桌面端无需扫码。',
     log_in: '登录',
     sign_up: '注册',
     log_out: '退出登录',

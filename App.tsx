@@ -7,6 +7,7 @@ import ProductTab from './views/ProductTab';
 import { parseAppTravelEsimCountry } from './utils/appTravelPath';
 import ProfileView from './views/ProfileView';
 import LoginModal from './views/LoginModal';
+import GuestAuthSheet from './components/auth/GuestAuthSheet';
 import DialerView from './views/DialerView';
 import ContactUsView from './views/ContactUsView';
 import InboxView from './views/InboxView';
@@ -364,6 +365,8 @@ function CustomerApp() {
   }, []);
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
   const [loginModalMode, setLoginModalMode] = useState<'LOGIN' | 'REGISTER'>('LOGIN');
+  /** Profile tab: same flowing sheet as `/top-up` checkout auth (not centre LoginModal). */
+  const [profileSheetAuth, setProfileSheetAuth] = useState<'login' | 'register' | null>(null);
   
   const [activeSims, setActiveSims] = useState<ActiveSim[]>(() => {
     try {
@@ -645,6 +648,7 @@ function CustomerApp() {
       email: userData.email,
     });
     setIsLoginModalOpen(false);
+    setProfileSheetAuth(null);
 
     // Fire-and-forget: inside the native shell, ask for notification
     // permission and ship the APNs/FCM token to Laravel. No-op in a
@@ -961,8 +965,12 @@ function CustomerApp() {
             <ProfileView
                 isLoggedIn={isLoggedIn}
                 user={user}
-                onLogin={() => { setLoginModalMode('LOGIN'); setIsLoginModalOpen(true); }}
-                onSignup={() => { setLoginModalMode('REGISTER'); setIsLoginModalOpen(true); }}
+                onLogin={() => {
+                  setProfileSheetAuth('login');
+                }}
+                onSignup={() => {
+                  setProfileSheetAuth('register');
+                }}
                 onLogout={handleLogout}
                 onOpenDialer={() => { previousTab.current = activeTab; setActiveTab(Tab.DIALER); }}
                 onOpenInbox={() => { previousTab.current = activeTab; setActiveTab(Tab.INBOX); }}
@@ -1082,6 +1090,13 @@ function CustomerApp() {
             onClose={() => setIsLoginModalOpen(false)}
             onLogin={handleLoginSuccess}
             initialMode={loginModalMode}
+        />
+
+        <GuestAuthSheet
+            open={profileSheetAuth !== null}
+            initialMode={profileSheetAuth === 'register' ? 'register' : 'login'}
+            onClose={() => setProfileSheetAuth(null)}
+            onSuccess={handleLoginSuccess}
         />
 
         <MobileOnlyNotice

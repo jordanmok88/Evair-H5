@@ -86,9 +86,21 @@ function looksLikeDesktopPointerEnvironment(): boolean {
  * Native WebView (`evair.isNative`), **`#app-preview`**, handheld viewports (&lt;768), and
  * touch-primary devices are excluded — real phones opening `/app` in landscape stay uninterrupted.
  */
+/** Deep-linked shells where we want the `/app` UI immediately (modal login, inbox, etc.). */
+export const APP_HASH_SKIP_DESKTOP_QR = ['#profile', '#inbox'] as const;
+
+function deeplinkSkipsDesktopAppQr(): boolean {
+    if (typeof window === 'undefined') return false;
+    const raw = window.location.hash.trim().toLowerCase();
+    if (!raw.startsWith('#')) return false;
+    const base = raw.split('?')[0] as string;
+    return (APP_HASH_SKIP_DESKTOP_QR as readonly string[]).includes(base);
+}
+
 export function shouldAutoPromptQrOnCustomerApp(): boolean {
     if (typeof window === 'undefined') return false;
     if (!isAppPath()) return false;
+    if (deeplinkSkipsDesktopAppQr()) return false;
     if (runningInsideNativeApp()) return false;
     if (isAppPreviewHash()) return false;
     if (readAck()) return false;
@@ -122,10 +134,12 @@ export function useCustomerAppDesktopQr(): Pick<
 
         mqs.forEach((mq) => mq.addEventListener('change', evaluate));
         window.addEventListener('storage', evaluate);
+        window.addEventListener('hashchange', evaluate);
 
         return () => {
             mqs.forEach((mq) => mq.removeEventListener('change', evaluate));
             window.removeEventListener('storage', evaluate);
+            window.removeEventListener('hashchange', evaluate);
         };
     }, []);
 

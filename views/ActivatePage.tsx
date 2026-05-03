@@ -21,6 +21,7 @@ import {
 } from 'lucide-react';
 import BarcodeScanner from '../components/BarcodeScanner';
 import SetupIntentCardForm from '../components/SetupIntentCardForm';
+import SiteHeader from '../components/marketing/SiteHeader';
 import {
     activationService,
     authService,
@@ -155,7 +156,10 @@ const ActivatePage: React.FC<ActivatePageProps> = ({ iccid: initialIccid }) => {
 
     return (
         <div className="min-h-screen bg-slate-50 flex flex-col">
-            <Header />
+            <SiteHeader />
+            <div className="border-b border-slate-200 bg-white px-4 py-2 text-center">
+                <p className="text-xs font-medium text-slate-500">{t('activate.header_tagline')}</p>
+            </div>
 
             <main className="flex-1 px-4 py-6 md:px-6 md:py-10 max-w-md mx-auto w-full">
                 {phase.kind === 'idle' && (
@@ -228,26 +232,6 @@ const ActivatePage: React.FC<ActivatePageProps> = ({ iccid: initialIccid }) => {
 export default ActivatePage;
 
 // ─── Subcomponents ────────────────────────────────────────────────────────
-
-const Header: React.FC = () => {
-    const { t } = useTranslation();
-    return (
-        <header className="sticky top-0 z-10 border-b border-slate-200 bg-white px-4 py-4 md:px-6">
-            <div className="mx-auto flex max-w-md flex-col items-center gap-1 text-center">
-                <a href="/" className="inline-block shrink-0" aria-label="EvairSIM home">
-                    <img
-                        src="/evairsim-wordmark.png"
-                        alt="EvairSIM"
-                        width={896}
-                        height={228}
-                        className="mx-auto h-7 w-auto max-h-9 object-contain sm:h-8"
-                    />
-                </a>
-                <p className="text-xs font-medium text-slate-500">{t('activate.header_tagline')}</p>
-            </div>
-        </header>
-    );
-};
 
 const LoadingState: React.FC = () => (
     <div className="flex flex-col items-center justify-center py-16 text-slate-500">

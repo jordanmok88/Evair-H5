@@ -659,6 +659,8 @@ const en = {
   },
   profile: {
     title: 'Profile',
+    sheet_auth_title: 'Sign in or create an account',
+    sheet_auth_body: 'Use the same email as your purchases. Takes a moment — no QR code needed on desktop.',
     log_in: 'Log in',
     sign_up: 'Sign up',
     log_out: 'Log out',
