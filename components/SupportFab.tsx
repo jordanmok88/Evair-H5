@@ -22,8 +22,10 @@ interface SupportFabProps {
 const STORAGE_KEY_POS = 'evair_support_fab_pos_v1';
 const STORAGE_KEY_DOCK = 'evair_support_fab_docked_v1';
 
-const FAB_SIZE = 56;
-const STRIP_W = 22;
+const FAB_SIZE = 64;
+/** Docked edge tab (marketing / inset “tucked” state) */
+const DOCK_STRIP_W = 44;
+const DOCK_STRIP_H = 112;
 const DEFAULT_IDLE_MS = 12_000;
 
 type Pos = { left: number; bottom: number };
@@ -191,18 +193,20 @@ const SupportFab: React.FC<SupportFabProps> = ({ visible, onClick, layout = 'ins
     const stripStyle: React.CSSProperties = {
       position: layout === 'fixed' ? 'fixed' : 'absolute',
       bottom: `calc(${pos.bottom}px + env(safe-area-inset-bottom, 0px))`,
-      width: STRIP_W,
-      height: FAB_SIZE,
+      width: DOCK_STRIP_W,
+      height: DOCK_STRIP_H,
       border: 'none',
       cursor: 'pointer',
       zIndex: layout === 'fixed' ? 60 : 50,
       display: 'flex',
+      flexDirection: 'column',
       alignItems: 'center',
       justifyContent: 'center',
+      gap: 6,
       background: 'linear-gradient(135deg, #FF6600, #FF8533)',
       boxShadow: '0 4px 16px -2px rgba(255,102,0,0.4)',
       WebkitTapHighlightColor: 'transparent',
-      padding: 0,
+      padding: '8px 4px',
       borderRadius: atLeft ? '0 12px 12px 0' : '12px 0 0 12px',
     };
     if (atLeft) stripStyle.left = 0;
@@ -211,19 +215,30 @@ const SupportFab: React.FC<SupportFabProps> = ({ visible, onClick, layout = 'ins
       stripStyle.left = 'auto';
     }
 
+    const handleDockedActivate = () => {
+      if (layout === 'fixed') {
+        onClick();
+        return;
+      }
+      onUndock();
+    };
+
     return (
       <button
         type="button"
-        onClick={onUndock}
+        onClick={handleDockedActivate}
         style={stripStyle}
-        className="active:scale-[0.98] transition-transform"
-        aria-label={t('support_fab.expand')}
+        className="relative active:scale-[0.98] transition-transform"
+        aria-label={layout === 'fixed' ? t('support_fab.open_chat') : t('support_fab.expand')}
       >
-        {atLeft ? <ChevronsRight size={16} color="#fff" /> : <ChevronsLeft size={16} color="#fff" />}
+        {atLeft ? <ChevronsRight size={18} color="#fff" /> : <ChevronsLeft size={18} color="#fff" />}
+        <span className="select-none text-center text-[9px] font-extrabold uppercase leading-tight tracking-wide text-white [text-wrap:balance]">
+          {t('support_fab.live_chat')}
+        </span>
         {unread > 0 && (
           <span
-            className="absolute w-2 h-2 rounded-full bg-red-500 border border-white"
-            style={{ top: 6, [atLeft ? 'right' : 'left']: 2 }}
+            className="absolute w-2 h-2 rounded-full border border-white bg-red-500"
+            style={{ top: 8, [atLeft ? 'right' : 'left']: 4 }}
             aria-hidden
           />
         )}
@@ -261,7 +276,7 @@ const SupportFab: React.FC<SupportFabProps> = ({ visible, onClick, layout = 'ins
         }}
         aria-label={t('support_fab.open_chat')}
       >
-        <MessageCircle size={26} color="#fff" strokeWidth={2.2} />
+        <MessageCircle size={28} color="#fff" strokeWidth={2.2} />
         {unread > 0 && (
           <span
             className="absolute min-w-[18px] h-[18px] rounded-[10px] bg-red-500 text-white text-[10px] font-extrabold flex items-center justify-center px-1 border-2 border-white"

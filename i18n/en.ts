@@ -3,6 +3,7 @@ const en = {
     open_chat: 'Open support chat',
     tuck: 'Tuck support button to the edge',
     expand: 'Show support chat',
+    live_chat: 'Live Chat',
   },
   barcode_scanner: {
     title: 'Scan ICCID barcode',

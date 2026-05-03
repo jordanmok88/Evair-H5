@@ -3,6 +3,7 @@ const zh = {
     open_chat: '打开客服聊天',
     tuck: '收起客服按钮到边缘',
     expand: '显示客服入口',
+    live_chat: '在线客服',
   },
   barcode_scanner: {
     title: '扫描 ICCID 条码',

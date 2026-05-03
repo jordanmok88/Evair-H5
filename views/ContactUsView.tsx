@@ -18,6 +18,8 @@ import {
 interface ContactUsViewProps {
   onBack: () => void;
   userName?: string;
+  /** Marketing slide-over / sheet: constrain height instead of forcing full viewport scroll */
+  embedded?: boolean;
 }
 
 const CATEGORY_KEYS = [
@@ -101,7 +103,11 @@ const RichText = ({ text }: { text: string }) => {
   );
 };
 
-const ContactUsView: React.FC<ContactUsViewProps> = ({ onBack, userName = 'Jordan' }) => {
+const ContactUsView: React.FC<ContactUsViewProps> = ({
+  onBack,
+  userName = 'Jordan',
+  embedded = false,
+}) => {
   const { t } = useTranslation();
   useEdgeSwipeBack(onBack);
   const [messages, setMessages] = useState<UnifiedChatMessage[]>([]);
@@ -769,7 +775,13 @@ const ContactUsView: React.FC<ContactUsViewProps> = ({ onBack, userName = 'Jorda
   })();
 
   return (
-    <div className="lg:h-full min-h-screen lg:min-h-0 flex flex-col bg-[#F2F4F7] relative">
+    <div
+      className={
+        embedded
+          ? 'flex h-full min-h-0 max-h-[100dvh] flex-col bg-[#F2F4F7] relative'
+          : 'lg:h-full min-h-screen lg:min-h-0 flex flex-col bg-[#F2F4F7] relative'
+      }
+    >
       {/* Header */}
       <div className="pt-safe px-4 pb-3 sticky top-0 z-10 rounded-b-2xl shadow-md" style={{ background: 'linear-gradient(180deg, #FF6600 0%, #FF8533 100%)' }}>
         <div className="flex items-center gap-3 mb-2">

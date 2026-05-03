@@ -41,6 +41,7 @@ import { BootSplash, shouldSkipBootSplash } from './components/BootSplash';
 import { useViewportMinWidth } from './hooks/useViewportMinWidth';
 import { useCustomerAppDesktopQr } from './hooks/useMobileSignInGate';
 import MobileOnlyNotice from './components/marketing/MobileOnlyNotice';
+import MarketingContactDrawer from './components/marketing/MarketingContactDrawer';
 
 /** Laravel `SupplierSeeder` default ordering: PCCW = 1, ESIMACCESS = 2. See Evair-Laravel `docs/ops/STAGING_PREVIEW_BINDINGS_JORDAN.md`. */
 const LARAVEL_SUPPLIER_ID_PCCW = 1;
@@ -48,11 +49,6 @@ const LARAVEL_SUPPLIER_ID_PCCW = 1;
 /** Matches Tailwind `--breakpoint-md` (`48rem`): tablet / windowed Safari and up use full `/app` chrome (no centred phone mock). */
 const APP_WIDE_LAYOUT_MIN_PX = 768;
 
-
-function navigateToAppSupport() {
-  if (typeof window === 'undefined') return;
-  window.location.assign(`${window.location.origin}/app#contact`);
-}
 
 function showGlobalSupportFabForRoute(kind: Route['kind']): boolean {
   /** 与 `CustomerApp` 互斥：`app` 路由内用内嵌 FAB；其余（含 apiTest / 营销 / activate 等）用全屏 fixed FAB */
@@ -70,6 +66,7 @@ function RouteSuspenseFallback() {
 function App() {
   /** Full-screen splash on every load (~2.8 s). Append `?nosplash` to skip (QA). Timing: BootSplash.tsx `BOOT_SPLASH_DURATION_*`. */
   const [bootComplete, setBootComplete] = useState(() => shouldSkipBootSplash());
+  const [marketingSupportOpen, setMarketingSupportOpen] = useState(false);
 
   // Top-level route detection. Falls back to <CustomerApp/> for any path
   // we don't explicitly handle, so existing app surfaces are unaffected.
@@ -84,6 +81,10 @@ function App() {
       window.removeEventListener('popstate', sync);
     };
   }, []);
+
+  useEffect(() => {
+    setMarketingSupportOpen(false);
+  }, [route.kind]);
 
   // Phone-frame scroll lock is owned by <CustomerApp/> (see its
   // own useEffect on `activeTab`). We deliberately do NOT toggle
@@ -161,7 +162,10 @@ function App() {
   return (
     <>
       {showGlobalSupportFabForRoute(route.kind) && (
-        <SupportFab layout="fixed" visible onClick={navigateToAppSupport} />
+        <>
+          <SupportFab layout="fixed" visible onClick={() => setMarketingSupportOpen(true)} />
+          <MarketingContactDrawer open={marketingSupportOpen} onClose={() => setMarketingSupportOpen(false)} />
+        </>
       )}
       <Suspense fallback={<RouteSuspenseFallback />}>{appBody}</Suspense>
     </>
