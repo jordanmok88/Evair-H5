@@ -10,9 +10,7 @@ import { CheckCircle2, ChevronRight, Star } from 'lucide-react';
 import { applyPageSeo } from '../utils/seoHead';
 import { isMobileDevice } from '../utils/device';
 import { FooterWordmarkLink } from '../components/marketing/FooterWordmarkLink';
-import { OpenAppHeaderButton } from '../components/marketing/OpenAppHeaderButton';
-import { MARKETING_NAV_ITEMS } from '../components/marketing/siteNavConfig';
-import MobileOnlyNotice from '../components/marketing/MobileOnlyNotice';
+import SiteHeader from '../components/marketing/SiteHeader';
 import { useMobileSignInGate } from '../hooks/useMobileSignInGate';
 import { AMAZON_SIM_PRIMARY_PRODUCT_URL, AMAZON_SIM_STOREFRONT_URL } from '../constants';
 
@@ -94,41 +92,7 @@ const MarketingPageRedesignPreview: React.FC = () => {
                 unchanged until you approve a merge.
             </div>
 
-            {/* ── Nav: OPEN APP (same CTA as production marketing home) ── */}
-            <header className="sticky top-0 z-30 border-b border-gray-100 bg-white/95 backdrop-blur-md supports-[backdrop-filter]:bg-white/90">
-                <div className="mx-auto flex h-14 min-h-14 max-w-6xl items-center justify-between gap-2 px-3 sm:h-16 sm:min-h-16 sm:gap-3 sm:px-4 md:px-8">
-                    <a href="/" className="flex min-w-0 max-w-[min(200px,52vw)] shrink items-center" aria-label="EvairSIM home">
-                        <img
-                            src="/evairsim-wordmark.png"
-                            alt="EvairSIM"
-                            width={896}
-                            height={228}
-                            className="h-7 w-auto max-h-9 sm:h-8 sm:max-h-10 md:h-9"
-                        />
-                    </a>
-                    <nav className="hidden min-w-0 flex-wrap items-center justify-end gap-x-5 gap-y-2 text-[0.9375rem] font-semibold leading-snug text-gray-800 md:flex lg:gap-x-7 lg:text-base">
-                        <a href="/travel-esim" className="transition-colors hover:text-gray-950">
-                            Global eSIM
-                        </a>
-                        <a href="/sim/phone" className="transition-colors hover:text-gray-950">
-                            {t('marketing.nav_mobile')}
-                        </a>
-                        <a href="/sim/camera" className="transition-colors hover:text-gray-950">
-                            Camera
-                        </a>
-                        <a href="/sim/iot" className="transition-colors hover:text-gray-950">
-                            IoT
-                        </a>
-                        <a href="/help" className="transition-colors hover:text-gray-950">
-                            Help
-                        </a>
-                        <a href="/blog" className="transition-colors hover:text-gray-950">
-                            Blog
-                        </a>
-                    </nav>
-                    <OpenAppHeaderButton href={APP_PATH} onClick={signInGate.gateClick} />
-                </div>
-            </header>
+            <SiteHeader active={null} gate={signInGate} />
 
             {/* ── 1. Hero — fluid type + safe tap targets ───────────────── */}
             <section className="bg-white px-4 py-12 sm:px-5 sm:py-16 md:px-6 md:py-20 lg:py-24">
@@ -464,11 +428,6 @@ const MarketingPageRedesignPreview: React.FC = () => {
                     </div>
                 </footer>
             </section>
-            <MobileOnlyNotice
-                open={signInGate.open}
-                onClose={signInGate.onClose}
-                onContinueAnyway={signInGate.onContinueAnyway}
-            />
         </div>
     );
 };

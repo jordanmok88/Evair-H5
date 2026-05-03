@@ -14,9 +14,11 @@
 import React, { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Menu, X } from 'lucide-react';
+import type { MobileSignInGate } from '../../hooks/useMobileSignInGate';
 import { useMobileSignInGate } from '../../hooks/useMobileSignInGate';
 import MobileOnlyNotice from './MobileOnlyNotice';
 import { OpenAppHeaderButton } from './OpenAppHeaderButton';
+import SiteHeaderAccountActions from './SiteHeaderAccountActions';
 import { MARKETING_NAV_ITEMS, type MarketingNavKey } from './siteNavConfig';
 
 export type SiteSection = MarketingNavKey | null;
@@ -24,11 +26,17 @@ export type SiteSection = MarketingNavKey | null;
 interface SiteHeaderProps {
     /** Highlight the matching nav item; pass `null` for the apex. */
     active?: SiteSection;
+    /**
+     * When set (apex marketing shares the hero QR gate), `OPEN APP` + notice use this controller;
+     * otherwise `SiteHeader` uses its own {@link useMobileSignInGate}.
+     */
+    gate?: MobileSignInGate;
 }
 
-const SiteHeader: React.FC<SiteHeaderProps> = ({ active = null }) => {
+const SiteHeader: React.FC<SiteHeaderProps> = ({ active = null, gate: gateProp }) => {
     const { t } = useTranslation();
-    const signInGate = useMobileSignInGate('/app');
+    const internalGate = useMobileSignInGate('/app');
+    const signInGate = gateProp ?? internalGate;
     const [mobileOpen, setMobileOpen] = useState(false);
 
     useEffect(() => {
@@ -96,6 +104,7 @@ const SiteHeader: React.FC<SiteHeaderProps> = ({ active = null }) => {
                     >
                         {mobileOpen ? <X size={22} aria-hidden /> : <Menu size={22} aria-hidden />}
                     </button>
+                    <SiteHeaderAccountActions />
                     <OpenAppHeaderButton href="/app" onClick={signInGate.gateClick} />
                 </div>
             </div>

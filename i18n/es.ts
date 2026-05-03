@@ -318,6 +318,8 @@ const es = {
     nav_help: 'Ayuda',
     nav_blog: 'Blog',
     footer_flat_home: 'Inicio',
+    header_inbox_aria: 'Abrir buzón en la app Evair',
+    header_profile_aria: 'Abrir perfil en la app Evair',
     footer_flat_refunds: 'Reembolsos',
     footer_flat_support: 'Soporte',
     footer_link_phone: 'SIM móvil',

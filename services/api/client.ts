@@ -71,6 +71,11 @@ const DEFAULT_BASE_URL =
 const TOKEN_KEY = 'evair_access_token';
 const REFRESH_TOKEN_KEY = 'evair_refresh_token';
 
+function dispatchAuthChanged(): void {
+  if (typeof window === 'undefined') return;
+  window.dispatchEvent(new Event('evair-auth-changed'));
+}
+
 let baseUrl = DEFAULT_BASE_URL;
 
 /**
@@ -93,7 +98,9 @@ export function getBaseUrl(): string {
  * 存储访问 Token
  */
 export function setAccessToken(token: string): void {
+  const prev = typeof localStorage !== 'undefined' ? localStorage.getItem(TOKEN_KEY) : null;
   localStorage.setItem(TOKEN_KEY, token);
+  if (prev !== token) dispatchAuthChanged();
 }
 
 /**
@@ -121,8 +128,10 @@ export function getRefreshToken(): string | null {
  * 清除所有 Token
  */
 export function clearTokens(): void {
+  const had = !!(getAccessToken() || getRefreshToken());
   localStorage.removeItem(TOKEN_KEY);
   localStorage.removeItem(REFRESH_TOKEN_KEY);
+  if (had) dispatchAuthChanged();
 }
 
 /**

@@ -10,11 +10,9 @@ import { ChevronRight, Star } from 'lucide-react';
 import { applyPageSeo } from '../utils/seoHead';
 import { isMobileDevice } from '../utils/device';
 import { useMobileSignInGate } from '../hooks/useMobileSignInGate';
-import MobileOnlyNotice from '../components/marketing/MobileOnlyNotice';
 import { MarketingHeroCarousel } from '../components/marketing/MarketingHeroCarousel';
-import { OpenAppHeaderButton } from '../components/marketing/OpenAppHeaderButton';
+import SiteHeader from '../components/marketing/SiteHeader';
 import { FooterWordmarkLink } from '../components/marketing/FooterWordmarkLink';
-import { MARKETING_NAV_ITEMS } from '../components/marketing/siteNavConfig';
 import { AMAZON_SIM_PRIMARY_PRODUCT_URL, AMAZON_SIM_STOREFRONT_URL } from '../constants';
 
 const APP_PATH = '/app';
@@ -155,28 +153,7 @@ const MarketingPage: React.FC = () => {
 
     return (
         <div className="min-h-screen overflow-x-hidden bg-white text-gray-900 antialiased [text-rendering:optimizeLegibility]">
-            <header className="sticky top-0 z-30 border-b border-gray-100 bg-white/95 backdrop-blur-md supports-[backdrop-filter]:bg-white/90">
-                <div className="mx-auto flex h-14 min-h-14 max-w-6xl items-center justify-between gap-2 px-3 sm:h-16 sm:min-h-16 sm:gap-3 sm:px-4 md:px-8">
-                    <a href="/" className="flex min-w-0 max-w-[min(200px,52vw)] shrink items-center" aria-label="EvairSIM home">
-                        <img
-                            src="/evairsim-wordmark.png"
-                            alt="EvairSIM"
-                            width={896}
-                            height={228}
-                            className="h-7 w-auto max-h-9 sm:h-8 sm:max-h-10 md:h-9"
-                        />
-                    </a>
-                    <nav className="hidden min-w-0 flex-wrap items-center justify-end gap-x-4 gap-y-2 text-[0.8125rem] font-semibold leading-snug text-gray-800 sm:text-[0.875rem] md:flex lg:gap-x-6 lg:text-[0.9375rem] xl:gap-x-7 xl:text-base">
-                        {MARKETING_NAV_ITEMS.map((item) => (
-                            <a key={item.key} href={item.href} className="transition-colors hover:text-gray-950">
-                                {t(item.labelKey)}
-                            </a>
-                        ))}
-                    </nav>
-                    <OpenAppHeaderButton href={APP_PATH} onClick={signInGate.gateClick} />
-                </div>
-            </header>
-
+            <SiteHeader active={null} gate={signInGate} />
             <section className="bg-white px-4 py-6 sm:px-5 sm:py-8 md:px-6 md:py-10 lg:py-11">
                 <div className="mx-auto w-full min-w-0 max-w-6xl">
                     <MarketingHeroCarousel
@@ -403,8 +380,6 @@ const MarketingPage: React.FC = () => {
                     </div>
                 </footer>
             </section>
-
-            <MobileOnlyNotice open={signInGate.open} onClose={signInGate.onClose} onContinueAnyway={signInGate.onContinueAnyway} />
         </div>
     );
 };
