@@ -81,6 +81,12 @@ import type { EsimPackage } from '../types';
 import type { UserDto } from '../services/api/types';
 import i18n from '../i18n';
 import { sortRowsForShelf } from '../utils/travelEsimCatalogRank';
+import { snapRetailUsdToXDot99 } from '../services/catalogPresentation';
+
+/** Keeps facet / API min-price hero copy on the same *.99 tier as checkout. */
+function formatTravelFromUsdUsd(minUsd: number): string {
+    return minUsd > 0 ? snapRetailUsdToXDot99(minUsd).toFixed(2) : '—';
+}
 
 const TravelTrustPillarsBlock: React.FC<{ compact?: boolean }> = ({ compact = false }) => {
     const { t } = useTranslation();
@@ -231,7 +237,7 @@ function buildShelfRowsSingleCountries(groups: EsimCountryGroup[]): Record<strin
         const code = g.locationCode.toLowerCase();
         const shelf = shelfRegionForIso2(code);
         const minUsd = g.minPrice ?? 0;
-        const priceFromUsd = minUsd > 0 ? minUsd.toFixed(2) : '—';
+        const priceFromUsd = formatTravelFromUsdUsd(minUsd);
         (out[shelf] ??= []).push({ code, name: g.locationName, priceFromUsd });
     }
     for (const k of Object.keys(out)) {
@@ -289,7 +295,7 @@ const TravelEsimPage: React.FC<TravelEsimPageProps> = ({ countryCode }) => {
                         name: g.locationName,
                         region: shelfRegionForIso2(code),
                         carriers,
-                        priceFromUsd: minP > 0 ? minP.toFixed(2) : '—',
+                        priceFromUsd: formatTravelFromUsdUsd(minP),
                         blurb: `Data-only travel eSIM for ${g.locationName}. Pick a plan below — instant QR delivery, no SIM swap.`,
                     },
                 });

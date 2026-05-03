@@ -23,6 +23,7 @@ import {
   formatGB,
   POPULAR_COUNTRY_CODES,
 } from '../services/dataService';
+import { snapRetailUsdToXDot99 } from '../services/catalogPresentation';
 import { bucketPlansByValidity, inferRetailPremiumSkuTier, isMostPopularRetailBucket, sanitizedRetailPlanMarketingName, segmentRetailBucketsForPresentation, sortRetailBucketsMostPopularFirst } from '../utils/travelEsimPlanBuckets';
 import { planCardNetworkLine } from '../utils/retailPackageNetworks';
 import { orderService } from '../services/api';
@@ -1716,9 +1717,11 @@ const ShopView: React.FC<ShopViewProps> = ({
                   <div className="bg-white rounded-xl border border-slate-100 divide-y divide-slate-100 overflow-hidden shadow-sm mb-5 md:grid md:grid-cols-2 md:divide-y-0 md:gap-[1px] md:bg-slate-100 md:border-0 md:[&>*]:bg-white lg:block lg:divide-y lg:divide-slate-100 lg:bg-white lg:border lg:border-slate-100 lg:[&>*]:bg-transparent">
                     {visibleEsimGroups.map((group, idx) => {
                       // facets 模式下 packages 初始为空，优先读 minPrice / packageCount
-                      const cheapestPrice = group.minPrice ?? (group.packages.length > 0
+                      const rawCheapest = group.minPrice ?? (group.packages.length > 0
                         ? packagePriceUsd(group.packages.reduce((min, p) => p.price < min.price ? p : min, group.packages[0]))
                         : 0);
+                      const cheapestPrice =
+                        rawCheapest > 0 ? snapRetailUsdToXDot99(rawCheapest) : 0;
                       const planCount = group.packageCount ?? group.packages.length;
                       // For multi-country groups keyed by supplier region code
                       // (e.g. "NA-3") splitting locationCode by comma is wrong —

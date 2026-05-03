@@ -3,10 +3,10 @@
  *
  * Each entry powers a static-renderable `/travel-esim/{iso2}` page
  * that targets searches like "japan esim" or "france esim card".
- * Live pricing still comes from the Red Tea catalogue once the
- * customer enters the H5 app (`/app/travel-esim/{iso2}`); the
- * `priceFromUsd` here is a "from $X" marketing anchor, not the
- * authoritative price.
+ * Live checkout uses the Laravel catalogue (.99 retail rule). Hero
+ * `priceFromUsd` here is still a curated SEO/marketing anchor for static
+ * country pages — keep values ending in *.99 only so messaging matches
+ * the storefront psychology tier.
  *
  * Selection logic: top US outbound destinations (per US DOC 2024
  * outbound stats) plus the most-searched eSIM keywords from
@@ -29,7 +29,7 @@ export interface TravelCountry {
     region: 'Asia' | 'Europe' | 'Americas' | 'Oceania' | 'Africa' | 'Middle East' | 'Other';
     /** Local networks the eSIM connects to (informational only). */
     carriers: string[];
-    /** "From $X.XX" anchor for the hero. Update if Red Tea pricing changes. */
+    /** Hero "From $X.XX" — use *.99 endings only (aligns with retail snap rule). */
     priceFromUsd: string;
     /** One-sentence SEO blurb shown above the fold. */
     blurb: string;
@@ -78,7 +78,7 @@ export const TRAVEL_COUNTRIES: TravelCountry[] = [
         name: 'Hong Kong',
         region: 'Asia',
         carriers: ['CSL', '3HK', 'SmarTone'],
-        priceFromUsd: '3.49',
+        priceFromUsd: '3.99',
         blurb:
             'Works the second your plane lands at HKIA. Perfect for cross-border trips into Shenzhen too.',
     },
@@ -105,7 +105,7 @@ export const TRAVEL_COUNTRIES: TravelCountry[] = [
         name: 'Vietnam',
         region: 'Asia',
         carriers: ['Viettel', 'Vinaphone', 'MobiFone'],
-        priceFromUsd: '4.49',
+        priceFromUsd: '4.99',
         blurb:
             'Coverage from Hanoi to Ho Chi Minh, including Phú Quốc and Da Nang.',
     },
@@ -132,7 +132,7 @@ export const TRAVEL_COUNTRIES: TravelCountry[] = [
         name: 'Philippines',
         region: 'Asia',
         carriers: ['Globe Telecom', 'Smart', 'DITO'],
-        priceFromUsd: '4.49',
+        priceFromUsd: '4.99',
         blurb:
             'Manila, Cebu, Boracay, Palawan. Island-hopping ready with reliable 4G across the major destinations.',
     },
@@ -141,7 +141,7 @@ export const TRAVEL_COUNTRIES: TravelCountry[] = [
         name: 'India',
         region: 'Asia',
         carriers: ['Jio', 'Airtel', 'Vi'],
-        priceFromUsd: '5.49',
+        priceFromUsd: '5.99',
         blurb:
             'Delhi, Mumbai, Bangalore, Goa. Skip the local KYC queue — eSIM activates instantly without paperwork.',
     },
@@ -150,7 +150,7 @@ export const TRAVEL_COUNTRIES: TravelCountry[] = [
         name: 'Cambodia',
         region: 'Asia',
         carriers: ['Smart Axiata', 'Cellcard', 'Metfone'],
-        priceFromUsd: '4.49',
+        priceFromUsd: '4.99',
         blurb:
             'Siem Reap, Phnom Penh, the Angkor temples — solid 4G across the country.',
     },
@@ -179,7 +179,7 @@ export const TRAVEL_COUNTRIES: TravelCountry[] = [
         name: 'France',
         region: 'Europe',
         carriers: ['Orange', 'SFR', 'Bouygues'],
-        priceFromUsd: '4.49',
+        priceFromUsd: '4.99',
         blurb:
             'Stay online from Paris to Provence. Roams across the EU at no extra cost.',
     },
@@ -188,7 +188,7 @@ export const TRAVEL_COUNTRIES: TravelCountry[] = [
         name: 'Italy',
         region: 'Europe',
         carriers: ['TIM', 'Vodafone', 'WindTre'],
-        priceFromUsd: '4.49',
+        priceFromUsd: '4.99',
         blurb:
             'Rome, Florence, Venice, Amalfi — full peninsula coverage and EU-wide roaming included.',
     },
@@ -197,7 +197,7 @@ export const TRAVEL_COUNTRIES: TravelCountry[] = [
         name: 'Spain',
         region: 'Europe',
         carriers: ['Movistar', 'Vodafone', 'Orange'],
-        priceFromUsd: '4.49',
+        priceFromUsd: '4.99',
         blurb:
             'Madrid, Barcelona, the Balearics — full mainland and island coverage.',
     },
@@ -224,7 +224,7 @@ export const TRAVEL_COUNTRIES: TravelCountry[] = [
         name: 'Greece',
         region: 'Europe',
         carriers: ['Cosmote', 'Vodafone', 'Wind'],
-        priceFromUsd: '4.49',
+        priceFromUsd: '4.99',
         blurb:
             'Athens, Santorini, Mykonos, Crete — island-hopping ready.',
     },
@@ -233,7 +233,7 @@ export const TRAVEL_COUNTRIES: TravelCountry[] = [
         name: 'Netherlands',
         region: 'Europe',
         carriers: ['KPN', 'T-Mobile', 'Vodafone'],
-        priceFromUsd: '4.49',
+        priceFromUsd: '4.99',
         blurb:
             'Amsterdam to Rotterdam, full country 5G + EU roaming.',
     },
@@ -251,7 +251,7 @@ export const TRAVEL_COUNTRIES: TravelCountry[] = [
         name: 'Portugal',
         region: 'Europe',
         carriers: ['MEO', 'Vodafone Portugal', 'NOS'],
-        priceFromUsd: '4.49',
+        priceFromUsd: '4.99',
         blurb:
             'Lisbon, Porto, the Algarve, Madeira. Mainland and island coverage with EU roaming.',
     },
@@ -260,7 +260,7 @@ export const TRAVEL_COUNTRIES: TravelCountry[] = [
         name: 'Belgium',
         region: 'Europe',
         carriers: ['Proximus', 'Orange', 'BASE'],
-        priceFromUsd: '4.49',
+        priceFromUsd: '4.99',
         blurb:
             'Brussels, Bruges, Antwerp. Roams seamlessly across the rest of the EU.',
     },
@@ -314,7 +314,7 @@ export const TRAVEL_COUNTRIES: TravelCountry[] = [
         name: 'Czechia',
         region: 'Europe',
         carriers: ['T-Mobile CZ', 'O2', 'Vodafone'],
-        priceFromUsd: '4.49',
+        priceFromUsd: '4.99',
         blurb:
             'Prague, Brno, Český Krumlov. Central Europe road-trip ready.',
     },
@@ -323,7 +323,7 @@ export const TRAVEL_COUNTRIES: TravelCountry[] = [
         name: 'Poland',
         region: 'Europe',
         carriers: ['Orange', 'Play', 'T-Mobile', 'Plus'],
-        priceFromUsd: '4.49',
+        priceFromUsd: '4.99',
         blurb:
             'Warsaw, Kraków, Gdańsk. Strong 5G and EU-wide roaming.',
     },
@@ -370,7 +370,7 @@ export const TRAVEL_COUNTRIES: TravelCountry[] = [
         name: 'Argentina',
         region: 'Americas',
         carriers: ['Movistar', 'Claro', 'Personal'],
-        priceFromUsd: '5.49',
+        priceFromUsd: '5.99',
         blurb:
             'Buenos Aires, Patagonia, Mendoza. No more swapping for a local SIM at Ezeiza.',
     },
@@ -397,7 +397,7 @@ export const TRAVEL_COUNTRIES: TravelCountry[] = [
         name: 'Peru',
         region: 'Americas',
         carriers: ['Claro', 'Movistar', 'Entel'],
-        priceFromUsd: '5.49',
+        priceFromUsd: '5.99',
         blurb:
             'Lima, Cusco, Machu Picchu. Coverage holds up in the Sacred Valley.',
     },
