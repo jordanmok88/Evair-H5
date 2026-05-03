@@ -82,43 +82,53 @@ import type { UserDto } from '../services/api/types';
 import i18n from '../i18n';
 import { sortRowsForShelf } from '../utils/travelEsimCatalogRank';
 
-const TravelTrustPillarsBlock: React.FC = () => {
+const TravelTrustPillarsBlock: React.FC<{ compact?: boolean }> = ({ compact = false }) => {
     const { t } = useTranslation();
+    const pad = compact ? 'p-3 md:p-4' : 'p-5 md:p-6';
+    const gridGap = compact ? 'gap-2 sm:grid-cols-3' : 'gap-4 sm:grid-cols-3';
+    const cardPad = compact ? 'p-3' : 'p-4';
+    const iconWrap = compact ? 'mb-1.5 h-8 w-8' : 'mb-2 h-9 w-9';
+    const iconSize = compact ? 17 : 20;
+    const titleCls = compact ? 'text-xs font-bold text-slate-900' : 'text-sm font-bold text-slate-900';
+    const bodyCls = compact
+        ? 'mt-1 text-[11px] leading-snug text-slate-600'
+        : 'mt-1.5 text-xs leading-relaxed text-slate-600';
+
     return (
         <section
-            className="rounded-2xl border border-slate-200 bg-slate-50/60 p-5 md:p-6"
+            className={`rounded-2xl border border-slate-200 bg-slate-50/60 ${compact ? 'rounded-xl' : ''} ${pad}`}
             aria-labelledby="travel-trust-heading"
         >
             <h2 id="travel-trust-heading" className="sr-only">
                 {t('travel_page.trust_heading')}
             </h2>
-            <div className="grid gap-4 sm:grid-cols-3">
-                <div className="rounded-xl border border-slate-100 bg-white p-4 text-left">
-                    <div className="mb-2 flex h-9 w-9 items-center justify-center rounded-lg bg-orange-50 text-orange-600">
-                        <Zap size={20} aria-hidden />
+            <div className={`grid ${gridGap}`}>
+                <div className={`rounded-xl border border-slate-100 bg-white ${cardPad} text-left`}>
+                    <div
+                        className={`flex ${iconWrap} items-center justify-center rounded-lg bg-orange-50 text-orange-600`}
+                    >
+                        <Zap size={iconSize} aria-hidden />
                     </div>
-                    <h3 className="text-sm font-bold text-slate-900">{t('travel_page.trust_speed_title')}</h3>
-                    <p className="mt-1.5 text-xs leading-relaxed text-slate-600">
-                        {t('travel_page.trust_speed_body')}
-                    </p>
+                    <h3 className={titleCls}>{t('travel_page.trust_speed_title')}</h3>
+                    <p className={bodyCls}>{t('travel_page.trust_speed_body')}</p>
                 </div>
-                <div className="rounded-xl border border-slate-100 bg-white p-4 text-left">
-                    <div className="mb-2 flex h-9 w-9 items-center justify-center rounded-lg bg-orange-50 text-orange-600">
-                        <Globe size={20} aria-hidden />
+                <div className={`rounded-xl border border-slate-100 bg-white ${cardPad} text-left`}>
+                    <div
+                        className={`flex ${iconWrap} items-center justify-center rounded-lg bg-orange-50 text-orange-600`}
+                    >
+                        <Globe size={iconSize} aria-hidden />
                     </div>
-                    <h3 className="text-sm font-bold text-slate-900">{t('travel_page.trust_us_ip_title')}</h3>
-                    <p className="mt-1.5 text-xs leading-relaxed text-slate-600">
-                        {t('travel_page.trust_us_ip_body')}
-                    </p>
+                    <h3 className={titleCls}>{t('travel_page.trust_us_ip_title')}</h3>
+                    <p className={bodyCls}>{t('travel_page.trust_us_ip_body')}</p>
                 </div>
-                <div className="rounded-xl border border-slate-100 bg-white p-4 text-left">
-                    <div className="mb-2 flex h-9 w-9 items-center justify-center rounded-lg bg-orange-50 text-orange-600">
-                        <Wifi size={20} aria-hidden />
+                <div className={`rounded-xl border border-slate-100 bg-white ${cardPad} text-left`}>
+                    <div
+                        className={`flex ${iconWrap} items-center justify-center rounded-lg bg-orange-50 text-orange-600`}
+                    >
+                        <Wifi size={iconSize} aria-hidden />
                     </div>
-                    <h3 className="text-sm font-bold text-slate-900">{t('travel_page.trust_apn_title')}</h3>
-                    <p className="mt-1.5 text-xs leading-relaxed text-slate-600">
-                        {t('travel_page.trust_apn_body')}
-                    </p>
+                    <h3 className={titleCls}>{t('travel_page.trust_apn_title')}</h3>
+                    <p className={bodyCls}>{t('travel_page.trust_apn_body')}</p>
                 </div>
             </div>
         </section>
@@ -882,18 +892,18 @@ const CatalogueIndexView: React.FC = () => {
 
     return (
         <>
-            <section className="px-4 md:px-8 pt-12 md:pt-16 pb-6 md:pb-8 max-w-6xl mx-auto text-center">
-                <div className="inline-flex items-center gap-2 bg-orange-50 text-orange-700 text-xs font-bold uppercase tracking-wider px-3 py-1 rounded-full mb-4">
+            <section className="mx-auto max-w-6xl px-4 pt-6 text-center md:px-8 md:pt-8 pb-3 md:pb-4">
+                <div className="mb-2 inline-flex items-center gap-2 rounded-full bg-orange-50 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-orange-700 md:mb-2.5 md:px-3 md:py-1 md:text-xs">
                     <Globe size={12} /> Travel eSIM
                 </div>
-                <h1 className="text-4xl md:text-5xl font-extrabold leading-tight tracking-tight mb-5 max-w-3xl mx-auto">
+                <h1 className="mx-auto mb-2 max-w-3xl text-3xl font-extrabold leading-tight tracking-tight text-slate-900 md:mb-3 md:text-4xl lg:text-[2.5rem]">
                     Stay connected in {headlineCount ?? '200+'} destinations
                 </h1>
-                <p className="text-lg text-slate-600 max-w-2xl mx-auto flex flex-wrap items-center justify-center gap-2">
+                <p className="mx-auto flex max-w-2xl flex-wrap items-center justify-center gap-2 text-sm leading-snug text-slate-600 md:text-base md:leading-relaxed">
                     {facetState.kind === 'loading' && (
                         <Loader2
                             size={18}
-                            className="animate-spin text-orange-500 shrink-0"
+                            className="shrink-0 animate-spin text-orange-500"
                             aria-hidden
                         />
                     )}
@@ -904,23 +914,23 @@ const CatalogueIndexView: React.FC = () => {
                     </span>
                 </p>
                 {facetState.kind === 'ready' && facetState.source === 'embed' && (
-                    <div className="mt-6 max-w-2xl mx-auto rounded-xl bg-sky-50 border border-sky-100 px-4 py-3 text-sm text-sky-950">
+                    <div className="mx-auto mt-3 max-w-2xl rounded-lg border border-sky-100 bg-sky-50 px-3 py-2.5 text-left text-xs text-sky-950 md:mt-4 md:px-4 md:text-sm">
                         Full destination list loaded from cache while we reconnect — prices refresh as soon as
                         the live catalogue is reachable again.
                     </div>
                 )}
             </section>
 
-            <div className="space-y-6 px-4 md:px-8 max-w-6xl mx-auto pb-4">
-                <TravelTrustPillarsBlock />
+            <div className="mx-auto max-w-6xl space-y-3 px-4 pb-2 md:px-8 md:pb-3">
+                <TravelTrustPillarsBlock compact />
             </div>
 
             <section
                 id="popular-destinations"
-                className="px-4 md:px-8 pt-4 md:pt-6 pb-16 max-w-6xl mx-auto"
+                className="mx-auto max-w-6xl px-4 pb-12 pt-2 md:px-8 md:pb-14 md:pt-3"
             >
                 {facetState.kind === 'ready' && (
-                    <div className="max-w-xl mx-auto mb-8">
+                    <div className="mx-auto mb-5 max-w-xl md:mb-6">
                         <label htmlFor="travel-esim-catalogue-search" className="sr-only">
                             Search destinations
                         </label>
@@ -959,7 +969,7 @@ const CatalogueIndexView: React.FC = () => {
                     </div>
                 )}
                 {facetState.kind === 'loading' && (
-                    <div className="flex justify-center py-16">
+                    <div className="flex justify-center py-8 md:py-10">
                         <Loader2 size={36} className="animate-spin text-orange-500" aria-hidden />
                     </div>
                 )}
