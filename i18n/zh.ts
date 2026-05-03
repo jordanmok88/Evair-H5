@@ -308,7 +308,7 @@ const zh = {
     nav_blog: '博客',
     footer_flat_home: '首页',
     header_inbox_aria: '打开收件箱',
-    header_profile_aria: '打开账户菜单',
+    header_profile_aria: '在 Evair APP 内打开个人资料',
     footer_flat_refunds: '退款',
     footer_flat_support: '客服',
     footer_link_phone: '手机 SIM',

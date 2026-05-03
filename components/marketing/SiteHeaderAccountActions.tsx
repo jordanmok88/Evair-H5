@@ -49,9 +49,7 @@ const SiteHeaderAccountActions: React.FC = () => {
         };
     }, [loggedIn]);
 
-    /** Always render inbox + profile in the marketing header (including narrow mobile WebView).
-     * Logged-out users still open the drawers: inbox shows empty-state copy; profile shows sign-in CTAs → `/app`.
-     */
+    if (!loggedIn) return null;
 
     const openInbox = () => {
         setProfileOpen(false);
@@ -116,7 +114,7 @@ const SiteHeaderAccountActions: React.FC = () => {
             <MarketingProfileDrawer
                 open={profileOpen}
                 onClose={() => setProfileOpen(false)}
-                isLoggedIn={loggedIn}
+                isLoggedIn
                 user={profileUser}
                 userLoading={profileOpen && profileUserLoading}
                 notifications={notifications}
