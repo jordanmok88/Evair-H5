@@ -203,7 +203,7 @@ export const DEVICE_CONTENT: Record<DeviceCategory, DeviceContent> = {
             },
         ],
         ctaHref: AMAZON_SIM_PRIMARY_PRODUCT_URL,
-        ctaLabel: 'Get a data plan',
+        ctaLabel: 'Get Mobile SIM',
     },
 
     camera: {
