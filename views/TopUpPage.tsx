@@ -66,6 +66,7 @@ import {
 } from '../services/api';
 import type { PackageDto, UserSimDto } from '../services/api/types';
 import { getTopUpTabFromLocation, type TopUpTab } from '../utils/routing';
+import { topUpKeepsStrictlyGreaterThanOneGib } from '../utils/topupCatalogFilters';
 import { isMobileDevice } from '../utils/device';
 
 /** Laravel PCCW supplier id — same rule as App.tsx bound-SIM grouping. */
@@ -113,10 +114,12 @@ async function fetchRechargeCatalogue(
             if (packages.length === 0) {
                 const fb = await packageService.getRechargePackages(iccid, 'esimaccess');
                 packages = fb.packages ?? [];
+                packages = packages.filter(p => topUpKeepsStrictlyGreaterThanOneGib(p.volume));
             }
             if (packages.length === 0) {
                 const omit = await packageService.getRechargePackages(iccid);
                 packages = omit.packages ?? [];
+                packages = packages.filter(p => topUpKeepsStrictlyGreaterThanOneGib(p.volume));
             }
             return packages;
         } catch {
@@ -130,6 +133,7 @@ async function fetchRechargeCatalogue(
             const omit = await packageService.getRechargePackages(iccid);
             packages = omit.packages ?? [];
         }
+        packages = packages.filter(p => topUpKeepsStrictlyGreaterThanOneGib(p.volume));
         return packages;
     } catch {
         return [];

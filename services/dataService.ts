@@ -43,6 +43,7 @@ import {
   type ActiveSimStatus,
 } from './esimApi';
 import { finalizeShopCatalogPackages } from './catalogPresentation';
+import { topUpKeepsStrictlyGreaterThanOneGib } from '../utils/topupCatalogFilters';
 
 // ─── Backend API ────────────────────────────────────────────────────
 
@@ -418,7 +419,11 @@ export async function fetchTopUpPackages(
   supplierType?: 'pccw' | 'esimaccess',
 ): Promise<EsimPackage[]> {
   const resp = await packageService.getRechargePackages(iccid, supplierType);
-  return (resp.packages || []).map(backendPkgToEsimPackage);
+  let list = (resp.packages || []).map(backendPkgToEsimPackage);
+  if (supplierType !== 'pccw') {
+    list = list.filter(p => topUpKeepsStrictlyGreaterThanOneGib(p.volume));
+  }
+  return list;
 }
 
 // ─── Order eSIM ──────────────────────────────────────────────────────
