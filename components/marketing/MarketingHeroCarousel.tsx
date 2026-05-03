@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useId, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { CheckCircle2, Globe, Star } from 'lucide-react';
+import { BadgeCheck, CheckCircle2, Coins, Globe, ShoppingCart, Star } from 'lucide-react';
 
 /** Autoplay spacing (≥4s): each advance picks a delay in this range. */
 const SLIDE_INTERVAL_MIN_MS = 4300;
@@ -197,9 +197,9 @@ function HeroSlidesCrossfade({
     );
 }
 
-/** Matches headline accent + hero CTAs (`from-orange-500 to-amber-400`). */
+/** Hero CTAs — lighter pastel gradient than headline text; icons use currentColor (white). */
 const heroCtaBtnClass =
-    'flex touch-manipulation min-h-[2.5rem] w-full shrink-0 items-center justify-center rounded-xl bg-gradient-to-r from-orange-500 to-amber-400 px-3 py-2 text-xs font-bold text-white shadow-md shadow-orange-500/25 outline-none ring-offset-white transition-[transform,filter] hover:brightness-105 active:scale-[0.98] focus-visible:ring-2 focus-visible:ring-[#2563eb] focus-visible:ring-offset-2 sm:min-h-11 sm:text-sm';
+    'flex touch-manipulation min-h-[2.5rem] w-full shrink-0 items-center justify-center rounded-xl bg-gradient-to-r from-orange-400 via-amber-300 to-yellow-300 px-2.5 py-2 text-xs font-bold text-white [text-shadow:0_1px_1px_rgba(0,0,0,0.28)] shadow-md shadow-orange-400/35 outline-none ring-offset-white transition-[transform,filter] hover:brightness-105 active:scale-[0.98] focus-visible:ring-2 focus-visible:ring-[#2563eb] focus-visible:ring-offset-2 sm:min-h-11 sm:px-3 sm:text-sm';
 
 /** Home hero: selling slides; striped indicators (jump, swipe on touch), imagery + CTAs. */
 export function MarketingHeroCarousel(props: MarketingHeroCarouselProps) {
@@ -348,7 +348,7 @@ export function MarketingHeroCarousel(props: MarketingHeroCarouselProps) {
                                 })}
                                 className={`h-1.5 min-h-[6px] flex-1 touch-manipulation rounded-full border-0 shadow-inner outline-none transition-colors duration-300 ease-out focus-visible:ring-2 focus-visible:ring-[#2563eb] focus-visible:ring-offset-2 sm:h-2 ${
                                     i === index
-                                        ? 'cursor-default bg-gradient-to-r from-orange-500 to-amber-400 shadow-sm'
+                                        ? 'cursor-default bg-gradient-to-r from-orange-400 via-amber-300 to-yellow-300 shadow-sm'
                                         : 'cursor-pointer bg-gray-200 hover:bg-gray-300'
                                 }`}
                             />
@@ -369,19 +369,22 @@ export function MarketingHeroCarousel(props: MarketingHeroCarouselProps) {
                                 href={amazonUrl}
                                 target="_blank"
                                 rel="noopener noreferrer"
-                                className={heroCtaBtnClass}
+                                className={`${heroCtaBtnClass} gap-1 sm:gap-1.5`}
                                 aria-label={t('marketing.buy_sim_card_aria')}
                             >
+                                <ShoppingCart className="h-3.5 w-3.5 shrink-0 opacity-95 sm:h-4 sm:w-4" aria-hidden />
                                 {t('marketing.hero_cta_buy_sim')}
                             </a>
                             <a
                                 href={activatePath}
                                 onClick={onActivateClick}
-                                className={heroCtaBtnClass}
+                                className={`${heroCtaBtnClass} gap-1 sm:gap-1.5`}
                             >
+                                <BadgeCheck className="h-3.5 w-3.5 shrink-0 opacity-95 sm:h-4 sm:w-4" aria-hidden />
                                 {t('marketing.hero_cta_activate_sim')}
                             </a>
-                            <a href="/top-up" className={heroCtaBtnClass}>
+                            <a href="/top-up" className={`${heroCtaBtnClass} gap-1 sm:gap-1.5`}>
+                                <Coins className="h-3.5 w-3.5 shrink-0 opacity-95 sm:h-4 sm:w-4" aria-hidden />
                                 {t('marketing.hero_cta_topup_sim')}
                             </a>
                         </div>
