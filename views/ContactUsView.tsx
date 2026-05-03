@@ -22,23 +22,16 @@ interface ContactUsViewProps {
   embedded?: boolean;
 }
 
-const CATEGORY_KEYS = [
-  'sim_activation',
-  'ecard_help',
-  'data_topup',
-  'billing_issue',
-  'network_problem',
-  'other',
-] as const;
+const CATEGORY_KEYS = ['sim_activation', 'network_problem', 'data_topup'] as const;
 
 const CATEGORY_TO_AI_QUERY: Record<string, string> = {
   sim_activation: 'How do I activate my SIM card?',
-  ecard_help: 'What is the Evair eCard and how to set it up?',
-  data_topup: 'How can I top up my data plan?',
-  billing_issue: 'I have a billing question about my payment',
   network_problem: 'My eSIM is not working, no signal or internet',
-  other: 'I need help',
+  data_topup: 'How can I top up my data plan?',
 };
+
+/** Edge swipe ignores the bottom strip so the composer is not mistaken for a back gesture */
+const EDGE_SWIPE_EXCLUDE_BOTTOM_PX = 176;
 
 const HUMAN_KEYWORDS = /\b(human|agent|real person|speak to someone|talk to person|live chat|representative|operator|transfer)\b|人工|客服|真人|转接|找人|humano|agente|persona real/i;
 
@@ -109,7 +102,7 @@ const ContactUsView: React.FC<ContactUsViewProps> = ({
   embedded = false,
 }) => {
   const { t } = useTranslation();
-  useEdgeSwipeBack(onBack);
+  useEdgeSwipeBack(onBack, { excludeBottomPx: EDGE_SWIPE_EXCLUDE_BOTTOM_PX });
   const [messages, setMessages] = useState<UnifiedChatMessage[]>([]);
   const [input, setInput] = useState<string>(() => {
     try { return localStorage.getItem(DRAFT_KEY) ?? ''; } catch { return ''; }
@@ -131,6 +124,7 @@ const ContactUsView: React.FC<ContactUsViewProps> = ({
   // Phase 2: upload state
   const [uploading, setUploading] = useState(false);
   const [attachMenuOpen, setAttachMenuOpen] = useState(false);
+  const [liveStaffModalOpen, setLiveStaffModalOpen] = useState(false);
   const imageInputRef = useRef<HTMLInputElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -635,6 +629,12 @@ const ContactUsView: React.FC<ContactUsViewProps> = ({
     providerRef.current?.markNeedsHuman().catch(() => { /* noop */ });
   };
 
+  const confirmLiveStaffRequest = () => {
+    setLiveStaffModalOpen(false);
+    handleTransferToHuman();
+    void sendCustomerMessage(t('contact.live_staff_request_note'), { skipAi: true });
+  };
+
   // 富媒体渲染：image / file / order / product
   const renderRichBody = (msg: UnifiedChatMessage, isCustomer: boolean) => {
     if (msg.messageType === 'image' && msg.mediaUrl) {
@@ -646,7 +646,7 @@ const ContactUsView: React.FC<ContactUsViewProps> = ({
           <img
             src={msg.mediaUrl}
             alt={msg.text || 'image'}
-            style={{ maxWidth: 220, maxHeight: 240, borderRadius: 12, display: 'block', objectFit: 'cover' }}
+            style={{ maxWidth: '100%', maxHeight: 240, borderRadius: 12, display: 'block', objectFit: 'cover' }}
           />
         </button>
       );
@@ -672,7 +672,10 @@ const ContactUsView: React.FC<ContactUsViewProps> = ({
             padding: '10px 14px',
             borderRadius: 12,
             backgroundColor: isCustomer ? 'rgba(255,255,255,0.15)' : '#f8fafc',
-            minWidth: 220,
+            maxWidth: '100%',
+            minWidth: 0,
+            alignSelf: 'stretch',
+            boxSizing: 'border-box',
             textDecoration: 'none',
             transition: 'transform 0.1s, background-color 0.15s',
           }}
@@ -708,10 +711,10 @@ const ContactUsView: React.FC<ContactUsViewProps> = ({
       return (
         <button
           onClick={() => setDetailSheet({ type: 'order', meta })}
-          style={{ display: 'flex', alignItems: 'center', gap: 8, minWidth: 220, padding: 4, border: 'none', background: 'transparent', cursor: 'pointer', textAlign: 'left', color: 'inherit', font: 'inherit', transition: 'transform 0.1s' }}
+          style={{ display: 'flex', alignItems: 'center', gap: 8, minWidth: 0, width: '100%', maxWidth: '100%', padding: 4, border: 'none', background: 'transparent', cursor: 'pointer', textAlign: 'left', color: 'inherit', font: 'inherit', transition: 'transform 0.1s' }}
           className="active:scale-[0.98]"
         >
-          <div style={{ flex: 1 }}>
+          <div style={{ flex: 1, minWidth: 0 }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
               <Receipt size={12} style={{ color: '#94a3b8', flexShrink: 0 }} />
               <span style={{ fontSize: 11, color: '#94a3b8', fontWeight: 600, textTransform: 'uppercase', letterSpacing: 0.4 }}>{t('contact.order_card')}</span>
@@ -733,10 +736,10 @@ const ContactUsView: React.FC<ContactUsViewProps> = ({
       return (
         <button
           onClick={() => setDetailSheet({ type: 'product', meta })}
-          style={{ display: 'flex', alignItems: 'center', gap: 8, minWidth: 220, padding: 4, border: 'none', background: 'transparent', cursor: 'pointer', textAlign: 'left', color: 'inherit', font: 'inherit', transition: 'transform 0.1s' }}
+          style={{ display: 'flex', alignItems: 'center', gap: 8, minWidth: 0, width: '100%', maxWidth: '100%', padding: 4, border: 'none', background: 'transparent', cursor: 'pointer', textAlign: 'left', color: 'inherit', font: 'inherit', transition: 'transform 0.1s' }}
           className="active:scale-[0.98]"
         >
-          <div style={{ flex: 1 }}>
+          <div style={{ flex: 1, minWidth: 0 }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
               <Package size={12} style={{ color: '#94a3b8', flexShrink: 0 }} />
               <span style={{ fontSize: 11, color: '#94a3b8', fontWeight: 600, textTransform: 'uppercase', letterSpacing: 0.4 }}>{t('contact.product_card')}</span>
@@ -778,126 +781,134 @@ const ContactUsView: React.FC<ContactUsViewProps> = ({
     <div
       className={
         embedded
-          ? 'relative flex h-full min-h-0 flex-col overflow-hidden bg-[#eef1f6]'
-          : 'relative flex h-full min-h-0 flex-col overflow-hidden bg-[#F2F4F7]'
+          ? 'relative flex h-full min-h-0 flex-col overflow-hidden overflow-x-hidden bg-[#eef1f6]'
+          : 'relative flex h-full min-h-0 flex-col overflow-hidden overflow-x-hidden bg-[#F2F4F7]'
       }
     >
-      {/* Header — full-screen app keeps tall chrome; embedded = compact modal bar (never shrink inside float) */}
+      {/* Header — gradient row + live-staff strip (single human path); edge swipe excludes composer */}
       {embedded ? (
-        <header className="shrink-0 border-b border-white/15 bg-gradient-to-br from-[#FF6600] via-[#FF7433] to-[#FF8533] px-4 pb-3 pt-[max(0.75rem,env(safe-area-inset-top,0px))] shadow-md">
-          <div className="flex items-start gap-3">
-            <div className="relative shrink-0">
-              <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-white shadow-md ring-2 ring-white/40">
-                {aiDisabled ? (
-                  <Headphones size={19} color="#059669" strokeWidth={2.2} />
-                ) : (
-                  <Sparkles size={19} color="#FF6600" strokeWidth={2.2} />
-                )}
+        <header className="flex shrink-0 flex-col overflow-x-hidden">
+          <div className="border-b border-white/15 bg-gradient-to-br from-[#FF6600] via-[#FF7433] to-[#FF8533] px-4 pb-3 pt-[max(0.75rem,env(safe-area-inset-top,0px))] shadow-md">
+            <div className="flex items-start gap-3">
+              <div className="relative shrink-0">
+                <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-white shadow-md ring-2 ring-white/40">
+                  {aiDisabled ? (
+                    <Headphones size={19} color="#059669" strokeWidth={2.2} />
+                  ) : (
+                    <Sparkles size={19} color="#FF6600" strokeWidth={2.2} />
+                  )}
+                </div>
+                <span
+                  className="absolute -bottom-0.5 -right-0.5 flex h-[15px] w-[15px] items-center justify-center rounded-full border-2 border-[#ea580c] bg-emerald-400 shadow-sm"
+                  aria-hidden
+                >
+                  {aiDisabled ? (
+                    <span className="h-1.5 w-1.5 rounded-full bg-white" />
+                  ) : (
+                    <Bot size={9} color="#fff" strokeWidth={2.8} />
+                  )}
+                </span>
               </div>
-              <span
-                className="absolute -bottom-0.5 -right-0.5 flex h-[15px] w-[15px] items-center justify-center rounded-full border-2 border-[#ea580c] bg-emerald-400 shadow-sm"
-                aria-hidden
-              >
-                {aiDisabled ? (
-                  <span className="h-1.5 w-1.5 rounded-full bg-white" />
-                ) : (
-                  <Bot size={9} color="#fff" strokeWidth={2.8} />
-                )}
-              </span>
+              <div className="min-w-0 flex-1 pt-0.5">
+                <p className="text-[0.625rem] font-bold uppercase tracking-[0.16em] text-white/80">
+                  {t('support_fab.live_chat')}
+                </p>
+                <h1 className="mt-0.5 truncate text-[1.0625rem] font-bold leading-tight tracking-tight text-white">
+                  {t('contact.title')}
+                </h1>
+                <p className="mt-1.5 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-[0.6875rem] font-medium leading-snug text-white/90">
+                  <span className="inline-flex items-center gap-1.5">
+                    <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-emerald-300 shadow-[0_0_0_2px_rgba(255,255,255,0.35)]" />
+                    <span>{aiDisabled ? t('contact.agent_status') : t('contact.online_status')}</span>
+                  </span>
+                  <span className="text-white/45" aria-hidden>
+                    ·
+                  </span>
+                  <span className="text-white/95">{aiDisabled ? t('contact.agent_name') : 'Evair AI Assistant'}</span>
+                </p>
+              </div>
+              <div className="flex shrink-0 items-center gap-1.5 pt-0.5">
+                <button
+                  type="button"
+                  onClick={onBack}
+                  className="flex h-9 w-9 items-center justify-center rounded-full bg-white/15 text-white ring-1 ring-white/30 transition-colors hover:bg-white/25 active:bg-white/20"
+                  aria-label={t('barcode_scanner.close')}
+                >
+                  <X size={18} strokeWidth={2.4} />
+                </button>
+              </div>
             </div>
-            <div className="min-w-0 flex-1 pt-0.5">
-              <p className="text-[0.625rem] font-bold uppercase tracking-[0.16em] text-white/80">
-                {t('support_fab.live_chat')}
-              </p>
-              <h1 className="mt-0.5 truncate text-[1.0625rem] font-bold leading-tight tracking-tight text-white">
-                {t('contact.title')}
-              </h1>
-              <p className="mt-1.5 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-[0.6875rem] font-medium leading-snug text-white/90">
-                <span className="inline-flex items-center gap-1.5">
-                  <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-emerald-300 shadow-[0_0_0_2px_rgba(255,255,255,0.35)]" />
-                  <span>{aiDisabled ? t('contact.agent_status') : t('contact.online_status')}</span>
-                </span>
-                <span className="text-white/45" aria-hidden>
-                  ·
-                </span>
-                <span className="text-white/95">{aiDisabled ? t('contact.agent_name') : 'Evair AI Assistant'}</span>
-              </p>
-            </div>
-            <div className="flex shrink-0 items-center gap-1.5 pt-0.5">
-              <button
-                type="button"
-                onClick={handleTransferToHuman}
-                className="flex h-9 w-9 items-center justify-center rounded-full bg-white/15 text-white ring-1 ring-white/30 transition-colors hover:bg-white/25 active:bg-white/20"
-                aria-label={t('contact.talk_to_human')}
-                title={t('contact.talk_to_human')}
-              >
-                <Headphones size={17} strokeWidth={2.2} />
-              </button>
-              <button
-                type="button"
-                onClick={onBack}
-                className="flex h-9 w-9 items-center justify-center rounded-full bg-white/15 text-white ring-1 ring-white/30 transition-colors hover:bg-white/25 active:bg-white/20"
-                aria-label={t('barcode_scanner.close')}
-              >
-                <X size={18} strokeWidth={2.4} />
-              </button>
-            </div>
+          </div>
+          <div className="shrink-0 border-b border-slate-200/90 bg-white px-4 py-3">
+            <button
+              type="button"
+              onClick={() => setLiveStaffModalOpen(true)}
+              className="touch-manipulation flex min-h-[44px] w-full items-center justify-center gap-2 rounded-xl border-2 border-[#FF6600] bg-white py-2.5 text-[15px] font-semibold text-[#FF6600] shadow-sm transition-colors hover:bg-orange-50 active:bg-orange-50/80"
+            >
+              <Headphones size={20} strokeWidth={2.2} aria-hidden />
+              {t('contact.live_staff_cta')}
+            </button>
+            <p className="mt-2 text-center text-[11px] leading-snug text-slate-500">{t('contact.live_staff_reply_sla')}</p>
           </div>
         </header>
       ) : (
-        <header
-          className="shrink-0 border-b border-white/15 pt-safe shadow-md"
-          style={{ background: 'linear-gradient(180deg, #FF6600 0%, #FF8533 100%)' }}
-        >
-          <div className="flex items-center gap-3 px-4 pb-3">
-            <button
-              type="button"
-              onClick={onBack}
-              className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-white/20 transition-colors active:bg-white/30"
-            >
-              <ChevronLeft size={22} color="#fff" strokeWidth={2.5} />
-            </button>
-            <div className="relative shrink-0">
-              <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-white shadow-sm">
-                {aiDisabled ? <Headphones size={16} color="#10B981" /> : <Sparkles size={16} color="#FF6600" />}
-              </div>
-              {aiDisabled ? (
-                <div className="absolute -bottom-0.5 -right-0.5 flex h-3.5 w-3.5 items-center justify-center rounded-full border-2 border-[#FF8533] bg-emerald-400">
-                  <div className="h-1.5 w-1.5 rounded-full bg-white" />
+        <header className="flex shrink-0 flex-col overflow-x-hidden">
+          <div
+            className="shrink-0 border-b border-white/15 pt-safe shadow-md"
+            style={{ background: 'linear-gradient(180deg, #FF6600 0%, #FF8533 100%)' }}
+          >
+            <div className="flex items-center gap-3 px-4 pb-3">
+              <button
+                type="button"
+                onClick={onBack}
+                className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-white/20 transition-colors active:bg-white/30"
+              >
+                <ChevronLeft size={22} color="#fff" strokeWidth={2.5} />
+              </button>
+              <div className="relative shrink-0">
+                <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-white shadow-sm">
+                  {aiDisabled ? <Headphones size={16} color="#10B981" /> : <Sparkles size={16} color="#FF6600" />}
                 </div>
-              ) : (
-                <div className="absolute -bottom-0.5 -right-0.5 flex h-3.5 w-3.5 items-center justify-center rounded-full border-2 border-[#FF8533] bg-emerald-400">
-                  <Bot size={7} color="#fff" strokeWidth={3} />
-                </div>
-              )}
-            </div>
-            <div className="min-w-0 flex-1">
-              <h1 className="truncate text-base font-bold tracking-tight text-white">{t('contact.title')}</h1>
-              <p className="mt-0.5 truncate text-xs font-semibold text-white/90">
-                {aiDisabled ? t('contact.agent_name') : 'Evair AI Assistant'}
-              </p>
-              <div className="mt-0.5 flex flex-wrap items-center gap-x-1.5 gap-y-0 text-[11px] font-medium text-white/75">
-                <span className="inline-flex items-center gap-1">
-                  <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-emerald-300" />
-                  {aiDisabled ? t('contact.agent_status') : t('contact.online_status')}
-                </span>
-                {!aiDisabled && (
-                  <>
-                    <span aria-hidden>·</span>
-                    <span>Powered by AI</span>
-                  </>
+                {aiDisabled ? (
+                  <div className="absolute -bottom-0.5 -right-0.5 flex h-3.5 w-3.5 items-center justify-center rounded-full border-2 border-[#FF8533] bg-emerald-400">
+                    <div className="h-1.5 w-1.5 rounded-full bg-white" />
+                  </div>
+                ) : (
+                  <div className="absolute -bottom-0.5 -right-0.5 flex h-3.5 w-3.5 items-center justify-center rounded-full border-2 border-[#FF8533] bg-emerald-400">
+                    <Bot size={7} color="#fff" strokeWidth={3} />
+                  </div>
                 )}
               </div>
+              <div className="min-w-0 flex-1">
+                <h1 className="truncate text-base font-bold tracking-tight text-white">{t('contact.title')}</h1>
+                <p className="mt-0.5 truncate text-xs font-semibold text-white/90">
+                  {aiDisabled ? t('contact.agent_name') : 'Evair AI Assistant'}
+                </p>
+                <div className="mt-0.5 flex flex-wrap items-center gap-x-1.5 gap-y-0 text-[11px] font-medium text-white/75">
+                  <span className="inline-flex items-center gap-1">
+                    <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-emerald-300" />
+                    {aiDisabled ? t('contact.agent_status') : t('contact.online_status')}
+                  </span>
+                  {!aiDisabled && (
+                    <>
+                      <span aria-hidden>·</span>
+                      <span>Powered by AI</span>
+                    </>
+                  )}
+                </div>
+              </div>
             </div>
+          </div>
+          <div className="shrink-0 border-b border-slate-200/90 bg-white px-4 py-3">
             <button
               type="button"
-              onClick={handleTransferToHuman}
-              className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-white/20 transition-colors active:bg-white/30"
-              aria-label={t('contact.talk_to_human')}
-              title={t('contact.talk_to_human')}
+              onClick={() => setLiveStaffModalOpen(true)}
+              className="touch-manipulation flex min-h-[44px] w-full items-center justify-center gap-2 rounded-xl border-2 border-[#FF6600] bg-white py-2.5 text-[15px] font-semibold text-[#FF6600] shadow-sm transition-colors hover:bg-orange-50 active:bg-orange-50/80"
             >
-              <Headphones size={18} color="#fff" strokeWidth={2.5} />
+              <Headphones size={20} strokeWidth={2.2} aria-hidden />
+              {t('contact.live_staff_cta')}
             </button>
+            <p className="mt-2 text-center text-[11px] leading-snug text-slate-500">{t('contact.live_staff_reply_sla')}</p>
           </div>
         </header>
       )}
@@ -913,12 +924,12 @@ const ContactUsView: React.FC<ContactUsViewProps> = ({
       {/* Topic chips — fixed below header (not inside message scroll) */}
       {!selectedCategory && (
         <div
-          className={`shrink-0 border-b border-slate-200/90 ${embedded ? 'bg-[#eef1f6]' : 'bg-[#F2F4F7]'}`}
+          className={`shrink-0 overflow-x-hidden border-b border-slate-200/90 ${embedded ? 'bg-[#eef1f6]' : 'bg-[#F2F4F7]'}`}
         >
           <p className="px-3 pt-2 text-center text-[10px] font-bold uppercase tracking-[0.14em] text-slate-500">
             {t('contact.choose_topic')}
           </p>
-          <div className="flex flex-wrap justify-center gap-1.5 px-2 pb-2 pt-1">
+          <div className="grid grid-cols-1 gap-2 px-2 pb-2 pt-1 min-[340px]:grid-cols-3">
             {CATEGORY_KEYS.map((key) => {
               const cat = t(`contact.${key}`);
               return (
@@ -926,7 +937,7 @@ const ContactUsView: React.FC<ContactUsViewProps> = ({
                   key={key}
                   type="button"
                   onClick={() => handleCategorySelect(cat)}
-                  className="rounded-full border border-slate-200/90 bg-white px-2.5 py-1 text-[11px] font-semibold leading-tight text-slate-700 shadow-sm transition-transform active:scale-[0.97] hover:border-orange-200 hover:text-orange-700"
+                  className="touch-manipulation min-h-[40px] w-full rounded-full border border-slate-200/90 bg-white px-3 py-2 text-center text-[11px] font-semibold leading-tight text-slate-700 shadow-sm transition-transform active:scale-[0.97] hover:border-orange-200 hover:text-orange-700"
                 >
                   {cat}
                 </button>
@@ -937,11 +948,11 @@ const ContactUsView: React.FC<ContactUsViewProps> = ({
       )}
 
       {/* Scrollable messages — only this region scrolls; composer stays put */}
-      <div className="relative flex min-h-0 flex-1 flex-col">
+      <div className="relative flex min-h-0 min-w-0 flex-1 flex-col overflow-x-hidden">
         <div
           ref={scrollContainerRef}
           onScroll={handleScroll}
-          className={`min-h-0 flex-1 overflow-y-auto overscroll-y-contain no-scrollbar ${embedded ? 'px-4 pt-3 sm:px-5' : 'px-4 pt-3'}`}
+          className={`touch-pan-y min-h-0 flex-1 overflow-x-hidden overflow-y-auto overscroll-y-contain no-scrollbar ${embedded ? 'px-4 pt-3 sm:px-5' : 'px-4 pt-3'}`}
           style={{
             scrollBehavior: 'smooth',
             WebkitOverflowScrolling: 'touch',
@@ -1003,7 +1014,7 @@ const ContactUsView: React.FC<ContactUsViewProps> = ({
                   }
                 </div>
               )}
-              <div style={{ maxWidth: '78%' }}>
+              <div className="min-w-0 max-w-[78%]">
                 {(isAgent || isAi) && (
                   <p style={{ fontSize: 11, color: isAgent ? '#10B981' : '#FF6600', fontWeight: 600, marginBottom: 2, paddingLeft: 4 }}>
                     {isAi ? 'Evair AI' : (msg.senderName || t('contact.agent_name'))}
@@ -1011,6 +1022,7 @@ const ContactUsView: React.FC<ContactUsViewProps> = ({
                 )}
                 <div
                   onDoubleClick={() => isFailed && retryFailed(msg)}
+                  className="overflow-hidden break-words"
                   style={{
                     padding: msg.messageType === 'image' ? 4 : '12px 16px',
                     borderRadius: isCustomer ? '18px 18px 4px 18px' : '18px 18px 18px 4px',
@@ -1063,7 +1075,7 @@ const ContactUsView: React.FC<ContactUsViewProps> = ({
           <button
             type="button"
             onClick={() => scrollToBottom()}
-            className="pointer-events-auto absolute bottom-3 right-4 z-10 flex h-9 w-9 items-center justify-center rounded-full border border-slate-200 bg-white shadow-lg transition hover:bg-slate-50"
+            className="pointer-events-auto absolute bottom-3 right-4 z-[30] flex h-9 w-9 items-center justify-center rounded-full border border-slate-200 bg-white shadow-lg transition hover:bg-slate-50"
             aria-label="jump to latest"
           >
             <ArrowDown size={18} color="#475569" />
@@ -1073,16 +1085,16 @@ const ContactUsView: React.FC<ContactUsViewProps> = ({
 
       {/* Phase 3: Input — flex footer (not position:fixed) so header/messages/composer don’t fight page scroll */}
       <div
-        className={`shrink-0 border-t border-slate-200/90 bg-white pt-2 shadow-[0_-8px_24px_-12px_rgba(15,23,42,0.08)] ${embedded ? 'px-3.5 pb-[max(10px,env(safe-area-inset-bottom,0px))]' : 'px-4 pb-[max(12px,env(safe-area-inset-bottom,0px))]'}`}
+        className={`relative z-20 shrink-0 touch-manipulation border-t border-slate-200/90 bg-white pt-2 shadow-[0_-8px_24px_-12px_rgba(15,23,42,0.08)] ${embedded ? 'px-3.5 pb-[max(10px,env(safe-area-inset-bottom,0px))]' : 'px-4 pb-[max(12px,env(safe-area-inset-bottom,0px))]'}`}
       >
-        <div style={{ display: 'flex', alignItems: 'flex-end', gap: 10, backgroundColor: '#f8fafc', borderRadius: 20, padding: '6px 6px 6px 16px', border: '1px solid #e2e8f0' }}>
-          {/* Phase 2: Paperclip opens attach menu, disabled only when uploading */}
+        <div className="flex min-h-[48px] w-full min-w-0 items-end gap-2 rounded-[20px] border border-[#e2e8f0] bg-[#f8fafc] p-2 pl-4 md:gap-3">
           <button
+            type="button"
             onClick={() => setAttachMenuOpen(true)}
             disabled={uploading}
-            style={{ width: 32, height: 32, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: 'transparent', border: 'none', cursor: uploading ? 'not-allowed' : 'pointer', flexShrink: 0, marginBottom: 2, opacity: uploading ? 0.4 : 1, transition: 'opacity 0.15s' }}
+            className="-mb-0.5 flex h-11 min-h-[44px] w-11 shrink-0 items-center justify-center rounded-full border-none bg-transparent transition-opacity disabled:cursor-not-allowed disabled:opacity-40"
           >
-            <Paperclip size={18} color="#94a3b8" />
+            <Paperclip size={20} color="#94a3b8" />
           </button>
           <textarea
             ref={inputRef}
@@ -1090,13 +1102,20 @@ const ContactUsView: React.FC<ContactUsViewProps> = ({
             onChange={e => setInput(e.target.value)}
             onKeyDown={handleKeyDown}
             placeholder={t('contact.type_message')}
-            rows={1}
-            style={{ flex: 1, border: 'none', outline: 'none', resize: 'none', backgroundColor: 'transparent', fontSize: 15, lineHeight: 1.5, color: '#1e293b', padding: '6px 0', maxHeight: 100, fontFamily: 'Inter, sans-serif' }}
+            rows={2}
+            className="min-h-[44px] min-w-0 flex-1 resize-none border-none bg-transparent py-2 font-sans text-[15px] leading-normal text-[#1e293b] outline-none"
+            style={{ maxHeight: 100 }}
           />
           <button
+            type="button"
             onClick={handleSend}
             disabled={!input.trim() || uploading}
-            style={{ width: 36, height: 36, borderRadius: '50%', backgroundColor: input.trim() && !uploading ? '#FF6600' : '#e2e8f0', border: 'none', cursor: input.trim() && !uploading ? 'pointer' : 'default', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, transition: 'background-color 0.2s', boxShadow: input.trim() && !uploading ? '0 2px 8px rgba(255,102,0,0.3)' : 'none' }}
+            className="flex h-11 min-h-[44px] w-11 shrink-0 items-center justify-center rounded-full border-none transition-colors"
+            style={{
+              backgroundColor: input.trim() && !uploading ? '#FF6600' : '#e2e8f0',
+              cursor: input.trim() && !uploading ? 'pointer' : 'default',
+              boxShadow: input.trim() && !uploading ? '0 2px 8px rgba(255,102,0,0.3)' : 'none',
+            }}
           >
             {/* Phase 2: show spinner when uploading */}
             {uploading
@@ -1106,6 +1125,39 @@ const ContactUsView: React.FC<ContactUsViewProps> = ({
           </button>
         </div>
       </div>
+
+      {liveStaffModalOpen && (
+        <div
+          className="fixed inset-0 z-[100] flex items-center justify-center bg-black/45 px-4"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="live-staff-modal-title"
+          onClick={() => setLiveStaffModalOpen(false)}
+        >
+          <div className="w-full max-w-sm rounded-2xl bg-white p-5 shadow-xl" onClick={e => e.stopPropagation()}>
+            <h2 id="live-staff-modal-title" className="text-lg font-bold text-slate-900">
+              {t('contact.live_staff_modal_title')}
+            </h2>
+            <p className="mt-3 text-sm leading-relaxed text-slate-600">{t('contact.live_staff_modal_body')}</p>
+            <div className="mt-5 flex gap-2">
+              <button
+                type="button"
+                className="min-h-[44px] flex-1 touch-manipulation rounded-xl border border-slate-200 py-3 text-[15px] font-semibold text-slate-700 transition-colors hover:bg-slate-50"
+                onClick={() => setLiveStaffModalOpen(false)}
+              >
+                {t('contact.live_staff_modal_cancel')}
+              </button>
+              <button
+                type="button"
+                className="min-h-[44px] flex-1 touch-manipulation rounded-xl bg-[#FF6600] py-3 text-[15px] font-semibold text-white shadow-md transition-colors hover:bg-[#e65c00]"
+                onClick={confirmLiveStaffRequest}
+              >
+                {t('contact.live_staff_modal_confirm')}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Phase 2: Attach menu (bottom sheet) */}
       {attachMenuOpen && (

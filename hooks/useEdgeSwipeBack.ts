@@ -4,18 +4,25 @@ const EDGE_ZONE = 28;       // px from left edge to start listening
 const TRIGGER_DISTANCE = 80; // px swipe distance to fire callback
 const MAX_Y_DRIFT = 60;     // px vertical drift tolerance
 
+export type EdgeSwipeBackOptions = {
+  /** Ignore edge swipe when touch starts in this many px from the bottom (e.g. composer strip). */
+  excludeBottomPx?: number;
+};
+
 /**
  * Detects a swipe gesture starting from the left edge of the screen
  * and calls `onBack` when the user swipes far enough to the right.
  * Returns a ref to attach to the scrollable container.
  */
-export function useEdgeSwipeBack(onBack: () => void) {
+export function useEdgeSwipeBack(onBack: () => void, options?: EdgeSwipeBackOptions) {
   const startX = useRef(0);
   const startY = useRef(0);
   const swiping = useRef(false);
   const indicator = useRef<HTMLDivElement | null>(null);
   const stableBack = useRef(onBack);
   stableBack.current = onBack;
+  const excludeBottomPxRef = useRef(options?.excludeBottomPx ?? 0);
+  excludeBottomPxRef.current = options?.excludeBottomPx ?? 0;
 
   const createIndicator = useCallback(() => {
     if (indicator.current) return indicator.current;
@@ -60,6 +67,8 @@ export function useEdgeSwipeBack(onBack: () => void) {
   useEffect(() => {
     const onTouchStart = (e: TouchEvent) => {
       const touch = e.touches[0];
+      const excludeBottom = excludeBottomPxRef.current;
+      if (excludeBottom > 0 && touch.clientY > window.innerHeight - excludeBottom) return;
       if (touch.clientX > EDGE_ZONE) return;
       startX.current = touch.clientX;
       startY.current = touch.clientY;
