@@ -1,4 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Html5Qrcode, Html5QrcodeSupportedFormats } from 'html5-qrcode';
 import { X, Camera, SwitchCamera } from 'lucide-react';
 
@@ -8,27 +9,84 @@ interface BarcodeScannerProps {
   onDetected: (value: string) => void;
 }
 
-/** Pull a 12–22 digit ICCID / EID substring from QR text or noisy barcode reads. */
+/**
+ * Pull ICCID from linear barcode text, QR payload, or URL query (`?iccid=`).
+ * Matches app routing: 15–22 ASCII alphanumerics after normalising separators.
+ */
 function extractIccidFromScan(raw: string): string | null {
-  const digits = raw.replace(/\D/g, '');
-  for (let len = 22; len >= 12; len--) {
-    for (let i = 0; i + len <= digits.length; i++) {
-      const slice = digits.slice(i, i + len);
+  const trimmed = raw.trim();
+  if (!trimmed) return null;
+
+  const alnumOnly = (s: string) => s.replace(/[^0-9A-Za-z]/g, '');
+
+  const inRange = (s: string): string | null => {
+    const c = alnumOnly(s);
+    if (c.length >= 15 && c.length <= 22) return c;
+    return null;
+  };
+
+  const param = /[?&#]iccid=([0-9A-Za-z]+)/i.exec(trimmed)?.[1];
+  if (param) {
+    const hit = inRange(param);
+    if (hit) return hit;
+  }
+
+  try {
+    const u = new URL(trimmed, 'https://evairdigital.com');
+    const q = u.searchParams.get('iccid');
+    if (q) {
+      const hit = inRange(q);
+      if (hit) return hit;
+    }
+  } catch {
+    /* not a navigable URL */
+  }
+
+  const compact = alnumOnly(trimmed);
+  if (compact.length >= 15 && compact.length <= 22) {
+    return compact;
+  }
+  if (compact.length < 15) {
+    return null;
+  }
+  for (let len = 22; len >= 15; len--) {
+    for (let i = 0; i + len <= compact.length; i++) {
+      const slice = compact.slice(i, i + len);
       if (slice.length === len) return slice;
     }
   }
   return null;
 }
 
+/** Formats common on SIM / retail cards: Code 128/39/93, ITF, Codabar, plus 2D for box QRs. */
+const ICCID_SCAN_FORMATS: Html5QrcodeSupportedFormats[] = [
+  Html5QrcodeSupportedFormats.CODE_128,
+  Html5QrcodeSupportedFormats.CODE_39,
+  Html5QrcodeSupportedFormats.CODE_93,
+  Html5QrcodeSupportedFormats.ITF,
+  Html5QrcodeSupportedFormats.CODABAR,
+  Html5QrcodeSupportedFormats.QR_CODE,
+  Html5QrcodeSupportedFormats.PDF_417,
+  Html5QrcodeSupportedFormats.DATA_MATRIX,
+  Html5QrcodeSupportedFormats.AZTEC,
+];
+
 const BarcodeScanner: React.FC<BarcodeScannerProps> = ({ open, onClose, onDetected }) => {
+  const { t } = useTranslation();
   const scannerRef = useRef<Html5Qrcode | null>(null);
+  const onDetectedRef = useRef(onDetected);
+  const onCloseRef = useRef(onClose);
   const [error, setError] = useState<string | null>(null);
   const [facingMode, setFacingMode] = useState<'environment' | 'user'>('environment');
   const containerId = 'barcode-scanner-region';
 
+  onDetectedRef.current = onDetected;
+  onCloseRef.current = onClose;
+
   useEffect(() => {
     if (!open) return;
 
+    setError(null);
     let cancelled = false;
     const scanner = new Html5Qrcode(containerId);
     scannerRef.current = scanner;
@@ -37,28 +95,21 @@ const BarcodeScanner: React.FC<BarcodeScannerProps> = ({ open, onClose, onDetect
       .start(
         { facingMode },
         {
-          fps: 10,
+          fps: 12,
           qrbox: (viewfinderWidth, viewfinderHeight) => {
-            const w = Math.min(Math.floor(viewfinderWidth * 0.92), 360);
-            const h = Math.min(Math.floor(viewfinderHeight * 0.38), 240);
-            return { width: w, height: Math.max(120, h) };
+            const w = Math.min(Math.floor(viewfinderWidth * 0.94), 400);
+            const h = Math.min(Math.floor(viewfinderHeight * 0.42), 260);
+            return { width: w, height: Math.max(128, h) };
           },
           aspectRatio: 1.777778,
-          formatsToSupport: [
-            Html5QrcodeSupportedFormats.CODE_128,
-            Html5QrcodeSupportedFormats.QR_CODE,
-            Html5QrcodeSupportedFormats.CODE_39,
-            Html5QrcodeSupportedFormats.PDF_417,
-            Html5QrcodeSupportedFormats.DATA_MATRIX,
-            Html5QrcodeSupportedFormats.ITF,
-          ],
+          formatsToSupport: ICCID_SCAN_FORMATS,
         },
         (decodedText) => {
           if (cancelled) return;
           const iccid = extractIccidFromScan(decodedText);
           if (iccid) {
-            onDetected(iccid);
-            onClose();
+            onDetectedRef.current(iccid);
+            onCloseRef.current();
           }
         },
         () => {},
@@ -67,8 +118,8 @@ const BarcodeScanner: React.FC<BarcodeScannerProps> = ({ open, onClose, onDetect
         if (!cancelled) {
           setError(
             err instanceof Error && err.message.includes('Permission')
-              ? 'Camera permission denied. Please allow camera access and try again.'
-              : 'Could not start camera. Make sure no other app is using it.',
+              ? t('barcode_scanner.permission_error')
+              : t('barcode_scanner.camera_error'),
           );
         }
       });
@@ -92,39 +143,40 @@ const BarcodeScanner: React.FC<BarcodeScannerProps> = ({ open, onClose, onDetect
   };
 
   return (
-    <div className="fixed inset-0 z-[70] bg-black flex flex-col">
+    <div className="fixed inset-0 z-[70] flex flex-col bg-black">
       {/* Top bar */}
-      <div className="shrink-0 flex items-center justify-between px-4 pt-safe pb-2">
-        <button onClick={onClose} className="p-2 text-white/80 active:text-white">
+      <div className="flex shrink-0 items-center justify-between px-4 pb-2 pt-safe">
+        <button type="button" onClick={onClose} className="p-2 text-white/80 active:text-white">
           <X size={24} />
         </button>
-        <span className="text-white font-semibold text-sm">Scan ICCID Barcode</span>
-        <button onClick={toggleCamera} className="p-2 text-white/80 active:text-white">
+        <span className="text-sm font-semibold text-white">{t('barcode_scanner.title')}</span>
+        <button type="button" onClick={toggleCamera} className="p-2 text-white/80 active:text-white">
           <SwitchCamera size={22} />
         </button>
       </div>
 
       {/* Camera view */}
-      <div className="flex-1 relative flex items-center justify-center overflow-hidden">
-        <div id={containerId} className="w-full h-full" />
+      <div className="relative flex flex-1 items-center justify-center overflow-hidden">
+        <div id={containerId} className="h-full w-full" />
 
         {error && (
           <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/80 px-8 text-center">
-            <Camera size={48} className="text-white/40 mb-4" />
-            <p className="text-white/80 text-sm mb-4">{error}</p>
+            <Camera size={48} className="mb-4 text-white/40" />
+            <p className="mb-4 text-sm text-white/80">{error}</p>
             <button
+              type="button"
               onClick={onClose}
-              className="bg-brand-orange text-white px-6 py-2.5 rounded-xl font-semibold text-sm"
+              className="rounded-xl bg-brand-orange px-6 py-2.5 text-sm font-semibold text-white"
             >
-              Close
+              {t('barcode_scanner.close')}
             </button>
           </div>
         )}
       </div>
 
       {/* Hint */}
-      <div className="shrink-0 pb-safe pt-3 pb-4 text-center">
-        <p className="text-white/60 text-xs">Point camera at the barcode on your SIM card</p>
+      <div className="shrink-0 pb-safe pt-3 text-center">
+        <p className="px-4 text-xs text-white/60">{t('barcode_scanner.hint')}</p>
       </div>
     </div>
   );

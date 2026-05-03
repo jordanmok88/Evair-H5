@@ -4,6 +4,14 @@ const en = {
     tuck: 'Tuck support button to the edge',
     expand: 'Show support chat',
   },
+  barcode_scanner: {
+    title: 'Scan ICCID barcode',
+    hint:
+      'Aim at the barcode on the back of your SIM card — use bright light, hold steady, and move closer if needed. QR codes on your box work too.',
+    permission_error: 'Camera permission denied. Please allow camera access and try again.',
+    camera_error: 'Could not start camera. Make sure no other app is using it.',
+    close: 'Close',
+  },
   nav: {
     sim_card: 'SIM Card',
     esim: 'eSIM',
@@ -324,10 +332,10 @@ const en = {
     header_tagline: 'Add data to your line',
     idle_title: 'Top up your EvairSIM',
     idle_body:
-      'Works with US SIM cards and global eSIMs: scan your box QR or enter the ICCID (Settings → Cellular or SIM Manager). Same flow for both.',
+      'Works with US SIM cards and global eSIMs: scan the barcode on your SIM card, your box QR, or enter the ICCID (Settings → Cellular or SIM Manager). Same flow for both.',
     idle_chip_us_sim: 'US SIM card',
     idle_chip_global_esim: 'Global eSIM',
-    idle_scan_cta: 'Scan QR code',
+    idle_scan_cta: 'Scan ICCID barcode',
     idle_or: 'or',
     idle_manual_label: 'Enter ICCID manually',
     idle_submit: 'Show top-up plans',
@@ -719,6 +727,13 @@ const en = {
   },
   activate: {
     header_tagline: 'Activate your SIM',
+    scan_barcode_cta: 'Scan ICCID barcode',
+    idle_title: 'Activate your SIM',
+    idle_body:
+      'Enter your ICCID or scan the barcode on the back of your SIM card. You can also scan the QR on your SIM box.',
+    idle_or: 'or',
+    idle_manual_label: 'Enter ICCID manually',
+    idle_lookup_sim: 'Look up SIM',
     invalid_iccid: "That doesn't look like a valid ICCID. Check the digits on your box (15-22 characters).",
     preview_failed: "We couldn't reach the activation service. Please check your connection and try again.",
   },

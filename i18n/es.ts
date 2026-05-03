@@ -4,6 +4,14 @@ const es = {
     tuck: 'Ocultar el botón de soporte al borde',
     expand: 'Mostrar chat de soporte',
   },
+  barcode_scanner: {
+    title: 'Escanear código de barras ICCID',
+    hint:
+      'Apunta al código en la parte trasera de tu SIM — buena luz, mano firme y acerca la cámara si hace falta. Los QR de la caja también funcionan.',
+    permission_error: 'Permiso de cámara denegado. Permítelo en el navegador e inténtalo de nuevo.',
+    camera_error: 'No pudimos iniciar la cámara. Cierra otras apps que la usen e inténtalo de nuevo.',
+    close: 'Cerrar',
+  },
   nav: {
     sim_card: 'Tarjeta SIM',
     esim: 'eSIM',
@@ -325,10 +333,10 @@ const es = {
     header_tagline: 'Añade datos a tu línea',
     idle_title: 'Recarga tu EvairSIM',
     idle_body:
-      'Sirve para SIM física EE. UU. y eSIM global: escanea el QR de la caja o escribe el ICCID (Ajustes → Cellular o Administrador SIM). Mismo proceso para ambas.',
+      'Sirve para SIM física EE. UU. y eSIM global: escanea el código de barras de la SIM, el QR de la caja o escribe el ICCID (Ajustes → Cellular o Administrador SIM). Mismo proceso para ambas.',
     idle_chip_us_sim: 'SIM EE. UU.',
     idle_chip_global_esim: 'eSIM global',
-    idle_scan_cta: 'Escanear código QR',
+    idle_scan_cta: 'Escanear código de barras ICCID',
     idle_or: 'o',
     idle_manual_label: 'Introduce el ICCID manualmente',
     idle_submit: 'Ver planes de recarga',
@@ -712,6 +720,13 @@ const es = {
   },
   activate: {
     header_tagline: 'Activa tu SIM',
+    scan_barcode_cta: 'Escanear código de barras ICCID',
+    idle_title: 'Activa tu SIM',
+    idle_body:
+      'Introduce tu ICCID o escanea el código de barras en la parte trasera de la SIM. También puedes usar el QR de la caja.',
+    idle_or: 'o',
+    idle_manual_label: 'Introducir ICCID manualmente',
+    idle_lookup_sim: 'Buscar SIM',
     invalid_iccid: 'Ese ICCID no parece válido. Revisa los dígitos en la caja (15-22 caracteres).',
     preview_failed: 'No pudimos contactar el servicio de activación. Comprueba tu conexión e inténtalo de nuevo.',
   },

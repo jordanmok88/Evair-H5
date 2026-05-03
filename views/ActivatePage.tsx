@@ -270,66 +270,66 @@ const IdleState: React.FC<IdleProps> = ({
     onManualChange,
     onManualSubmit,
     onScan,
-}) => (
-    <div>
-        <h1 className="text-2xl font-bold text-slate-900 mb-2">
-            Scan the QR on your SIM box
-        </h1>
-        <p className="text-sm text-slate-600 mb-6 leading-relaxed">
-            We need your ICCID to activate your SIM. It's the long number on the
-            inside of the box, or you can scan the QR code on the back.
-        </p>
+}) => {
+    const { t } = useTranslation();
+    return (
+        <div>
+            <h1 className="mb-2 text-2xl font-bold text-slate-900">{t('activate.idle_title')}</h1>
+            <p className="mb-6 text-sm leading-relaxed text-slate-600">{t('activate.idle_body')}</p>
 
-        <button
-            type="button"
-            onClick={onScan}
-            className="w-full bg-brand-orange text-white py-4 rounded-xl font-bold text-base shadow-lg shadow-orange-500/20 active:scale-[0.98] transition-all flex items-center justify-center gap-2 mb-4"
-        >
-            <ScanLine className="w-5 h-5" />
-            Scan QR code
-        </button>
+            <button
+                type="button"
+                onClick={onScan}
+                className="mb-4 flex w-full items-center justify-center gap-2 rounded-xl bg-brand-orange py-4 text-base font-bold text-white shadow-lg shadow-orange-500/20 transition-all active:scale-[0.98]"
+            >
+                <ScanLine className="h-5 w-5" />
+                {t('activate.scan_barcode_cta')}
+            </button>
 
-        <div className="flex items-center gap-3 my-6">
-            <div className="flex-1 h-px bg-slate-200" />
-            <span className="text-xs text-slate-400 uppercase tracking-wide">or</span>
-            <div className="flex-1 h-px bg-slate-200" />
+            <div className="my-6 flex items-center gap-3">
+                <div className="h-px flex-1 bg-slate-200" />
+                <span className="text-xs uppercase tracking-wide text-slate-400">
+                    {t('activate.idle_or')}
+                </span>
+                <div className="h-px flex-1 bg-slate-200" />
+            </div>
+
+            <label className="mb-2 block text-xs font-semibold uppercase tracking-wide text-slate-700">
+                {t('activate.idle_manual_label')}
+            </label>
+            <div className="relative">
+                <QrCode className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+                <input
+                    type="text"
+                    value={manualIccid}
+                    onChange={(e) => onManualChange(e.target.value)}
+                    onKeyDown={(e) => {
+                        if (e.key === 'Enter') onManualSubmit();
+                    }}
+                    placeholder="89014103211118510720"
+                    inputMode="numeric"
+                    autoComplete="off"
+                    className="w-full rounded-xl border-2 border-slate-200 bg-white py-3 pl-10 pr-4 text-sm font-mono focus:border-brand-orange focus:outline-none focus:ring-2 focus:ring-brand-orange/20"
+                />
+            </div>
+            {manualError && (
+                <p className="mt-2 flex items-center gap-1.5 text-xs text-red-600">
+                    <AlertCircle className="h-3.5 w-3.5" />
+                    {manualError}
+                </p>
+            )}
+            <button
+                type="button"
+                onClick={onManualSubmit}
+                disabled={manualIccid.length < 15}
+                className="mt-4 flex w-full items-center justify-center gap-2 rounded-xl bg-slate-900 py-3 text-sm font-semibold text-white transition-all active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-40"
+            >
+                {t('activate.idle_lookup_sim')}
+                <ArrowRight className="h-4 w-4" />
+            </button>
         </div>
-
-        <label className="block text-xs font-semibold text-slate-700 mb-2 uppercase tracking-wide">
-            Enter ICCID manually
-        </label>
-        <div className="relative">
-            <QrCode className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-            <input
-                type="text"
-                value={manualIccid}
-                onChange={(e) => onManualChange(e.target.value)}
-                onKeyDown={(e) => {
-                    if (e.key === 'Enter') onManualSubmit();
-                }}
-                placeholder="89014103211118510720"
-                inputMode="numeric"
-                autoComplete="off"
-                className="w-full bg-white border-2 border-slate-200 rounded-xl py-3 pl-10 pr-4 text-sm font-mono focus:outline-none focus:border-brand-orange focus:ring-2 focus:ring-brand-orange/20"
-            />
-        </div>
-        {manualError && (
-            <p className="text-xs text-red-600 mt-2 flex items-center gap-1.5">
-                <AlertCircle className="w-3.5 h-3.5" />
-                {manualError}
-            </p>
-        )}
-        <button
-            type="button"
-            onClick={onManualSubmit}
-            disabled={manualIccid.length < 15}
-            className="w-full mt-4 bg-slate-900 text-white py-3 rounded-xl font-semibold text-sm active:scale-[0.98] transition-all flex items-center justify-center gap-2 disabled:opacity-40 disabled:cursor-not-allowed"
-        >
-            Look up SIM
-            <ArrowRight className="w-4 h-4" />
-        </button>
-    </div>
-);
+    );
+};
 
 const NotFoundState: React.FC<{ iccid: string | null; onRetry: () => void }> = ({
     iccid,

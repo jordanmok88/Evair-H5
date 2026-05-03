@@ -4,6 +4,14 @@ const zh = {
     tuck: '收起客服按钮到边缘',
     expand: '显示客服入口',
   },
+  barcode_scanner: {
+    title: '扫描 ICCID 条码',
+    hint:
+      '对准 SIM 卡背面条码——光线充足、拿稳设备，必要时拉近镜头。包装盒上的二维码也可扫描。',
+    permission_error: '未获得摄像头权限，请在浏览器设置中允许后重试。',
+    camera_error: '无法启动摄像头，请关闭占用摄像头的其它应用后再试。',
+    close: '关闭',
+  },
   nav: {
     sim_card: 'SIM卡',
     esim: 'eSIM',
@@ -309,10 +317,10 @@ const zh = {
     header_tagline: '为已开通的 SIM / eSIM 充值',
     idle_title: '为 EvairSIM 充值',
     idle_body:
-      '美国实体 SIM 与全球 eSIM 通用：扫描包装盒二维码，或手动输入 ICCID（手机设置 → 蜂窝网络 / SIM 管理器）。流程一致。',
+      '美国实体 SIM 与全球 eSIM 通用：可扫描 SIM 卡背面条码、包装盒二维码，或手动输入 ICCID（手机设置 → 蜂窝网络 / SIM 管理器）。流程一致。',
     idle_chip_us_sim: '美国 SIM 卡',
     idle_chip_global_esim: '全球 eSIM',
-    idle_scan_cta: '扫描二维码',
+    idle_scan_cta: '扫描 ICCID 条码',
     idle_or: '或',
     idle_manual_label: '手动输入 ICCID',
     idle_submit: '查看充值套餐',
@@ -692,6 +700,13 @@ const zh = {
   },
   activate: {
     header_tagline: '激活您的 SIM',
+    scan_barcode_cta: '扫描 ICCID 条码',
+    idle_title: '激活您的 SIM',
+    idle_body:
+      '请输入 ICCID，或扫描 SIM 卡背面的条码。也可扫描包装盒上的二维码。',
+    idle_or: '或',
+    idle_manual_label: '手动输入 ICCID',
+    idle_lookup_sim: '查询 SIM',
     invalid_iccid: 'ICCID 格式无效，请检查包装盒上的数字（15-22 位）。',
     preview_failed: '无法连接激活服务，请检查网络后重试。',
   },
