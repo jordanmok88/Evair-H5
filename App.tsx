@@ -2,7 +2,6 @@ import React, { useState, useEffect, useRef, useCallback, useMemo, lazy, Suspens
 import { useTranslation } from 'react-i18next';
 import { Loader2, Zap } from 'lucide-react';
 import AppShellFloater from './components/AppShellFloater';
-import SupportFab from './components/SupportFab';
 import ProductTab from './views/ProductTab';
 import { parseAppTravelEsimCountry } from './utils/appTravelPath';
 import ProfileView from './views/ProfileView';
@@ -76,11 +75,6 @@ function hashFragmentForTab(tab: Tab): string {
   }
 }
 
-
-function showGlobalSupportFabForRoute(kind: Route['kind']): boolean {
-  /** 与 `CustomerApp` 互斥：`app` 路由内用内嵌 FAB；其余（含 apiTest / 营销 / activate 等）用全屏 fixed FAB */
-  return kind !== 'app';
-}
 
 function RouteSuspenseFallback() {
   return (
@@ -198,11 +192,8 @@ function App() {
 
   return (
     <>
-      {showGlobalSupportFabForRoute(route.kind) && (
-        <>
-          <SupportFab layout="fixed" visible={!marketingSupportOpen} onClick={() => setMarketingSupportOpen(true)} />
-          <MarketingContactDrawer open={marketingSupportOpen} onClose={() => setMarketingSupportOpen(false)} />
-        </>
+      {route.kind !== 'app' && (
+        <MarketingContactDrawer open={marketingSupportOpen} onClose={() => setMarketingSupportOpen(false)} />
       )}
       <Suspense fallback={<RouteSuspenseFallback />}>{appBody}</Suspense>
     </>
@@ -1163,6 +1154,10 @@ function CustomerApp() {
                 embedded
                 notifications={notifications}
                 onUpdateNotifications={setNotifications}
+                onOpenDialer={() => {
+                  previousTab.current = Tab.INBOX;
+                  handleTabChange(Tab.DIALER);
+                }}
                 onNavigate={(tabStr) => {
                   if (tabStr === 'ESIM') handleTabChange(Tab.ESIM);
                   else if (tabStr === 'SIM_CARD') handleTabChange(Tab.SIM_CARD);
@@ -1184,6 +1179,10 @@ function CustomerApp() {
           <InboxView
             notifications={notifications}
             onUpdateNotifications={setNotifications}
+            onOpenDialer={() => {
+              previousTab.current = Tab.INBOX;
+              handleTabChange(Tab.DIALER);
+            }}
             onNavigate={(tabStr) => {
               if (tabStr === 'ESIM') handleTabChange(Tab.ESIM);
               else if (tabStr === 'SIM_CARD') handleTabChange(Tab.SIM_CARD);
@@ -1330,16 +1329,6 @@ function CustomerApp() {
             {renderContent()}
           </div>
         </main>
-
-        {/* 浮动客服：主功能 Tab；打开聊天 Tab 时隐藏；inset 与全站 fixed FAB 互斥 */}
-        <SupportFab
-          layout="inset"
-          visible={activeTab === Tab.INBOX || activeTab === Tab.PROFILE}
-          onClick={() => {
-            previousTab.current = activeTab;
-            setActiveTab(Tab.DIALER);
-          }}
-        />
 
         <LoginModal
             isOpen={isLoginModalOpen}

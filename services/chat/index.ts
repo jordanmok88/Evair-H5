@@ -66,7 +66,7 @@ export function createChatProvider(name?: ChatProviderName): ChatProvider {
 
 // ─── 共享单例（acquire / release）─────────────────────────────────
 //
-// 多个组件（ContactUsView + SupportFab）需要共享同一个 provider，
+// 多个组件（ContactUsView + AppShellLiveChatButton）需要共享同一个 provider，
 // 否则会针对同一会话开两个 Reverb 订阅、未读计数与视图状态错位。
 // 用引用计数：第一个 acquire 时创建，最后一个 release 时 dispose。
 //

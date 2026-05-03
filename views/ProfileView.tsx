@@ -2,6 +2,7 @@ import React, { useState, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ChevronRight, Share, ChevronLeft, Search, Lock, Bell, Download, Trash2, Check, Plus, Package, HelpCircle, FileText, Globe, Info, Coins, ShieldCheck, CreditCard, ShoppingBag, Briefcase, Phone, Settings, AlertCircle, Play, Smartphone, Loader2, X, Star, Gift } from 'lucide-react';
 import ReferralView from './ReferralView';
+import AppShellLiveChatButton from '../components/AppShellLiveChatButton';
 import { AppNotification } from '../types';
 import { useSwipeBack } from '../hooks/useSwipeBack';
 import { useEdgeSwipeBack } from '../hooks/useEdgeSwipeBack';
@@ -1332,16 +1333,22 @@ const ProfileViewInner: React.FC<ProfileViewProps> = ({
         
         {/* Header */}
         <div
-          className={`bg-white/90 backdrop-blur-xl ${profileHeaderPad} pb-3 flex items-center gap-2 shrink-0 sticky top-0 z-10 border-b border-slate-100 ${
+          className={`bg-white/90 backdrop-blur-xl ${profileHeaderPad} pb-3 flex shrink-0 items-center gap-2 sticky top-0 z-10 border-b border-slate-100 ${
             embedded ? 'pt-3' : 'pt-safe'
           }`}
         >
-            {onBack && (
-              <button onClick={onBack} className="w-9 h-9 -ml-1 rounded-full flex items-center justify-center hover:bg-black/5 active:bg-black/10 transition-colors">
-                <ChevronLeft size={22} className="text-slate-900" />
-              </button>
-            )}
-            <h1 className="text-lg font-bold text-slate-900 tracking-tight">{t('profile.title')}</h1>
+            <div className="flex min-w-0 flex-1 items-center gap-2">
+              {onBack && (
+                <button onClick={onBack} className="w-9 h-9 -ml-1 shrink-0 rounded-full flex items-center justify-center hover:bg-black/5 active:bg-black/10 transition-colors">
+                  <ChevronLeft size={22} className="text-slate-900" />
+                </button>
+              )}
+              <h1 className="min-w-0 flex-1 truncate text-lg font-bold tracking-tight text-slate-900">{t('profile.title')}</h1>
+            </div>
+            <AppShellLiveChatButton
+              onClick={onOpenDialer}
+              className="relative flex shrink-0 items-center gap-1 rounded-full bg-gradient-to-r from-[#FF6600] to-[#FF8A3D] px-2.5 py-2 text-[10px] font-extrabold uppercase tracking-wide text-white shadow-sm active:scale-[0.98] transition-transform sm:px-3 sm:text-[11px]"
+            />
         </div>
 
         <div

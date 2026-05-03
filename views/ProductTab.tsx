@@ -235,6 +235,7 @@ const ProductTab: React.FC<ProductTabProps> = ({
             esimsMineWizardDefer={type === 'ESIM' && esimsMineWizardDefer}
             onReleaseEsimsMineWizardDefer={() => setEsimsMineWizardDefer(false)}
             onConsumeLinkEsimRequestNonce={() => setLinkEsimFromShopNonce(0)}
+            onOpenLiveChat={onOpenContactFromBrowseShop}
           />
        )}
 

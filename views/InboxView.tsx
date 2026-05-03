@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { ChevronRight, Bell, Package, AlertTriangle, Clock, Tag, Zap, Trash2, ArrowLeft } from 'lucide-react';
 import { AppNotification, NotificationType } from '../types';
 import FlagIcon from '../components/FlagIcon';
+import AppShellLiveChatButton from '../components/AppShellLiveChatButton';
 import { useSwipeBack } from '../hooks/useSwipeBack';
 import { useEdgeSwipeBack } from '../hooks/useEdgeSwipeBack';
 
@@ -28,6 +29,8 @@ interface InboxViewProps {
   onUpdateNotifications: (updater: (prev: AppNotification[]) => AppNotification[]) => void;
   onNavigate?: (tab: string) => void;
   onBack?: () => void;
+  /** Open live chat / Contact (same as shop header — sets previousTab in App.tsx). */
+  onOpenDialer?: () => void;
   /** Marketing floating drawer — compact chrome + in-flow scroll (see `MarketingInboxDrawer`). */
   embedded?: boolean;
 }
@@ -42,6 +45,7 @@ const InboxView: React.FC<InboxViewProps> = ({
   onUpdateNotifications,
   onNavigate,
   onBack,
+  onOpenDialer,
   embedded = false,
 }) => {
   const { t } = useTranslation();
@@ -97,11 +101,17 @@ const InboxView: React.FC<InboxViewProps> = ({
         }`}
       >
         {onBack && (
-          <button onClick={onBack} className="w-9 h-9 -ml-1 rounded-full flex items-center justify-center hover:bg-black/5 active:bg-black/10 transition-colors">
+          <button onClick={onBack} className="w-9 h-9 shrink-0 -ml-1 rounded-full flex items-center justify-center hover:bg-black/5 active:bg-black/10 transition-colors">
             <ArrowLeft size={22} className="text-slate-900" />
           </button>
         )}
-        <h1 className="text-lg font-bold tracking-tight text-slate-900">{t('profile.inbox')}</h1>
+        <h1 className="min-w-0 flex-1 truncate text-lg font-bold tracking-tight text-slate-900">{t('profile.inbox')}</h1>
+        {onOpenDialer && (
+          <AppShellLiveChatButton
+            onClick={onOpenDialer}
+            className="relative flex shrink-0 items-center gap-1 rounded-full bg-gradient-to-r from-[#FF6600] to-[#FF8A3D] px-2.5 py-2 text-[10px] font-extrabold uppercase tracking-wide text-white shadow-sm active:scale-[0.98] transition-transform sm:px-3 sm:text-[11px]"
+          />
+        )}
       </div>
 
       <div

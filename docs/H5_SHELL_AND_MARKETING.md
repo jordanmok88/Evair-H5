@@ -13,7 +13,7 @@ flowchart TD
     loc[window.location pathname + hostname + hash]
     get[getRoute in utils/routing.ts]
     app[App.tsx appBody branch]
-    global[SupportFab fixed + MarketingContactDrawer]
+    global[MarketingContactDrawer — header Live Chat + evair-open-marketing-contact]
     ca[CustomerApp]
 
     loc --> get
@@ -24,7 +24,7 @@ flowchart TD
 ```
 
 - **`utils/routing.ts`** — `getRoute()`: deterministic `Route` discriminated union (no React Router yet).
-- **`App.tsx`** — Chooses **`appBody`** from `route.kind`; renders **global FAB + contact drawer** when `route.kind !== 'app'`.
+- **`App.tsx`** — Chooses **`appBody`** from `route.kind`; renders **`MarketingContactDrawer`** when `route.kind !== 'app'` (opened from **`SiteHeader`** Live Chat or **`EVAIR_OPEN_MARKETING_CONTACT_EVENT`**).
 - **`CustomerApp`** (inline in **`App.tsx`**) — Shop / SIMs / profile hashes, session storage tabs, Stripe sheets, nested views.
 
 ---
@@ -62,8 +62,8 @@ Canonical shop catalogue flows through **`services/dataService.ts`** (not `packa
 
 ## 4. Marketing / public chrome (any `route.kind !== 'app'`)
 
-- **`SupportFab`** (**`layout="fixed"`)** opens **`MarketingContactDrawer`** (same stacking as inbox/profile marketing drawers).
-- **Site header logged-in extras** (`SiteHeaderAccountActions`):
+- **`AppShellLiveChatButton`**（顶栏）在 **`SiteHeader`** 与 App 内 **Shop / Profile / Inbox** 打开聊天；营销站通过 **`EVAIR_OPEN_MARKETING_CONTACT_EVENT`** 拉起 **`MarketingContactDrawer`**。
+- **Site header logged-in extras**（`SiteHeaderAccountActions`）：
   - **Inbox** → **`MarketingInboxDrawer`** (portal to `document.body`, `z-[70]` / `71`).
   - **Profile** → **`MarketingProfileDrawer`** (same geometry; stays on **current pathname** — does **not** navigate to `/app#profile`).
 - **Bridge event** (**`utils/evairMarketingEvents.ts`**): dispatch **`EVAIR_OPEN_MARKETING_CONTACT_EVENT`** (“Contact Us” from profile on marketing); **`App.tsx`** listens and sets **`marketingSupportOpen`**, unless **`getRoute().kind === 'app'`**.

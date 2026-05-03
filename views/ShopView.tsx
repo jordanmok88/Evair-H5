@@ -32,9 +32,9 @@ import { pollEsimOrderUntilProvisioned } from '../services/api/order';
 import type { OrderDetailDto } from '../services/api/types';
 import { useSwipeBack } from '../hooks/useSwipeBack';
 
-import { Bell, UserCircle, MessageCircle } from 'lucide-react';
+import { Bell, UserCircle } from 'lucide-react';
 import { AppNotification } from '../types';
-import { useUnreadChat } from '../hooks/useUnreadChat';
+import AppShellLiveChatButton from '../components/AppShellLiveChatButton';
 
 /** eSIM shop filter row: single-country tabs + Multi-Country (`Multi-Region` in facets). */
 const ESIM_LOCATION_FILTER_TABS: ContinentTab[] = [
@@ -220,7 +220,6 @@ const ShopView: React.FC<ShopViewProps> = ({
 }) => {
   const { t, i18n } = useTranslation();
   /** Shop header replaces floating FAB — keep unread parity with former FAB */
-  const { unread: unreadChatFromAgent } = useUnreadChat(true);
   const TOP_COUNTRY_COUNT = 10;
   const [selectedCountry, setSelectedCountry] = useState<Country | null>(null);
   const [selectedPlan, setSelectedPlan] = useState<Plan | null>(null);
@@ -1410,23 +1409,12 @@ const ShopView: React.FC<ShopViewProps> = ({
                       {t('shop.hello')} {isLoggedIn && user ? user.name : t('shop.new_friend')}
                   </p>
               </div>
-              <button
-                  type="button"
-                  onClick={() =>
-                    onOpenContactFromBrowseShop ? onOpenContactFromBrowseShop() : onNavigate?.('DIALER')
-                  }
-                  className="relative flex shrink-0 items-center gap-1 rounded-full bg-gradient-to-r from-[#FF6600] to-[#FF8A3D] px-3 py-2 text-[11px] font-extrabold uppercase tracking-wide text-white shadow-sm active:scale-[0.98] transition-transform"
-                  aria-label={t('support_fab.open_chat')}
-                  style={{ WebkitTapHighlightColor: 'transparent' }}
-              >
-                  <MessageCircle size={16} strokeWidth={2} className="shrink-0 text-white" aria-hidden />
-                  <span className="max-w-[4.75rem] truncate sm:max-w-none">{t('support_fab.live_chat')}</span>
-                  {unreadChatFromAgent > 0 && (
-                    <span className="absolute -right-0.5 -top-0.5 flex h-[17px] min-w-[17px] items-center justify-center rounded-full border-2 border-white bg-red-500 px-[3px] text-[10px] font-bold leading-none text-white">
-                      {unreadChatFromAgent > 9 ? '9+' : unreadChatFromAgent}
-                    </span>
-                  )}
-              </button>
+              <AppShellLiveChatButton
+                className="relative flex shrink-0 items-center gap-1 rounded-full bg-gradient-to-r from-[#FF6600] to-[#FF8A3D] px-3 py-2 text-[11px] font-extrabold uppercase tracking-wide text-white shadow-sm active:scale-[0.98] transition-transform"
+                onClick={() =>
+                  onOpenContactFromBrowseShop ? onOpenContactFromBrowseShop() : onNavigate?.('DIALER')
+                }
+              />
               <div className="flex shrink-0 items-center gap-2">
                 <button onClick={() => onNavigate?.('INBOX')} className="relative w-10 h-10 rounded-xl bg-slate-100 flex items-center justify-center active:scale-95 transition-all" style={{ WebkitTapHighlightColor: 'transparent' }}>
                   <Bell size={18} className="text-slate-700" />
