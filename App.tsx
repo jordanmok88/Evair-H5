@@ -560,7 +560,7 @@ function CustomerApp() {
               if (name) {
                 patch.plan = {
                   ...sim.plan,
-                  name,
+                  name: '',
                   days: profile.totalDuration > 0 ? profile.totalDuration : sim.plan.days,
                 };
                 const region = deriveEsimCountryOverlay(name);

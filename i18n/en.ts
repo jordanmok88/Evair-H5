@@ -468,6 +468,7 @@ const en = {
     /** Fallback when expiry is not synced yet (catalogue bundle length only). */
     validity_bundle_only_one: '{{count}} day (plan allowance)',
     validity_bundle_only_other: '{{count}} days (plan allowance)',
+    live_plan_region_fallback: 'eSIM',
     install_esim: 'Install eSIM',
     install_esim_title: 'Install Your eSIM',
     install_esim_desc: 'Scan the QR code or enter details in your mobile settings',

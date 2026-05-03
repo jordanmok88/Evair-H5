@@ -468,6 +468,7 @@ const es = {
     validity_time_left_other: 'Quedan {{count}} días',
     validity_bundle_only_one: '{{count}} día (incluidos en el plan)',
     validity_bundle_only_other: '{{count}} días (incluidos en el plan)',
+    live_plan_region_fallback: 'eSIM',
     install_esim: 'Instalar eSIM',
     install_esim_title: 'Instala tu eSIM',
     install_esim_desc: 'Escanea el código QR o ingresa los datos en la configuración de tu móvil',

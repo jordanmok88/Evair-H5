@@ -447,6 +447,7 @@ const zh = {
     validity_time_left_other: '剩余 {{count}} 天',
     validity_bundle_only_one: '{{count}} 天（套餐标明）',
     validity_bundle_only_other: '{{count}} 天（套餐标明）',
+    live_plan_region_fallback: 'eSIM',
     install_esim: '安装eSIM',
     install_esim_title: '安装您的eSIM',
     install_esim_desc: '扫描二维码或在手机设置中手动输入',

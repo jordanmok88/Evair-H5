@@ -455,9 +455,28 @@ const MySimsView: React.FC<MySimsViewProps> = ({
   const remainingSegs = totalSegs - usedSegs;
 
   const detailCarrierInfo = retailCarrierRowForIso(currentSim.country.countryCode) ?? { carrier: '—', network: '' };
+
+  /** Plan type row: prefer live metrics (matches supplier dashboard after top-ups), not static SKU titles. */
+  const livePlanTypeLabel = ((): string | null => {
+    const hasData = Number.isFinite(currentSim.dataTotalGB) && currentSim.dataTotalGB > 0;
+    if (!hasData && validityDaysRemaining === null) return null;
+
+    const regionRaw = currentSim.country?.name?.trim();
+    const region = regionRaw || t('my_sims.live_plan_region_fallback');
+    const parts = [region];
+    if (hasData) parts.push(formatGB(currentSim.dataTotalGB));
+    if (validityDaysRemaining !== null) {
+      parts.push(t('my_sims.validity_time_left', { count: validityDaysRemaining }));
+    } else if ((currentSim.plan?.days ?? 0) > 0) {
+      parts.push(t('my_sims.validity_bundle_only', { count: Math.max(1, currentSim.plan.days) }));
+    }
+    return parts.join(' · ');
+  })();
+
   const planDisplayLabel =
-    (currentSim.plan?.name && String(currentSim.plan.name).trim()) ||
-    (validityDaysRemaining !== null
+    livePlanTypeLabel
+    ?? (currentSim.plan?.name && String(currentSim.plan.name).trim())
+    ?? (validityDaysRemaining !== null
       ? `${formatGB(currentSim.dataTotalGB)} · ${t('my_sims.validity_time_left', { count: validityDaysRemaining })}`
       : `${formatGB(currentSim.dataTotalGB)} · ${t('my_sims.validity_bundle_only', { count: Math.max(1, currentSim.plan.days || 0) })}`);
 
