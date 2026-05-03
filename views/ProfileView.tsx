@@ -334,7 +334,7 @@ const OrdersView = ({ onBack }: { onBack: () => void }) => {
                     <h3 className="text-base font-bold text-slate-900">United States / eSIM</h3>
                     <p className="text-slate-500 text-sm mb-3 mt-0.5">7 days - 1 GB</p>
                     <p className="text-slate-400 text-sm font-medium mb-4">13 Jan 2024, 08:37</p>
-                    <p className="text-lg font-bold text-slate-900">$4.50 USD</p>
+                    <p className="text-lg font-bold text-slate-900">$4.99 USD</p>
                 </div>
             </div>
         </div>

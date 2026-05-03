@@ -207,8 +207,8 @@ const KNOWLEDGE_BASE: KnowledgeEntry[] = [
       "**eSIM plans** (single-country and multi-country)\n" +
       "- 1 GB / 7 days — from $0.99\n" +
       "- 3 GB / 30 days — from $3.99\n" +
-      "- 5 GB / 30 days — from $7.50\n" +
-      "- 10 GB / 30 days — from $12.50\n" +
+      "- 5 GB / 30 days — from $7.99\n" +
+      "- 10 GB / 30 days — from $12.99\n" +
       "- Regional and global multi-country plans are also available.\n\n" +
       "**Physical SIM plans** (US data only)\n" +
       "- Plans start from $8.99.\n\n" +
@@ -220,8 +220,8 @@ const KNOWLEDGE_BASE: KnowledgeEntry[] = [
       "**eSIM 套餐**（单国与多国）\n" +
       "- 1 GB / 7 天——低至 $0.99\n" +
       "- 3 GB / 30 天——低至 $3.99\n" +
-      "- 5 GB / 30 天——低至 $7.50\n" +
-      "- 10 GB / 30 天——低至 $12.50\n" +
+      "- 5 GB / 30 天——低至 $7.99\n" +
+      "- 10 GB / 30 天——低至 $12.99\n" +
       "- 另有地区与全球多国套餐可选。\n\n" +
       "**实体 SIM 卡套餐**（仅限美国数据）\n" +
       "- 套餐起价 $8.99。\n\n" +
@@ -233,8 +233,8 @@ const KNOWLEDGE_BASE: KnowledgeEntry[] = [
       "**Planes eSIM** (un país y multi-país)\n" +
       "- 1 GB / 7 días — desde $0.99\n" +
       "- 3 GB / 30 días — desde $3.99\n" +
-      "- 5 GB / 30 días — desde $7.50\n" +
-      "- 10 GB / 30 días — desde $12.50\n" +
+      "- 5 GB / 30 días — desde $7.99\n" +
+      "- 10 GB / 30 días — desde $12.99\n" +
       "- También ofrecemos planes regionales y globales.\n\n" +
       "**Planes SIM física** (solo datos en EE. UU.)\n" +
       "- Desde $8.99.\n\n" +
