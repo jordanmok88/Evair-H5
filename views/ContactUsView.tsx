@@ -779,12 +779,12 @@ const ContactUsView: React.FC<ContactUsViewProps> = ({
       className={
         embedded
           ? 'relative flex h-full min-h-0 flex-col overflow-hidden bg-[#eef1f6]'
-          : 'lg:h-full min-h-screen lg:min-h-0 flex flex-col bg-[#F2F4F7] relative'
+          : 'relative flex h-full min-h-0 flex-col overflow-hidden bg-[#F2F4F7]'
       }
     >
       {/* Header — full-screen app keeps tall chrome; embedded = compact modal bar (never shrink inside float) */}
       {embedded ? (
-        <header className="shrink-0 border-b border-white/15 bg-gradient-to-br from-[#FF6600] via-[#FF7433] to-[#FF8533] px-4 py-3.5 shadow-md sm:py-4">
+        <header className="shrink-0 border-b border-white/15 bg-gradient-to-br from-[#FF6600] via-[#FF7433] to-[#FF8533] px-4 pb-3 pt-[max(0.75rem,env(safe-area-inset-top,0px))] shadow-md">
           <div className="flex items-start gap-3">
             <div className="relative shrink-0">
               <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-white shadow-md ring-2 ring-white/40">
@@ -845,59 +845,61 @@ const ContactUsView: React.FC<ContactUsViewProps> = ({
           </div>
         </header>
       ) : (
-        <div
-          className="shrink-0 pt-safe px-4 pb-3 sticky top-0 z-10 rounded-b-2xl shadow-md"
+        <header
+          className="shrink-0 border-b border-white/15 pt-safe shadow-md"
           style={{ background: 'linear-gradient(180deg, #FF6600 0%, #FF8533 100%)' }}
         >
-          <div className="flex items-center gap-3 mb-2">
-            <button onClick={onBack} className="w-9 h-9 rounded-full bg-white/20 flex items-center justify-center active:bg-white/30 transition-colors">
+          <div className="flex items-center gap-3 px-4 pb-3">
+            <button
+              type="button"
+              onClick={onBack}
+              className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-white/20 transition-colors active:bg-white/30"
+            >
               <ChevronLeft size={22} color="#fff" strokeWidth={2.5} />
             </button>
-            <div className="flex-1">
-              <h1 className="text-lg font-bold text-white tracking-tight">{t('contact.title')}</h1>
-              <div className="flex items-center gap-1.5 mt-0.5">
-                <div className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
-                <span className="text-sm text-white/85 font-medium">{aiDisabled ? t('contact.agent_status') : t('contact.online_status')}</span>
+            <div className="relative shrink-0">
+              <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-white shadow-sm">
+                {aiDisabled ? <Headphones size={16} color="#10B981" /> : <Sparkles size={16} color="#FF6600" />}
+              </div>
+              {aiDisabled ? (
+                <div className="absolute -bottom-0.5 -right-0.5 flex h-3.5 w-3.5 items-center justify-center rounded-full border-2 border-[#FF8533] bg-emerald-400">
+                  <div className="h-1.5 w-1.5 rounded-full bg-white" />
+                </div>
+              ) : (
+                <div className="absolute -bottom-0.5 -right-0.5 flex h-3.5 w-3.5 items-center justify-center rounded-full border-2 border-[#FF8533] bg-emerald-400">
+                  <Bot size={7} color="#fff" strokeWidth={3} />
+                </div>
+              )}
+            </div>
+            <div className="min-w-0 flex-1">
+              <h1 className="truncate text-base font-bold tracking-tight text-white">{t('contact.title')}</h1>
+              <p className="mt-0.5 truncate text-xs font-semibold text-white/90">
+                {aiDisabled ? t('contact.agent_name') : 'Evair AI Assistant'}
+              </p>
+              <div className="mt-0.5 flex flex-wrap items-center gap-x-1.5 gap-y-0 text-[11px] font-medium text-white/75">
+                <span className="inline-flex items-center gap-1">
+                  <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-emerald-300" />
+                  {aiDisabled ? t('contact.agent_status') : t('contact.online_status')}
+                </span>
+                {!aiDisabled && (
+                  <>
+                    <span aria-hidden>·</span>
+                    <span>Powered by AI</span>
+                  </>
+                )}
               </div>
             </div>
-            {/* Phase 1: headphone button triggers markNeedsHuman + setAiDisabled */}
             <button
+              type="button"
               onClick={handleTransferToHuman}
-              className="w-9 h-9 rounded-full bg-white/20 flex items-center justify-center active:bg-white/30 transition-colors"
+              className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-white/20 transition-colors active:bg-white/30"
               aria-label={t('contact.talk_to_human')}
               title={t('contact.talk_to_human')}
             >
               <Headphones size={18} color="#fff" strokeWidth={2.5} />
             </button>
           </div>
-          <div className="flex items-center gap-3 ml-12">
-            <div className="relative">
-              <div className="w-9 h-9 rounded-xl bg-white flex items-center justify-center shadow-sm">
-                {/* Phase 1: icon switches between Sparkles (AI) and Headphones (agent) */}
-                {aiDisabled
-                  ? <Headphones size={16} color="#10B981" />
-                  : <Sparkles size={16} color="#FF6600" />
-                }
-              </div>
-              {aiDisabled ? (
-                <div className="absolute -bottom-0.5 -right-0.5 w-4 h-4 rounded-full bg-emerald-400 border-2 border-[#FF6600] flex items-center justify-center">
-                  <div className="w-2 h-2 rounded-full bg-white" />
-                </div>
-              ) : (
-                <div className="absolute -bottom-0.5 -right-0.5 w-4 h-4 rounded-full bg-emerald-400 border-2 border-[#FF6600] flex items-center justify-center">
-                  <Bot size={8} color="#fff" strokeWidth={3} />
-                </div>
-              )}
-            </div>
-            <div>
-              {/* Phase 1: subtitle changes based on aiDisabled */}
-              <span className="text-sm font-semibold text-white">{aiDisabled ? t('contact.agent_name') : 'Evair AI Assistant'}</span>
-              <div className="flex items-center gap-1 mt-0.5">
-                <span className="text-xs text-white/70 font-medium">{aiDisabled ? t('contact.agent_status') : 'Powered by AI'}</span>
-              </div>
-            </div>
-          </div>
-        </div>
+        </header>
       )}
 
       {/* 网络状态条：仅在非 connected 时显示 */}
@@ -908,67 +910,72 @@ const ContactUsView: React.FC<ContactUsViewProps> = ({
         </div>
       )}
 
-      {/* Messages Area — pb: full-page uses fixed composer (~96px); embedded keeps composer in-flow */}
-      <div
-        ref={scrollContainerRef}
-        onScroll={handleScroll}
-        className={`flex-1 overflow-y-auto no-scrollbar ${embedded ? 'px-4 pt-4 sm:px-5' : 'px-4 pt-5'}`}
-        style={{
-          scrollBehavior: 'smooth',
-          WebkitOverflowScrolling: 'touch',
-          paddingBottom: embedded ? 16 : 96,
-        }}
-      >
-        {/* IntersectionObserver sentinel for infinite scroll up */}
-        <div ref={sentinelRef} style={{ height: 1 }} />
+      {/* Topic chips — fixed below header (not inside message scroll) */}
+      {!selectedCategory && (
+        <div
+          className={`shrink-0 border-b border-slate-200/90 ${embedded ? 'bg-[#eef1f6]' : 'bg-[#F2F4F7]'}`}
+        >
+          <p className="px-3 pt-2 text-center text-[10px] font-bold uppercase tracking-[0.14em] text-slate-500">
+            {t('contact.choose_topic')}
+          </p>
+          <div className="flex flex-wrap justify-center gap-1.5 px-2 pb-2 pt-1">
+            {CATEGORY_KEYS.map((key) => {
+              const cat = t(`contact.${key}`);
+              return (
+                <button
+                  key={key}
+                  type="button"
+                  onClick={() => handleCategorySelect(cat)}
+                  className="rounded-full border border-slate-200/90 bg-white px-2.5 py-1 text-[11px] font-semibold leading-tight text-slate-700 shadow-sm transition-transform active:scale-[0.97] hover:border-orange-200 hover:text-orange-700"
+                >
+                  {cat}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      )}
 
-        {/* Loading older messages spinner (at top, above sentinel) */}
-        {loadingMore && (
+      {/* Scrollable messages — only this region scrolls; composer stays put */}
+      <div className="relative flex min-h-0 flex-1 flex-col">
+        <div
+          ref={scrollContainerRef}
+          onScroll={handleScroll}
+          className={`min-h-0 flex-1 overflow-y-auto overscroll-y-contain no-scrollbar ${embedded ? 'px-4 pt-3 sm:px-5' : 'px-4 pt-3'}`}
+          style={{
+            scrollBehavior: 'smooth',
+            WebkitOverflowScrolling: 'touch',
+          }}
+        >
+          {/* IntersectionObserver sentinel for infinite scroll up */}
+          <div ref={sentinelRef} style={{ height: 1 }} />
+
+          {/* Loading older messages spinner (at top, above sentinel) */}
+          {loadingMore && (
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, padding: '12px 0' }}>
             <Loader2 size={14} style={{ color: '#94a3b8', animation: 'spin 1s linear infinite' }} />
             <span style={{ fontSize: 12, color: '#94a3b8', fontWeight: 500 }}>{t('contact.loading_messages')}</span>
           </div>
-        )}
+          )}
 
-        {/* "Beginning of conversation" indicator */}
-        {!hasMore && messages.length > 0 && (
+          {/* "Beginning of conversation" indicator */}
+          {!hasMore && messages.length > 0 && (
           <div style={{ display: 'flex', justifyContent: 'center', paddingBottom: 8 }}>
             <span style={{ fontSize: 11, color: '#cbd5e1', fontWeight: 500 }}>
               {t('contact.loading_messages').replace('...', '')}
             </span>
           </div>
-        )}
+          )}
 
-        {/* Phase 4: loading history indicator (initial load) */}
-        {loadingHistory && (
+          {/* Phase 4: loading history indicator (initial load) */}
+          {loadingHistory && (
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, padding: '20px 0' }}>
             <Loader2 size={16} style={{ color: '#94a3b8', animation: 'spin 1s linear infinite' }} />
             <span style={{ fontSize: 13, color: '#94a3b8', fontWeight: 500 }}>{t('contact.loading_messages')}</span>
           </div>
-        )}
+          )}
 
-        {!selectedCategory && (
-          <div style={{ marginBottom: 20 }}>
-            <p style={{ fontSize: 14, fontWeight: 600, color: '#94a3b8', marginBottom: 8, textAlign: 'center' }}>{t('contact.choose_topic')}</p>
-            <div className="flex flex-wrap justify-center gap-2">
-              {CATEGORY_KEYS.map(key => {
-                const cat = t(`contact.${key}`);
-                return (
-                  <button
-                    key={key}
-                    onClick={() => handleCategorySelect(cat)}
-                    style={{ padding: '8px 16px', borderRadius: 20, backgroundColor: '#fff', border: '1px solid #e2e8f0', fontSize: 15, fontWeight: 600, color: '#334155', boxShadow: '0 1px 3px rgba(0,0,0,0.04)', transition: 'all 0.15s' }}
-                    className="active:scale-95 hover:border-orange-300 hover:text-orange-600"
-                  >
-                    {cat}
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-        )}
-
-        {messageItems.map(item => {
+          {messageItems.map(item => {
           if (item.kind === 'divider') {
             return (
               <div key={item.key} style={{ display: 'flex', justifyContent: 'center', margin: '12px 0' }}>
@@ -1035,9 +1042,9 @@ const ContactUsView: React.FC<ContactUsViewProps> = ({
               </div>
             </div>
           );
-        })}
+          })}
 
-        {isTyping && (
+          {isTyping && (
           <div className="chat-msg-enter" style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
             <div style={{ width: 28, height: 28, borderRadius: 10, background: aiDisabled ? 'linear-gradient(135deg, #10B981, #059669)' : 'linear-gradient(135deg, #FF6600, #FF8533)', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
               {aiDisabled ? <Headphones size={14} color="#fff" /> : <Sparkles size={14} color="#fff" />}
@@ -1048,63 +1055,25 @@ const ContactUsView: React.FC<ContactUsViewProps> = ({
               ))}
             </div>
           </div>
+          )}
+          <div ref={messagesEndRef} />
+        </div>
+
+        {showJumpToLatest && (
+          <button
+            type="button"
+            onClick={() => scrollToBottom()}
+            className="pointer-events-auto absolute bottom-3 right-4 z-10 flex h-9 w-9 items-center justify-center rounded-full border border-slate-200 bg-white shadow-lg transition hover:bg-slate-50"
+            aria-label="jump to latest"
+          >
+            <ArrowDown size={18} color="#475569" />
+          </button>
         )}
-        <div ref={messagesEndRef} />
       </div>
 
-      {/* 跳到最新（浮动按钮，向上滚动后才出现） */}
-      {showJumpToLatest && (
-        <button
-          onClick={() => scrollToBottom()}
-          style={{
-            position: 'absolute',
-            right: embedded ? 12 : 16,
-            bottom: embedded ? 92 : 104,
-            width: 36,
-            height: 36,
-            borderRadius: '50%',
-            backgroundColor: '#fff',
-            border: '1px solid #e2e8f0',
-            boxShadow: '0 4px 12px rgba(0,0,0,0.08)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            cursor: 'pointer',
-            zIndex: 15,
-            transition: 'transform 0.2s, opacity 0.2s',
-          }}
-          aria-label="jump to latest"
-        >
-          <ArrowDown size={18} color="#475569" />
-        </button>
-      )}
-
-      {/* Phase 3: Input — viewport-fixed in-app; embedded = in-flow inside marketing widget */}
+      {/* Phase 3: Input — flex footer (not position:fixed) so header/messages/composer don’t fight page scroll */}
       <div
-        style={
-          embedded
-            ? {
-                position: 'relative',
-                flexShrink: 0,
-                zIndex: 20,
-                padding: '14px 14px max(14px, env(safe-area-inset-bottom, 0px))',
-                paddingTop: 12,
-                backgroundColor: '#fff',
-                borderTop: '1px solid #e8ecf1',
-                boxShadow: '0 -12px 24px -18px rgba(15,23,42,0.12)',
-              }
-            : {
-                position: 'fixed',
-                bottom: 0,
-                left: 0,
-                right: 0,
-                zIndex: 20,
-                padding: '12px 16px 32px',
-                backgroundColor: '#fff',
-                borderTop: '1px solid #f1f5f9',
-                boxShadow: '0 -2px 10px rgba(0,0,0,0.03)',
-              }
-        }
+        className={`shrink-0 border-t border-slate-200/90 bg-white pt-2 shadow-[0_-8px_24px_-12px_rgba(15,23,42,0.08)] ${embedded ? 'px-3.5 pb-[max(10px,env(safe-area-inset-bottom,0px))]' : 'px-4 pb-[max(12px,env(safe-area-inset-bottom,0px))]'}`}
       >
         <div style={{ display: 'flex', alignItems: 'flex-end', gap: 10, backgroundColor: '#f8fafc', borderRadius: 20, padding: '6px 6px 6px 16px', border: '1px solid #e2e8f0' }}>
           {/* Phase 2: Paperclip opens attach menu, disabled only when uploading */}
