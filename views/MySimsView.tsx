@@ -6,6 +6,7 @@ import FlagIcon from '../components/FlagIcon';
 import StripePaymentModal from '../components/StripePaymentModal';
 import AutoRenewToggle from '../components/AutoRenewToggle';
 import { retailCarrierRowForIso } from '../utils/retailCarrierLookup';
+import { daysRemainingFromExpiry } from '../utils/daysRemainingFromExpiry';
 import { topUp, fetchTopUpPackages, fetchPackages, checkDataUsage, formatVolume, formatPrice, retailPrice, packagePriceUsd, formatGB, queryProfile, mapRedTeaStatus, unbindSim } from '../services/dataService';
 import { useEdgeSwipeBack } from '../hooks/useEdgeSwipeBack';
 import LinkEsimWizard from '../components/LinkEsimWizard';
@@ -432,6 +433,7 @@ const MySimsView: React.FC<MySimsViewProps> = ({
   }
 
   // --- RING GAUGE LOGIC ---
+  const validityDaysRemaining = daysRemainingFromExpiry(currentSim.expiryDate);
   const dataUsed = currentSim.dataUsedGB;
   const dataTotal = currentSim.dataTotalGB;
   const dataRemaining = Math.max(0, dataTotal - dataUsed);
@@ -455,7 +457,9 @@ const MySimsView: React.FC<MySimsViewProps> = ({
   const detailCarrierInfo = retailCarrierRowForIso(currentSim.country.countryCode) ?? { carrier: '—', network: '' };
   const planDisplayLabel =
     (currentSim.plan?.name && String(currentSim.plan.name).trim()) ||
-    `${formatGB(currentSim.dataTotalGB)} · ${currentSim.plan.days} ${t('my_sims.days')}`;
+    (validityDaysRemaining !== null
+      ? `${formatGB(currentSim.dataTotalGB)} · ${t('my_sims.validity_time_left', { count: validityDaysRemaining })}`
+      : `${formatGB(currentSim.dataTotalGB)} · ${t('my_sims.validity_bundle_only', { count: Math.max(1, currentSim.plan.days || 0) })}`);
 
   const handleCopy = (text: string, field: 'smdp' | 'activation' | 'qr') => {
     navigator.clipboard.writeText(text).then(() => {
@@ -839,7 +843,12 @@ const MySimsView: React.FC<MySimsViewProps> = ({
                   <span className="font-mono">Order {currentSim.orderNo}</span>
                 </div>
               )}
-              <p className="text-xs text-slate-300 mt-1">{formatGB(currentSim.dataTotalGB)} · {currentSim.plan.days} {t('my_sims.days')}</p>
+              <p className="text-xs text-slate-300 mt-1">
+                {formatGB(currentSim.dataTotalGB)} ·{' '}
+                {validityDaysRemaining !== null
+                  ? t('my_sims.validity_time_left', { count: validityDaysRemaining })
+                  : `${currentSim.plan.days} ${t('my_sims.days')}`}
+              </p>
             </div>
 
             <div className="px-5 pb-5 space-y-2.5 border-t border-slate-50 pt-4">
@@ -1070,7 +1079,7 @@ const MySimsView: React.FC<MySimsViewProps> = ({
                       <div className="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-slate-500">
                           <Database size={16} />
                       </div>
-                      <span className="text-sm font-bold text-slate-900">Data Allowance</span>
+                      <span className="text-sm font-bold text-slate-900">{t('my_sims.data_allowance_label')}</span>
                   </div>
                   <span className="text-sm font-bold text-slate-500">{formatGB(currentSim.dataTotalGB)}</span>
               </div>
@@ -1080,9 +1089,13 @@ const MySimsView: React.FC<MySimsViewProps> = ({
                       <div className="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-slate-500">
                           <Calendar size={16} />
                       </div>
-                      <span className="text-sm font-bold text-slate-900">Validity</span>
+                      <span className="text-sm font-bold text-slate-900">{t('my_sims.validity_section_label')}</span>
                   </div>
-                  <span className="text-sm font-bold text-slate-500">{currentSim.plan.days} Days</span>
+                  <span className="text-sm font-bold text-slate-500">
+                    {validityDaysRemaining !== null
+                      ? t('my_sims.validity_time_left', { count: validityDaysRemaining })
+                      : t('my_sims.validity_bundle_only', { count: Math.max(1, currentSim.plan.days || 0) })}
+                  </span>
               </div>
 
               <div className="flex justify-between items-center">
@@ -1090,7 +1103,7 @@ const MySimsView: React.FC<MySimsViewProps> = ({
                       <div className="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-slate-500">
                           <Clock size={16} />
                       </div>
-                      <span className="text-sm font-bold text-slate-900">Expires</span>
+                      <span className="text-sm font-bold text-slate-900">{t('my_sims.expires_section_label')}</span>
                   </div>
                   <span className="text-sm font-bold text-slate-500">{formatSafeLocaleDate(currentSim.expiryDate)}</span>
               </div>

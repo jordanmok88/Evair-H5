@@ -459,6 +459,15 @@ const en = {
     status_not_activated: 'Not Activated',
     network_status: 'Network Status',
     plan_type: 'Plan Type',
+    data_allowance_label: 'Data allowance',
+    validity_section_label: 'Validity',
+    expires_section_label: 'Expires',
+    /** Shown when `expiryDate` is known — matches supplier "time left". */
+    validity_time_left_one: '{{count}} day left',
+    validity_time_left_other: '{{count}} days left',
+    /** Fallback when expiry is not synced yet (catalogue bundle length only). */
+    validity_bundle_only_one: '{{count}} day (plan allowance)',
+    validity_bundle_only_other: '{{count}} days (plan allowance)',
     install_esim: 'Install eSIM',
     install_esim_title: 'Install Your eSIM',
     install_esim_desc: 'Scan the QR code or enter details in your mobile settings',
