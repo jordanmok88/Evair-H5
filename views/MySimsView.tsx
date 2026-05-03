@@ -25,8 +25,8 @@ interface MySimsViewProps {
   onSwitchToSetup?: (tab?: 'ACTIVATE' | 'TRACKING', trackingNumber?: string) => void;
   onUpdateSim?: (simId: string, updates: Partial<ActiveSim>) => void;
   /**
-   * Bump this from Shop (Global eSIM) to open Link eSIM once on mount/update.
-   * Parent increments a counter — avoids duplicated opens vs a plain boolean StrictMode flicker.
+   * Parent-owned counter — Profile «Link existing eSIM» bumps it so MySims opens the wizard once.
+   * Cleared when the wizard closes or when navigating to Mine from shop with SIMs already in wallet (see ProductTab).
    */
   linkEsimRequestNonce?: number;
   /**
@@ -36,6 +36,12 @@ interface MySimsViewProps {
   esimsMineWizardDefer?: boolean;
   /** Clear parent defer when Link wizard closes so Shop kick can resume if still empty */
   onReleaseEsimsMineWizardDefer?: () => void;
+  /**
+   * Clears parent's `linkEsimFromShopNonce` when Link wizard closes. Required so
+   * leaving Mine for Shop does not lose `lastHandled` (child unmounted) while the
+   * nonce stays bumped — returning to Mine would otherwise re-open Link eSIM.
+   */
+  onConsumeLinkEsimRequestNonce?: () => void;
 }
 
 const CARD_HEIGHT = 72;
@@ -76,6 +82,7 @@ const MySimsView: React.FC<MySimsViewProps> = ({
   linkEsimRequestNonce = 0,
   esimsMineWizardDefer = false,
   onReleaseEsimsMineWizardDefer,
+  onConsumeLinkEsimRequestNonce,
 }) => {
   const { t } = useTranslation();
   const swipeBack = useCallback(() => {
@@ -100,7 +107,8 @@ const MySimsView: React.FC<MySimsViewProps> = ({
   const handleLinkWizardClose = useCallback(() => {
     setLinkEsimOpen(false);
     onReleaseEsimsMineWizardDefer?.();
-  }, [onReleaseEsimsMineWizardDefer]);
+    onConsumeLinkEsimRequestNonce?.();
+  }, [onReleaseEsimsMineWizardDefer, onConsumeLinkEsimRequestNonce]);
   const lastHandledLinkNonce = useRef(0);
 
   useLayoutEffect(() => {

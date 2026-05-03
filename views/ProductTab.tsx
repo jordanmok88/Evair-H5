@@ -187,14 +187,21 @@ const ProductTab: React.FC<ProductTabProps> = ({
             onLoginRequest={onLoginRequest}
             onPurchaseComplete={(info) => {
                 onPurchaseComplete(info);
+                setLinkEsimFromShopNonce(0);
                 setViewMode('MINE');
             }}
             hasActiveSims={mySims.length > 0}
             activeSims={activeSims}
-            onSwitchToMySims={() => setViewMode('MINE')}
+            onSwitchToMySims={() => {
+              if (mySims.length > 0) {
+                setLinkEsimFromShopNonce(0);
+              }
+              setViewMode('MINE');
+            }}
             onSwitchToSetup={() => handleSwitchToSetup()}
             onAddCard={async (iccid) => {
                 await onAddCard?.(iccid);
+                setLinkEsimFromShopNonce(0);
                 setViewMode('MINE');
             }}
             onNavigate={(tab) => onNavigate(tab as Tab)}
@@ -227,6 +234,7 @@ const ProductTab: React.FC<ProductTabProps> = ({
             linkEsimRequestNonce={type === 'ESIM' ? linkEsimFromShopNonce : 0}
             esimsMineWizardDefer={type === 'ESIM' && esimsMineWizardDefer}
             onReleaseEsimsMineWizardDefer={() => setEsimsMineWizardDefer(false)}
+            onConsumeLinkEsimRequestNonce={() => setLinkEsimFromShopNonce(0)}
           />
        )}
 
