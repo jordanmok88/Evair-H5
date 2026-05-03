@@ -19,8 +19,7 @@ export interface MarketingProfileDrawerProps {
 }
 
 /**
- * Marketing-site account manager — same floating-panel geometry as {@link MarketingInboxDrawer},
- * stays on the public page (does not navigate to `/app#profile`).
+ * Marketing-site account — floating card from `md:` up; below `md`, full-viewport sheet.
  */
 const MarketingProfileDrawer: React.FC<MarketingProfileDrawerProps> = ({
     open,
@@ -54,7 +53,7 @@ const MarketingProfileDrawer: React.FC<MarketingProfileDrawerProps> = ({
         <div className="fixed inset-0 z-[70]" role="presentation">
             <button
                 type="button"
-                className="absolute inset-0 bg-slate-900/35 backdrop-blur-[2px] animate-in fade-in duration-200"
+                className="absolute inset-0 hidden bg-slate-900/35 backdrop-blur-[2px] animate-in fade-in duration-200 md:block"
                 aria-label={t('barcode_scanner.close')}
                 onClick={onClose}
             />
@@ -62,9 +61,9 @@ const MarketingProfileDrawer: React.FC<MarketingProfileDrawerProps> = ({
                 role="dialog"
                 aria-modal="true"
                 aria-label={t('profile.title')}
-                className="fixed bottom-[max(1rem,calc(env(safe-area-inset-bottom,0px)+8px))] left-4 right-4 z-[71] mx-auto flex h-[min(42rem,calc(100dvh-7rem))] w-full max-w-[400px] flex-col overflow-hidden rounded-2xl bg-[#eef1f6] shadow-[0_-8px_40px_-12px_rgba(0,0,0,0.15)] ring-1 ring-black/10 animate-in fade-in zoom-in-95 duration-200 sm:left-auto sm:right-5 sm:mx-0 md:right-8"
+                className="fixed inset-0 z-[71] flex h-[100dvh] max-h-[100dvh] w-full flex-col overflow-hidden rounded-none bg-[#eef1f6] shadow-none ring-0 animate-in fade-in duration-200 md:inset-auto md:bottom-[max(1rem,calc(env(safe-area-inset-bottom,0px)+8px))] md:left-auto md:right-5 md:top-auto md:h-[min(42rem,calc(100dvh-7rem))] md:max-h-[min(42rem,calc(100dvh-7rem))] md:w-full md:max-w-[400px] md:rounded-2xl md:shadow-[0_-8px_40px_-12px_rgba(0,0,0,0.15)] md:ring-1 md:ring-black/10 md:zoom-in-95 lg:right-8"
             >
-                <div className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-2xl">
+                <div className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-none md:rounded-2xl">
                     {isLoggedIn && userLoading ? (
                         <div className="flex flex-1 min-h-[12rem] flex-col items-center justify-center gap-3 bg-[#F2F4F7] text-slate-500">
                             <Loader2 className="h-9 w-9 animate-spin text-brand-orange" aria-hidden />
