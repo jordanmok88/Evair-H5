@@ -9,6 +9,9 @@ const en = {
     title: 'Scan ICCID barcode',
     hint:
       'Aim at the barcode on the back of your SIM card — use bright light, hold steady, and move closer if needed. QR codes on your box work too.',
+    esim_link_title: 'Scan QR code',
+    esim_link_hint:
+      'Use a QR that includes your ICCID or order URL. Plain install QR codes (sm‑dp+) only belong in Settings — paste your ICCID here if unsure.',
     permission_error: 'Camera permission denied. Please allow camera access and try again.',
     camera_error: 'Could not start camera. Make sure no other app is using it.',
     close: 'Close',
@@ -397,6 +400,37 @@ const en = {
     auth_privacy_link: 'Privacy Policy',
   },
   my_sims: {
+    no_evairsim_yet: 'No EvairSIM Yet',
+    link_esim: 'Link existing eSIM',
+    link_esim_title: 'Link eSIM',
+    link_esim_empty_hint:
+      'Shop for a plan or enter an ICCID from a confirmation email to show it here.',
+    link_esim_sheet_lead: 'Already bought a plan?',
+    link_esim_hint:
+      'Enter the ICCID from your order confirmation, or scan a QR code only if it includes your ICCID or order link.',
+    link_esim_iccid_placeholder: '15–22 digit ICCID',
+    link_esim_iccid_invalid: 'Enter a valid ICCID (15–22 letters or digits).',
+    link_esim_scan_qr: 'Scan QR code',
+    link_esim_lookup: 'Look up',
+    link_esim_lookup_loading: 'Looking up…',
+    link_esim_not_found: 'We could not find this ICCID. Check the number and try again.',
+    link_esim_pending: 'This line is still being set up — try again shortly.',
+    link_esim_claimed_other:
+      'This eSIM is already linked to another account. For help email {{email}}.',
+    link_esim_already_linked: 'This eSIM already appears under My eSIMs.',
+    link_esim_missing_sim_id: 'This ICCID could not be matched internally — contact support.',
+    link_esim_login_prompt: 'Sign in to link this eSIM to your account.',
+    link_esim_confirm: 'Add to My eSIMs',
+    link_esim_binding: 'Linking…',
+    link_esim_success: 'Your eSIM is linked.',
+    link_esim_bind_failed: 'Could not link — check your activation code or try again.',
+    link_esim_plan_fallback: 'Your Evair eSIM plan',
+    link_esim_activation_optional: '(optional)',
+    link_esim_activation_placeholder: 'From SIM insert / packaging',
+    link_esim_activation_help:
+      'If the server rejects bind without details, paste the activation code printed on your packaging.',
+    link_esim_back: 'Back to ICCID',
+
     title_esims: 'My eSIMs',
     title_sims: 'My SIMs',
     no_esims: "You haven't added any eSIMs.",

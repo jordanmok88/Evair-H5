@@ -9,6 +9,9 @@ const zh = {
     title: '扫描 ICCID 条码',
     hint:
       '对准 SIM 卡背面条码——光线充足、拿稳设备，必要时拉近镜头。包装盒上的二维码也可扫描。',
+    esim_link_title: '扫描二维码（仅含 ICCID）',
+    esim_link_hint:
+      '二维码需包含 ICCID 或订单链接；若仅为安装 QR（SM-DP+），请在手机里安装，或直接在此粘贴邮件中的 ICCID。',
     permission_error: '未获得摄像头权限，请在浏览器设置中允许后重试。',
     camera_error: '无法启动摄像头，请关闭占用摄像头的其它应用后再试。',
     close: '关闭',
@@ -379,6 +382,36 @@ const zh = {
     auth_privacy_link: '隐私政策',
   },
   my_sims: {
+    no_evairsim_yet: '暂无 EvairSIM',
+    link_esim: '关联已有 eSIM',
+    link_esim_title: '关联 eSIM',
+    link_esim_empty_hint: '在商店选购套餐，或输入确认邮件里的 ICCID 以在此显示。',
+    link_esim_sheet_lead: '已购买套餐？',
+    link_esim_hint:
+      '请输入订单邮件中的 ICCID；仅当二维码内包含 ICCID 或订单链接时再扫码（不是纯安装 QR）。',
+    link_esim_iccid_placeholder: '15–22 位 ICCID',
+    link_esim_iccid_invalid: '请输入有效 ICCID（15–22 位字母或数字）。',
+    link_esim_scan_qr: '扫描二维码',
+    link_esim_lookup: '查询',
+    link_esim_lookup_loading: '查询中…',
+    link_esim_not_found: '未找到该 ICCID，请核对后重试。',
+    link_esim_pending: '该号码仍在开通中，请稍后再试。',
+    link_esim_claimed_other:
+      '此 eSIM 已绑定到其他账号。如需协助请邮件联系 {{email}}。',
+    link_esim_already_linked: '此 eSIM 已在「我的 eSIM」中。',
+    link_esim_missing_sim_id: '无法在系统中匹配该 ICCID，请联系客服。',
+    link_esim_login_prompt: '请先登录，再关联到此账号。',
+    link_esim_confirm: '添加到「我的 eSIM」',
+    link_esim_binding: '关联中…',
+    link_esim_success: 'eSIM 已关联。',
+    link_esim_bind_failed: '关联失败——请核对激活码或稍后重试。',
+    link_esim_plan_fallback: '您的 Evair eSIM 套餐',
+    link_esim_activation_optional: '（可选）',
+    link_esim_activation_placeholder: '卡盒/包装上印刷的激活码',
+    link_esim_activation_help:
+      '若服务端要求激活详情，请将包装上印刷的激活码粘贴在此处。',
+    link_esim_back: '返回 ICCID 输入',
+
     title_esims: '我的eSIM',
     title_sims: '我的SIM卡',
     no_esims: '你还没有添加任何eSIM。',

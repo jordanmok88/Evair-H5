@@ -1013,6 +1013,7 @@ function CustomerApp() {
       onInitialEsimDeepLinkConsumed={handleTravelEsimDeepLinkConsumed}
       initialBindSimDeepLink={pendingBindSimDeepLink && currentSimType === 'PHYSICAL'}
       onBindSimDeepLinkConsumed={clearBindSimDeepLink}
+      onLinkedEsimRefresh={fetchUserSims}
     />
   );
 

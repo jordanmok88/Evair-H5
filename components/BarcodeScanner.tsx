@@ -7,13 +7,20 @@ interface BarcodeScannerProps {
   open: boolean;
   onClose: () => void;
   onDetected: (value: string) => void;
+  /** Restrict symbologies (e.g. QR-only for link-eSIM flow). Default: ICCID_SCAN_FORMATS. */
+  formatsToSupport?: Html5QrcodeSupportedFormats[];
+  /** i18n key for header title. */
+  titleKey?: string;
+  /** i18n key for bottom hint. */
+  hintKey?: string;
 }
 
 /**
  * Pull ICCID from linear barcode text, QR payload, or URL query (`?iccid=`).
  * Matches app routing: 15–22 ASCII alphanumerics after normalising separators.
+ * GSMA LPA strings may embed an 18–22 digit ICCID substring — we try digit runs after `LPA:`.
  */
-function extractIccidFromScan(raw: string): string | null {
+export function extractIccidFromScan(raw: string): string | null {
   const trimmed = raw.trim();
   if (!trimmed) return null;
 
@@ -24,6 +31,16 @@ function extractIccidFromScan(raw: string): string | null {
     if (c.length >= 15 && c.length <= 22) return c;
     return null;
   };
+
+  if (/^LPA:/i.test(trimmed)) {
+    const digitRuns = trimmed.match(/\d{18,22}/g);
+    if (digitRuns) {
+      for (const run of digitRuns) {
+        const hit = inRange(run);
+        if (hit) return hit;
+      }
+    }
+  }
 
   const param = /[?&#]iccid=([0-9A-Za-z]+)/i.exec(trimmed)?.[1];
   if (param) {
@@ -71,7 +88,14 @@ const ICCID_SCAN_FORMATS: Html5QrcodeSupportedFormats[] = [
   Html5QrcodeSupportedFormats.AZTEC,
 ];
 
-const BarcodeScanner: React.FC<BarcodeScannerProps> = ({ open, onClose, onDetected }) => {
+const BarcodeScanner: React.FC<BarcodeScannerProps> = ({
+  open,
+  onClose,
+  onDetected,
+  formatsToSupport = ICCID_SCAN_FORMATS,
+  titleKey = 'barcode_scanner.title',
+  hintKey = 'barcode_scanner.hint',
+}) => {
   const { t } = useTranslation();
   const scannerRef = useRef<Html5Qrcode | null>(null);
   const onDetectedRef = useRef(onDetected);
@@ -102,7 +126,7 @@ const BarcodeScanner: React.FC<BarcodeScannerProps> = ({ open, onClose, onDetect
             return { width: w, height: Math.max(128, h) };
           },
           aspectRatio: 1.777778,
-          formatsToSupport: ICCID_SCAN_FORMATS,
+          formatsToSupport,
         },
         (decodedText) => {
           if (cancelled) return;
@@ -134,7 +158,7 @@ const BarcodeScanner: React.FC<BarcodeScannerProps> = ({ open, onClose, onDetect
           scannerRef.current = null;
         });
     };
-  }, [open, facingMode]);
+  }, [open, facingMode, formatsToSupport]);
 
   if (!open) return null;
 
@@ -149,7 +173,7 @@ const BarcodeScanner: React.FC<BarcodeScannerProps> = ({ open, onClose, onDetect
         <button type="button" onClick={onClose} className="p-2 text-white/80 active:text-white">
           <X size={24} />
         </button>
-        <span className="text-sm font-semibold text-white">{t('barcode_scanner.title')}</span>
+        <span className="text-sm font-semibold text-white">{t(titleKey)}</span>
         <button type="button" onClick={toggleCamera} className="p-2 text-white/80 active:text-white">
           <SwitchCamera size={22} />
         </button>
@@ -176,7 +200,7 @@ const BarcodeScanner: React.FC<BarcodeScannerProps> = ({ open, onClose, onDetect
 
       {/* Hint */}
       <div className="shrink-0 pb-safe pt-3 text-center">
-        <p className="px-4 text-xs text-white/60">{t('barcode_scanner.hint')}</p>
+        <p className="px-4 text-xs text-white/60">{t(hintKey)}</p>
       </div>
     </div>
   );

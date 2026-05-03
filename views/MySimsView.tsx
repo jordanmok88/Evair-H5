@@ -1,6 +1,6 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Wifi, Phone, Zap, ChevronDown, CheckCircle2, QrCode, Copy, X, Calendar, Clock, SignalHigh, Smartphone, RefreshCw, Plus, ShoppingBag, Settings, MoreHorizontal, Trash2, Check, AlertTriangle, Loader2, Globe, Database, ScanLine, ArrowLeft, PartyPopper, Sparkles } from 'lucide-react';
+import { Wifi, Phone, Zap, ChevronDown, CheckCircle2, QrCode, Copy, X, Calendar, Clock, SignalHigh, Smartphone, RefreshCw, Plus, ShoppingBag, Settings, MoreHorizontal, Trash2, Check, AlertTriangle, Loader2, Globe, Database, ScanLine, ArrowLeft, PartyPopper, Sparkles, Link2 } from 'lucide-react';
 import { ActiveSim, Tab, SimType, EsimPackage } from '../types';
 import FlagIcon from '../components/FlagIcon';
 import StripePaymentModal from '../components/StripePaymentModal';
@@ -8,11 +8,15 @@ import AutoRenewToggle from '../components/AutoRenewToggle';
 import { retailCarrierRowForIso } from '../utils/retailCarrierLookup';
 import { topUp, fetchTopUpPackages, fetchPackages, checkDataUsage, formatVolume, formatPrice, retailPrice, packagePriceUsd, formatGB, queryProfile, mapRedTeaStatus, unbindSim } from '../services/dataService';
 import { useEdgeSwipeBack } from '../hooks/useEdgeSwipeBack';
+import LinkEsimWizard from '../components/LinkEsimWizard';
 
 interface MySimsViewProps {
   activeSims: ActiveSim[];
   onNavigate: (tab: Tab) => void;
   filterType: SimType;
+  onLoginRequest?: () => void;
+  /** Refetch server SIM list after linking an eSIM. */
+  onLinkedEsimRefresh?: () => void | Promise<void>;
   onSwitchToShop?: () => void;
   onDeleteSim?: (simId: string) => void;
   // Legacy signature accepted `(tab, trackingNumber)` — the TRACKING
@@ -47,12 +51,51 @@ function resolveIccid(sim: ActiveSim): string {
   return sim.iccid || `898520002633221${sim.id.replace(/\D/g, '').slice(0, 5)}`;
 }
 
-const MySimsView: React.FC<MySimsViewProps> = ({ activeSims, onNavigate, filterType, onSwitchToShop, onDeleteSim, onSwitchToSetup, onUpdateSim }) => {
+const MySimsView: React.FC<MySimsViewProps> = ({
+  activeSims,
+  onNavigate,
+  filterType,
+  onLoginRequest,
+  onLinkedEsimRefresh,
+  onSwitchToShop,
+  onDeleteSim,
+  onSwitchToSetup,
+  onUpdateSim,
+}) => {
   const { t } = useTranslation();
-  const swipeBack = useCallback(() => { onSwitchToShop?.(); }, [onSwitchToShop]);
+  const swipeBack = useCallback(() => {
+    onSwitchToShop?.();
+  }, [onSwitchToShop]);
   useEdgeSwipeBack(swipeBack);
-  const filteredSims = activeSims.filter(s => s.type === filterType);
-  
+  const filteredSims = activeSims.filter((s) => s.type === filterType);
+
+  const boundEsimIccids = useMemo(() => {
+    const set = new Set<string>();
+    for (const s of activeSims) {
+      if (s.type !== 'ESIM') continue;
+      const raw = s.iccid?.trim();
+      if (!raw) continue;
+      const c = raw.replace(/[^0-9A-Za-z]/g, '');
+      if (c.length >= 15 && c.length <= 22) set.add(c);
+    }
+    return set;
+  }, [activeSims]);
+
+  const [linkEsimOpen, setLinkEsimOpen] = useState(false);
+  const closeLinkWizard = useCallback(() => setLinkEsimOpen(false), []);
+
+  const linkWizard = (
+    <LinkEsimWizard
+      open={linkEsimOpen}
+      onClose={closeLinkWizard}
+      boundIccids={boundEsimIccids}
+      onSuccess={async () => {
+        await onLinkedEsimRefresh?.();
+      }}
+      onLoginRequest={() => onLoginRequest?.()}
+    />
+  );
+
   // Phase 4 cross-sell: ActivatePage redirects here with `?just_activated=1`
   // so we can render a one-off welcome + top-up CTA banner. Read it once
   // on mount and immediately scrub the URL so a refresh doesn't re-show
@@ -274,6 +317,7 @@ const MySimsView: React.FC<MySimsViewProps> = ({ activeSims, onNavigate, filterT
         : t('my_sims.add');
 
       return (
+          <>
           <div className="lg:h-full min-h-[60vh] flex flex-col items-center justify-center px-8 text-center bg-[#F2F4F7]">
               <div className="relative mb-10">
                   <div className="w-60 h-36 bg-white rounded-2xl border border-slate-200 shadow-sm flex flex-col p-5 relative overflow-hidden">
@@ -297,9 +341,12 @@ const MySimsView: React.FC<MySimsViewProps> = ({ activeSims, onNavigate, filterT
                       </button>
                   </div>
               </div>
-              <p className="text-slate-500 mb-8 font-medium text-base tracking-tight">
-                  {filterType === 'ESIM' ? t('my_sims.no_esims') : t('my_sims.no_sims')}
+              <p className={`text-lg font-semibold tracking-tight text-slate-800 ${filterType === 'ESIM' ? 'mb-2' : 'mb-8'}`}>
+                  {filterType === 'ESIM' ? t('my_sims.no_evairsim_yet') : t('my_sims.no_sims')}
               </p>
+              {filterType === 'ESIM' && (
+                  <p className="mb-8 max-w-[20rem] text-sm leading-relaxed text-slate-500">{t('my_sims.link_esim_empty_hint')}</p>
+              )}
               {primaryAction && (
                 <button
                     onClick={primaryAction}
@@ -309,8 +356,19 @@ const MySimsView: React.FC<MySimsViewProps> = ({ activeSims, onNavigate, filterT
                     {primaryLabel}
                 </button>
               )}
+              {filterType === 'ESIM' && (
+                <button
+                  type="button"
+                  onClick={() => setLinkEsimOpen(true)}
+                  className="mt-4 py-3 text-base font-semibold text-brand-orange"
+                >
+                  {t('my_sims.link_esim')}
+                </button>
+              )}
           </div>
-      )
+          {linkWizard}
+          </>
+      );
   }
 
   // --- RING GAUGE LOGIC ---
@@ -348,6 +406,7 @@ const MySimsView: React.FC<MySimsViewProps> = ({ activeSims, onNavigate, filterT
 
   if (isInstallModalOpen) {
     return (
+      <>
       <div className="lg:h-full flex flex-col bg-[#1c1c1e]">
           <div className="px-4 pt-safe pb-3 flex items-center justify-between shrink-0 sticky top-0 bg-[#1c1c1e] z-10 border-b border-white/10">
               <h2 className="text-white text-lg font-bold tracking-tight">{t('my_sims.install_esim')}</h2>
@@ -474,10 +533,13 @@ const MySimsView: React.FC<MySimsViewProps> = ({ activeSims, onNavigate, filterT
                </button>
           </div>
       </div>
+      {linkWizard}
+      </>
     );
   }
 
   return (
+    <>
     <div className={`flex flex-col flex-1 min-h-0 h-full lg:h-full bg-[#F2F4F7] no-scrollbar relative ${isRechargeModalOpen ? 'overflow-hidden' : 'overflow-y-auto lg:overflow-y-auto'}`}>
       
       {/* Header */}
@@ -490,10 +552,21 @@ const MySimsView: React.FC<MySimsViewProps> = ({ activeSims, onNavigate, filterT
             )}
             <h1 className="text-lg font-bold tracking-tight text-slate-900">{filterType === 'ESIM' ? t('my_sims.title_esims') : t('my_sims.title_sims')}</h1>
           </div>
-          <div className="flex gap-2">
-             <button onClick={handleSync} className="w-9 h-9 bg-slate-100 rounded-full flex items-center justify-center text-slate-600 active:scale-95 transition-transform">
+          <div className="flex gap-2 items-center">
+             <button type="button" onClick={handleSync} className="w-9 h-9 bg-slate-100 rounded-full flex items-center justify-center text-slate-600 active:scale-95 transition-transform">
                  <RefreshCw size={16} className={isSyncing ? 'animate-spin' : ''} />
              </button>
+             {filterType === 'ESIM' && (
+               <button
+                 type="button"
+                 title={t('my_sims.link_esim')}
+                 aria-label={t('my_sims.link_esim')}
+                 onClick={() => setLinkEsimOpen(true)}
+                 className="w-9 h-9 rounded-full border border-slate-200 bg-white flex items-center justify-center text-slate-600 shadow-sm hover:border-brand-orange/40 hover:text-brand-orange active:scale-95 transition-all"
+               >
+                 <Link2 size={17} strokeWidth={2.25} />
+               </button>
+             )}
              {onSwitchToShop && (
                 <button onClick={filterType === 'PHYSICAL' && onSwitchToSetup ? () => onSwitchToSetup('ACTIVATE') : onSwitchToShop} className="w-9 h-9 bg-brand-orange text-white rounded-full flex items-center justify-center shadow-md active:scale-95 transition-transform">
                     <Plus size={18} />
@@ -1312,6 +1385,8 @@ const MySimsView: React.FC<MySimsViewProps> = ({ activeSims, onNavigate, filterT
       )}
 
     </div>
+    {linkWizard}
+    </>
   );
 };
 

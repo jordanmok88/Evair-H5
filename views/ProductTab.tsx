@@ -42,6 +42,8 @@ interface ProductTabProps {
   /** `/app#bind-sim` — open Add SIM / bind wizard once (marketing "Activate my SIM"). */
   initialBindSimDeepLink?: boolean;
   onBindSimDeepLinkConsumed?: () => void;
+  /** Refresh bound SIM list from API after linking an existing eSIM. */
+  onLinkedEsimRefresh?: () => void | Promise<void>;
 }
 
 const ProductTab: React.FC<ProductTabProps> = ({
@@ -62,6 +64,7 @@ const ProductTab: React.FC<ProductTabProps> = ({
   onInitialEsimDeepLinkConsumed,
   initialBindSimDeepLink = false,
   onBindSimDeepLinkConsumed,
+  onLinkedEsimRefresh,
 }) => {
   const mySims = activeSims.filter(s => s.type === type);
   const bindDeepLinkConsumedRef = useRef(false);
@@ -174,6 +177,8 @@ const ProductTab: React.FC<ProductTabProps> = ({
             onDeleteSim={onDeleteSim}
             onSwitchToSetup={handleSwitchToSetup}
             onUpdateSim={onUpdateSim}
+            onLoginRequest={onLoginRequest}
+            onLinkedEsimRefresh={onLinkedEsimRefresh}
           />
        )}
 
