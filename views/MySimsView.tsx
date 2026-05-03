@@ -119,6 +119,7 @@ const MySimsView: React.FC<MySimsViewProps> = ({
         await onLinkedEsimRefresh?.();
       }}
       onLoginRequest={() => onLoginRequest?.()}
+      onAfterSuccessNavigate={filterType === 'ESIM' ? onSwitchToShop : undefined}
     />
   );
 

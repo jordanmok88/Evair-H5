@@ -423,7 +423,8 @@ const es = {
     link_esim_login_prompt: 'Inicia sesión para vincular este eSIM a tu cuenta.',
     link_esim_confirm: 'Añadir a Mis eSIM',
     link_esim_binding: 'Vinculando…',
-    link_esim_success: 'Tu eSIM está vinculado.',
+    link_esim_success: 'Enhorabuena — tu eSIM se ha vinculado.',
+    link_esim_success_continue: 'Continuar',
     link_esim_bind_failed:
       'No se pudo vincular — comprueba el código de activación o inténtalo de nuevo.',
     link_esim_plan_fallback: 'Tu plan Evair eSIM',

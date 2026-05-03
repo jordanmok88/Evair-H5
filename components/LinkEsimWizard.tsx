@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ArrowLeft, Link2, Loader2 } from 'lucide-react';
 import { authService } from '../services/api/auth';
@@ -23,6 +23,10 @@ function formatPlanLine(data: ActivationPreviewData, t: (k: string) => string): 
   return bits.length > 0 ? bits.join(' · ') : t('my_sims.link_esim_plan_fallback');
 }
 
+/** Milliseconds to show success before auto-close + optional navigation. */
+const LINK_SUCCESS_DISPLAY_MS = 1500;
+const LINK_SUCCESS_DISPLAY_MS_REDUCED = 600;
+
 export interface LinkEsimWizardProps {
   open: boolean;
   onClose: () => void;
@@ -30,6 +34,8 @@ export interface LinkEsimWizardProps {
   boundIccids: ReadonlySet<string>;
   onSuccess: () => void | Promise<void>;
   onLoginRequest: () => void;
+  /** After successful link: called after toast screen, right before/on same tick as modal close — e.g. switch ProductTab to eSIM shop. */
+  onAfterSuccessNavigate?: () => void;
 }
 
 const LinkEsimWizard: React.FC<LinkEsimWizardProps> = ({
@@ -38,6 +44,7 @@ const LinkEsimWizard: React.FC<LinkEsimWizardProps> = ({
   boundIccids,
   onSuccess,
   onLoginRequest,
+  onAfterSuccessNavigate,
 }) => {
   const { t } = useTranslation();
   const [phase, setPhase] = useState<'enter' | 'confirm' | 'binding' | 'done'>('enter');
@@ -46,9 +53,24 @@ const LinkEsimWizard: React.FC<LinkEsimWizardProps> = ({
   const [activationCode, setActivationCode] = useState('');
   const [lookupLoading, setLookupLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const successNavDoneRef = useRef(false);
+  const successNavigateTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const onCloseRef = useRef(onClose);
+  const onAfterNavigateRef = useRef(onAfterSuccessNavigate);
+  useEffect(() => {
+    onCloseRef.current = onClose;
+  }, [onClose]);
+  useEffect(() => {
+    onAfterNavigateRef.current = onAfterSuccessNavigate;
+  }, [onAfterSuccessNavigate]);
 
   useEffect(() => {
     if (!open) return;
+    successNavDoneRef.current = false;
+    if (successNavigateTimerRef.current) {
+      clearTimeout(successNavigateTimerRef.current);
+      successNavigateTimerRef.current = null;
+    }
     setPhase('enter');
     setIccidInput('');
     setPreview(null);
@@ -56,6 +78,35 @@ const LinkEsimWizard: React.FC<LinkEsimWizardProps> = ({
     setLookupLoading(false);
     setError(null);
   }, [open]);
+
+  const finalizeLinkSuccess = useCallback(() => {
+    if (successNavDoneRef.current) return;
+    successNavDoneRef.current = true;
+    if (successNavigateTimerRef.current) {
+      clearTimeout(successNavigateTimerRef.current);
+      successNavigateTimerRef.current = null;
+    }
+    onCloseRef.current();
+    onAfterNavigateRef.current?.();
+  }, []);
+
+  useEffect(() => {
+    if (!open || phase !== 'done') return;
+    const prefersReduced =
+      typeof window !== 'undefined' &&
+      window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const delayMs = prefersReduced ? LINK_SUCCESS_DISPLAY_MS_REDUCED : LINK_SUCCESS_DISPLAY_MS;
+    successNavigateTimerRef.current = setTimeout(() => {
+      successNavigateTimerRef.current = null;
+      finalizeLinkSuccess();
+    }, delayMs);
+    return () => {
+      if (successNavigateTimerRef.current) {
+        clearTimeout(successNavigateTimerRef.current);
+        successNavigateTimerRef.current = null;
+      }
+    };
+  }, [open, phase, finalizeLinkSuccess]);
 
   const effectiveClaimState = useCallback(
     (data: ActivationPreviewData): 'available' | 'claimed_by_other' | 'pending_shipment' | 'claimed_self' => {
@@ -168,6 +219,10 @@ const LinkEsimWizard: React.FC<LinkEsimWizardProps> = ({
       return;
     }
     if (phase === 'binding') return;
+    if (phase === 'done') {
+      finalizeLinkSuccess();
+      return;
+    }
     onClose();
   };
 
@@ -288,13 +343,15 @@ const LinkEsimWizard: React.FC<LinkEsimWizardProps> = ({
             <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-emerald-100 text-emerald-600">
               <Link2 size={28} />
             </div>
-            <p className="mb-6 text-center text-lg font-bold text-slate-900">{t('my_sims.link_esim_success')}</p>
+            <p className="mb-6 max-w-sm text-center text-lg font-bold leading-snug text-slate-900">
+              {t('my_sims.link_esim_success')}
+            </p>
             <button
               type="button"
-              onClick={() => onClose()}
+              onClick={() => finalizeLinkSuccess()}
               className="rounded-xl bg-brand-orange px-8 py-3.5 font-bold text-white shadow-lg shadow-orange-500/20 active:scale-[0.99]"
             >
-              {t('my_sims.done')}
+              {t('my_sims.link_esim_success_continue')}
             </button>
           </div>
         )}
