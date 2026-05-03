@@ -19,6 +19,8 @@ interface ProfileViewProps {
   notifications?: AppNotification[];
   onBack?: () => void;
   onUserUpdate?: (user: { name: string; role?: string; email: string }) => void;
+  /** `/app` wide shell — floated panel beside the shop (`AppShellFloater`); constrain height + internal scroll */
+  embedded?: boolean;
 };
 
 type ProfileScreen = 'MAIN' | 'ACCOUNT' | 'INBOX' | 'ORDERS' | 'CURRENCY' | 'HELP' | 'INFO' | 'LANGUAGES' | 'REFUND' | 'TERMS' | 'ABOUT' | 'PRIVACY' | 'ACCEPTABLE' | 'COOKIE' | 'REFERRAL';
@@ -1185,7 +1187,19 @@ const HelpCenterView = ({ onBack }: { onBack: () => void }) => {
 };
 
 
-const ProfileView: React.FC<ProfileViewProps> = ({ isLoggedIn, user, onLogin, onSignup, onLogout, onOpenDialer, onOpenInbox, notifications = [], onBack, onUserUpdate }) => {
+const ProfileView: React.FC<ProfileViewProps> = ({
+  isLoggedIn,
+  user,
+  onLogin,
+  onSignup,
+  onLogout,
+  onOpenDialer,
+  onOpenInbox,
+  notifications = [],
+  onBack,
+  onUserUpdate,
+  embedded = false,
+}) => {
   const [currentView, setCurrentView] = useState<ProfileScreen>('MAIN');
   const [shareToast, setShareToast] = useState(false);
   const [rateModalOpen, setRateModalOpen] = useState(false);
@@ -1251,10 +1265,18 @@ const ProfileView: React.FC<ProfileViewProps> = ({ isLoggedIn, user, onLogin, on
 
   // Main Profile Menu
   return (
-    <div className="lg:h-full flex flex-col bg-[#F2F4F7] lg:overflow-y-auto no-scrollbar relative">
+    <div
+      className={`flex flex-col bg-[#F2F4F7] no-scrollbar relative ${
+        embedded ? 'h-full min-h-0 overflow-hidden' : 'lg:h-full lg:overflow-y-auto'
+      }`}
+    >
         
         {/* Header */}
-        <div className="bg-white/90 backdrop-blur-xl pt-safe px-4 pb-3 flex items-center gap-2 shrink-0 sticky top-0 z-10 border-b border-slate-100">
+        <div
+          className={`bg-white/90 backdrop-blur-xl px-4 pb-3 flex items-center gap-2 shrink-0 sticky top-0 z-10 border-b border-slate-100 ${
+            embedded ? 'pt-3' : 'pt-safe'
+          }`}
+        >
             {onBack && (
               <button onClick={onBack} className="w-9 h-9 -ml-1 rounded-full flex items-center justify-center hover:bg-black/5 active:bg-black/10 transition-colors">
                 <ChevronLeft size={22} className="text-slate-900" />
@@ -1263,7 +1285,11 @@ const ProfileView: React.FC<ProfileViewProps> = ({ isLoggedIn, user, onLogin, on
             <h1 className="text-lg font-bold text-slate-900 tracking-tight">{t('profile.title')}</h1>
         </div>
 
-        <div className="flex-1 px-4 pb-6 pt-4">
+        <div
+          className={`px-4 pb-6 pt-4 ${
+            embedded ? 'flex-1 min-h-0 overflow-y-auto' : 'flex-1'
+          }`}
+        >
             
             {/* GUEST VIEW */}
             {!isLoggedIn && (

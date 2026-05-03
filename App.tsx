@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef, useCallback, useMemo, lazy, Suspense } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Loader2, Zap } from 'lucide-react';
-import BottomNav from './components/BottomNav';
+import AppShellFloater from './components/AppShellFloater';
 import SupportFab from './components/SupportFab';
 import ProductTab from './views/ProductTab';
 import { parseAppTravelEsimCountry } from './utils/appTravelPath';
@@ -49,6 +49,23 @@ const LARAVEL_SUPPLIER_ID_PCCW = 1;
 
 /** Matches Tailwind `--breakpoint-md` (`48rem`): tablet / windowed Safari and up use full `/app` chrome (no centred phone mock). */
 const APP_WIDE_LAYOUT_MIN_PX = 768;
+
+function hashFragmentForTab(tab: Tab): string {
+  switch (tab) {
+    case Tab.DIALER:
+      return '#contact';
+    case Tab.INBOX:
+      return '#inbox';
+    case Tab.PROFILE:
+      return '#profile';
+    case Tab.SIM_CARD:
+      return '#sim-card';
+    case Tab.ESIM:
+      return '#esim';
+    default:
+      return '#esim';
+  }
+}
 
 
 function showGlobalSupportFabForRoute(kind: Route['kind']): boolean {
@@ -309,6 +326,12 @@ function CustomerApp() {
   useEffect(() => {
     activeTabRef.current = activeTab;
   }, [activeTab]);
+
+  /** Wide-browser `/app`: profile + inbox float over the SIM/eSIM storefront (marketing drawer geometry). */
+  const shellFloatEligible =
+    viewportMdUp && !runningInsideNativeApp() && !isAppPreviewHash();
+  const shellFloatOpen =
+    shellFloatEligible && (activeTab === Tab.PROFILE || activeTab === Tab.INBOX);
 
   // Hash deep-links: external surfaces (help articles, marketing
   // page, third-party emails) can land users on a specific tab via
@@ -603,11 +626,6 @@ function CustomerApp() {
       }
     });
   }, [isLoggedIn, activeSims, addNotification]);
-
-  const handleTabChange = (tab: Tab) => {
-    setActiveTab(tab);
-    window.scrollTo(0, 0);
-  };
 
   const clearLogoutStorage = () => {
     // Session/auth related keys only. Keep UX preferences (e.g. language, FAB position).
@@ -918,51 +936,88 @@ function CustomerApp() {
   }, [currentSimType]);
 
   useEffect(() => {
-    sessionStorage.setItem('evair-activeTab', activeTab);
-  }, [activeTab]);
+    const persist =
+      shellFloatOpen
+        ? (currentSimType === 'PHYSICAL' ? Tab.SIM_CARD : Tab.ESIM)
+        : activeTab;
+    sessionStorage.setItem('evair-activeTab', persist);
+  }, [shellFloatOpen, currentSimType, activeTab]);
 
   useEffect(() => {
     sessionStorage.setItem('evair-simType', currentSimType);
   }, [currentSimType]);
 
+  const syncAppHash = useCallback((tab: Tab) => {
+    if (typeof window === 'undefined') return;
+    const { pathname, search } = window.location;
+    window.history.replaceState(null, '', `${pathname}${search || ''}${hashFragmentForTab(tab)}`);
+  }, []);
+
+  const closeShellFloat = useCallback(() => {
+    const base = currentSimType === 'PHYSICAL' ? Tab.SIM_CARD : Tab.ESIM;
+    setActiveTab(base);
+    syncAppHash(base);
+    window.scrollTo(0, 0);
+  }, [currentSimType, syncAppHash]);
+
+  const handleTabChange = useCallback(
+    (tab: Tab) => {
+      previousTab.current = activeTabRef.current;
+      setActiveTab(tab);
+      syncAppHash(tab);
+      window.scrollTo(0, 0);
+    },
+    [syncAppHash],
+  );
+
   const handleSwitchSimType = (type: SimType) => {
     setCurrentSimType(type);
-    if (type === 'PHYSICAL') setActiveTab(Tab.SIM_CARD);
-    else setActiveTab(Tab.ESIM);
+    if (type === 'PHYSICAL') {
+      setActiveTab(Tab.SIM_CARD);
+      syncAppHash(Tab.SIM_CARD);
+    } else {
+      setActiveTab(Tab.ESIM);
+      syncAppHash(Tab.ESIM);
+    }
     window.scrollTo(0, 0);
   };
 
+  const renderBrowseProductTab = () => (
+    <ProductTab
+      key={currentSimType}
+      type={currentSimType}
+      isLoggedIn={isLoggedIn}
+      user={user}
+      onLoginRequest={() => setIsLoginModalOpen(true)}
+      onPurchaseComplete={handlePurchaseComplete}
+      onAddCard={handleAddCard}
+      onDeleteSim={handleDeleteSim}
+      onUpdateSim={handleUpdateSim}
+      activeSims={serverSims.length > 0 ? serverSims : activeSims}
+      onNavigate={handleTabChange}
+      onSwitchSimType={handleSwitchSimType}
+      notifications={notifications}
+      testMode={testMode}
+      initialEsimLocationCode={travelEsimOpenCode}
+      onInitialEsimDeepLinkConsumed={handleTravelEsimDeepLinkConsumed}
+      initialBindSimDeepLink={pendingBindSimDeepLink && currentSimType === 'PHYSICAL'}
+      onBindSimDeepLinkConsumed={clearBindSimDeepLink}
+    />
+  );
+
   const renderContent = () => {
-    switch (activeTab) {
-      case Tab.SIM_CARD:
-      case Tab.ESIM:
-        return (
-            <ProductTab
-                key={currentSimType}
-                type={currentSimType}
-                isLoggedIn={isLoggedIn}
-                user={user}
-                onLoginRequest={() => setIsLoginModalOpen(true)}
-                onPurchaseComplete={handlePurchaseComplete}
-                onAddCard={handleAddCard}
-                onDeleteSim={handleDeleteSim}
-                onUpdateSim={handleUpdateSim}
-                activeSims={serverSims.length > 0 ? serverSims : activeSims}
-                onNavigate={handleTabChange}
-                onSwitchSimType={handleSwitchSimType}
-                notifications={notifications}
-                testMode={testMode}
-                initialEsimLocationCode={travelEsimOpenCode}
-                onInitialEsimDeepLinkConsumed={handleTravelEsimDeepLinkConsumed}
-                initialBindSimDeepLink={pendingBindSimDeepLink && currentSimType === 'PHYSICAL'}
-                onBindSimDeepLinkConsumed={clearBindSimDeepLink}
-            />
-        );
-      case Tab.INBOX:
-        return <InboxView notifications={notifications} onUpdateNotifications={setNotifications} onNavigate={(tab) => setActiveTab(tab as Tab)} onBack={() => { setActiveTab(previousTab.current); window.scrollTo(0,0); }} />;
-      case Tab.PROFILE:
-        return (
-            <ProfileView
+    if (shellFloatOpen) {
+      return (
+        <>
+          {renderBrowseProductTab()}
+          <AppShellFloater
+            open
+            onClose={closeShellFloat}
+            ariaLabel={activeTab === Tab.PROFILE ? t('profile.title') : t('profile.inbox')}
+          >
+            {activeTab === Tab.PROFILE ? (
+              <ProfileView
+                embedded
                 isLoggedIn={isLoggedIn}
                 user={user}
                 onLogin={() => {
@@ -972,15 +1027,87 @@ function CustomerApp() {
                   setProfileSheetAuth('register');
                 }}
                 onLogout={handleLogout}
-                onOpenDialer={() => { previousTab.current = activeTab; setActiveTab(Tab.DIALER); }}
-                onOpenInbox={() => { previousTab.current = activeTab; setActiveTab(Tab.INBOX); }}
+                onOpenDialer={() => {
+                  handleTabChange(Tab.DIALER);
+                }}
+                onOpenInbox={() => {
+                  handleTabChange(Tab.INBOX);
+                }}
                 notifications={notifications}
-                onBack={() => { setActiveTab(currentSimType === 'PHYSICAL' ? Tab.SIM_CARD : Tab.ESIM); window.scrollTo(0,0); }}
-                onUserUpdate={(updatedUser) => setUser(prev => prev ? { ...prev, ...updatedUser } : undefined)}
-            />
+                onBack={closeShellFloat}
+                onUserUpdate={(updatedUser) =>
+                  setUser(prev => (prev ? { ...prev, ...updatedUser } : undefined))
+                }
+              />
+            ) : (
+              <InboxView
+                embedded
+                notifications={notifications}
+                onUpdateNotifications={setNotifications}
+                onNavigate={(tabStr) => {
+                  if (tabStr === 'ESIM') handleTabChange(Tab.ESIM);
+                  else if (tabStr === 'SIM_CARD') handleTabChange(Tab.SIM_CARD);
+                }}
+                onBack={closeShellFloat}
+              />
+            )}
+          </AppShellFloater>
+        </>
+      );
+    }
+
+    switch (activeTab) {
+      case Tab.SIM_CARD:
+      case Tab.ESIM:
+        return renderBrowseProductTab();
+      case Tab.INBOX:
+        return (
+          <InboxView
+            notifications={notifications}
+            onUpdateNotifications={setNotifications}
+            onNavigate={(tabStr) => {
+              if (tabStr === 'ESIM') handleTabChange(Tab.ESIM);
+              else if (tabStr === 'SIM_CARD') handleTabChange(Tab.SIM_CARD);
+            }}
+            onBack={() => handleTabChange(previousTab.current)}
+          />
+        );
+      case Tab.PROFILE:
+        return (
+          <ProfileView
+            isLoggedIn={isLoggedIn}
+            user={user}
+            onLogin={() => {
+              setProfileSheetAuth('login');
+            }}
+            onSignup={() => {
+              setProfileSheetAuth('register');
+            }}
+            onLogout={handleLogout}
+            onOpenDialer={() => {
+              previousTab.current = activeTab;
+              handleTabChange(Tab.DIALER);
+            }}
+            onOpenInbox={() => {
+              previousTab.current = activeTab;
+              handleTabChange(Tab.INBOX);
+            }}
+            notifications={notifications}
+            onBack={() =>
+              handleTabChange(currentSimType === 'PHYSICAL' ? Tab.SIM_CARD : Tab.ESIM)
+            }
+            onUserUpdate={(updatedUser) =>
+              setUser(prev => (prev ? { ...prev, ...updatedUser } : undefined))
+            }
+          />
         );
       case Tab.DIALER:
-        return <ContactUsView onBack={() => { setActiveTab(previousTab.current); window.scrollTo(0,0); }} userName={user?.name} />;
+        return (
+          <ContactUsView
+            onBack={() => handleTabChange(previousTab.current)}
+            userName={user?.name}
+          />
+        );
       default:
         return null;
     }
