@@ -197,9 +197,9 @@ function HeroSlidesCrossfade({
     );
 }
 
-/** Matches headline accent + hero CTAs (`from-orange-500 to-amber-400`). */
+/** Home hero CTAs — white tiles, orange border + type (matches homepage mock). */
 const heroCtaBtnClass =
-    'flex touch-manipulation min-h-[2.5rem] w-full shrink-0 items-center justify-center rounded-xl bg-gradient-to-r from-orange-500 to-amber-400 px-3 py-2 text-xs font-bold text-white shadow-md shadow-orange-500/25 outline-none ring-offset-white transition-[transform,filter] hover:brightness-105 active:scale-[0.98] focus-visible:ring-2 focus-visible:ring-[#2563eb] focus-visible:ring-offset-2 sm:min-h-11 sm:text-sm';
+    'flex touch-manipulation min-h-[2.5rem] w-full shrink-0 items-center justify-center gap-1 rounded-xl border border-brand-orange bg-white px-2 py-2 text-[11px] font-bold leading-tight text-brand-orange shadow-md shadow-orange-950/12 outline-none ring-offset-white transition-[transform,box-shadow,background-color] hover:bg-orange-50 active:scale-[0.98] focus-visible:ring-2 focus-visible:ring-brand-orange focus-visible:ring-offset-2 sm:min-h-11 sm:gap-1.5 sm:px-3 sm:text-sm';
 
 /** Home hero: selling slides; striped indicators (jump, swipe on touch), imagery + CTAs. */
 export function MarketingHeroCarousel(props: MarketingHeroCarouselProps) {
@@ -361,30 +361,26 @@ export function MarketingHeroCarousel(props: MarketingHeroCarouselProps) {
                             onClick={onTravelClick}
                             className={`${heroCtaBtnClass} gap-2`}
                         >
-                            <Globe className="h-4 w-4 shrink-0 opacity-95 sm:h-[18px] sm:w-[18px]" aria-hidden />
+                            <Globe className="h-4 w-4 shrink-0 sm:h-[18px] sm:w-[18px]" aria-hidden />
                             {t('marketing.home_travel_esim')}
                         </a>
-                        <div className="mt-2 grid grid-cols-1 gap-2 sm:mt-2.5 sm:grid-cols-3 sm:items-stretch sm:gap-2">
+                        <div className="mt-2 grid grid-cols-3 items-stretch gap-1.5 sm:mt-2.5 sm:gap-2">
                             <a
                                 href={amazonUrl}
                                 target="_blank"
                                 rel="noopener noreferrer"
-                                className={`${heroCtaBtnClass} gap-1 sm:gap-1.5`}
+                                className={heroCtaBtnClass}
                                 aria-label={t('marketing.buy_sim_card_aria')}
                             >
-                                <ShoppingCart className="h-3.5 w-3.5 shrink-0 opacity-95 sm:h-4 sm:w-4" aria-hidden />
+                                <ShoppingCart className="h-3.5 w-3.5 shrink-0 sm:h-4 sm:w-4" aria-hidden />
                                 {t('marketing.hero_cta_buy_sim')}
                             </a>
-                            <a
-                                href={activatePath}
-                                onClick={onActivateClick}
-                                className={`${heroCtaBtnClass} gap-1 sm:gap-1.5`}
-                            >
-                                <BadgeCheck className="h-3.5 w-3.5 shrink-0 opacity-95 sm:h-4 sm:w-4" aria-hidden />
+                            <a href={activatePath} onClick={onActivateClick} className={heroCtaBtnClass}>
+                                <BadgeCheck className="h-3.5 w-3.5 shrink-0 sm:h-4 sm:w-4" aria-hidden />
                                 {t('marketing.hero_cta_activate_sim')}
                             </a>
-                            <a href="/top-up" className={`${heroCtaBtnClass} gap-1 sm:gap-1.5`}>
-                                <Coins className="h-3.5 w-3.5 shrink-0 opacity-95 sm:h-4 sm:w-4" aria-hidden />
+                            <a href="/top-up" className={heroCtaBtnClass}>
+                                <Coins className="h-3.5 w-3.5 shrink-0 sm:h-4 sm:w-4" aria-hidden />
                                 {t('marketing.hero_cta_topup_sim')}
                             </a>
                         </div>
