@@ -161,36 +161,23 @@ const DeviceLandingPage: React.FC<DeviceLandingPageProps> = ({ category }) => {
 
             {/* Why Evair — after shopper sees price */}
             <section className="mx-auto max-w-6xl px-4 py-10 md:px-8 md:py-14">
-                <div className="grid gap-4 md:grid-cols-3">
-                    {content.pillars.map(p =>
-                        category === 'phone' ? (
+                <div className="grid gap-4 md:grid-cols-3 md:items-stretch">
+                    {content.pillars.map((p) => (
+                        <div
+                            key={p.title}
+                            className="relative flex h-full min-h-0 flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white p-5 shadow-sm"
+                        >
                             <div
-                                key={p.title}
-                                className="relative overflow-hidden rounded-2xl border border-slate-200 bg-white p-5 shadow-sm"
-                            >
-                                <div
-                                    className="absolute left-0 right-0 top-0 h-1 bg-gradient-to-r from-orange-500 via-amber-400 to-yellow-300"
-                                    aria-hidden
-                                />
-                                <h3 className="mb-1.5 flex items-center gap-2 pt-0.5 text-lg font-bold text-slate-900">
-                                    <p.icon size={20} className="shrink-0 text-[#F27420]" />
-                                    {p.title}
-                                </h3>
-                                <p className="text-sm leading-relaxed text-slate-600">{p.body}</p>
-                            </div>
-                        ) : (
-                            <div
-                                key={p.title}
-                                className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm"
-                            >
-                                <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-xl bg-slate-50">
-                                    <p.icon size={22} className="text-orange-500" />
-                                </div>
-                                <h3 className="mb-1 text-lg font-bold">{p.title}</h3>
-                                <p className="text-sm leading-relaxed text-slate-600">{p.body}</p>
-                            </div>
-                        ),
-                    )}
+                                className="absolute left-0 right-0 top-0 h-1 bg-gradient-to-r from-orange-500 via-amber-400 to-yellow-300"
+                                aria-hidden
+                            />
+                            <h3 className="mb-1.5 flex items-center gap-2 pt-0.5 text-lg font-bold text-slate-900">
+                                <p.icon size={20} className="shrink-0 text-[#F27420]" aria-hidden />
+                                {p.title}
+                            </h3>
+                            <p className="text-sm leading-relaxed text-slate-600">{p.body}</p>
+                        </div>
+                    ))}
                 </div>
             </section>
 
