@@ -29,6 +29,8 @@ interface ProfileViewProps {
   embedded?: boolean;
   /** Marketing header account drawer — edge-to-edge content on phones */
   marketingDrawer?: boolean;
+  /** Global eSIM: open My eSIMs ICCID linking wizard (promoted out of shop header) */
+  onLinkExistingEsim?: () => void;
 };
 
 type ProfileScreen = 'MAIN' | 'ACCOUNT' | 'INBOX' | 'ORDERS' | 'CURRENCY' | 'HELP' | 'INFO' | 'LANGUAGES' | 'REFUND' | 'TERMS' | 'ABOUT' | 'PRIVACY' | 'ACCEPTABLE' | 'COOKIE' | 'REFERRAL';
@@ -1252,6 +1254,7 @@ const ProfileViewInner: React.FC<ProfileViewProps> = ({
   onBack,
   onUserUpdate,
   embedded = false,
+  onLinkExistingEsim,
 }) => {
   const mainMenuPad = useMarketingProfileMainMenuPad();
   const profileHeaderPad = useMarketingProfileHeaderPad();
@@ -1434,7 +1437,10 @@ const ProfileViewInner: React.FC<ProfileViewProps> = ({
                             );
                           })()}
                         />
-                        <MenuItem label={t('profile.orders')} isLast onClick={() => setCurrentView('ORDERS')} />
+                        <MenuItem label={t('profile.orders')} isLast={!onLinkExistingEsim} onClick={() => setCurrentView('ORDERS')} />
+                        {onLinkExistingEsim && (
+                          <MenuItem label={t('my_sims.link_esim')} onClick={onLinkExistingEsim} isLast />
+                        )}
                     </MenuGroup>
 
                     <MenuGroup>

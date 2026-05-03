@@ -419,6 +419,8 @@ function CustomerApp() {
    */
   const [simWalletHydrated, setSimWalletHydrated] = useState(() => !authService.isLoggedIn());
   const [notifications, setNotifications] = useState<AppNotification[]>(MOCK_NOTIFICATIONS);
+  /** Profile → Link existing eSIM (browse ProductTab unmounts while Profile is open). */
+  const [linkEsimProfileNonce, setLinkEsimProfileNonce] = useState(0);
 
   const mockSimIds = useMemo(() => new Set(MOCK_ACTIVE_SIMS.map(s => s.id)), []);
   useEffect(() => {
@@ -990,6 +992,12 @@ function CustomerApp() {
     [syncAppHash],
   );
 
+  const handleProfileLinkExistingEsim = useCallback(() => {
+    if (currentSimType !== 'ESIM') return;
+    handleTabChange(Tab.ESIM);
+    queueMicrotask(() => setLinkEsimProfileNonce((n) => n + 1));
+  }, [currentSimType, handleTabChange]);
+
   const handleSwitchSimType = (type: SimType) => {
     setCurrentSimType(type);
     if (type === 'PHYSICAL') {
@@ -1024,6 +1032,7 @@ function CustomerApp() {
       onBindSimDeepLinkConsumed={clearBindSimDeepLink}
       onLinkedEsimRefresh={fetchUserSims}
       simWalletHydrated={simWalletHydrated}
+      externalLinkExistingEsimNonce={linkEsimProfileNonce}
     />
   );
 
@@ -1059,6 +1068,9 @@ function CustomerApp() {
                 onBack={closeShellFloat}
                 onUserUpdate={(updatedUser) =>
                   setUser(prev => (prev ? { ...prev, ...updatedUser } : undefined))
+                }
+                onLinkExistingEsim={
+                  currentSimType === 'ESIM' ? handleProfileLinkExistingEsim : undefined
                 }
               />
             ) : (
@@ -1120,6 +1132,9 @@ function CustomerApp() {
             }
             onUserUpdate={(updatedUser) =>
               setUser(prev => (prev ? { ...prev, ...updatedUser } : undefined))
+            }
+            onLinkExistingEsim={
+              currentSimType === 'ESIM' ? handleProfileLinkExistingEsim : undefined
             }
           />
         );
@@ -1232,7 +1247,7 @@ function CustomerApp() {
         {/* 浮动客服：主功能 Tab；打开聊天 Tab 时隐藏；inset 与全站 fixed FAB 互斥 */}
         <SupportFab
           layout="inset"
-          visible={activeTab === Tab.SIM_CARD || activeTab === Tab.ESIM || activeTab === Tab.INBOX || activeTab === Tab.PROFILE}
+          visible={activeTab === Tab.INBOX || activeTab === Tab.PROFILE}
           onClick={() => { previousTab.current = activeTab; setActiveTab(Tab.DIALER); }}
         />
 

@@ -48,6 +48,11 @@ interface ProductTabProps {
   onLinkedEsimRefresh?: () => void | Promise<void>;
   /** First GET /users/sims finished (guest: true immediately). Gates empty eSIM "Mine" → Shop kick. */
   simWalletHydrated: boolean;
+  /**
+   * Bumped from Profile tab so "Link existing eSIM" can run after ProductTab remounts
+   * (`Profile` hides the browse subtree).
+   */
+  externalLinkExistingEsimNonce?: number;
 }
 
 const ProductTab: React.FC<ProductTabProps> = ({
@@ -70,6 +75,7 @@ const ProductTab: React.FC<ProductTabProps> = ({
   onBindSimDeepLinkConsumed,
   onLinkedEsimRefresh,
   simWalletHydrated,
+  externalLinkExistingEsimNonce = 0,
 }) => {
   const { t } = useTranslation();
   const mySims = activeSims.filter(s => s.type === type);
@@ -96,6 +102,7 @@ const ProductTab: React.FC<ProductTabProps> = ({
   const [linkEsimFromShopNonce, setLinkEsimFromShopNonce] = useState(0);
   /** Holds empty Mine on screen briefly so Link wizard from Shop can mount */
   const [esimsMineWizardDefer, setEsimsMineWizardDefer] = useState(false);
+  const lastExternalLinkNonce = useRef(0);
 
   const consumeBindDeepLink = useCallback(() => {
     onBindSimDeepLinkConsumed?.();
@@ -147,6 +154,18 @@ const ProductTab: React.FC<ProductTabProps> = ({
     if (esimsMineWizardDefer) return;
     setViewMode('SHOP');
   }, [simWalletHydrated, type, viewMode, mySims.length, esimsMineWizardDefer]);
+
+  // Profile-drawer → Link existing eSIM (nonce bumps once per request)
+  useLayoutEffect(() => {
+    if (type !== 'ESIM') return;
+    if (externalLinkExistingEsimNonce <= 0) return;
+    if (externalLinkExistingEsimNonce === lastExternalLinkNonce.current) return;
+    lastExternalLinkNonce.current = externalLinkExistingEsimNonce;
+    setEsimsMineWizardDefer(true);
+    setLinkEsimFromShopNonce((n) => n + 1);
+    setViewMode('MINE');
+  }, [type, externalLinkExistingEsimNonce]);
+
   const mineHydratingLoggedInEsims =
     viewMode === 'MINE' &&
     type === 'ESIM' &&
@@ -180,15 +199,6 @@ const ProductTab: React.FC<ProductTabProps> = ({
             notifications={notifications}
             initialEsimLocationCode={initialEsimLocationCode}
             onInitialEsimDeepLinkConsumed={onInitialEsimDeepLinkConsumed}
-            onLinkExistingEsim={
-              type === 'ESIM'
-                ? () => {
-                    setEsimsMineWizardDefer(true);
-                    setLinkEsimFromShopNonce((n) => n + 1);
-                    setViewMode('MINE');
-                  }
-                : undefined
-            }
           />
        )}
        

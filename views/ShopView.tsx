@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Search, ChevronRight, ArrowLeft, Globe, Star, X, MapPin, Loader2, Smartphone, CheckCircle, Calendar, Wifi, Signal, Info, CreditCard, ArrowDown, QrCode, Copy, Check, RefreshCw, Zap, Clock, Shield, Mail, Radio, Link2 } from 'lucide-react';
+import { Search, ChevronRight, ArrowLeft, Globe, Star, X, MapPin, Loader2, Smartphone, CheckCircle, Calendar, Wifi, Signal, Info, CreditCard, ArrowDown, QrCode, Copy, Check, RefreshCw, Zap, Clock, Shield, Mail, Radio } from 'lucide-react';
 import { Country, Plan, SimType, User, SimCardProduct, EsimPackage, EsimCountryGroup, EsimOrderResult, ActiveSim } from '../types';
 import { MOCK_COUNTRIES } from '../constants';
 import AmazonPhysicalSimPicker from '../components/AmazonPhysicalSimPicker';
@@ -31,8 +31,9 @@ import { pollEsimOrderUntilProvisioned } from '../services/api/order';
 import type { OrderDetailDto } from '../services/api/types';
 import { useSwipeBack } from '../hooks/useSwipeBack';
 
-import { Bell, UserCircle } from 'lucide-react';
+import { Bell, UserCircle, MessageCircle } from 'lucide-react';
 import { AppNotification } from '../types';
+import { useUnreadChat } from '../hooks/useUnreadChat';
 
 /** eSIM shop filter row: single-country tabs + Multi-Country (`Multi-Region` in facets). */
 const ESIM_LOCATION_FILTER_TABS: ContinentTab[] = [
@@ -63,8 +64,6 @@ interface ShopViewProps {
   /** ISO-2 from `/app/travel-esim/{xx}` — auto-open that country group. */
   initialEsimLocationCode?: string | null;
   onInitialEsimDeepLinkConsumed?: () => void;
-  /** Global eSIM shop — go to My eSIMs + open ICCID link wizard */
-  onLinkExistingEsim?: () => void;
 }
 
 // ─── 国家/地区信息映射 ────────────────────────────────────────────────
@@ -214,9 +213,10 @@ const ShopView: React.FC<ShopViewProps> = ({
   notifications = [],
   initialEsimLocationCode = null,
   onInitialEsimDeepLinkConsumed,
-  onLinkExistingEsim,
 }) => {
   const { t } = useTranslation();
+  /** Shop header replaces floating FAB — keep unread parity with former FAB */
+  const { unread: unreadChatFromAgent } = useUnreadChat(true);
   const TOP_COUNTRY_COUNT = 10;
   const [selectedCountry, setSelectedCountry] = useState<Country | null>(null);
   const [selectedPlan, setSelectedPlan] = useState<Plan | null>(null);
@@ -1399,15 +1399,29 @@ const ShopView: React.FC<ShopViewProps> = ({
           className="bg-white px-4 pt-safe pb-3 sticky top-0 z-40 border-b border-slate-100 transition-transform duration-300 ease-out"
           style={{ transform: headerHidden ? 'translateY(-100%)' : 'translateY(0)' }}
         >
-          {/* Row 1: Greeting + action buttons */}
-          <div className="flex justify-between items-center mb-3">
-              <div>
-                  <p className="text-base font-bold text-slate-900 tracking-tight">
+          {/* Row 1: Greeting · Live chat · notifications · profile (subtext removed for space) */}
+          <div className="flex min-w-0 items-center gap-2 mb-3">
+              <div className="min-w-0 flex-1">
+                  <p className="truncate text-base font-bold text-slate-900 tracking-tight">
                       {t('shop.hello')} {isLoggedIn && user ? user.name : t('shop.new_friend')}
                   </p>
-                  <p className="text-xs text-slate-400 mt-0.5">Find the perfect plan for your trip</p>
               </div>
-              <div className="flex items-center gap-2">
+              <button
+                  type="button"
+                  onClick={() => onNavigate?.('DIALER')}
+                  className="relative flex shrink-0 items-center gap-1 rounded-full bg-gradient-to-r from-[#FF6600] to-[#FF8A3D] px-3 py-2 text-[11px] font-extrabold uppercase tracking-wide text-white shadow-sm active:scale-[0.98] transition-transform"
+                  aria-label={t('support_fab.open_chat')}
+                  style={{ WebkitTapHighlightColor: 'transparent' }}
+              >
+                  <MessageCircle size={16} strokeWidth={2} className="shrink-0 text-white" aria-hidden />
+                  <span className="max-w-[4.75rem] truncate sm:max-w-none">{t('support_fab.live_chat')}</span>
+                  {unreadChatFromAgent > 0 && (
+                    <span className="absolute -right-0.5 -top-0.5 flex h-[17px] min-w-[17px] items-center justify-center rounded-full border-2 border-white bg-red-500 px-[3px] text-[10px] font-bold leading-none text-white">
+                      {unreadChatFromAgent > 9 ? '9+' : unreadChatFromAgent}
+                    </span>
+                  )}
+              </button>
+              <div className="flex shrink-0 items-center gap-2">
                 <button onClick={() => onNavigate?.('INBOX')} className="relative w-10 h-10 rounded-xl bg-slate-100 flex items-center justify-center active:scale-95 transition-all" style={{ WebkitTapHighlightColor: 'transparent' }}>
                   <Bell size={18} className="text-slate-700" />
                   {notifications.filter(n => !n.read).length > 0 && (
@@ -1447,23 +1461,6 @@ const ShopView: React.FC<ShopViewProps> = ({
               {t('topup_page.tab_esim')}
             </button>
           </div>
-
-          {simType === 'ESIM' && onLinkExistingEsim && (
-            <button
-              type="button"
-              onClick={() => onLinkExistingEsim()}
-              className="mt-2 w-full flex items-center gap-3 rounded-xl border border-slate-200 bg-white px-4 py-3 text-left shadow-sm active:scale-[0.99] transition-transform"
-            >
-              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-orange-50 text-brand-orange">
-                <Link2 size={18} strokeWidth={2.25} />
-              </div>
-              <div className="min-w-0 flex-1">
-                <p className="text-sm font-bold text-slate-900">{t('my_sims.link_esim')}</p>
-                <p className="text-[11px] text-slate-500 leading-snug mt-0.5">{t('shop.link_esim_shop_hint')}</p>
-              </div>
-              <ChevronRight size={16} className="text-brand-orange shrink-0" />
-            </button>
-          )}
 
           {/* Row 3: "My eSIMs" bar — only when user has active SIMs */}
           {(() => {
@@ -1644,58 +1641,6 @@ const ShopView: React.FC<ShopViewProps> = ({
                     className="w-full bg-white border border-slate-200 text-slate-900 pl-10 pr-3 py-2.5 rounded-xl text-sm font-medium focus:outline-none focus:border-brand-orange focus:ring-2 focus:ring-brand-orange/20 placeholder-slate-400 transition-all"
                   />
                 </div>
-
-                {!searchQuery && (
-                  <div className="mb-4 rounded-xl border border-slate-100 bg-slate-50/90 px-3 py-2.5">
-                    <p className="mb-1.5 text-[11px] font-bold uppercase tracking-wide text-slate-500">
-                      {t('shop.faq_strip.title')}
-                    </p>
-                    <nav className="flex flex-wrap gap-x-3 gap-y-1 text-xs" aria-label={t('shop.faq_strip.title')}>
-                      <a
-                        href="/help/what-is-an-esim"
-                        className="font-semibold text-brand-orange hover:underline underline-offset-2"
-                      >
-                        {t('shop.faq_strip.what_is_esim')}
-                      </a>
-                      <span className="text-slate-300" aria-hidden>
-                        ·
-                      </span>
-                      <a
-                        href="/help/install-esim-iphone"
-                        className="font-semibold text-brand-orange hover:underline underline-offset-2"
-                      >
-                        {t('shop.faq_strip.install_iphone')}
-                      </a>
-                      <span className="text-slate-300" aria-hidden>
-                        ·
-                      </span>
-                      <a
-                        href="/help/install-esim-android"
-                        className="font-semibold text-brand-orange hover:underline underline-offset-2"
-                      >
-                        {t('shop.faq_strip.install_android')}
-                      </a>
-                      <span className="text-slate-300" aria-hidden>
-                        ·
-                      </span>
-                      <a
-                        href="/help/top-up-data"
-                        className="font-semibold text-brand-orange hover:underline underline-offset-2"
-                      >
-                        {t('shop.faq_strip.topup')}
-                      </a>
-                      <span className="text-slate-300" aria-hidden>
-                        ·
-                      </span>
-                      <a
-                        href="/help/refund-policy"
-                        className="font-semibold text-brand-orange hover:underline underline-offset-2"
-                      >
-                        {t('shop.faq_strip.refund')}
-                      </a>
-                    </nav>
-                  </div>
-                )}
 
                 {/* ── Region filter: single-country continents + Multi-Country (multi-region plans) ── */}
                 {!searchQuery && (
