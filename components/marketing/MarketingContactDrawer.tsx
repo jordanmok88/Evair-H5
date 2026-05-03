@@ -1,4 +1,5 @@
 import React, { useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { useTranslation } from 'react-i18next';
 import ContactUsView from '../../views/ContactUsView';
 
@@ -10,6 +11,7 @@ export interface MarketingContactDrawerProps {
 /**
  * Marketing-site support chat — compact floating panel (bottom corner), not full-height takeover.
  * `ContactUsView` must use `embedded` so its composer stays inside this box (`position` in-flow vs viewport-fixed).
+ * Portals to `document.body`; see `MarketingInboxDrawer` for why (backdrop-filter ancestors / Safari).
  */
 const MarketingContactDrawer: React.FC<MarketingContactDrawerProps> = ({ open, onClose }) => {
   const { t } = useTranslation();
@@ -25,7 +27,11 @@ const MarketingContactDrawer: React.FC<MarketingContactDrawerProps> = ({ open, o
 
   if (!open) return null;
 
-  return (
+  const mount =
+    typeof document !== 'undefined' && document.body ? document.body : null;
+  if (!mount) return null;
+
+  return createPortal(
     <div className="fixed inset-0 z-[70]" role="presentation">
       <button
         type="button"
@@ -43,7 +49,8 @@ const MarketingContactDrawer: React.FC<MarketingContactDrawerProps> = ({ open, o
           <ContactUsView onBack={onClose} embedded />
         </div>
       </div>
-    </div>
+    </div>,
+    mount,
   );
 };
 

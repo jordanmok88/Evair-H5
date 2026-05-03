@@ -1,4 +1,5 @@
 import React, { useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { useTranslation } from 'react-i18next';
 import InboxView from '../../views/InboxView';
 import type { AppNotification } from '../../types';
@@ -13,6 +14,9 @@ export interface MarketingInboxDrawerProps {
 /**
  * Marketing-site inbox — same floating-panel pattern as {@link MarketingContactDrawer}
  * (bottom-corner card + backdrop), not a full `/app` navigation.
+ *
+ * Portals to `document.body` so `position:fixed` is viewport-anchored — ancestors with
+ * `backdrop-filter` (e.g. sticky `SiteHeader`) otherwise create a containing block in Safari/WebKit.
  */
 const MarketingInboxDrawer: React.FC<MarketingInboxDrawerProps> = ({
     open,
@@ -38,7 +42,11 @@ const MarketingInboxDrawer: React.FC<MarketingInboxDrawerProps> = ({
         window.location.assign('/app#shop');
     };
 
-    return (
+    const mount =
+        typeof document !== 'undefined' && document.body ? document.body : null;
+    if (!mount) return null;
+
+    return createPortal(
         <div className="fixed inset-0 z-[70]" role="presentation">
             <button
                 type="button"
@@ -62,7 +70,8 @@ const MarketingInboxDrawer: React.FC<MarketingInboxDrawerProps> = ({
                     />
                 </div>
             </div>
-        </div>
+        </div>,
+        mount,
     );
 };
 
