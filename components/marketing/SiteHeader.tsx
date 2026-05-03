@@ -7,13 +7,13 @@
  * Active-section highlight is driven by `active` (a stable key) so
  * pages don't have to reason about pathname matching themselves.
  *
- * Narrow viewports get a collapsible sheet — desktop nav stays in the
- * top row (`md:` and up).
+ * From `md:` and up, horizontal nav links appear in the header. Narrow
+ * mobile viewports omit the old hamburger drawer to keep the bar from
+ * feeling crowded; visitors use in-page CTAs, footer links, and OPEN APP.
  */
 
-import React, { useEffect, useState } from 'react';
+import React from 'react';
 import { useTranslation } from 'react-i18next';
-import { Menu, X } from 'lucide-react';
 import type { MobileSignInGate } from '../../hooks/useMobileSignInGate';
 import { useMobileSignInGate } from '../../hooks/useMobileSignInGate';
 import MobileOnlyNotice from './MobileOnlyNotice';
@@ -37,31 +37,6 @@ const SiteHeader: React.FC<SiteHeaderProps> = ({ active = null, gate: gateProp }
     const { t } = useTranslation();
     const internalGate = useMobileSignInGate('/app');
     const signInGate = gateProp ?? internalGate;
-    const [mobileOpen, setMobileOpen] = useState(false);
-
-    useEffect(() => {
-        const mq = window.matchMedia('(min-width: 768px)');
-        const collapse = () => {
-            if (mq.matches) setMobileOpen(false);
-        };
-        collapse();
-        mq.addEventListener('change', collapse);
-        return () => mq.removeEventListener('change', collapse);
-    }, []);
-
-    useEffect(() => {
-        if (!mobileOpen) return;
-        const onEsc = (e: KeyboardEvent) => {
-            if (e.key === 'Escape') setMobileOpen(false);
-        };
-        window.addEventListener('keydown', onEsc);
-        return () => window.removeEventListener('keydown', onEsc);
-    }, [mobileOpen]);
-
-    const linkCls = (isActive: boolean) =>
-        isActive
-            ? 'py-3 text-base font-semibold text-orange-600 border-b border-orange-100 last:border-b-0'
-            : 'py-3 text-base font-semibold text-slate-800 hover:text-slate-950 border-b border-slate-100 last:border-b-0';
 
     return (
         <header className="sticky top-0 z-30 border-b border-slate-100 bg-white/90 backdrop-blur-md supports-[backdrop-filter]:bg-white/90">
@@ -94,39 +69,10 @@ const SiteHeader: React.FC<SiteHeaderProps> = ({ active = null, gate: gateProp }
                     ))}
                 </nav>
                 <div className="flex shrink-0 items-center gap-1 sm:gap-2">
-                    <button
-                        type="button"
-                        className="inline-flex md:hidden rounded-lg border border-slate-200 bg-white p-2 text-slate-800 shadow-sm transition hover:border-slate-300 hover:bg-slate-50"
-                        aria-expanded={mobileOpen}
-                        aria-controls="site-mobile-nav"
-                        aria-label={mobileOpen ? 'Close menu' : 'Open menu'}
-                        onClick={() => setMobileOpen(v => !v)}
-                    >
-                        {mobileOpen ? <X size={22} aria-hidden /> : <Menu size={22} aria-hidden />}
-                    </button>
                     <SiteHeaderAccountActions />
                     <OpenAppHeaderButton href="/app" onClick={signInGate.gateClick} />
                 </div>
             </div>
-
-            {mobileOpen && (
-                <nav
-                    id="site-mobile-nav"
-                    aria-label="Mobile main"
-                    className="border-t border-slate-100 bg-white/98 px-4 pb-4 pt-2 shadow-inner md:hidden"
-                >
-                    {MARKETING_NAV_ITEMS.map(item => (
-                        <a
-                            key={item.key}
-                            href={item.href}
-                            className={linkCls(active === item.key)}
-                            onClick={() => setMobileOpen(false)}
-                        >
-                            {t(item.labelKey)}
-                        </a>
-                    ))}
-                </nav>
-            )}
 
             <MobileOnlyNotice
                 open={signInGate.open}
