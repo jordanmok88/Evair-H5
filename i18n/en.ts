@@ -348,10 +348,10 @@ const en = {
     esim_guest_body:
       'Sign in to pick an eSIM already on your account, or browse travel eSIM countries to purchase a plan first.',
     esim_open_app: 'Open Evair APP',
-    esim_browse_travel: 'Browse travel eSIM',
+    esim_browse_travel: 'Our Global eSIM Available Here',
     esim_pick_title: 'Choose an eSIM line',
     esim_pick_hint: 'We load recharge plans once you tap the ICCID tied to your account.',
-    esim_empty_title: 'No travel eSIM yet',
+    esim_empty_title: 'No Global eSIM Found!',
     esim_empty_body:
       'Grab a regional or country travel plan first — it will appear here when it is tied to your account.',
     esim_change_line: 'Choose a different line',

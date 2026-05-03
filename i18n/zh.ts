@@ -332,10 +332,10 @@ const zh = {
     esim_guest_body:
       '登录后选择已在账户名下的 eSIM 线路即可充值；若没有，请先选购旅游套餐。',
     esim_open_app: '打开 Evair 应用',
-    esim_browse_travel: '浏览旅游 eSIM',
+    esim_browse_travel: '我们的 Global eSIM 在此可选',
     esim_pick_title: '选择一条 eSIM 线路',
     esim_pick_hint: '点选与你的账户绑定的那条 ICCID，我们将加载可用的充值档位。',
-    esim_empty_title: '暂未绑定境外旅游 eSIM',
+    esim_empty_title: '未发现 Global eSIM！',
     esim_empty_body:
       '先在国家/地区套餐里下单购买完成后，符合条件的产品会在此处显示以供充值。',
     esim_change_line: '换一个线路',
