@@ -68,6 +68,12 @@ Other files stay authoritative:
 
 - Prefer **English** when the assistant replies **to Jordan** (avoid switching assistant explanations into Chinese unless he asks).
 
+## Edits Jordan made — approval before changing
+
+- After **Jordan** changes files himself (manual edits in Cursor, copy, wording, spacing, wiring, etc.), assistants must **not** overwrite, revert, or rework those edits **unless Jordan explicitly approves in chat** — or his message clearly asks you to revise that exact work (same thread).
+- If the next assistant step would touch the same lines or contradict Jordan’s version, **stop**, spell out the mismatch in plain English, and **ask how he wants to proceed** before using tools to edit.
+- Applies to fixes and tidy-ups too: treating Jordan’s version as provisional until he says go prevents surprise rollbacks.
+
 ## Deploy and live previews
 
 - After meaningful changes in **this repo**, finish with **`bash scripts/save.sh "short message"`** in the **same session** when Jordan wants GitHub updated. That push is what triggers **Netlify** (there is no separate "push only to Netlify"). Expect ~1–3 minutes build time after GitHub receives the commit.
@@ -96,4 +102,5 @@ _Use one dated line each; agents append newest at bottom. Optionally compress ol
 - 2026-04-29 — Plain “what sticks” table added (no plugin for full chat; files + optional Cursor Rules/Memories; `save.sh` for Git/Netlify). Don’t dodge—point Jordan at that section.
 - 2026-05-01 — Renamed rule file from `jordan-standing-instructions.mdc` to **`jordan-chat-history.mdc`** so Jordan can say “Jordan chat history” to call it out.
 - 2026-05-02 — Shop + `/travel-esim` catalogue must never fall back to the small static SEO country list: `fetchLocationFacets` retries Laravel + bundled snapshot **`data/catalogLocationFacetsEmbed.ts`**. Refresh after big catalogue edits: **`npm run catalog:embed-facets`**. Public storefront API calls use **`skipAuth`** so stale app tokens cannot empty grids (same WebView H5 serves browser + Flutter APP).
+- 2026-05-03 — Jordan: after **his** edits, assistants need **his approval** before changing that work (`jordan-chat-history.mdc` — **Edits Jordan made — approval before changing**).
 
