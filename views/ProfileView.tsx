@@ -422,17 +422,32 @@ const AboutEvairView = ({ onBack }: { onBack: () => void }) => {
             <div className="px-5 pt-2 pb-6">
 
                 {/* Hero */}
-                <div className="rounded-2xl mb-6 overflow-hidden px-5 py-5 flex items-center gap-4" style={{ background: 'linear-gradient(135deg, #1a0a00 0%, #3d1800 50%, #5c2600 100%)' }}>
+                <div
+                    className="rounded-2xl mb-6 overflow-hidden px-5 py-5 flex flex-col sm:flex-row sm:items-center gap-4"
+                    style={{ background: 'linear-gradient(135deg, #1a0a00 0%, #3d1800 50%, #5c2600 100%)' }}
+                >
                     <img
                         src="/evairsim-wordmark.png"
                         alt="EvairSIM – Travel eSIM and SIM Card Provider"
                         loading="lazy"
                         width={896}
                         height={228}
-                        style={{ width: 130, height: 'auto', objectFit: 'contain', flexShrink: 0 }}
+                        className="sm:shrink-0"
+                        style={{ width: 130, height: 'auto', objectFit: 'contain' }}
                     />
-                    <p style={{ fontSize: 15, fontWeight: 600, color: 'rgba(255,165,80,0.6)', lineHeight: 1.5, letterSpacing: '0.02em', fontStyle: 'italic' }}>
-                        "Connecting the world,<br />one journey at a time."
+                    {/* Two stacked lines only: avoid flex-column squeeze breaking “the” / “world,” apart */}
+                    <p
+                        className="flex min-w-0 flex-1 flex-col leading-snug sm:leading-relaxed sm:text-right"
+                        style={{
+                            fontSize: 15,
+                            fontWeight: 600,
+                            color: 'rgba(255,165,80,0.6)',
+                            letterSpacing: '0.02em',
+                            fontStyle: 'italic',
+                        }}
+                    >
+                        <span className="whitespace-nowrap">{'\u201C'}Connecting the world,</span>
+                        <span className="whitespace-nowrap">one journey at a time.{'\u201D'}</span>
                     </p>
                 </div>
 
