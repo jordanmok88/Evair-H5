@@ -197,9 +197,9 @@ function HeroSlidesCrossfade({
     );
 }
 
-/** Hero CTAs — lighter pastel gradient than headline text; icons use currentColor (white). */
+/** Matches headline accent + hero CTAs (`from-orange-500 to-amber-400`). */
 const heroCtaBtnClass =
-    'flex touch-manipulation min-h-[2.5rem] w-full shrink-0 items-center justify-center rounded-xl bg-gradient-to-r from-orange-400 via-amber-300 to-yellow-300 px-2.5 py-2 text-xs font-bold text-white [text-shadow:0_1px_1px_rgba(0,0,0,0.28)] shadow-md shadow-orange-400/35 outline-none ring-offset-white transition-[transform,filter] hover:brightness-105 active:scale-[0.98] focus-visible:ring-2 focus-visible:ring-[#2563eb] focus-visible:ring-offset-2 sm:min-h-11 sm:px-3 sm:text-sm';
+    'flex touch-manipulation min-h-[2.5rem] w-full shrink-0 items-center justify-center rounded-xl bg-gradient-to-r from-orange-500 to-amber-400 px-3 py-2 text-xs font-bold text-white shadow-md shadow-orange-500/25 outline-none ring-offset-white transition-[transform,filter] hover:brightness-105 active:scale-[0.98] focus-visible:ring-2 focus-visible:ring-[#2563eb] focus-visible:ring-offset-2 sm:min-h-11 sm:text-sm';
 
 /** Home hero: selling slides; striped indicators (jump, swipe on touch), imagery + CTAs. */
 export function MarketingHeroCarousel(props: MarketingHeroCarouselProps) {
@@ -348,7 +348,7 @@ export function MarketingHeroCarousel(props: MarketingHeroCarouselProps) {
                                 })}
                                 className={`h-1.5 min-h-[6px] flex-1 touch-manipulation rounded-full border-0 shadow-inner outline-none transition-colors duration-300 ease-out focus-visible:ring-2 focus-visible:ring-[#2563eb] focus-visible:ring-offset-2 sm:h-2 ${
                                     i === index
-                                        ? 'cursor-default bg-gradient-to-r from-orange-400 via-amber-300 to-yellow-300 shadow-sm'
+                                        ? 'cursor-default bg-gradient-to-r from-orange-500 to-amber-400 shadow-sm'
                                         : 'cursor-pointer bg-gray-200 hover:bg-gray-300'
                                 }`}
                             />
