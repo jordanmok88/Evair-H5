@@ -78,6 +78,7 @@ const ProductTab: React.FC<ProductTabProps> = ({
   onLinkedEsimRefresh,
   simWalletHydrated,
   externalLinkExistingEsimNonce = 0,
+  onOpenContactFromBrowseShop,
 }) => {
   const { t } = useTranslation();
   const mySims = activeSims.filter(s => s.type === type);
