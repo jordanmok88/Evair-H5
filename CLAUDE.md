@@ -20,6 +20,7 @@ These files ship with Jordan's persistent preferences (preload / always apply):
 
 **Optional deep dive (not injected as rules):**
 
+- **`docs/H5_SHELL_AND_MARKETING.md`** — **routing vs customer shell**: `getRoute()` → `App.tsx` branches, marketing drawers vs `/app` hashes (`#profile`, `#inbox`), global FAB/contact. Read before changing **`utils/routing.ts`**, **`App.tsx`** top-level output, or **marketing**/floating chrome.
 - `docs/CONVERSATION_HISTORY.md` — chronological log of past work sessions
   and major decisions.
 
@@ -54,10 +55,14 @@ EvairSIM H5 is a mobile-first web app for selling and managing eSIMs and physica
 
 ## Architecture
 
-### Mode Detection (App.tsx)
-- `#admin` in URL hash → AdminApp (chat, notifications)
-- `#api-test` in URL hash → ApiTestPage (API testing interface)
-- Default → Customer-facing app
+**Shell map (authoritative detail): `docs/H5_SHELL_AND_MARKETING.md`** — pathname → lazy page vs `<CustomerApp/>`, marketing portaled drawers, hash tabs inside `/app`.
+
+### Top-level mode detection (`utils/routing.ts` + `App.tsx`)
+
+`getRoute()` inspects **`pathname`, `hostname`, and hash** (`#api-test` forces `apiTest`). Unmatched paths fall through to **`{ kind: 'app' }`** → **`CustomerApp`** (`/app`, `/`, most content pages).
+
+- Hash contains **`api-test`** → **`ApiTestPage`** (see `routing.ts`).
+- **`#admin`** is legacy in **`robots.txt`** only; **`App.tsx`** does not branch Admin here today (admin Vue lives separately).
 
 ### API Client (services/api/)
 
@@ -113,6 +118,8 @@ i18n/               — Translation files (en.ts, zh.ts, es.ts)
 
 | File | Purpose |
 |------|---------|
+| `docs/H5_SHELL_AND_MARKETING.md` | Marketing vs `/app` shell, drawers, hashes — read before routing/global chrome edits |
+| `utils/routing.ts` | **`getRoute()`** — discriminated union for lazy page vs `CustomerApp` |
 | `App.tsx` | Main routing, mode detection, global state |
 | `services/api/client.ts` | Core API client with interceptors |
 | `services/api/types.ts` | All backend API TypeScript types |

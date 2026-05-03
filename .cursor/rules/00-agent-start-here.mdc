@@ -27,6 +27,8 @@ alwaysApply: true
 
 Also read **`CLAUDE.md`** at the repo root for build commands (`npm run dev`, `npm run build`) and architecture notes.
 
+Optional when touching **`routing.ts`**, **`App.tsx`** top-level branches, hashes, or marketing floating panels: skim **`docs/H5_SHELL_AND_MARKETING.md`** so changes stay confined to the right layer.
+
 ---
 
 If Jordan contradicts something in chat, **follow Jordan** for that task and propose updating the rule file so future agents stay aligned.
