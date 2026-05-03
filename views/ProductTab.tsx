@@ -1,4 +1,6 @@
 import React, { useState, useEffect, useLayoutEffect, useRef, useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
+import { Loader2 } from 'lucide-react';
 import { SimType, ActiveSim, Tab, User, AppNotification, EsimProfileResult } from '../types';
 import ShopView from './ShopView';
 import MySimsView from './MySimsView';
@@ -44,6 +46,8 @@ interface ProductTabProps {
   onBindSimDeepLinkConsumed?: () => void;
   /** Refresh bound SIM list from API after linking an existing eSIM. */
   onLinkedEsimRefresh?: () => void | Promise<void>;
+  /** First GET /users/sims finished (guest: true immediately). Gates empty eSIM "Mine" → Shop kick. */
+  simWalletHydrated: boolean;
 }
 
 const ProductTab: React.FC<ProductTabProps> = ({
@@ -65,7 +69,9 @@ const ProductTab: React.FC<ProductTabProps> = ({
   initialBindSimDeepLink = false,
   onBindSimDeepLinkConsumed,
   onLinkedEsimRefresh,
+  simWalletHydrated,
 }) => {
+  const { t } = useTranslation();
   const mySims = activeSims.filter(s => s.type === type);
   const bindDeepLinkConsumedRef = useRef(false);
 
@@ -88,6 +94,8 @@ const ProductTab: React.FC<ProductTabProps> = ({
   const [setupEntryPoint, setSetupEntryPoint] = useState<'SHOP' | 'MINE'>('SHOP');
   /** Bump when user taps "Link existing eSIM" on eSIM shop — MySims opens wizard */
   const [linkEsimFromShopNonce, setLinkEsimFromShopNonce] = useState(0);
+  /** Holds empty Mine on screen briefly so Link wizard from Shop can mount */
+  const [esimsMineWizardDefer, setEsimsMineWizardDefer] = useState(false);
 
   const consumeBindDeepLink = useCallback(() => {
     onBindSimDeepLinkConsumed?.();
@@ -128,18 +136,23 @@ const ProductTab: React.FC<ProductTabProps> = ({
     setViewMode('SETUP');
   };
 
-  // Auto-pick the initial view on FIRST mount only:
-  //   - If the user already owns SIMs of this type -> land on MINE.
-  //   - Otherwise land on SHOP (default from useState init above).
-  // We intentionally do NOT reactively bounce the user back to SHOP if
-  // `mySims` becomes empty later (e.g. during a post-bind re-fetch race),
-  // because that was the cause of the "jumps back to main page after
-  // binding" bug. An empty MY SIMs page renders a proper empty state.
-  const didInitModeRef = useRef(false);
-  useEffect(() => {
-    if (didInitModeRef.current) return;
-    didInitModeRef.current = true;
-  }, []);
+  // Persisted Mine with zero eSIMs is redundant UX (shop has buy + link). Send
+  // users to Shop once we know `/users/sims` finished loading, unless they are in
+  // the middle of "Link existing eSIM" from the shop banner.
+  useLayoutEffect(() => {
+    if (type !== 'ESIM') return;
+    if (viewMode !== 'MINE') return;
+    if (!simWalletHydrated) return;
+    if (mySims.length > 0) return;
+    if (esimsMineWizardDefer) return;
+    setViewMode('SHOP');
+  }, [simWalletHydrated, type, viewMode, mySims.length, esimsMineWizardDefer]);
+  const mineHydratingLoggedInEsims =
+    viewMode === 'MINE' &&
+    type === 'ESIM' &&
+    isLoggedIn &&
+    !simWalletHydrated &&
+    mySims.length === 0;
 
   return (
     <div className="flex flex-col flex-1 min-h-0 h-full lg:h-full relative">
@@ -170,6 +183,7 @@ const ProductTab: React.FC<ProductTabProps> = ({
             onLinkExistingEsim={
               type === 'ESIM'
                 ? () => {
+                    setEsimsMineWizardDefer(true);
                     setLinkEsimFromShopNonce((n) => n + 1);
                     setViewMode('MINE');
                   }
@@ -178,7 +192,14 @@ const ProductTab: React.FC<ProductTabProps> = ({
           />
        )}
        
-       {viewMode === 'MINE' && (
+       {mineHydratingLoggedInEsims && (
+          <div className="flex flex-1 flex-col min-h-0 h-full lg:h-full items-center justify-center bg-[#F2F4F7] px-8 gap-4">
+            <Loader2 size={36} strokeWidth={2.25} className="animate-spin text-brand-orange" aria-hidden />
+            <p className="text-xs font-semibold uppercase tracking-wide text-slate-400 text-center">{t('my_sims.wallet_syncing')}</p>
+          </div>
+       )}
+
+       {viewMode === 'MINE' && !mineHydratingLoggedInEsims && (
           <MySimsView 
             activeSims={activeSims}
             filterType={type}
@@ -190,6 +211,8 @@ const ProductTab: React.FC<ProductTabProps> = ({
             onLoginRequest={onLoginRequest}
             onLinkedEsimRefresh={onLinkedEsimRefresh}
             linkEsimRequestNonce={type === 'ESIM' ? linkEsimFromShopNonce : 0}
+            esimsMineWizardDefer={type === 'ESIM' && esimsMineWizardDefer}
+            onReleaseEsimsMineWizardDefer={() => setEsimsMineWizardDefer(false)}
           />
        )}
 

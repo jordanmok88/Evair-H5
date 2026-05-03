@@ -399,6 +399,8 @@ const en = {
   },
   my_sims: {
     no_evairsim_yet: 'No EvairSIM Yet',
+    wallet_syncing: 'Syncing your SIMs…',
+    open_esim_shop: 'Open eSIM shop',
     link_esim: 'Link existing eSIM',
     link_esim_title: 'Link eSIM',
     link_esim_empty_hint:

@@ -400,6 +400,8 @@ const es = {
   },
   my_sims: {
     no_evairsim_yet: 'Aún sin EvairSIM',
+    wallet_syncing: 'Sincronizando tus SIM…',
+    open_esim_shop: 'Ir a la tienda eSIM',
     link_esim: 'Vincular eSIM existente',
     link_esim_title: 'Vincular eSIM',
     link_esim_empty_hint:

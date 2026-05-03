@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
+import React, { useState, useEffect, useLayoutEffect, useCallback, useMemo, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Wifi, Phone, Zap, ChevronDown, CheckCircle2, QrCode, Copy, X, Calendar, Clock, SignalHigh, Smartphone, RefreshCw, Plus, ShoppingBag, Settings, MoreHorizontal, Trash2, Check, AlertTriangle, Loader2, Globe, Database, ScanLine, ArrowLeft, PartyPopper, Sparkles, Link2 } from 'lucide-react';
 import { ActiveSim, Tab, SimType, EsimPackage } from '../types';
@@ -29,6 +29,13 @@ interface MySimsViewProps {
    * Parent increments a counter — avoids duplicated opens vs a plain boolean StrictMode flicker.
    */
   linkEsimRequestNonce?: number;
+  /**
+   * When true (opening Link wizard from shop on empty Mine), skip full-screen
+   * empty marketing chrome — wizard supplies the UX.
+   */
+  esimsMineWizardDefer?: boolean;
+  /** Clear parent defer when Link wizard closes so Shop kick can resume if still empty */
+  onReleaseEsimsMineWizardDefer?: () => void;
 }
 
 const CARD_HEIGHT = 72;
@@ -67,6 +74,8 @@ const MySimsView: React.FC<MySimsViewProps> = ({
   onSwitchToSetup,
   onUpdateSim,
   linkEsimRequestNonce = 0,
+  esimsMineWizardDefer = false,
+  onReleaseEsimsMineWizardDefer,
 }) => {
   const { t } = useTranslation();
   const swipeBack = useCallback(() => {
@@ -88,10 +97,13 @@ const MySimsView: React.FC<MySimsViewProps> = ({
   }, [activeSims]);
 
   const [linkEsimOpen, setLinkEsimOpen] = useState(false);
-  const closeLinkWizard = useCallback(() => setLinkEsimOpen(false), []);
+  const handleLinkWizardClose = useCallback(() => {
+    setLinkEsimOpen(false);
+    onReleaseEsimsMineWizardDefer?.();
+  }, [onReleaseEsimsMineWizardDefer]);
   const lastHandledLinkNonce = useRef(0);
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     if (filterType !== 'ESIM') return;
     if (!linkEsimRequestNonce || linkEsimRequestNonce === lastHandledLinkNonce.current) return;
     lastHandledLinkNonce.current = linkEsimRequestNonce;
@@ -101,7 +113,7 @@ const MySimsView: React.FC<MySimsViewProps> = ({
   const linkWizard = (
     <LinkEsimWizard
       open={linkEsimOpen}
-      onClose={closeLinkWizard}
+      onClose={handleLinkWizardClose}
       boundIccids={boundEsimIccids}
       onSuccess={async () => {
         await onLinkedEsimRefresh?.();
@@ -319,19 +331,36 @@ const MySimsView: React.FC<MySimsViewProps> = ({
 
   // EMPTY STATE
   if (!currentSim) {
-      // For plastic US SIMs we don't sell them from Shop any more —
-      // customers receive them from Amazon/Temu, so the primary CTA
-      // should jump straight into the bind/setup flow. eSIMs still
-      // go through Shop (plan picker -> checkout -> auto-bind).
-      const primaryAction = filterType === 'PHYSICAL' && onSwitchToSetup
-        ? onSwitchToSetup
-        : onSwitchToShop;
-      const primaryLabel = filterType === 'PHYSICAL'
-        ? t('my_sims.bind_cta', 'Bind your SIM')
-        : t('my_sims.add');
+    if (filterType === 'ESIM' && esimsMineWizardDefer) {
+      return <>{linkWizard}</>;
+    }
 
+    if (filterType === 'ESIM') {
       return (
-          <>
+        <>
+          <div className="flex min-h-[50vh] flex-col items-center justify-center bg-[#F2F4F7] px-8 text-center lg:min-h-0 lg:flex-1">
+            <p className="mb-2 text-lg font-semibold tracking-tight text-slate-800">{t('my_sims.no_evairsim_yet')}</p>
+            <p className="mb-6 max-w-[20rem] text-sm leading-relaxed text-slate-500">{t('my_sims.link_esim_empty_hint')}</p>
+            {onSwitchToShop && (
+              <button
+                type="button"
+                onClick={onSwitchToShop}
+                className="min-w-[10rem] rounded-xl bg-brand-orange px-6 py-3 text-base font-bold text-white shadow-lg shadow-orange-500/15 transition-all hover:bg-orange-600 active:scale-95"
+              >
+                {t('my_sims.open_esim_shop')}
+              </button>
+            )}
+          </div>
+          {linkWizard}
+        </>
+      );
+    }
+
+    const primaryAction = onSwitchToSetup ?? onSwitchToShop;
+    const primaryLabel = t('my_sims.bind_cta', 'Bind your SIM');
+
+    return (
+        <>
           <div className="lg:h-full min-h-[60vh] flex flex-col items-center justify-center px-8 text-center bg-[#F2F4F7]">
               <div className="relative mb-10">
                   <div className="w-60 h-36 bg-white rounded-2xl border border-slate-200 shadow-sm flex flex-col p-5 relative overflow-hidden">
@@ -355,12 +384,9 @@ const MySimsView: React.FC<MySimsViewProps> = ({
                       </button>
                   </div>
               </div>
-              <p className={`text-lg font-semibold tracking-tight text-slate-800 ${filterType === 'ESIM' ? 'mb-2' : 'mb-8'}`}>
-                  {filterType === 'ESIM' ? t('my_sims.no_evairsim_yet') : t('my_sims.no_sims')}
+              <p className="text-lg font-semibold tracking-tight text-slate-800 mb-8">
+                  {t('my_sims.no_sims')}
               </p>
-              {filterType === 'ESIM' && (
-                  <p className="mb-8 max-w-[20rem] text-sm leading-relaxed text-slate-500">{t('my_sims.link_esim_empty_hint')}</p>
-              )}
               {primaryAction && (
                 <button
                     onClick={primaryAction}
@@ -370,19 +396,10 @@ const MySimsView: React.FC<MySimsViewProps> = ({
                     {primaryLabel}
                 </button>
               )}
-              {filterType === 'ESIM' && (
-                <button
-                  type="button"
-                  onClick={() => setLinkEsimOpen(true)}
-                  className="mt-4 py-3 text-base font-semibold text-brand-orange"
-                >
-                  {t('my_sims.link_esim')}
-                </button>
-              )}
           </div>
           {linkWizard}
-          </>
-      );
+        </>
+    );
   }
 
   // --- RING GAUGE LOGIC ---

@@ -413,6 +413,11 @@ function CustomerApp() {
     return MOCK_ACTIVE_SIMS;
   });
   const [serverSims, setServerSims] = useState<ActiveSim[]>([]);
+  /**
+   * After the first authenticated GET /users/sims (or immediately when logged out).
+   * Prevents bouncing an empty persisted "My eSIMs" to Shop before bindings load.
+   */
+  const [simWalletHydrated, setSimWalletHydrated] = useState(() => !authService.isLoggedIn());
   const [notifications, setNotifications] = useState<AppNotification[]>(MOCK_NOTIFICATIONS);
 
   const mockSimIds = useMemo(() => new Set(MOCK_ACTIVE_SIMS.map(s => s.id)), []);
@@ -535,15 +540,19 @@ function CustomerApp() {
       }
     } catch (err) {
       console.error('[fetchUserSims] Failed:', err);
+    } finally {
+      setSimWalletHydrated(true);
     }
   }, []);
 
   // 登录成功后获取 SIM 卡列表
   useEffect(() => {
     if (isLoggedIn) {
+      setSimWalletHydrated(false);
       fetchUserSims();
     } else {
       setServerSims([]);
+      setSimWalletHydrated(true);
     }
   }, [isLoggedIn, fetchUserSims]);
 
@@ -1014,6 +1023,7 @@ function CustomerApp() {
       initialBindSimDeepLink={pendingBindSimDeepLink && currentSimType === 'PHYSICAL'}
       onBindSimDeepLinkConsumed={clearBindSimDeepLink}
       onLinkedEsimRefresh={fetchUserSims}
+      simWalletHydrated={simWalletHydrated}
     />
   );
 

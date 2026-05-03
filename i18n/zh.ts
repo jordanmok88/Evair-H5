@@ -381,6 +381,8 @@ const zh = {
   },
   my_sims: {
     no_evairsim_yet: '暂无 EvairSIM',
+    wallet_syncing: '正在同步您的 SIM…',
+    open_esim_shop: '前往 eSIM 商店',
     link_esim: '关联已有 eSIM',
     link_esim_title: '关联 eSIM',
     link_esim_empty_hint: '在商店购买套餐，或输入订单邮件中的 ICCID，即可在此处显示。',
