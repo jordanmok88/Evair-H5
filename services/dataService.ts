@@ -452,17 +452,51 @@ export async function topUp(req: TopUpRequest): Promise<TopUpResult> {
 
 // ─── Data Usage ──────────────────────────────────────────────────────
 
+function normalizeDataUsageDto(
+  iccid: string,
+  u: { iccid?: string; totalVolume?: number; usedVolume?: number; expiredTime?: string | null },
+): DataUsageResult {
+  return {
+    iccid: (typeof u.iccid === 'string' && u.iccid.trim()) || iccid,
+    totalVolume: Math.max(0, Number(u.totalVolume) || 0),
+    usedVolume: Math.max(0, Number(u.usedVolume) || 0),
+    expiredTime: typeof u.expiredTime === 'string' ? u.expiredTime.trim() : '',
+  };
+}
+
+function usageSnapshotHasSignal(u: DataUsageResult): boolean {
+  const exp = u.expiredTime?.trim() ?? '';
+  const expOk = Boolean(exp && !Number.isNaN(Date.parse(exp)));
+  return u.totalVolume > 0 || u.usedVolume > 0 || expOk;
+}
+
+/**
+ * Laravel `GET /app/sims/{iccid}/usage` reads `sim_assets` — linked eSIM rows can
+ * return HTTP 200 with zeros/null expiry until a supplier sync fills the row.
+ * When the snapshot carries no usable signal, re-fetch from Red Tea via Netlify
+ * proxy (`supplierCheckUsage`) so wallet cards match the supplier dashboard.
+ */
 export async function checkDataUsage(iccid: string): Promise<DataUsageResult> {
+  let primary: DataUsageResult;
   try {
-    const usage = await esimService.getUsage(iccid);
-    return {
-      iccid: usage.iccid,
-      totalVolume: usage.totalVolume,
-      usedVolume: usage.usedVolume,
-      expiredTime: usage.expiredTime,
-    };
+    primary = normalizeDataUsageDto(iccid, await esimService.getUsage(iccid));
   } catch {
-    return supplierCheckUsage(iccid);
+    return normalizeDataUsageDto(iccid, await supplierCheckUsage(iccid));
+  }
+
+  if (usageSnapshotHasSignal(primary)) {
+    return primary;
+  }
+
+  try {
+    const sup = normalizeDataUsageDto(iccid, await supplierCheckUsage(iccid));
+    const supBetter =
+      sup.totalVolume > primary.totalVolume ||
+      sup.usedVolume > primary.usedVolume ||
+      (!usageSnapshotHasSignal(primary) && usageSnapshotHasSignal(sup));
+    return supBetter ? sup : primary;
+  } catch {
+    return primary;
   }
 }
 

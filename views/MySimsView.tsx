@@ -65,6 +65,14 @@ function fmtCompact(gb: number): string {
   return gb % 1 === 0 ? `${gb.toFixed(0)} GB` : `${gb.toFixed(1)} GB`;
 }
 
+function formatSafeLocaleDate(raw: string | undefined): string {
+  const s = raw?.trim();
+  if (!s) return '—';
+  const t = Date.parse(s);
+  if (Number.isNaN(t)) return '—';
+  return new Date(t).toLocaleDateString();
+}
+
 function resolveIccid(sim: ActiveSim): string {
   return sim.iccid || `898520002633221${sim.id.replace(/\D/g, '').slice(0, 5)}`;
 }
@@ -199,8 +207,9 @@ const MySimsView: React.FC<MySimsViewProps> = ({
       if (Number.isFinite(usedGB) && usedGB >= 0 && usedGB <= (updates.dataTotalGB ?? sim.dataTotalGB ?? Infinity)) {
         updates.dataUsedGB = Math.round(usedGB * 100) / 100;
       }
-      if (usage.expiredTime) {
-        updates.expiryDate = usage.expiredTime;
+      if (usage.expiredTime?.trim()) {
+        const t = Date.parse(usage.expiredTime);
+        if (!Number.isNaN(t)) updates.expiryDate = usage.expiredTime;
       }
       // eSIM status still comes from the profile query since the
       // usage endpoint doesn't carry lifecycle state. For physical SIMs
@@ -933,7 +942,7 @@ const MySimsView: React.FC<MySimsViewProps> = ({
                   <div className="flex items-center gap-1.5">
                       <Calendar size={12} className="text-brand-orange" />
                       <span className="text-sm font-semibold text-slate-500">
-                          {new Date(currentSim.expiryDate).toLocaleDateString()}
+                          {formatSafeLocaleDate(currentSim.expiryDate)}
                       </span>
                   </div>
               </div>
@@ -950,7 +959,9 @@ const MySimsView: React.FC<MySimsViewProps> = ({
           </div>
       </div>
       {/* Low data warning banner */}
-      {(currentSim.status === 'ACTIVE' || currentSim.status === 'IN_USE') && percentUsed >= 80 && (
+      {(currentSim.status === 'ACTIVE' || currentSim.status === 'IN_USE') &&
+        currentSim.dataTotalGB > 0 &&
+        percentUsed >= 80 && (
         <div className="px-4 mb-4">
           <button
             onClick={() => setIsRechargeModalOpen(true)}
@@ -1081,7 +1092,7 @@ const MySimsView: React.FC<MySimsViewProps> = ({
                       </div>
                       <span className="text-sm font-bold text-slate-900">Expires</span>
                   </div>
-                  <span className="text-sm font-bold text-slate-500">{new Date(currentSim.expiryDate).toLocaleDateString()}</span>
+                  <span className="text-sm font-bold text-slate-500">{formatSafeLocaleDate(currentSim.expiryDate)}</span>
               </div>
 
               <div className="flex justify-between items-center">

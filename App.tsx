@@ -25,7 +25,7 @@ import { Tab, ActiveSim, Country, SimType, User, AppNotification, EsimProfileRes
 import { Lock } from 'lucide-react';
 import { MOCK_COUNTRIES, MOCK_PLANS_US, MOCK_ACTIVE_SIMS, MOCK_NOTIFICATIONS } from './constants';
 import { retailCarrierRowForIso } from './utils/retailCarrierLookup';
-import { checkDataUsage, prefetchPackages, DEMO_MODE, mapRedTeaStatus, bindSim } from './services/dataService';
+import { checkDataUsage, prefetchPackages, DEMO_MODE, mapRedTeaStatus, bindSim, queryProfile } from './services/dataService';
 import { supabaseConfigured, fetchNotifications, logSimActivation } from './services/supabase';
 import { authService, userService, type UserDto, type UserSimDto } from './services/api';
 import { initPush, unregisterPush } from './services/pushService';
@@ -39,6 +39,7 @@ import {
 } from './utils/testMode';
 import { getRoute, type Route } from './utils/routing';
 import { EVAIR_OPEN_MARKETING_CONTACT_EVENT } from './utils/evairMarketingEvents';
+import { deriveEsimCountryOverlay } from './utils/deriveEsimRegionFromPlanName';
 import { BootSplash, shouldSkipBootSplash } from './components/BootSplash';
 import { useViewportMinWidth } from './hooks/useViewportMinWidth';
 import { useCustomerAppDesktopQr } from './hooks/useMobileSignInGate';
@@ -47,6 +48,13 @@ import MarketingContactDrawer from './components/marketing/MarketingContactDrawe
 
 /** Laravel `SupplierSeeder` default ordering: PCCW = 1, ESIMACCESS = 2. See Evair-Laravel `docs/ops/STAGING_PREVIEW_BINDINGS_JORDAN.md`. */
 const LARAVEL_SUPPLIER_ID_PCCW = 1;
+
+function normaliseExpiryIso(raw: string | undefined | null): string | undefined {
+  const s = typeof raw === 'string' ? raw.trim() : '';
+  if (!s) return undefined;
+  const t = Date.parse(s);
+  return Number.isNaN(t) ? undefined : new Date(t).toISOString();
+}
 
 /** Matches Tailwind `--breakpoint-md` (`48rem`): tablet / windowed Safari and up use full `/app` chrome (no centred phone mock). */
 const APP_WIDE_LAYOUT_MIN_PX = 768;
@@ -523,30 +531,61 @@ function CustomerApp() {
       // #endregion
       setServerSims(convertedSims);
 
-      // Fan-out live usage refresh (per-SIM supplier) — best-effort; on
-      // any single-SIM failure we keep the cached DB values rather than
-      // blanking the card.
-      const usageResults = await Promise.all(
+      // Per-SIM merge: Laravel usage (sim_assets) plus Red Tea fallback inside
+      // `checkDataUsage`, then supplier `queryProfile` for plan name + region
+      // label — GET /app/users/sims only returns iccid/status/supplier id.
+      const patchResults = await Promise.all(
         convertedSims.map(async (sim) => {
           if (!sim.iccid) return null;
+          const patch: Partial<ActiveSim> = {};
+
           try {
             const usage = await checkDataUsage(sim.iccid);
             const totalGB = usage.totalVolume / (1024 * 1024 * 1024);
             const usedGB = usage.usedVolume / (1024 * 1024 * 1024);
-            if (!Number.isFinite(totalGB) || !Number.isFinite(usedGB)) return null;
-            return {
-              id: sim.id,
-              dataTotalGB: Math.round(totalGB * 10) / 10,
-              dataUsedGB: Math.round(usedGB * 100) / 100,
-              expiryDate: usage.expiredTime || sim.expiryDate,
-            };
+            if (Number.isFinite(totalGB) && Number.isFinite(usedGB)) {
+              patch.dataTotalGB = Math.round(totalGB * 10) / 10;
+              patch.dataUsedGB = Math.round(usedGB * 100) / 100;
+            }
+            const exp = normaliseExpiryIso(usage.expiredTime);
+            if (exp) patch.expiryDate = exp;
           } catch {
-            return null;
+            /* keep zeros from convertUserSimToActiveSim */
           }
+
+          if (sim.type === 'ESIM') {
+            try {
+              const profile = await queryProfile(sim.iccid);
+              const name = profile.packageName?.trim();
+              if (name) {
+                patch.plan = {
+                  ...sim.plan,
+                  name,
+                  days: profile.totalDuration > 0 ? profile.totalDuration : sim.plan.days,
+                };
+                const region = deriveEsimCountryOverlay(name);
+                if (region) {
+                  patch.country = { ...sim.country, ...region };
+                }
+              }
+              const profExp = normaliseExpiryIso(profile.expiredTime);
+              if (profExp && !patch.expiryDate) patch.expiryDate = profExp;
+              if ((patch.dataTotalGB ?? 0) <= 0 && profile.totalVolume > 0) {
+                patch.dataTotalGB = Math.round((profile.totalVolume / (1024 * 1024 * 1024)) * 10) / 10;
+              }
+              if (profile.status?.trim()) {
+                patch.status = mapRedTeaStatus(profile.status);
+              }
+            } catch {
+              /* supplier preview optional */
+            }
+          }
+
+          return Object.keys(patch).length > 0 ? { id: sim.id, patch } : null;
         }),
       );
       const byId = new Map(
-        usageResults.filter((r): r is NonNullable<typeof r> => r !== null).map((r) => [r.id, r]),
+        patchResults.filter((r): r is NonNullable<typeof r> => r !== null).map((r) => [r.id, r.patch]),
       );
       if (byId.size > 0) {
         setServerSims((prev) =>

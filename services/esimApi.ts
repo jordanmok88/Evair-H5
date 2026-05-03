@@ -148,7 +148,8 @@ export async function queryProfile(iccid: string): Promise<EsimProfileResult> {
     iccid: esim.iccid,
     packageCode: esim.packageList?.[0]?.packageCode || '',
     packageName: esim.packageList?.[0]?.packageName || '',
-    status: esim.smdpStatus || esim.esimStatus || '',
+    /** Prefer lifecycle status over SM-DP+ row state (profile can show DISABLED while Es is still In Use). */
+    status: esim.esimStatus || esim.smdpStatus || '',
     smdpStatus: esim.smdpStatus || '',
     expiredTime: esim.expiredTime || '',
     totalVolume: esim.totalVolume || 0,
