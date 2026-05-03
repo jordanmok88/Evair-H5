@@ -225,7 +225,7 @@ const en = {
     hero_slide3_stay: 'Travel, home, or IoT.',
     hero_slide3_accent: 'One brand. Many plans.',
     hero_slide3_sub:
-      'Travel eSIM in 200+ countries; US SIM with Auto APN on compatible plans — activate from your box in minutes.',
+      'Travel eSIM in 200+ countries; SIM card plans with Auto APN on compatible options — activate from your box in minutes.',
     hero_slide_caption_1: 'GPS trackers',
     hero_slide_caption_2: 'Smartwatches',
     hero_slide_caption_3: 'E-readers (Kindle, Boox)',
@@ -298,7 +298,7 @@ const en = {
     home_footer_made: 'Made for travelers and the people who stay.',
     home_footer_copyright: '© {{year}} Evair Digital. All rights reserved.',
     footer_col_travel: 'Travel',
-    footer_col_us: 'US SIMs',
+    footer_col_us: 'SIM cards',
     footer_col_resources: 'Resources',
     footer_col_legal: 'Legal',
     footer_link_travel_esim: 'Global eSIM',
@@ -331,16 +331,19 @@ const en = {
   topup_page: {
     header_tagline: 'Add data to your line',
     idle_title: 'Top up your EvairSIM',
-    idle_body:
-      'Works with US SIM cards and global eSIMs: scan the barcode on your SIM card, your box QR, or enter the ICCID (Settings → Cellular or SIM Manager). Same flow for both.',
-    idle_chip_us_sim: 'US SIM card',
-    idle_chip_global_esim: 'Global eSIM',
+    picker_intro: 'Pick physical SIM card or Global eSIM — each has its own top-up screen.',
+    picker_card_sim: 'SIM Card',
+    picker_card_esim: 'Global eSIM',
+    idle_body_sim:
+      'SIM card flow: scan the ICCID barcode on your card or SIM box, scan the QR, or enter the ICCID manually (Settings → Cellular or SIM Manager).',
+    idle_body_esim:
+      'Global eSIM flow: scan your profile QR/barcode from your confirmation email or device settings, or enter the ICCID from your eSIM details.',
     idle_scan_cta: 'Scan ICCID barcode',
     idle_or: 'or',
     idle_manual_label: 'Enter ICCID manually',
     idle_submit: 'Show top-up plans',
     idle_iccid_invalid:
-      "That doesn't look like a valid ICCID (15–22 alphanumeric characters). Check your box.",
+      "That doesn't look like a valid ICCID (15–22 alphanumeric characters). Check your SIM card.",
     loading_catalog: 'Loading top-up plans…',
   },
   my_sims: {

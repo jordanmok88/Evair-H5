@@ -226,7 +226,7 @@ const es = {
     hero_slide3_stay: 'Viaje, hogar e IoT.',
     hero_slide3_accent: 'Una marca, muchos planes.',
     hero_slide3_sub:
-      'eSIM de viaje en más de 200 países; SIM EE. UU. con Auto APN en planes compatibles — activa desde la caja en minutos.',
+      'eSIM de viaje en más de 200 países; tarjetas SIM con Auto APN en planes compatibles — activa desde la caja en minutos.',
     hero_slide_caption_1: 'Rastreadores GPS',
     hero_slide_caption_2: 'Smartwatches',
     hero_slide_caption_3: 'E-readers (Kindle, Boox)',
@@ -299,7 +299,7 @@ const es = {
     home_footer_made: 'Hecho para quienes viajan y quienes se quedan.',
     home_footer_copyright: '© {{year}} Evair Digital. Todos los derechos reservados.',
     footer_col_travel: 'Viajes',
-    footer_col_us: 'SIM EE. UU.',
+    footer_col_us: 'Tarjetas SIM',
     footer_col_resources: 'Recursos',
     footer_col_legal: 'Legal',
     footer_link_travel_esim: 'eSIM global',
@@ -332,16 +332,19 @@ const es = {
   topup_page: {
     header_tagline: 'Añade datos a tu línea',
     idle_title: 'Recarga tu EvairSIM',
-    idle_body:
-      'Sirve para SIM física EE. UU. y eSIM global: escanea el código de barras de la SIM, el QR de la caja o escribe el ICCID (Ajustes → Cellular o Administrador SIM). Mismo proceso para ambas.',
-    idle_chip_us_sim: 'SIM EE. UU.',
-    idle_chip_global_esim: 'eSIM global',
+    picker_intro: 'Elige tarjeta SIM física o eSIM global: cada opción lleva su propia pantalla de recarga.',
+    picker_card_sim: 'Tarjeta SIM',
+    picker_card_esim: 'eSIM global',
+    idle_body_sim:
+      'Flujo SIM física: escanea el código de barras ICCID en tu tarjeta o en la caja, escanea el código QR o introduce el ICCID manualmente (Ajustes → Celular o administrador SIM).',
+    idle_body_esim:
+      'Flujo eSIM global: escanea el QR o código de barras del perfil desde tu correo de confirmación o ajustes, o introduce el ICCID desde los detalles de la eSIM.',
     idle_scan_cta: 'Escanear código de barras ICCID',
     idle_or: 'o',
     idle_manual_label: 'Introduce el ICCID manualmente',
     idle_submit: 'Ver planes de recarga',
     idle_iccid_invalid:
-      'Ese ICCID no parece válido (15–22 caracteres alfanuméricos). Revisa la caja.',
+      'Ese ICCID no parece válido (15–22 caracteres alfanuméricos). Revisa la tarjeta SIM.',
     loading_catalog: 'Cargando planes de recarga…',
   },
   my_sims: {

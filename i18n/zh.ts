@@ -219,7 +219,7 @@ const zh = {
     hero_slide3_stay: '出门在外或在家联网。',
     hero_slide3_accent: '一个品牌，多套方案。',
     hero_slide3_sub:
-      '旅游 eSIM 覆盖 200+ 国家／地区；美国 SIM 多款支持自动 APN，盒子扫码几分钟即可启用。',
+      '旅游 eSIM 覆盖 200+ 国家／地区；实体 SIM 卡多款支持自动 APN，包装盒扫码几分钟即可启用。',
     hero_slide_caption_1: 'GPS 追踪器',
     hero_slide_caption_2: '智能手表',
     hero_slide_caption_3: '电子阅读器（Kindle、文石等）',
@@ -283,7 +283,7 @@ const zh = {
     home_footer_made: '为旅人与留下的人而做。',
     home_footer_copyright: '© {{year}} Evair Digital. 保留所有权利。',
     footer_col_travel: '旅游',
-    footer_col_us: '美国 SIM',
+    footer_col_us: 'SIM 卡',
     footer_col_resources: '资源',
     footer_col_legal: '法律',
     footer_link_travel_esim: '全球 eSIM',
@@ -316,15 +316,18 @@ const zh = {
   topup_page: {
     header_tagline: '为已开通的 SIM / eSIM 充值',
     idle_title: '为 EvairSIM 充值',
-    idle_body:
-      '美国实体 SIM 与全球 eSIM 通用：可扫描 SIM 卡背面条码、包装盒二维码，或手动输入 ICCID（手机设置 → 蜂窝网络 / SIM 管理器）。流程一致。',
-    idle_chip_us_sim: '美国 SIM 卡',
-    idle_chip_global_esim: '全球 eSIM',
+    picker_intro: '请先选择充值对象：实体 SIM 卡或全球 eSIM，各自对应独立充值页。',
+    picker_card_sim: 'SIM 卡',
+    picker_card_esim: '全球 eSIM',
+    idle_body_sim:
+      '实体 SIM 流程：扫描卡体或包装上 ICCID 条形码、扫描二维码，或在手机设置里手动填写 ICCID（设置 → 蜂窝网络 / SIM 管理器）。',
+    idle_body_esim:
+      '全球 eSIM 流程：扫描确认邮件或设备里的资料二维码／条码，或从 eSIM 详情页复制 ICCID 手动粘贴。',
     idle_scan_cta: '扫描 ICCID 条码',
     idle_or: '或',
     idle_manual_label: '手动输入 ICCID',
     idle_submit: '查看充值套餐',
-    idle_iccid_invalid: 'ICC ID 应为 15–22 位字母数字，请核对包装盒上的编号。',
+    idle_iccid_invalid: 'ICC ID 应为 15–22 位字母数字，请核对卡片或包装。',
     loading_catalog: '正在加载充值套餐…',
   },
   my_sims: {

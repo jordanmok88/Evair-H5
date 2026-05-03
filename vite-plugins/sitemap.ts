@@ -61,6 +61,8 @@ const STATIC_URLS: SitemapEntry[] = [
     { path: '/blog', changefreq: 'weekly', priority: 0.7 },
     { path: '/activate', changefreq: 'monthly', priority: 0.6 },
     { path: '/top-up', changefreq: 'monthly', priority: 0.6 },
+    { path: '/top-up/sim', changefreq: 'monthly', priority: 0.55 },
+    { path: '/top-up/esim', changefreq: 'monthly', priority: 0.55 },
     // Legal — Stripe live mode and most app stores require these to be
     // crawlable, and search engines should know they exist so users can
     // find them via "evair refund policy" type queries.

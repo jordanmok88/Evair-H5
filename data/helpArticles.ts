@@ -434,7 +434,7 @@ export const HELP_ARTICLES: HelpArticle[] = [
             {
                 type: 'note',
                 tone: 'tip',
-                text: 'You can also reach the top-up flow directly via /top-up?iccid=YOUR_ICCID — handy if you want to share a link with a teammate to top up a fleet SIM.',
+                text: 'You can open evairdigital.com/top-up, choose SIM Card or Global eSIM, or link directly to evairdigital.com/top-up/sim?iccid=YOUR_ICCID for a plastic SIM fleet.',
             },
         ],
     },

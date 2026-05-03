@@ -7,7 +7,7 @@
  * either from:
  *   - The "Top up" CTA inside the customer app (`/app/my-sims`).
  *   - A direct deep-link printed on the SIM card / inside-the-box
- *     insert (`evairdigital.com/top-up?iccid=...`).
+ *     insert (`evairdigital.com/top-up?iccid=…` — pick **SIM Card** or **Global eSIM** on `/top-up`, then continue on `/top-up/sim` or `/top-up/esim`).
  *
  * Flow:
  *   1. Read `iccid` from the URL (or ask the user to scan / type).
@@ -66,9 +66,11 @@ import {
     type ActivationPreviewData,
 } from '../services/api';
 import type { PackageDto } from '../services/api/types';
+import type { TopUpRouteMode } from '../utils/routing';
 
 interface TopUpPageProps {
     iccid: string | null;
+    mode: TopUpRouteMode;
 }
 
 /**
@@ -93,11 +95,48 @@ type Phase =
 
 const ICCID_REGEX = /^[0-9A-Za-z]{15,22}$/;
 
-const TopUpPage: React.FC<TopUpPageProps> = ({ iccid: initialIccid }) => {
+async function fetchRechargeCatalogue(iccid: string, flowMode: Exclude<TopUpRouteMode, null>): Promise<PackageDto[]> {
+    if (flowMode === 'sim') {
+        try {
+            const primary = await packageService.getRechargePackages(iccid, 'pccw');
+            let packages = primary.packages ?? [];
+            if (packages.length === 0) {
+                const fb = await packageService.getRechargePackages(iccid, 'esimaccess');
+                packages = fb.packages ?? [];
+            }
+            if (packages.length === 0) {
+                const omit = await packageService.getRechargePackages(iccid);
+                packages = omit.packages ?? [];
+            }
+            return packages;
+        } catch {
+            return [];
+        }
+    }
+    try {
+        const primary = await packageService.getRechargePackages(iccid, 'esimaccess');
+        let packages = primary.packages ?? [];
+        if (packages.length === 0) {
+            const omit = await packageService.getRechargePackages(iccid);
+            packages = omit.packages ?? [];
+        }
+        return packages;
+    } catch {
+        return [];
+    }
+}
+
+/** Path for deep links — ICCID appended when present (`/top-up` chooser forwards it). */
+function topUpPathFor(flowMode: 'sim' | 'esim', iccidHint: string | null): string {
+    const q = iccidHint ? `?iccid=${encodeURIComponent(iccidHint)}` : '';
+    return `/top-up/${flowMode}${q}`;
+}
+
+const TopUpPage: React.FC<TopUpPageProps> = ({ iccid: initialIccid, mode }) => {
     const { t } = useTranslation();
     const [iccid, setIccid] = useState<string | null>(initialIccid);
-    const [phase, setPhase] = useState<Phase>(
-        initialIccid ? { kind: 'loading' } : { kind: 'idle' },
+    const [phase, setPhase] = useState<Phase>(() =>
+        mode !== null && initialIccid ? { kind: 'loading' } : { kind: 'idle' },
     );
     const [scannerOpen, setScannerOpen] = useState(false);
     const [manualIccid, setManualIccid] = useState('');
@@ -108,26 +147,21 @@ const TopUpPage: React.FC<TopUpPageProps> = ({ iccid: initialIccid }) => {
     const [selectedPackageCode, setSelectedPackageCode] = useState<string | null>(null);
     const [checkoutOpen, setCheckoutOpen] = useState(false);
 
-    // ─── Lookup ICCID + catalogue ────────────────────────────────────────
+    // ─── Lookup ICCID + catalogue (only `/top-up/sim` or `/top-up/esim`) ──
     useEffect(() => {
-        if (!iccid) {
-            setPhase({ kind: 'idle' });
+        if (mode === null || !iccid) {
+            if (mode !== null) setPhase({ kind: 'idle' });
             return;
         }
 
         let cancelled = false;
         setPhase({ kind: 'loading' });
 
-        // Fan out preview + catalogue in parallel — they're independent and
-        // both gate the "ready" state. We don't want to make the user wait
-        // for two sequential round-trips.
         Promise.all([
             activationService.previewByIccid(iccid),
-            // Try without supplier_type first (works for eSIM); fall back
-            // to physical-SIM templates if the catalogue comes back empty.
-            packageService.getRechargePackages(iccid).catch(() => ({ packages: [] })),
+            fetchRechargeCatalogue(iccid, mode),
         ])
-            .then(async ([previewResult, firstAttempt]) => {
+            .then(([previewResult, packages]) => {
                 if (cancelled) return;
 
                 if (previewResult.kind === 'not_found') {
@@ -148,16 +182,6 @@ const TopUpPage: React.FC<TopUpPageProps> = ({ iccid: initialIccid }) => {
                     return;
                 }
 
-                let packages = firstAttempt.packages ?? [];
-                if (packages.length === 0) {
-                    try {
-                        const fallback = await packageService.getRechargePackages(iccid, 'pccw');
-                        packages = fallback.packages ?? [];
-                    } catch {
-                        // Empty catalogue is its own visible state below.
-                    }
-                }
-
                 if (cancelled) return;
                 setPhase({ kind: 'ready', preview: previewResult.data, packages });
             })
@@ -170,7 +194,7 @@ const TopUpPage: React.FC<TopUpPageProps> = ({ iccid: initialIccid }) => {
         return () => {
             cancelled = true;
         };
-    }, [iccid]);
+    }, [iccid, mode]);
 
     const submitManualIccid = useCallback(
         (raw: string) => {
@@ -188,13 +212,25 @@ const TopUpPage: React.FC<TopUpPageProps> = ({ iccid: initialIccid }) => {
         [t],
     );
 
+    if (mode === null) {
+        return (
+            <div className="flex min-h-screen flex-col bg-slate-50">
+                <Header />
+                <main className="mx-auto w-full max-w-md flex-1 px-4 py-6 md:px-6 md:py-10">
+                    <ChooserState iccidHint={iccid} />
+                </main>
+            </div>
+        );
+    }
+
     return (
-        <div className="min-h-screen bg-slate-50 flex flex-col">
+        <div className="flex min-h-screen flex-col bg-slate-50">
             <Header />
 
-            <main className="flex-1 px-4 py-6 md:px-6 md:py-10 max-w-md mx-auto w-full">
+            <main className="mx-auto w-full max-w-md flex-1 px-4 py-6 md:px-6 md:py-10">
                 {phase.kind === 'idle' && (
                     <IdleState
+                        flowMode={mode}
                         manualIccid={manualIccid}
                         manualError={manualError}
                         onManualChange={(v) => {
@@ -265,6 +301,7 @@ const TopUpPage: React.FC<TopUpPageProps> = ({ iccid: initialIccid }) => {
                 {phase.kind === 'ready' && checkoutOpen && (
                     <CheckoutFlow
                         iccid={phase.preview.iccid}
+                        supplierType={mode === 'sim' ? 'pccw' : 'esimaccess'}
                         selected={
                             phase.packages.find((p) => p.packageCode === selectedPackageCode) ??
                             null
@@ -296,23 +333,47 @@ export default TopUpPage;
 
 // ─── Subcomponents ──────────────────────────────────────────────────────
 
+const ChooserState: React.FC<{ iccidHint: string | null }> = ({ iccidHint }) => {
+    const { t } = useTranslation();
+    return (
+        <div>
+            <h1 className="mb-2 text-2xl font-bold text-slate-900">{t('topup_page.idle_title')}</h1>
+            <p className="mb-6 text-sm leading-relaxed text-slate-600">{t('topup_page.picker_intro')}</p>
+            <div className="grid grid-cols-2 gap-2">
+                <a
+                    href={topUpPathFor('sim', iccidHint)}
+                    className="flex min-h-[3.75rem] items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-xs font-semibold leading-snug text-slate-800 shadow-sm transition-colors hover:bg-slate-50 sm:min-h-[4rem] sm:text-[0.8125rem]"
+                >
+                    <Smartphone className="h-4 w-4 shrink-0 text-brand-orange" aria-hidden />
+                    {t('topup_page.picker_card_sim')}
+                </a>
+                <a
+                    href={topUpPathFor('esim', iccidHint)}
+                    className="flex min-h-[3.75rem] items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-xs font-semibold leading-snug text-slate-800 shadow-sm transition-colors hover:bg-slate-50 sm:min-h-[4rem] sm:text-[0.8125rem]"
+                >
+                    <Globe className="h-4 w-4 shrink-0 text-brand-orange" aria-hidden />
+                    {t('topup_page.picker_card_esim')}
+                </a>
+            </div>
+        </div>
+    );
+};
+
 const Header: React.FC = () => {
     const { t } = useTranslation();
     return (
-        <header className="sticky top-0 z-30 border-b border-slate-200 bg-white/90 backdrop-blur-md supports-[backdrop-filter]:bg-white/90">
-            <div className="mx-auto flex h-14 min-h-14 max-w-md items-center justify-between gap-3 px-4 sm:h-16 md:px-6">
-                <a href="/" className="flex min-w-0 max-w-[min(200px,58vw)] shrink-0 items-center" aria-label="EvairSIM home">
+        <header className="sticky top-0 z-10 border-b border-slate-200 bg-white px-4 py-4 md:px-6">
+            <div className="mx-auto flex max-w-md flex-col items-center gap-1 text-center">
+                <a href="/" className="inline-block shrink-0" aria-label="EvairSIM home">
                     <img
                         src="/evairsim-wordmark.png"
                         alt="EvairSIM"
                         width={896}
                         height={228}
-                        className="h-7 w-auto max-h-9 sm:h-8"
+                        className="mx-auto h-7 w-auto max-h-9 object-contain sm:h-8"
                     />
                 </a>
-                <p className="max-w-[11rem] text-right text-[11px] font-medium leading-snug text-slate-500 sm:max-w-[13rem] sm:text-xs">
-                    {t('topup_page.header_tagline')}
-                </p>
+                <p className="text-xs font-medium text-slate-500">{t('topup_page.header_tagline')}</p>
             </div>
         </header>
     );
@@ -329,6 +390,7 @@ const LoadingState: React.FC = () => {
 };
 
 interface IdleProps {
+    flowMode: 'sim' | 'esim';
     manualIccid: string;
     manualError: string;
     onManualChange: (v: string) => void;
@@ -337,6 +399,7 @@ interface IdleProps {
 }
 
 const IdleState: React.FC<IdleProps> = ({
+    flowMode,
     manualIccid,
     manualError,
     onManualChange,
@@ -344,25 +407,11 @@ const IdleState: React.FC<IdleProps> = ({
     onScan,
 }) => {
     const { t } = useTranslation();
+    const bodyKey = flowMode === 'sim' ? 'topup_page.idle_body_sim' : 'topup_page.idle_body_esim';
     return (
         <div>
             <h1 className="mb-2 text-2xl font-bold text-slate-900">{t('topup_page.idle_title')}</h1>
-            <p className="mb-4 text-sm leading-relaxed text-slate-600">{t('topup_page.idle_body')}</p>
-
-            <div className="mb-6 grid grid-cols-2 gap-2">
-                <div className="flex min-h-[3.25rem] items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2.5 shadow-sm">
-                    <Smartphone className="h-4 w-4 shrink-0 text-brand-orange" aria-hidden />
-                    <span className="text-xs font-semibold leading-snug text-slate-800 sm:text-[0.8125rem]">
-                        {t('topup_page.idle_chip_us_sim')}
-                    </span>
-                </div>
-                <div className="flex min-h-[3.25rem] items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2.5 shadow-sm">
-                    <Globe className="h-4 w-4 shrink-0 text-brand-orange" aria-hidden />
-                    <span className="text-xs font-semibold leading-snug text-slate-800 sm:text-[0.8125rem]">
-                        {t('topup_page.idle_chip_global_esim')}
-                    </span>
-                </div>
-            </div>
+            <p className="mb-6 text-sm leading-relaxed text-slate-600">{t(bodyKey)}</p>
 
             <button
                 type="button"
@@ -407,7 +456,7 @@ const IdleState: React.FC<IdleProps> = ({
                 type="button"
                 onClick={onManualSubmit}
                 disabled={manualIccid.length < 15}
-                className="mt-4 flex w-full items-center justify-center gap-2 rounded-xl bg-brand-orange py-3 text-sm font-semibold text-white transition-all active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-40"
+                className="mt-4 flex w-full min-h-[3.25rem] items-center justify-center gap-2 rounded-xl bg-slate-900 py-4 text-base font-bold text-white transition-all active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-40"
             >
                 {t('topup_page.idle_submit')}
                 <ArrowRight className="h-4 w-4 shrink-0" />
@@ -710,6 +759,7 @@ const ReadyState: React.FC<ReadyProps> = ({
 
 interface CheckoutProps {
     iccid: string;
+    supplierType: 'pccw' | 'esimaccess';
     selected: PackageDto | null;
     onClose: () => void;
     onSuccess: () => void;
@@ -721,7 +771,7 @@ type CheckoutStep =
     | { kind: 'paying'; clientSecret: string; rechargeId: number }
     | { kind: 'error'; message: string };
 
-const CheckoutFlow: React.FC<CheckoutProps> = ({ iccid, selected, onClose, onSuccess }) => {
+const CheckoutFlow: React.FC<CheckoutProps> = ({ iccid, selected, supplierType, onClose, onSuccess }) => {
     const [step, setStep] = useState<CheckoutStep>(() =>
         authService.isLoggedIn() ? { kind: 'creating_order' } : { kind: 'auth' },
     );
@@ -738,7 +788,7 @@ const CheckoutFlow: React.FC<CheckoutProps> = ({ iccid, selected, onClose, onSuc
             const order = await esimService.topup({
                 iccid,
                 packageCode: selected.packageCode,
-                supplierType: 'esimaccess',
+                supplierType,
             });
             const session = await esimService.createRechargePayment(order.id);
             setStep({

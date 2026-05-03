@@ -8,7 +8,7 @@
  *   const route = getRoute();
  *   switch (route.kind) {
  *     case 'activate': return <ActivatePage iccid={route.iccid} />;
- *     case 'topup':    return <TopUpPage iccid={route.iccid} />;
+ *     case 'topup':    return <TopUpPage iccid={route.iccid} mode={route.mode} />;
  *     default:         return <CustomerApp />;
  *   }
  *
@@ -29,10 +29,18 @@ export type DeviceCategory = 'phone' | 'camera' | 'iot';
 
 export type LegalSlug = 'terms' | 'privacy' | 'refund';
 
+/** `/top-up` chooser (`null`) vs dedicated physical-SIM (`sim`) vs eSIM (`esim`) flow. */
+export type TopUpRouteMode = null | 'sim' | 'esim';
+
 export type Route =
     | { kind: 'app' }                                  // /, /app, /app/*, anything not matched below
     | { kind: 'activate'; iccid: string | null }       // /activate, /activate?iccid=...
-    | { kind: 'topup'; iccid: string | null }          // /top-up, /top-up?iccid=...
+    | {
+          kind: 'topup';
+          /** `null`: `/top-up` — pick SIM card vs Global eSIM. `sim`/`esim`: `/top-up/sim`, `/top-up/esim`. */
+          mode: TopUpRouteMode;
+          iccid: string | null;
+      }
     | { kind: 'marketing' }                            // /welcome (Phase 3 apex landing page)
     | { kind: 'marketingPreview' }                   // /welcome-preview — layout redesign draft (not live)
     | { kind: 'device'; category: DeviceCategory }     // /sim/phone, /sim/camera, /sim/iot (Phase 2 SEO)
@@ -81,7 +89,11 @@ export function getRoute(): Route {
     }
 
     if (path === '/top-up' || path.startsWith('/top-up/')) {
-        return { kind: 'topup', iccid: extractIccidFromQuery() };
+        const segments = path.split('/').filter(Boolean);
+        let mode: TopUpRouteMode = null;
+        if (segments[1] === 'sim') mode = 'sim';
+        else if (segments[1] === 'esim') mode = 'esim';
+        return { kind: 'topup', mode, iccid: extractIccidFromQuery() };
     }
 
     if (path === '/welcome-preview') {

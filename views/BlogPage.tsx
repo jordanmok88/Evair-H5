@@ -49,9 +49,9 @@ const BlogPage: React.FC<BlogPageProps> = ({ slug }) => {
         } else {
             applyPageSeo({
                 path: '/blog',
-                title: 'Evair Blog — Travel eSIMs, US SIMs, IoT',
+                title: 'Evair Blog — Travel eSIMs, SIM cards, IoT',
                 description:
-                    'Honest guides on travel eSIMs, US SIMs, IoT data plans, and how to actually save money on mobile data.',
+                    'Honest guides on travel eSIMs, SIM card data plans, IoT setups, and how to actually save money on mobile data.',
             });
         }
     }, [post]);

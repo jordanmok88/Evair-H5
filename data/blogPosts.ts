@@ -44,7 +44,7 @@ export interface BlogPost {
 
 export const BLOG_TAGS: { key: BlogTag; label: string }[] = [
     { key: 'travel-esim', label: 'Travel eSIM' },
-    { key: 'us-sim', label: 'US SIM' },
+    { key: 'us-sim', label: 'SIM card' },
     { key: 'iot', label: 'IoT' },
     { key: 'camera', label: 'Cameras' },
     { key: 'comparisons', label: 'Comparisons' },
@@ -80,7 +80,7 @@ export const BLOG_POSTS: BlogPost[] = [
             { type: 'h2', text: 'Option 3: Evair Japan eSIM' },
             {
                 type: 'p',
-                text: 'From $4.99 for 1 GB / 7 days, scaling to ~$2/GB on the larger packs. Connects to NTT DOCOMO, SoftBank, or KDDI depending on which has the strongest signal where you are — meaningful in rural areas. The same Evair app that holds your eSIMs also holds your US SIM if you have one, so you have one place for everything.',
+                text: 'From $4.99 for 1 GB / 7 days, scaling to ~$2/GB on the larger packs. Connects to NTT DOCOMO, SoftBank, or KDDI depending on which has the strongest signal where you are — meaningful in rural areas. The same Evair app that holds your eSIMs also holds your SIM card plan if you have one, so you have one place for everything.',
             },
             { type: 'h2', text: 'Option 4: T-Mobile Magenta international roaming' },
             {

@@ -426,7 +426,7 @@ const MarketingPageRedesignPreview: React.FC = () => {
                             ]}
                         />
                         <FooterColumn
-                            title="US SIMs"
+                            title="SIM cards"
                             links={[
                                 { label: t('marketing.footer_link_phone'), href: '/sim/phone' },
                                 { label: 'Security & trail cameras', href: '/sim/camera' },

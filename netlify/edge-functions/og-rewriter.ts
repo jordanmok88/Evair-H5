@@ -143,7 +143,7 @@ function resolveMeta(pathname: string): OgMeta | null {
         return {
             title: 'Mobile & tablet SIM cards — EvairSIM',
             description:
-                'Honest US SIM cards for mobiles, tablets, hotspots, and laptops. 5G up to 650 Mbps; 9 GB high-speed then 10 Mbps. Plug-and-play APN.',
+                'Honest SIM cards for mobiles, tablets, hotspots, and laptops. 5G up to 650 Mbps; 9 GB high-speed then 10 Mbps. Plug-and-play APN.',
             type: 'website',
         };
     }
@@ -178,9 +178,9 @@ function helpIndexMeta(): OgMeta {
 
 function blogIndexMeta(): OgMeta {
     return {
-        title: 'EvairSIM Blog — Travel eSIMs, US SIMs, IoT',
+        title: 'EvairSIM Blog — Travel eSIMs, SIM cards, IoT',
         description:
-            'Honest guides on travel eSIMs, US SIMs, IoT data plans, and how to actually save money on mobile data.',
+            'Honest guides on travel eSIMs, SIM card data plans, IoT setups, and how to actually save money on mobile data.',
         type: 'website',
     };
 }

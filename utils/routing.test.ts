@@ -72,4 +72,22 @@ describe('getRoute', () => {
         mockLocation({ pathname: '/legal/terms' });
         expect(getRoute()).toEqual({ kind: 'legal', slug: 'terms' });
     });
+
+    it('parses top-up chooser vs sim vs esim', () => {
+        mockLocation({ pathname: '/top-up' });
+        expect(getRoute()).toEqual({ kind: 'topup', mode: null, iccid: null });
+
+        mockLocation({
+            pathname: '/top-up/sim',
+            search: '?iccid=89014103211118510720',
+        });
+        expect(getRoute()).toEqual({
+            kind: 'topup',
+            mode: 'sim',
+            iccid: '89014103211118510720',
+        });
+
+        mockLocation({ pathname: '/top-up/esim' });
+        expect(getRoute()).toEqual({ kind: 'topup', mode: 'esim', iccid: null });
+    });
 });

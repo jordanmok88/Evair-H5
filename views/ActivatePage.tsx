@@ -280,7 +280,7 @@ const IdleState: React.FC<IdleProps> = ({
             <button
                 type="button"
                 onClick={onScan}
-                className="mb-4 flex w-full items-center justify-center gap-2 rounded-xl bg-brand-orange py-4 text-base font-bold text-white shadow-lg shadow-orange-500/20 transition-all active:scale-[0.98]"
+                className="mb-4 flex w-full min-h-[3.25rem] items-center justify-center gap-2 rounded-xl bg-brand-orange py-4 text-base font-bold text-white shadow-lg shadow-orange-500/20 transition-all active:scale-[0.98]"
             >
                 <ScanLine className="h-5 w-5" />
                 {t('activate.scan_barcode_cta')}
@@ -322,7 +322,7 @@ const IdleState: React.FC<IdleProps> = ({
                 type="button"
                 onClick={onManualSubmit}
                 disabled={manualIccid.length < 15}
-                className="mt-4 flex w-full items-center justify-center gap-2 rounded-xl bg-slate-900 py-3 text-sm font-semibold text-white transition-all active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-40"
+                className="mt-4 flex w-full min-h-[3.25rem] items-center justify-center gap-2 rounded-xl bg-slate-900 py-4 text-base font-bold text-white transition-all active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-40"
             >
                 {t('activate.idle_lookup_sim')}
                 <ArrowRight className="h-4 w-4" />
