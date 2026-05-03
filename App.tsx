@@ -143,7 +143,7 @@ function App() {
     if (!bootComplete) return null;
     if (route.kind === 'apiTest') return <ApiTestPage />;
     if (route.kind === 'activate') return <ActivatePage iccid={route.iccid} />;
-    if (route.kind === 'topup') return <TopUpPage iccid={route.iccid} mode={route.mode} />;
+    if (route.kind === 'topup') return <TopUpPage iccid={route.iccid} initialTab={route.tab} />;
     if (route.kind === 'marketingPreview') return <MarketingPageRedesignPreview />;
     if (route.kind === 'marketing') return <MarketingPage />;
     if (route.kind === 'device') return <DeviceLandingPage category={route.category} />;

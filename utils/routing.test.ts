@@ -73,21 +73,36 @@ describe('getRoute', () => {
         expect(getRoute()).toEqual({ kind: 'legal', slug: 'terms' });
     });
 
-    it('parses top-up chooser vs sim vs esim', () => {
+    it('parses top-up tab defaults to sim and honours ?tab=', () => {
         mockLocation({ pathname: '/top-up' });
-        expect(getRoute()).toEqual({ kind: 'topup', mode: null, iccid: null });
+        expect(getRoute()).toEqual({ kind: 'topup', tab: 'sim', iccid: null });
 
+        mockLocation({ pathname: '/top-up', search: '?tab=esim' });
+        expect(getRoute()).toEqual({ kind: 'topup', tab: 'esim', iccid: null });
+
+        mockLocation({ pathname: '/top-up', search: '?tab=oops' });
+        expect(getRoute()).toEqual({ kind: 'topup', tab: 'sim', iccid: null });
+    });
+
+    it('parses legacy /top-up/sim and /top-up/esim paths (tab overrides query)', () => {
         mockLocation({
             pathname: '/top-up/sim',
             search: '?iccid=89014103211118510720',
         });
         expect(getRoute()).toEqual({
             kind: 'topup',
-            mode: 'sim',
+            tab: 'sim',
             iccid: '89014103211118510720',
         });
 
         mockLocation({ pathname: '/top-up/esim' });
-        expect(getRoute()).toEqual({ kind: 'topup', mode: 'esim', iccid: null });
+        expect(getRoute()).toEqual({ kind: 'topup', tab: 'esim', iccid: null });
+
+        mockLocation({ pathname: '/top-up/sim', search: '?tab=esim' });
+        expect(getRoute()).toEqual({
+            kind: 'topup',
+            tab: 'sim',
+            iccid: null,
+        });
     });
 });

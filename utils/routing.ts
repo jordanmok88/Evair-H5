@@ -8,7 +8,7 @@
  *   const route = getRoute();
  *   switch (route.kind) {
  *     case 'activate': return <ActivatePage iccid={route.iccid} />;
- *     case 'topup':    return <TopUpPage iccid={route.iccid} mode={route.mode} />;
+ *     case 'topup':    return <TopUpPage iccid={route.iccid} initialTab={route.tab} />;
  *     default:         return <CustomerApp />;
  *   }
  *
@@ -29,16 +29,16 @@ export type DeviceCategory = 'phone' | 'camera' | 'iot';
 
 export type LegalSlug = 'terms' | 'privacy' | 'refund';
 
-/** `/top-up` chooser (`null`) vs dedicated physical-SIM (`sim`) vs eSIM (`esim`) flow. */
-export type TopUpRouteMode = null | 'sim' | 'esim';
+/** Top-up segmented control: SIM card (plastic) vs eSIM (travel / account lines). */
+export type TopUpTab = 'sim' | 'esim';
 
 export type Route =
     | { kind: 'app' }                                  // /, /app, /app/*, anything not matched below
     | { kind: 'activate'; iccid: string | null }       // /activate, /activate?iccid=...
     | {
           kind: 'topup';
-          /** `null`: `/top-up` — pick SIM card vs Global eSIM. `sim`/`esim`: `/top-up/sim`, `/top-up/esim`. */
-          mode: TopUpRouteMode;
+          /** From `?tab=esim` or legacy `/top-up/esim`; default SIM. */
+          tab: TopUpTab;
           iccid: string | null;
       }
     | { kind: 'marketing' }                            // /welcome (Phase 3 apex landing page)
@@ -89,11 +89,11 @@ export function getRoute(): Route {
     }
 
     if (path === '/top-up' || path.startsWith('/top-up/')) {
-        const segments = path.split('/').filter(Boolean);
-        let mode: TopUpRouteMode = null;
-        if (segments[1] === 'sim') mode = 'sim';
-        else if (segments[1] === 'esim') mode = 'esim';
-        return { kind: 'topup', mode, iccid: extractIccidFromQuery() };
+        return {
+            kind: 'topup',
+            tab: resolveTopUpTab(path),
+            iccid: extractIccidFromQuery(),
+        };
     }
 
     if (path === '/welcome-preview') {
@@ -183,7 +183,7 @@ function sanitiseSlug(rest: string): string {
  * Pull `?iccid=...` from the current URL and normalise it.
  *
  * Returns `null` when the param is missing, empty, or fails the loose ICCID
- * shape check (15-22 ASCII alphanumerics — matches the Laravel route
+ * shape check (15–22 ASCII alphanumerics — matches the Laravel route
  * constraint). Callers should treat `null` as "ask the user to scan or type
  * their ICCID" rather than as an error.
  */
@@ -209,5 +209,37 @@ function extractIccidFromQuery(): string | null {
         // URLSearchParams can throw on truly malformed URLs — fail silently
         // and let the page render its empty-state UI.
         return null;
+    }
+}
+
+/** Path segment overrides query: `/top-up/esim` works without `?tab=`. Sync tab after pushState/popstate in TopUpPage. */
+export function getTopUpTabFromLocation(pathname?: string): TopUpTab {
+    if (typeof window === 'undefined') {
+        return 'sim';
+    }
+    const path = pathname ?? window.location.pathname;
+    const segments = path.split('/').filter(Boolean);
+    if (segments[1] === 'esim') return 'esim';
+    if (segments[1] === 'sim') return 'sim';
+    try {
+        const raw = new URLSearchParams(window.location.search).get('tab');
+        return raw === 'esim' ? 'esim' : 'sim';
+    } catch {
+        return 'sim';
+    }
+}
+
+function resolveTopUpTab(pathname: string): TopUpTab {
+    if (typeof window === 'undefined') {
+        return 'sim';
+    }
+    const segments = pathname.split('/').filter(Boolean);
+    if (segments[1] === 'esim') return 'esim';
+    if (segments[1] === 'sim') return 'sim';
+    try {
+        const raw = new URLSearchParams(window.location.search).get('tab');
+        return raw === 'esim' ? 'esim' : 'sim';
+    } catch {
+        return 'sim';
     }
 }

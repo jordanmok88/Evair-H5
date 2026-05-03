@@ -434,7 +434,7 @@ export const HELP_ARTICLES: HelpArticle[] = [
             {
                 type: 'note',
                 tone: 'tip',
-                text: 'You can open evairdigital.com/top-up, choose SIM Card or Global eSIM, or link directly to evairdigital.com/top-up/sim?iccid=YOUR_ICCID for a plastic SIM fleet.',
+                text: 'You can open evairdigital.com/top-up (SIM Card tab is the default — use optional ?tab=esim for travel eSIM), or link directly to evairdigital.com/top-up?iccid=YOUR_ICCID for plastic SIM fleets.',
             },
         ],
     },

@@ -7,7 +7,7 @@
  * either from:
  *   - The "Top up" CTA inside the customer app (`/app/my-sims`).
  *   - A direct deep-link printed on the SIM card / inside-the-box
- *     insert (`evairdigital.com/top-up?iccid=…` — pick **SIM Card** or **Global eSIM** on `/top-up`, then continue on `/top-up/sim` or `/top-up/esim`).
+ *     insert (`evairdigital.com/top-up?iccid=…`; **SIM Card** tab is default, **eSIM** tab optional via `?tab=esim` or bookmark `/top-up/esim`).
  *
  * Flow:
  *   1. Read `iccid` from the URL (or ask the user to scan / type).
@@ -63,14 +63,22 @@ import {
     authService,
     esimService,
     packageService,
+    userService,
     type ActivationPreviewData,
 } from '../services/api';
-import type { PackageDto } from '../services/api/types';
-import type { TopUpRouteMode } from '../utils/routing';
+import type { PackageDto, UserSimDto } from '../services/api/types';
+import { getTopUpTabFromLocation, type TopUpTab } from '../utils/routing';
+
+/** Laravel PCCW supplier id — same rule as App.tsx bound-SIM grouping. */
+const LARAVEL_SUPPLIER_ID_PCCW = 1;
+
+function isAccountEsimBinding(row: UserSimDto): boolean {
+    return row.sim.supplierId !== LARAVEL_SUPPLIER_ID_PCCW;
+}
 
 interface TopUpPageProps {
     iccid: string | null;
-    mode: TopUpRouteMode;
+    initialTab: TopUpTab;
 }
 
 /**
@@ -95,8 +103,11 @@ type Phase =
 
 const ICCID_REGEX = /^[0-9A-Za-z]{15,22}$/;
 
-async function fetchRechargeCatalogue(iccid: string, flowMode: Exclude<TopUpRouteMode, null>): Promise<PackageDto[]> {
-    if (flowMode === 'sim') {
+async function fetchRechargeCatalogue(
+    iccid: string,
+    rechargeKind: 'sim' | 'esim',
+): Promise<PackageDto[]> {
+    if (rechargeKind === 'sim') {
         try {
             const primary = await packageService.getRechargePackages(iccid, 'pccw');
             let packages = primary.packages ?? [];
@@ -126,77 +137,209 @@ async function fetchRechargeCatalogue(iccid: string, flowMode: Exclude<TopUpRout
     }
 }
 
-/** Path for deep links — ICCID appended when present (`/top-up` chooser forwards it). */
-function topUpPathFor(flowMode: 'sim' | 'esim', iccidHint: string | null): string {
-    const q = iccidHint ? `?iccid=${encodeURIComponent(iccidHint)}` : '';
-    return `/top-up/${flowMode}${q}`;
+function formatMaskedIccid(full: string): string {
+    if (full.length <= 8) return full;
+    return `…${full.slice(-8)}`;
 }
 
-const TopUpPage: React.FC<TopUpPageProps> = ({ iccid: initialIccid, mode }) => {
+const TopUpPage: React.FC<TopUpPageProps> = ({ iccid: initialIccid, initialTab }) => {
     const { t } = useTranslation();
-    const [iccid, setIccid] = useState<string | null>(initialIccid);
-    const [phase, setPhase] = useState<Phase>(() =>
-        mode !== null && initialIccid ? { kind: 'loading' } : { kind: 'idle' },
+
+    const [activeTab, setActiveTab] = useState<TopUpTab>(() => initialTab);
+
+    useEffect(() => {
+        const path = window.location.pathname;
+        const m = /^\/top-up\/(sim|esim)\/?$/.exec(path);
+        if (!m) return;
+        const u = new URL(window.location.href);
+        u.pathname = '/top-up';
+        if (m[1] === 'esim') u.searchParams.set('tab', 'esim');
+        else u.searchParams.delete('tab');
+        window.history.replaceState(window.history.state, '', u.toString());
+    }, []);
+
+    useEffect(() => {
+        const onPop = () => setActiveTab(getTopUpTabFromLocation());
+        window.addEventListener('popstate', onPop);
+        return () => window.removeEventListener('popstate', onPop);
+    }, []);
+
+    const navigateTab = useCallback((tab: TopUpTab) => {
+        setActiveTab(tab);
+        const u = new URL(window.location.href);
+        u.pathname = '/top-up';
+        if (tab === 'esim') u.searchParams.set('tab', 'esim');
+        else u.searchParams.delete('tab');
+        window.history.pushState(window.history.state, '', u.toString());
+    }, []);
+
+    const [simIccid, setSimIccid] = useState<string | null>(() => initialIccid);
+    useEffect(() => {
+        setSimIccid(initialIccid);
+    }, [initialIccid]);
+
+    const [simPhase, setSimPhase] = useState<Phase>(() =>
+        initialTab === 'sim' && initialIccid ? { kind: 'loading' } : { kind: 'idle' },
     );
     const [scannerOpen, setScannerOpen] = useState(false);
     const [manualIccid, setManualIccid] = useState('');
     const [manualError, setManualError] = useState('');
+    const [simSelectedPackageCode, setSimSelectedPackageCode] = useState<string | null>(null);
+    const [simCheckoutOpen, setSimCheckoutOpen] = useState(false);
 
-    // Once a SIM is loaded the customer interacts with selection +
-    // checkout state separately from the page-level Phase.
-    const [selectedPackageCode, setSelectedPackageCode] = useState<string | null>(null);
-    const [checkoutOpen, setCheckoutOpen] = useState(false);
+    const [sessionEpoch, setSessionEpoch] = useState(0);
 
-    // ─── Lookup ICCID + catalogue (only `/top-up/sim` or `/top-up/esim`) ──
+    const [esimRows, setEsimRows] = useState<UserSimDto[] | null>(null);
+    const [esimListStatus, setEsimListStatus] = useState<'idle' | 'loading' | 'done' | 'error'>('idle');
+    const [esimListErr, setEsimListErr] = useState<string | null>(null);
+    const [esimIccidSelected, setEsimIccidSelected] = useState<string | null>(null);
+    const [esimPhase, setEsimPhase] = useState<Phase>({ kind: 'idle' });
+    const [manualEsimOpen, setManualEsimOpen] = useState(false);
+    const [manualEsimValue, setManualEsimValue] = useState('');
+    const [manualEsimErr, setManualEsimErr] = useState('');
+    const [esimSelectedPkg, setEsimSelectedPkg] = useState<string | null>(null);
+    const [esimCheckoutOpen, setEsimCheckoutOpen] = useState(false);
+
     useEffect(() => {
-        if (mode === null || !iccid) {
-            if (mode !== null) setPhase({ kind: 'idle' });
+        if (activeTab !== 'esim') {
+            setEsimIccidSelected(null);
+            setEsimPhase({ kind: 'idle' });
+            setEsimCheckoutOpen(false);
+            setEsimSelectedPkg(null);
+        }
+    }, [activeTab]);
+
+    useEffect(() => {
+        if (activeTab !== 'sim') return;
+        if (!simIccid) {
+            setSimPhase({ kind: 'idle' });
             return;
         }
 
         let cancelled = false;
-        setPhase({ kind: 'loading' });
+        setSimPhase({ kind: 'loading' });
 
-        Promise.all([
-            activationService.previewByIccid(iccid),
-            fetchRechargeCatalogue(iccid, mode),
-        ])
+        Promise.all([activationService.previewByIccid(simIccid), fetchRechargeCatalogue(simIccid, 'sim')])
             .then(([previewResult, packages]) => {
                 if (cancelled) return;
 
                 if (previewResult.kind === 'not_found') {
-                    setPhase({ kind: 'not_found' });
+                    setSimPhase({ kind: 'not_found' });
                     return;
                 }
                 if (previewResult.kind === 'error') {
-                    setPhase({ kind: 'error', message: previewResult.message });
+                    setSimPhase({ kind: 'error', message: previewResult.message });
                     return;
                 }
 
                 if (previewResult.data.claimState === 'pending_shipment') {
-                    setPhase({ kind: 'pending_shipment' });
+                    setSimPhase({ kind: 'pending_shipment' });
                     return;
                 }
                 if (previewResult.data.claimState === 'available') {
-                    setPhase({ kind: 'needs_activation' });
+                    setSimPhase({ kind: 'needs_activation' });
                     return;
                 }
 
                 if (cancelled) return;
-                setPhase({ kind: 'ready', preview: previewResult.data, packages });
+                setSimPhase({ kind: 'ready', preview: previewResult.data, packages });
             })
             .catch((err) => {
                 if (cancelled) return;
                 const message = err instanceof Error ? err.message : 'Lookup failed';
-                setPhase({ kind: 'error', message });
+                setSimPhase({ kind: 'error', message });
             });
 
         return () => {
             cancelled = true;
         };
-    }, [iccid, mode]);
+    }, [simIccid, activeTab]);
 
-    const submitManualIccid = useCallback(
+    useEffect(() => {
+        if (activeTab !== 'esim' || !authService.isLoggedIn()) {
+            setEsimListStatus('idle');
+            return;
+        }
+
+        let cancelled = false;
+        setEsimListStatus('loading');
+        setEsimListErr(null);
+        userService
+            .getSims()
+            .then((res) => {
+                if (cancelled) return;
+                const lines = (res.list ?? []).filter(isAccountEsimBinding);
+                setEsimRows(lines);
+                setEsimListStatus('done');
+            })
+            .catch(() => {
+                if (cancelled) return;
+                setEsimListErr('generic');
+                setEsimListStatus('error');
+                setEsimRows(null);
+            });
+
+        return () => {
+            cancelled = true;
+        };
+    }, [activeTab, sessionEpoch]);
+
+    useEffect(() => {
+        if (activeTab !== 'esim' || esimListStatus !== 'done' || !esimRows || esimRows.length !== 1) {
+            return;
+        }
+        setEsimIccidSelected(esimRows[0].sim.iccid);
+    }, [activeTab, esimListStatus, esimRows]);
+
+    useEffect(() => {
+        if (activeTab !== 'esim' || !esimIccidSelected) {
+            if (activeTab === 'esim' && !esimIccidSelected) setEsimPhase({ kind: 'idle' });
+            return;
+        }
+
+        let cancelled = false;
+        setEsimPhase({ kind: 'loading' });
+
+        Promise.all([
+            activationService.previewByIccid(esimIccidSelected),
+            fetchRechargeCatalogue(esimIccidSelected, 'esim'),
+        ])
+            .then(([previewResult, packages]) => {
+                if (cancelled) return;
+
+                if (previewResult.kind === 'not_found') {
+                    setEsimPhase({ kind: 'not_found' });
+                    return;
+                }
+                if (previewResult.kind === 'error') {
+                    setEsimPhase({ kind: 'error', message: previewResult.message });
+                    return;
+                }
+
+                if (previewResult.data.claimState === 'pending_shipment') {
+                    setEsimPhase({ kind: 'pending_shipment' });
+                    return;
+                }
+                if (previewResult.data.claimState === 'available') {
+                    setEsimPhase({ kind: 'needs_activation' });
+                    return;
+                }
+
+                if (cancelled) return;
+                setEsimPhase({ kind: 'ready', preview: previewResult.data, packages });
+            })
+            .catch((err) => {
+                if (cancelled) return;
+                const message = err instanceof Error ? err.message : 'Lookup failed';
+                setEsimPhase({ kind: 'error', message });
+            });
+
+        return () => {
+            cancelled = true;
+        };
+    }, [activeTab, esimIccidSelected]);
+
+    const submitManualIccidSim = useCallback(
         (raw: string) => {
             const cleaned = raw.replace(/[^0-9A-Za-z]/g, '');
             if (!ICCID_REGEX.test(cleaned)) {
@@ -206,155 +349,334 @@ const TopUpPage: React.FC<TopUpPageProps> = ({ iccid: initialIccid, mode }) => {
             setManualError('');
             const url = new URL(window.location.href);
             url.searchParams.set('iccid', cleaned);
-            window.history.replaceState(null, '', url.toString());
-            setIccid(cleaned);
+            window.history.replaceState(window.history.state, '', url.toString());
+            setSimIccid(cleaned);
         },
         [t],
     );
 
-    if (mode === null) {
-        return (
-            <div className="flex min-h-screen flex-col bg-slate-50">
-                <Header />
-                <main className="mx-auto w-full max-w-md flex-1 px-4 py-6 md:px-6 md:py-10">
-                    <ChooserState iccidHint={iccid} />
-                </main>
-            </div>
-        );
-    }
+    const submitManualIccidEsim = useCallback(
+        (raw: string) => {
+            const cleaned = raw.replace(/[^0-9A-Za-z]/g, '');
+            if (!ICCID_REGEX.test(cleaned)) {
+                setManualEsimErr(t('topup_page.idle_iccid_invalid'));
+                return;
+            }
+            setManualEsimErr('');
+            setEsimIccidSelected(cleaned);
+            setManualEsimOpen(false);
+        },
+        [t],
+    );
+
+    const onSessionChanged = () => setSessionEpoch((e) => e + 1);
 
     return (
         <div className="flex min-h-screen flex-col bg-slate-50">
             <Header />
 
             <main className="mx-auto w-full max-w-md flex-1 px-4 py-6 md:px-6 md:py-10">
-                {phase.kind === 'idle' && (
-                    <IdleState
-                        flowMode={mode}
-                        manualIccid={manualIccid}
-                        manualError={manualError}
-                        onManualChange={(v) => {
-                            setManualIccid(v);
-                            if (manualError) setManualError('');
-                        }}
-                        onManualSubmit={() => submitManualIccid(manualIccid)}
-                        onScan={() => setScannerOpen(true)}
-                    />
-                )}
+                <TopUpTabBar activeTab={activeTab} onNavigate={navigateTab} />
 
-                {phase.kind === 'loading' && <LoadingState />}
+                {activeTab === 'sim' && (
+                    <>
+                        {simPhase.kind === 'idle' && (
+                            <IdleState
+                                manualIccid={manualIccid}
+                                manualError={manualError}
+                                onManualChange={(v) => {
+                                    setManualIccid(v);
+                                    if (manualError) setManualError('');
+                                }}
+                                onManualSubmit={() => submitManualIccidSim(manualIccid)}
+                                onScan={() => setScannerOpen(true)}
+                            />
+                        )}
 
-                {phase.kind === 'not_found' && (
-                    <NotFoundState
-                        iccid={iccid}
-                        onRetry={() => {
-                            setIccid(null);
-                            setManualIccid('');
-                            setPhase({ kind: 'idle' });
-                            const url = new URL(window.location.href);
-                            url.searchParams.delete('iccid');
-                            window.history.replaceState(null, '', url.toString());
-                        }}
-                    />
-                )}
+                        {simPhase.kind === 'loading' && <LoadingState />}
 
-                {phase.kind === 'pending_shipment' && (
-                    <ShippedSoonState iccid={iccid ?? ''} />
-                )}
+                        {simPhase.kind === 'not_found' && (
+                            <NotFoundState
+                                iccid={simIccid}
+                                onRetry={() => {
+                                    setSimIccid(null);
+                                    setManualIccid('');
+                                    setSimPhase({ kind: 'idle' });
+                                    const url = new URL(window.location.href);
+                                    url.searchParams.delete('iccid');
+                                    window.history.replaceState(window.history.state, '', url.toString());
+                                }}
+                            />
+                        )}
 
-                {phase.kind === 'needs_activation' && (
-                    <NeedsActivationState iccid={iccid ?? ''} />
-                )}
+                        {simPhase.kind === 'pending_shipment' && (
+                            <ShippedSoonState iccid={simIccid ?? ''} />
+                        )}
 
-                {phase.kind === 'error' && (
-                    <ErrorBox
-                        icon={<AlertCircle className="w-7 h-7 text-red-500" />}
-                        title="Something went wrong"
-                        body={<p>{phase.message}</p>}
-                        primaryCta={{
-                            label: 'Try again',
-                            onClick: () => {
-                                // Force the lookup effect to re-run. We bounce
-                                // through `null` so the state actually changes
-                                // and React schedules the dependency-driven
-                                // rerun even when the ICCID is unchanged.
-                                if (iccid) {
-                                    const current = iccid;
-                                    setIccid(null);
-                                    setTimeout(() => setIccid(current), 0);
+                        {simPhase.kind === 'needs_activation' && (
+                            <NeedsActivationState iccid={simIccid ?? ''} />
+                        )}
+
+                        {simPhase.kind === 'error' && (
+                            <ErrorBox
+                                icon={<AlertCircle className="w-7 h-7 text-red-500" />}
+                                title="Something went wrong"
+                                body={<p>{simPhase.message}</p>}
+                                primaryCta={{
+                                    label: 'Try again',
+                                    onClick: () => {
+                                        if (simIccid) {
+                                            const current = simIccid;
+                                            setSimIccid(null);
+                                            setTimeout(() => setSimIccid(current), 0);
+                                        }
+                                    },
+                                }}
+                            />
+                        )}
+
+                        {simPhase.kind === 'ready' && (
+                            <ReadyState
+                                preview={simPhase.preview}
+                                packages={simPhase.packages}
+                                selectedPackageCode={simSelectedPackageCode}
+                                onSelectPackage={setSimSelectedPackageCode}
+                                onContinue={() => setSimCheckoutOpen(true)}
+                            />
+                        )}
+
+                        {simPhase.kind === 'ready' && simCheckoutOpen && (
+                            <CheckoutFlow
+                                iccid={simPhase.preview.iccid}
+                                supplierType="pccw"
+                                selected={
+                                    simPhase.packages.find((p) => p.packageCode === simSelectedPackageCode) ??
+                                    null
                                 }
-                            },
-                        }}
-                    />
+                                onClose={() => setSimCheckoutOpen(false)}
+                                onSuccess={() => {
+                                    window.location.href = `/app/my-sims?iccid=${encodeURIComponent(simPhase.preview.iccid)}`;
+                                }}
+                            />
+                        )}
+                    </>
                 )}
 
-                {phase.kind === 'ready' && (
-                    <ReadyState
-                        preview={phase.preview}
-                        packages={phase.packages}
-                        selectedPackageCode={selectedPackageCode}
-                        onSelectPackage={setSelectedPackageCode}
-                        onContinue={() => setCheckoutOpen(true)}
-                    />
-                )}
+                {activeTab === 'esim' && (
+                    <>
+                        {!authService.isLoggedIn() && (
+                            <EsimGuestIntro onSessionChanged={onSessionChanged} />
+                        )}
 
-                {phase.kind === 'ready' && checkoutOpen && (
-                    <CheckoutFlow
-                        iccid={phase.preview.iccid}
-                        supplierType={mode === 'sim' ? 'pccw' : 'esimaccess'}
-                        selected={
-                            phase.packages.find((p) => p.packageCode === selectedPackageCode) ??
-                            null
-                        }
-                        onClose={() => setCheckoutOpen(false)}
-                        onSuccess={() => {
-                            // Redirect into the customer app where the new
-                            // package will appear on the SIM detail card.
-                            window.location.href = `/app/my-sims?iccid=${encodeURIComponent(phase.preview.iccid)}`;
-                        }}
-                    />
+                        {authService.isLoggedIn() && esimListStatus === 'loading' && <LoadingState />}
+
+                        {authService.isLoggedIn() && esimListStatus === 'error' && esimListErr && (
+                            <ErrorBox
+                                icon={<AlertCircle className="w-7 h-7 text-red-500" />}
+                                title={t('topup_page.esim_list_err_title')}
+                                body={<p>{t('topup_page.esim_list_fetch_failed')}</p>}
+                                primaryCta={{
+                                    label: t('topup_page.esim_retry'),
+                                    onClick: onSessionChanged,
+                                }}
+                            />
+                        )}
+
+                        {authService.isLoggedIn() && esimListStatus === 'done' && esimRows && esimRows.length === 0 && (
+                            <section className="space-y-6">
+                                <EsimEmptyLoggedIn browseHref="/travel-esim" />
+                                <EsimManualIccidCollapsible
+                                    open={manualEsimOpen}
+                                    onToggle={() => setManualEsimOpen((v) => !v)}
+                                    value={manualEsimValue}
+                                    onChange={(v) => {
+                                        setManualEsimValue(v);
+                                        if (manualEsimErr) setManualEsimErr('');
+                                    }}
+                                    error={manualEsimErr}
+                                    onSubmit={() => submitManualIccidEsim(manualEsimValue)}
+                                />
+                            </section>
+                        )}
+
+                        {authService.isLoggedIn() &&
+                            esimListStatus === 'done' &&
+                            esimRows &&
+                            esimRows.length > 0 &&
+                            !esimIccidSelected && (
+                                <section className="space-y-4">
+                                    <h1 className="text-2xl font-bold text-slate-900">{t('topup_page.esim_pick_title')}</h1>
+                                    <p className="text-sm leading-relaxed text-slate-600">
+                                        {t('topup_page.esim_pick_hint')}
+                                    </p>
+                                    <div className="space-y-2">
+                                        {esimRows.map((row) => {
+                                            const id = row.sim.iccid;
+                                            return (
+                                                <button
+                                                    key={row.id}
+                                                    type="button"
+                                                    className="flex w-full min-h-[3.25rem] items-center justify-between rounded-2xl border border-slate-200 bg-white px-4 py-3 text-left text-sm shadow-sm transition-colors hover:bg-slate-50"
+                                                    onClick={() => setEsimIccidSelected(id)}
+                                                >
+                                                    <span className="font-mono text-xs text-slate-800">
+                                                        {formatMaskedIccid(id)}
+                                                    </span>
+                                                    <span className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+                                                        {row.sim.status === 'inactive'
+                                                            ? t('topup_page.esim_status_inactive')
+                                                            : t('topup_page.esim_status_active')}
+                                                    </span>
+                                                </button>
+                                            );
+                                        })}
+                                    </div>
+                                    <EsimManualIccidCollapsible
+                                        open={manualEsimOpen}
+                                        onToggle={() => setManualEsimOpen((v) => !v)}
+                                        value={manualEsimValue}
+                                        onChange={(v) => {
+                                            setManualEsimValue(v);
+                                            if (manualEsimErr) setManualEsimErr('');
+                                        }}
+                                        error={manualEsimErr}
+                                        onSubmit={() => submitManualIccidEsim(manualEsimValue)}
+                                    />
+                                </section>
+                            )}
+
+                        {esimIccidSelected && esimPhase.kind === 'loading' && <LoadingState />}
+
+                        {esimIccidSelected && esimPhase.kind === 'not_found' && (
+                            <NotFoundState
+                                iccid={esimIccidSelected}
+                                onRetry={() => {
+                                    setEsimIccidSelected(null);
+                                    setEsimPhase({ kind: 'idle' });
+                                }}
+                            />
+                        )}
+
+                        {esimIccidSelected && esimPhase.kind === 'pending_shipment' && (
+                            <ShippedSoonState iccid={esimIccidSelected} />
+                        )}
+
+                        {esimIccidSelected && esimPhase.kind === 'needs_activation' && (
+                            <NeedsActivationState iccid={esimIccidSelected} />
+                        )}
+
+                        {esimIccidSelected && esimPhase.kind === 'error' && (
+                            <ErrorBox
+                                icon={<AlertCircle className="w-7 h-7 text-red-500" />}
+                                title="Something went wrong"
+                                body={<p>{esimPhase.message}</p>}
+                                primaryCta={{
+                                    label: 'Try again',
+                                    onClick: () => {
+                                        const cur = esimIccidSelected;
+                                        setEsimIccidSelected(null);
+                                        setTimeout(() => setEsimIccidSelected(cur), 0);
+                                    },
+                                }}
+                            />
+                        )}
+
+                        {esimIccidSelected && esimPhase.kind === 'ready' && (
+                            <>
+                                {esimRows && esimRows.length > 1 && (
+                                    <button
+                                        type="button"
+                                        className="mb-4 text-sm font-semibold text-brand-orange"
+                                        onClick={() => {
+                                            setEsimIccidSelected(null);
+                                            setEsimPhase({ kind: 'idle' });
+                                            setEsimSelectedPkg(null);
+                                            setEsimCheckoutOpen(false);
+                                        }}
+                                    >
+                                        ← {t('topup_page.esim_change_line')}
+                                    </button>
+                                )}
+                                <ReadyState
+                                    preview={esimPhase.preview}
+                                    packages={esimPhase.packages}
+                                    selectedPackageCode={esimSelectedPkg}
+                                    onSelectPackage={setEsimSelectedPkg}
+                                    onContinue={() => setEsimCheckoutOpen(true)}
+                                />
+
+                                {esimCheckoutOpen && (
+                                    <CheckoutFlow
+                                        iccid={esimPhase.preview.iccid}
+                                        supplierType="esimaccess"
+                                        selected={
+                                            esimPhase.packages.find((p) => p.packageCode === esimSelectedPkg) ??
+                                            null
+                                        }
+                                        onClose={() => setEsimCheckoutOpen(false)}
+                                        onSuccess={() => {
+                                            window.location.href = `/app/my-sims?iccid=${encodeURIComponent(esimPhase.preview.iccid)}`;
+                                        }}
+                                    />
+                                )}
+                            </>
+                        )}
+                    </>
                 )}
             </main>
 
             <BarcodeScanner
-                open={scannerOpen}
+                open={activeTab === 'sim' && scannerOpen}
                 onClose={() => setScannerOpen(false)}
                 onDetected={(value) => {
                     setScannerOpen(false);
                     setManualIccid(value);
-                    submitManualIccid(value);
+                    submitManualIccidSim(value);
                 }}
             />
         </div>
     );
 };
 
-export default TopUpPage;
-
 // ─── Subcomponents ──────────────────────────────────────────────────────
 
-const ChooserState: React.FC<{ iccidHint: string | null }> = ({ iccidHint }) => {
+const TopUpTabBar: React.FC<{ activeTab: TopUpTab; onNavigate: (tab: TopUpTab) => void }> = ({
+    activeTab,
+    onNavigate,
+}) => {
     const { t } = useTranslation();
+    const tabBtn =
+        'flex flex-1 min-h-[2.875rem] items-center justify-center gap-2 rounded-lg text-sm font-bold transition-all';
     return (
-        <div>
-            <h1 className="mb-2 text-2xl font-bold text-slate-900">{t('topup_page.idle_title')}</h1>
-            <p className="mb-6 text-sm leading-relaxed text-slate-600">{t('topup_page.picker_intro')}</p>
-            <div className="grid grid-cols-2 gap-2">
-                <a
-                    href={topUpPathFor('sim', iccidHint)}
-                    className="flex min-h-[3.75rem] items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-xs font-semibold leading-snug text-slate-800 shadow-sm transition-colors hover:bg-slate-50 sm:min-h-[4rem] sm:text-[0.8125rem]"
-                >
-                    <Smartphone className="h-4 w-4 shrink-0 text-brand-orange" aria-hidden />
-                    {t('topup_page.picker_card_sim')}
-                </a>
-                <a
-                    href={topUpPathFor('esim', iccidHint)}
-                    className="flex min-h-[3.75rem] items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-xs font-semibold leading-snug text-slate-800 shadow-sm transition-colors hover:bg-slate-50 sm:min-h-[4rem] sm:text-[0.8125rem]"
-                >
-                    <Globe className="h-4 w-4 shrink-0 text-brand-orange" aria-hidden />
-                    {t('topup_page.picker_card_esim')}
-                </a>
-            </div>
+        <div
+            className="mb-8 flex gap-1 rounded-xl border border-slate-200 bg-slate-100 p-1 shadow-inner"
+            role="tablist"
+            aria-label={t('topup_page.tabs_aria')}
+        >
+            <button
+                type="button"
+                role="tab"
+                aria-selected={activeTab === 'sim'}
+                className={`${tabBtn} ${
+                    activeTab === 'sim' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500'
+                }`}
+                onClick={() => onNavigate('sim')}
+            >
+                <Smartphone className="h-4 w-4 shrink-0 text-brand-orange" aria-hidden />
+                {t('topup_page.tab_sim')}
+            </button>
+            <button
+                type="button"
+                role="tab"
+                aria-selected={activeTab === 'esim'}
+                className={`${tabBtn} ${
+                    activeTab === 'esim' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500'
+                }`}
+                onClick={() => onNavigate('esim')}
+            >
+                <Globe className="h-4 w-4 shrink-0 text-brand-orange" aria-hidden />
+                {t('topup_page.tab_esim')}
+            </button>
         </div>
     );
 };
@@ -390,7 +712,6 @@ const LoadingState: React.FC = () => {
 };
 
 interface IdleProps {
-    flowMode: 'sim' | 'esim';
     manualIccid: string;
     manualError: string;
     onManualChange: (v: string) => void;
@@ -399,7 +720,6 @@ interface IdleProps {
 }
 
 const IdleState: React.FC<IdleProps> = ({
-    flowMode,
     manualIccid,
     manualError,
     onManualChange,
@@ -407,11 +727,10 @@ const IdleState: React.FC<IdleProps> = ({
     onScan,
 }) => {
     const { t } = useTranslation();
-    const bodyKey = flowMode === 'sim' ? 'topup_page.idle_body_sim' : 'topup_page.idle_body_esim';
     return (
         <div>
             <h1 className="mb-2 text-2xl font-bold text-slate-900">{t('topup_page.idle_title')}</h1>
-            <p className="mb-6 text-sm leading-relaxed text-slate-600">{t(bodyKey)}</p>
+            <p className="mb-6 text-sm leading-relaxed text-slate-600">{t('topup_page.idle_body_sim')}</p>
 
             <button
                 type="button"
@@ -881,10 +1200,18 @@ const CheckoutFlow: React.FC<CheckoutProps> = ({ iccid, selected, supplierType, 
 // ─── Inline auth form ───────────────────────────────────────────────────
 
 const InlineAuthForm: React.FC<{
-    plan: PackageDto;
+    /** When set (checkout), summary card lists the picked plan — guest eSIM passes `null`. */
+    plan?: PackageDto | null;
+    dismissible?: boolean;
     onAuthenticated: () => void;
-    onCancel: () => void;
-}> = ({ plan, onAuthenticated, onCancel }) => {
+    onCancel?: () => void;
+}> = ({
+    plan = null,
+    dismissible = true,
+    onAuthenticated,
+    onCancel,
+}) => {
+    const { t } = useTranslation();
     const [mode, setMode] = useState<'register' | 'login'>('register');
     const [name, setName] = useState('');
     const [email, setEmail] = useState('');
@@ -898,7 +1225,7 @@ const InlineAuthForm: React.FC<{
         setSubmitError('');
 
         if (mode === 'register' && password.length < 8) {
-            setSubmitError('Password must be at least 8 characters.');
+            setSubmitError(t('topup_page.auth_pw_min'));
             return;
         }
 
@@ -915,7 +1242,7 @@ const InlineAuthForm: React.FC<{
             }
             onAuthenticated();
         } catch (err) {
-            const message = err instanceof Error ? err.message : 'Authentication failed.';
+            const message = err instanceof Error ? err.message : t('topup_page.auth_failed');
             setSubmitError(message);
             setSubmitting(false);
         }
@@ -923,91 +1250,97 @@ const InlineAuthForm: React.FC<{
 
     return (
         <form onSubmit={handleSubmit} className="p-6 space-y-4">
-            <div className="flex items-start justify-between gap-3 mb-2">
+            <div
+                className={`mb-2 flex items-start gap-3 ${dismissible && onCancel ? 'justify-between' : ''}`}
+            >
                 <div>
-                    <h2 className="text-lg font-bold text-slate-900">Sign in to continue</h2>
-                    <p className="text-xs text-slate-500 mt-1">
-                        We'll save your top-up history and keep your billing in one place.
+                    <h2 className="text-lg font-bold text-slate-900">
+                        {plan ? t('topup_page.auth_title_checkout') : t('topup_page.auth_title_esim')}
+                    </h2>
+                    <p className="mt-1 text-xs text-slate-500">
+                        {plan ? t('topup_page.auth_body_checkout') : t('topup_page.auth_body_esim')}
                     </p>
                 </div>
-                <button
-                    type="button"
-                    onClick={onCancel}
-                    className="text-slate-400 hover:text-slate-600 text-sm"
-                    aria-label="Close"
-                >
-                    Cancel
-                </button>
+                {dismissible && onCancel && (
+                    <button
+                        type="button"
+                        onClick={onCancel}
+                        className="text-sm text-slate-400 hover:text-slate-600"
+                        aria-label={t('topup_page.auth_cancel_aria')}
+                    >
+                        {t('topup_page.auth_cancel')}
+                    </button>
+                )}
             </div>
 
-            <div className="bg-slate-50 border border-slate-200 rounded-xl p-3 flex items-center justify-between">
-                <span className="text-xs text-slate-600">{plan.name}</span>
-                <span className="text-sm font-bold text-slate-900">
-                    {formatPrice(plan.price, plan.currency)}
-                </span>
-            </div>
+            {plan && (
+                <div className="flex items-center justify-between rounded-xl border border-slate-200 bg-slate-50 p-3">
+                    <span className="text-xs text-slate-600">{plan.name}</span>
+                    <span className="text-sm font-bold text-slate-900">
+                        {formatPrice(plan.price, plan.currency)}
+                    </span>
+                </div>
+            )}
 
             {/* Tabs */}
-            <div className="flex gap-2 bg-slate-100 p-1 rounded-xl">
+            <div className="flex gap-2 rounded-xl bg-slate-100 p-1">
                 {(['register', 'login'] as const).map((m) => (
                     <button
                         key={m}
                         type="button"
                         onClick={() => setMode(m)}
-                        className={`flex-1 py-2 rounded-lg text-sm font-semibold transition-all ${
-                            mode === m
-                                ? 'bg-white text-slate-900 shadow-sm'
-                                : 'text-slate-500'
+                        className={`flex-1 rounded-lg py-2 text-sm font-semibold transition-all ${
+                            mode === m ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500'
                         }`}
                     >
-                        {m === 'register' ? 'New customer' : 'Sign in'}
+                        {m === 'register' ? t('topup_page.auth_tab_register') : t('topup_page.auth_tab_login')}
                     </button>
                 ))}
             </div>
 
             {mode === 'register' && (
                 <div>
-                    <label className="block text-xs font-semibold text-slate-700 mb-1.5 uppercase tracking-wide">
-                        Your name (optional)
+                    <label className="mb-1.5 block text-xs font-semibold uppercase tracking-wide text-slate-700">
+                        {t('topup_page.auth_name_label')}
                     </label>
                     <div className="relative">
-                        <UserIcon className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
+                        <UserIcon className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
                         <input
                             type="text"
                             value={name}
                             onChange={(e) => setName(e.target.value)}
-                            placeholder="Jordan Smith"
+                            placeholder={t('topup_page.auth_name_placeholder')}
                             autoComplete="name"
-                            className="w-full bg-white border-2 border-slate-200 rounded-xl py-3 pl-10 pr-4 text-sm focus:outline-none focus:border-brand-orange focus:ring-2 focus:ring-brand-orange/20"
+                            className="w-full rounded-xl border-2 border-slate-200 bg-white py-3 pl-10 pr-4 text-sm focus:border-brand-orange focus:outline-none focus:ring-2 focus:ring-brand-orange/20"
                         />
                     </div>
                 </div>
             )}
 
             <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1.5 uppercase tracking-wide">
-                    Email <span className="text-brand-orange">*</span>
+                <label className="mb-1.5 block text-xs font-semibold uppercase tracking-wide text-slate-700">
+                    {t('topup_page.auth_email_label')} <span className="text-brand-orange">*</span>
                 </label>
                 <div className="relative">
-                    <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
+                    <Mail className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
                     <input
                         type="email"
                         value={email}
                         onChange={(e) => setEmail(e.target.value)}
-                        placeholder="you@example.com"
+                        placeholder={t('topup_page.auth_email_placeholder')}
                         autoComplete="email"
                         required
-                        className="w-full bg-white border-2 border-slate-200 rounded-xl py-3 pl-10 pr-4 text-sm focus:outline-none focus:border-brand-orange focus:ring-2 focus:ring-brand-orange/20"
+                        className="w-full rounded-xl border-2 border-slate-200 bg-white py-3 pl-10 pr-4 text-sm focus:border-brand-orange focus:outline-none focus:ring-2 focus:ring-brand-orange/20"
                     />
                 </div>
             </div>
 
             <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1.5 uppercase tracking-wide">
-                    Password <span className="text-brand-orange">*</span>
+                <label className="mb-1.5 block text-xs font-semibold uppercase tracking-wide text-slate-700">
+                    {t('topup_page.auth_password_label')} <span className="text-brand-orange">*</span>
                 </label>
                 <div className="relative">
-                    <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
+                    <Lock className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
                     <input
                         type={showPassword ? 'text' : 'password'}
                         value={password}
@@ -1016,25 +1349,25 @@ const InlineAuthForm: React.FC<{
                         autoComplete={mode === 'register' ? 'new-password' : 'current-password'}
                         required
                         minLength={mode === 'register' ? 8 : undefined}
-                        className="w-full bg-white border-2 border-slate-200 rounded-xl py-3 pl-10 pr-11 text-sm focus:outline-none focus:border-brand-orange focus:ring-2 focus:ring-brand-orange/20"
+                        className="w-full rounded-xl border-2 border-slate-200 bg-white py-3 pl-10 pr-11 text-sm focus:border-brand-orange focus:outline-none focus:ring-2 focus:ring-brand-orange/20"
                     />
                     <button
                         type="button"
                         onClick={() => setShowPassword((v) => !v)}
-                        className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 p-1"
-                        aria-label={showPassword ? 'Hide password' : 'Show password'}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 p-1 text-slate-400 hover:text-slate-600"
+                        aria-label={showPassword ? t('topup_page.auth_pw_hide') : t('topup_page.auth_pw_show')}
                     >
-                        {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                        {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                     </button>
                 </div>
                 {mode === 'register' && (
-                    <p className="text-xs text-slate-500 mt-1.5">Minimum 8 characters.</p>
+                    <p className="mt-1.5 text-xs text-slate-500">{t('topup_page.auth_pw_hint')}</p>
                 )}
             </div>
 
             {submitError && (
-                <div className="flex items-start gap-2 px-3 py-2.5 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700">
-                    <AlertCircle className="w-4 h-4 mt-0.5 flex-shrink-0" />
+                <div className="flex items-start gap-2 rounded-lg border border-red-200 bg-red-50 px-3 py-2.5 text-sm text-red-700">
+                    <AlertCircle className="mt-0.5 h-4 w-4 flex-shrink-0" />
                     <span>{submitError}</span>
                 </div>
             )}
@@ -1042,32 +1375,154 @@ const InlineAuthForm: React.FC<{
             <button
                 type="submit"
                 disabled={submitting}
-                className="w-full bg-brand-orange text-white py-3.5 rounded-xl font-bold text-sm shadow-lg shadow-orange-500/20 active:scale-[0.98] transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="flex w-full items-center justify-center gap-2 rounded-xl bg-brand-orange py-3.5 text-sm font-bold text-white shadow-lg shadow-orange-500/20 transition-all active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50"
             >
                 {submitting ? (
                     <>
-                        <Loader2 className="w-4 h-4 animate-spin" />
-                        {mode === 'register' ? 'Creating account…' : 'Signing in…'}
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                        {mode === 'register' ? t('topup_page.auth_submitting_register') : t('topup_page.auth_submitting_login')}
                     </>
                 ) : (
-                    <>{mode === 'register' ? 'Create account & continue' : 'Sign in & continue'}</>
+                    <>
+                        {mode === 'register' ? t('topup_page.auth_submit_register') : t('topup_page.auth_submit_login')}
+                    </>
                 )}
             </button>
 
-            <p className="text-xs text-slate-500 text-center leading-relaxed">
-                By continuing you agree to our{' '}
-                <a href="/terms" className="text-brand-orange font-semibold">
-                    Terms
+            <p className="text-center text-xs leading-relaxed text-slate-500">
+                {t('topup_page.auth_terms_prefix')}{' '}
+                <a href="/terms" className="font-semibold text-brand-orange">
+                    {t('topup_page.auth_terms_link')}
                 </a>{' '}
-                and{' '}
-                <a href="/privacy" className="text-brand-orange font-semibold">
-                    Privacy Policy
+                {t('topup_page.auth_terms_and')}{' '}
+                <a href="/privacy" className="font-semibold text-brand-orange">
+                    {t('topup_page.auth_privacy_link')}
                 </a>
                 .
             </p>
         </form>
     );
 };
+
+const EsimManualIccidCollapsible: React.FC<{
+    open: boolean;
+    onToggle: () => void;
+    value: string;
+    onChange: (v: string) => void;
+    error: string;
+    onSubmit: () => void;
+}> = ({ open, onToggle, value, onChange, error, onSubmit }) => {
+    const { t } = useTranslation();
+    return (
+        <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+            <button
+                type="button"
+                className="flex w-full items-center justify-between gap-2 text-left text-sm font-semibold text-slate-800"
+                onClick={onToggle}
+                aria-expanded={open}
+            >
+                {t('topup_page.esim_manual_iccid_toggle')}
+                <ChevronRight
+                    className={`h-4 w-4 shrink-0 text-slate-400 transition-transform ${open ? 'rotate-90' : ''}`}
+                    aria-hidden
+                />
+            </button>
+            {open && (
+                <div className="mt-4 space-y-3">
+                    <label className="mb-2 block text-xs font-semibold uppercase tracking-wide text-slate-700">
+                        {t('topup_page.idle_manual_label')}
+                    </label>
+                    <div className="relative">
+                        <QrCode className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+                        <input
+                            type="text"
+                            value={value}
+                            onChange={(e) => onChange(e.target.value)}
+                            onKeyDown={(e) => {
+                                if (e.key === 'Enter') onSubmit();
+                            }}
+                            placeholder="89014103211118510720"
+                            inputMode="numeric"
+                            autoComplete="off"
+                            className="w-full rounded-xl border-2 border-slate-200 bg-white py-3 pl-10 pr-4 font-mono text-sm focus:border-brand-orange focus:outline-none focus:ring-2 focus:ring-brand-orange/20"
+                        />
+                    </div>
+                    {error && (
+                        <p className="flex items-center gap-1.5 text-xs text-red-600">
+                            <AlertCircle className="h-3.5 w-3.5 shrink-0" />
+                            {error}
+                        </p>
+                    )}
+                    <button
+                        type="button"
+                        disabled={value.length < 15}
+                        onClick={onSubmit}
+                        className="flex min-h-[3.25rem] w-full items-center justify-center gap-2 rounded-xl bg-slate-900 py-4 text-base font-bold text-white transition-all active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-40"
+                    >
+                        {t('topup_page.idle_submit')}
+                        <ArrowRight className="h-4 w-4 shrink-0" />
+                    </button>
+                </div>
+            )}
+        </div>
+    );
+};
+
+const EsimEmptyLoggedIn: React.FC<{ browseHref: string }> = ({ browseHref }) => {
+    const { t } = useTranslation();
+    return (
+        <div>
+            <h1 className="mb-2 text-2xl font-bold text-slate-900">{t('topup_page.esim_empty_title')}</h1>
+            <p className="mb-6 text-sm leading-relaxed text-slate-600">{t('topup_page.esim_empty_body')}</p>
+            <a
+                href={browseHref}
+                className="mb-6 flex min-h-[3.25rem] w-full items-center justify-center rounded-xl bg-brand-orange py-4 text-base font-bold text-white shadow-lg shadow-orange-500/20 transition-all active:scale-[0.98]"
+            >
+                {t('topup_page.esim_browse_travel')}
+            </a>
+            <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+                {t('topup_page.esim_manual_iccid_intro')}
+            </p>
+        </div>
+    );
+};
+
+const EsimGuestIntro: React.FC<{ onSessionChanged: () => void }> = ({ onSessionChanged }) => {
+    const { t } = useTranslation();
+    return (
+        <div className="space-y-6">
+            <div>
+                <h1 className="mb-2 text-2xl font-bold text-slate-900">{t('topup_page.esim_guest_title')}</h1>
+                <p className="text-sm leading-relaxed text-slate-600">{t('topup_page.esim_guest_body')}</p>
+            </div>
+            <div className="flex flex-col gap-3">
+                <a
+                    href="/travel-esim"
+                    className="flex min-h-[3.25rem] w-full items-center justify-center rounded-xl bg-brand-orange py-4 text-base font-bold text-white shadow-lg shadow-orange-500/20 transition-all active:scale-[0.98]"
+                >
+                    {t('topup_page.esim_browse_travel')}
+                </a>
+                <a
+                    href="/app"
+                    className="flex min-h-[3rem] items-center justify-center rounded-xl border-2 border-slate-200 bg-white py-3 text-base font-semibold text-slate-800"
+                >
+                    {t('topup_page.esim_open_app')}
+                </a>
+            </div>
+            <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+                <InlineAuthForm
+                    plan={null}
+                    dismissible={false}
+                    onAuthenticated={() => {
+                        onSessionChanged();
+                    }}
+                />
+            </div>
+        </div>
+    );
+};
+
+export default TopUpPage;
 
 // ─── Helpers ────────────────────────────────────────────────────────────
 
