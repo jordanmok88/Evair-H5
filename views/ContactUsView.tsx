@@ -26,13 +26,35 @@ const EDGE_SWIPE_EXCLUDE_BOTTOM_PX = 140;
 
 const HUMAN_KEYWORDS = /\b(human|agent|real person|speak to someone|talk to person|live chat|representative|operator|transfer)\b|人工|客服|真人|转接|找人|humano|agente|persona real/i;
 
-const COMPOSER_SUGGESTION_KEYS = ['network_problem', 'sim_activation', 'data_topup', 'billing_issue'] as const;
+/** Quick-topic chips aligned with `ai/evairAssistant.ts` knowledge (no eCard). */
+const COMPOSER_SUGGESTION_KEYS = [
+  'network_problem',
+  'sim_activation',
+  'install_esim',
+  'iccid_help',
+  'device_compatibility',
+  'data_topup',
+  'plans_pricing',
+  'coverage_roaming',
+  'billing_issue',
+  'refund_help',
+  'shipping_sim',
+  'plan_validity',
+] as const;
 
 const SUGGESTION_AI_QUERY: Record<(typeof COMPOSER_SUGGESTION_KEYS)[number], string> = {
   network_problem: 'My eSIM is not working, no signal or internet',
   sim_activation: 'How do I activate my SIM card?',
+  install_esim: 'How do I install my eSIM using the QR code?',
+  iccid_help: 'Where do I find my ICCID number on my SIM?',
+  device_compatibility: 'Is my phone compatible with Evair eSIM?',
   data_topup: 'How can I top up my data plan?',
+  plans_pricing: 'What are your data plan prices and discounts?',
+  coverage_roaming: 'Which countries does EvairSIM cover for roaming?',
   billing_issue: 'I have a billing question about my payment',
+  refund_help: 'What is your refund policy?',
+  shipping_sim: 'How long does shipping take for a physical SIM card?',
+  plan_validity: 'When does my plan validity period start and expire?',
 };
 
 const DRAFT_KEY = 'evair-chat-draft';
@@ -809,9 +831,9 @@ const ContactUsView: React.FC<ContactUsViewProps> = ({
     <div className="relative flex h-full min-h-0 flex-col overflow-hidden overflow-x-hidden bg-[#ECE5DD]">
       {/* WhatsApp-density header: gradient bar + ⋮ overflow (live staff, default AI) */}
       <header
-        className={`relative z-[41] shrink-0 overflow-visible border-b border-white/15 bg-gradient-to-br from-[#FF6600] via-[#FF7433] to-[#FF8533] shadow-md ${embedded ? 'pb-2 pt-[max(10px,env(safe-area-inset-top,0px))]' : 'pb-2 pt-safe'}`}
+        className={`relative z-[41] shrink-0 overflow-visible border-b border-white/15 bg-gradient-to-br from-[#FF6600] via-[#FF7433] to-[#FF8533] shadow-md ${embedded ? 'pb-1.5 pt-[max(8px,env(safe-area-inset-top,0px))]' : 'pb-1.5 pt-[max(6px,env(safe-area-inset-top,0px))]'}`}
       >
-        <div className={`flex min-h-[48px] items-center gap-2 px-3 ${embedded ? '' : ''}`}>
+        <div className={`flex min-h-[44px] items-center gap-2 px-3 ${embedded ? '' : ''}`}>
           <button
             type="button"
             onClick={onBack}
@@ -909,7 +931,7 @@ const ContactUsView: React.FC<ContactUsViewProps> = ({
         <div
           ref={scrollContainerRef}
           onScroll={handleScroll}
-          className={`touch-pan-y min-h-0 flex-1 overflow-x-hidden overflow-y-auto overscroll-y-contain no-scrollbar pb-2 ${embedded ? 'px-3 pt-2 sm:px-4' : 'px-3 pt-2'} bg-[#ECE5DD]`}
+          className={`touch-pan-y min-h-0 flex-1 overflow-x-hidden overflow-y-auto overscroll-y-contain no-scrollbar pb-1 ${embedded ? 'px-3 pt-1 sm:px-4' : 'px-3 pt-1'} bg-[#ECE5DD]`}
           style={{
             scrollBehavior: 'smooth',
             WebkitOverflowScrolling: 'touch',
@@ -1032,7 +1054,7 @@ const ContactUsView: React.FC<ContactUsViewProps> = ({
           <button
             type="button"
             onClick={() => scrollToBottom()}
-            className="pointer-events-auto absolute bottom-3 left-1/2 z-[34] flex max-w-[calc(100%-2rem)] -translate-x-1/2 touch-manipulation items-center gap-2 rounded-full border border-slate-200/90 bg-white px-5 py-2.5 text-[14px] font-semibold text-slate-800 shadow-[0_4px_16px_rgba(15,23,42,0.14)] active:scale-[0.98]"
+            className="pointer-events-auto absolute bottom-2 left-1/2 z-[34] flex max-w-[calc(100%-2rem)] -translate-x-1/2 touch-manipulation items-center gap-1.5 rounded-full border border-slate-200/90 bg-white px-4 py-2 text-[13px] font-semibold text-slate-800 shadow-[0_4px_16px_rgba(15,23,42,0.14)] active:scale-[0.98]"
             aria-label={t('contact.jump_to_latest')}
           >
             <ArrowDown size={18} className="shrink-0 text-slate-600" aria-hidden />
@@ -1041,10 +1063,10 @@ const ContactUsView: React.FC<ContactUsViewProps> = ({
         )}
       </div>
 
-      <footer className={`relative z-20 shrink-0 bg-[#F0F2F5] pb-[max(14px,env(safe-area-inset-bottom,0px))] pt-2 ${embedded ? 'px-3' : 'px-3'}`}>
-        <div className="flex w-full min-w-0 flex-col gap-2">
+      <footer className={`relative z-20 shrink-0 bg-[#F0F2F5] pb-[max(8px,env(safe-area-inset-bottom,0px))] pt-1 ${embedded ? 'px-3' : 'px-3'}`}>
+        <div className="flex w-full min-w-0 flex-col gap-1">
           <div
-            className="flex gap-2 overflow-x-auto overscroll-x-contain py-0.5 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+            className="flex gap-1.5 overflow-x-auto overscroll-x-contain [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
             style={{ WebkitOverflowScrolling: 'touch' }}
             role="group"
             aria-label={t('contact.suggestion_chips_label')}
@@ -1055,20 +1077,20 @@ const ContactUsView: React.FC<ContactUsViewProps> = ({
                 type="button"
                 onClick={() => void handleSuggestionChip(key)}
                 disabled={uploading}
-                className="shrink-0 whitespace-nowrap rounded-full border border-orange-100 bg-white px-3 py-1.5 text-[12px] font-semibold text-[#c2410c] shadow-[0_1px_2px_rgba(15,23,42,0.06)] transition-colors active:bg-orange-50 disabled:cursor-not-allowed disabled:opacity-50"
+                className="shrink-0 whitespace-nowrap rounded-full border border-orange-100 bg-white px-2.5 py-1 text-[11px] font-semibold text-[#c2410c] shadow-[0_1px_2px_rgba(15,23,42,0.06)] transition-colors active:bg-orange-50 disabled:cursor-not-allowed disabled:opacity-50"
               >
                 {t(`contact.${key}`)}
               </button>
             ))}
           </div>
-          <div className="flex min-h-[48px] w-full min-w-0 touch-manipulation items-center gap-1 rounded-[28px] bg-white px-2 py-1.5 shadow-[0_1px_3px_rgba(15,23,42,0.08)] ring-1 ring-black/[0.04]">
+          <div className="flex min-h-[44px] w-full min-w-0 touch-manipulation items-center gap-0.5 rounded-[24px] bg-white px-1.5 py-1 shadow-[0_1px_3px_rgba(15,23,42,0.08)] ring-1 ring-black/[0.04]">
             <button
               type="button"
               onClick={() => setAttachMenuOpen(true)}
               disabled={uploading}
-              className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full border-none bg-transparent text-slate-500 transition-colors active:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-40"
+              className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border-none bg-transparent text-slate-500 transition-colors active:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-40"
             >
-              <Paperclip size={21} strokeWidth={2} />
+              <Paperclip size={20} strokeWidth={2} />
             </button>
             <textarea
               ref={inputRef}
@@ -1084,7 +1106,7 @@ const ContactUsView: React.FC<ContactUsViewProps> = ({
               rows={1}
               spellCheck
               aria-label={t('contact.type_message')}
-              className="box-border min-h-[44px] min-w-0 flex-1 resize-none overflow-hidden border-none bg-transparent px-2 py-2.5 font-sans text-[16px] leading-snug text-[#1f2937] [-webkit-appearance:none] outline-none"
+              className="box-border min-h-[40px] min-w-0 flex-1 resize-none overflow-hidden border-none bg-transparent px-2 py-2 font-sans text-[16px] leading-snug text-[#1f2937] [-webkit-appearance:none] outline-none"
               style={{
                 maxHeight: COMPOSER_MAX_INPUT_PX,
               }}
@@ -1093,7 +1115,7 @@ const ContactUsView: React.FC<ContactUsViewProps> = ({
               type="button"
               onClick={handleSend}
               disabled={!input.trim() || uploading}
-              className="flex h-11 w-11 shrink-0 touch-manipulation items-center justify-center rounded-full border-none transition-colors"
+              className="flex h-10 w-10 shrink-0 touch-manipulation items-center justify-center rounded-full border-none transition-colors"
               style={{
                 backgroundColor: input.trim() && !uploading ? '#FF6600' : '#e2e8f0',
                 cursor: input.trim() && !uploading ? 'pointer' : 'default',

@@ -1204,10 +1204,12 @@ function CustomerApp() {
                 {t('app.test_mode_exit')}
               </button>
             </div>
-          ) : (
+          ) : activeTab !== Tab.DIALER ? (
             // When the test banner is hidden, inject a safe-area spacer so
             // the iPhone notch / Android status bar doesn't overlap the
             // first row of UI (e.g. the "Hello New Friend" greeting).
+            // Contact Support fills its own orange header with inset — skip
+            // this white strip so the chat bar meets the viewport edge.
             // Desktop (lg) is inside a mock phone frame so it doesn't
             // need the inset; `lg:hidden` keeps the mock pixel-perfect.
             <div
@@ -1215,7 +1217,7 @@ function CustomerApp() {
               style={{ height: 'env(safe-area-inset-top, 0px)' }}
               aria-hidden
             />
-          )}
+          ) : null}
           {/* Inner content wrapper.
               Phone-mock: `min-h-0 overflow-hidden` so the inner view
               owns its own scroll inside the fixed-height phone frame.
