@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect, useLayoutEffect, useMemo, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
-import { ChevronLeft, Send, Paperclip, CheckCheck, Bot, Sparkles, AlertCircle, ArrowDown, ArrowUp, Wifi, WifiOff, Headphones, ImagePlus, FileText, Loader2, X, Package, Receipt, Download } from 'lucide-react';
+import { ChevronLeft, Send, Paperclip, CheckCheck, Bot, Sparkles, AlertCircle, ArrowDown, ArrowUp, Wifi, WifiOff, Headphones, ImagePlus, FileText, Loader2, X, Package, Receipt, Download, MoreVertical } from 'lucide-react';
 import { getMultilingualResponse } from '../ai/evairAssistant';
 import { useEdgeSwipeBack } from '../hooks/useEdgeSwipeBack';
 import { chatService, newClientMsgId } from '../services/api/chat';
@@ -8,7 +8,6 @@ import {
   acquireSharedChatProvider,
   createChatProvider,
   releaseSharedChatProvider,
-  resolveProviderName,
   type ChatProvider,
   type ConnectionState,
   type UnifiedChatMessage,
@@ -22,23 +21,13 @@ interface ContactUsViewProps {
   embedded?: boolean;
 }
 
-const CATEGORY_KEYS = ['sim_activation', 'network_problem', 'data_topup'] as const;
-
-const CATEGORY_TO_AI_QUERY: Record<string, string> = {
-  sim_activation: 'How do I activate my SIM card?',
-  network_problem: 'My eSIM is not working, no signal or internet',
-  data_topup: 'How can I top up my data plan?',
-};
-
 /** Edge swipe ignores the bottom strip so the composer is not mistaken for a back gesture */
-const EDGE_SWIPE_EXCLUDE_BOTTOM_PX = 176;
+const EDGE_SWIPE_EXCLUDE_BOTTOM_PX = 140;
 
 const HUMAN_KEYWORDS = /\b(human|agent|real person|speak to someone|talk to person|live chat|representative|operator|transfer)\b|人工|客服|真人|转接|找人|humano|agente|persona real/i;
 
 const DRAFT_KEY = 'evair-chat-draft';
 const SCROLL_FOLLOW_THRESHOLD_PX = 80;
-const SCROLL_JUMP_TOP_SHOW_PX = 80;
-
 const COMPOSER_MIN_INPUT_PX = 44;
 const COMPOSER_MAX_INPUT_PX = 132;
 
@@ -111,11 +100,9 @@ const ContactUsView: React.FC<ContactUsViewProps> = ({
   const [input, setInput] = useState<string>(() => {
     try { return localStorage.getItem(DRAFT_KEY) ?? ''; } catch { return ''; }
   });
-  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [isTyping, setIsTyping] = useState(false);
   const [connection, setConnection] = useState<ConnectionState>('idle');
   const [showJumpToLatest, setShowJumpToLatest] = useState(false);
-  const [showJumpToTop, setShowJumpToTop] = useState(false);
   const [lightboxUrl, setLightboxUrl] = useState<string | null>(null);
   const [detailSheet, setDetailSheet] = useState<{
     type: 'product' | 'order';
@@ -130,6 +117,7 @@ const ContactUsView: React.FC<ContactUsViewProps> = ({
   const [uploading, setUploading] = useState(false);
   const [attachMenuOpen, setAttachMenuOpen] = useState(false);
   const [liveStaffModalOpen, setLiveStaffModalOpen] = useState(false);
+  const [headerMenuOpen, setHeaderMenuOpen] = useState(false);
   const imageInputRef = useRef<HTMLInputElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -145,14 +133,6 @@ const ContactUsView: React.FC<ContactUsViewProps> = ({
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const providerRef = useRef<ChatProvider | null>(null);
   const conversationIdRef = useRef<string | null>(null);
-
-  const providerName = useMemo(() => {
-    const resolved = resolveProviderName();
-    if (import.meta.env.DEV) {
-      console.log('[ContactUs] provider resolved:', resolved, '| hasToken:', !!localStorage.getItem('evair_access_token'));
-    }
-    return resolved;
-  }, []);
 
   // 草稿持久化
   useEffect(() => {
@@ -295,10 +275,6 @@ const ContactUsView: React.FC<ContactUsViewProps> = ({
     setShowJumpToLatest(false);
   }, []);
 
-  const scrollToTop = useCallback((behavior: ScrollBehavior = 'smooth') => {
-    scrollContainerRef.current?.scrollTo({ top: 0, behavior });
-  }, []);
-
   const adjustComposerHeight = useCallback(() => {
     const ta = inputRef.current;
     if (!ta) return;
@@ -320,13 +296,34 @@ const ContactUsView: React.FC<ContactUsViewProps> = ({
     adjustComposerHeight();
   }, [input, adjustComposerHeight]);
 
+  const syncScrollFABsFromEl = useCallback(() => {
+    const el = scrollContainerRef.current;
+    if (!el) return;
+    const gap = el.scrollHeight - el.scrollTop - el.clientHeight;
+    const nearBottom = gap < SCROLL_FOLLOW_THRESHOLD_PX;
+    const canScroll = el.scrollHeight > el.clientHeight + 24;
+    setShowJumpToLatest(!nearBottom && canScroll);
+  }, []);
+
+  const handleScroll = () => {
+    syncScrollFABsFromEl();
+  };
+
+  const scrollToTop = useCallback((behavior: ScrollBehavior = 'smooth') => {
+    scrollContainerRef.current?.scrollTo({ top: 0, behavior });
+    setHeaderMenuOpen(false);
+    requestAnimationFrame(() => syncScrollFABsFromEl());
+  }, [syncScrollFABsFromEl]);
+
   useEffect(() => {
     if (isNearBottom()) {
       scrollToBottom();
     } else {
       setShowJumpToLatest(true);
     }
-  }, [messages, isTyping, isNearBottom, scrollToBottom]);
+    requestAnimationFrame(() => syncScrollFABsFromEl());
+
+  }, [messages, isTyping, isNearBottom, scrollToBottom, syncScrollFABsFromEl]);
 
   // ── Infinite scroll up: load older messages when scrolling to top ──
   const loadOlderMessages = useCallback(async () => {
@@ -407,14 +404,8 @@ const ContactUsView: React.FC<ContactUsViewProps> = ({
     );
     observer.observe(sentinel);
     return () => observer.disconnect();
-  }, [loadingMore, hasMore, loadOlderMessages]);
 
-  const handleScroll = () => {
-    const el = scrollContainerRef.current;
-    if (el && el.scrollTop > SCROLL_JUMP_TOP_SHOW_PX) setShowJumpToTop(true);
-    else setShowJumpToTop(false);
-    if (isNearBottom()) setShowJumpToLatest(false);
-  };
+  }, [loadingMore, hasMore, loadOlderMessages]);
 
   // ── 发送 ──────────────────────────────────────────────
   const upsertOptimistic = (msg: UnifiedChatMessage) => {
@@ -638,16 +629,6 @@ const ContactUsView: React.FC<ContactUsViewProps> = ({
     await sendCustomerMessage(trimmed);
   };
 
-  const handleCategorySelect = async (cat: string) => {
-    setSelectedCategory(cat);
-    const provider = providerRef.current;
-    if (!provider || !conversationIdRef.current) return;
-    await sendCustomerMessage(`${t('contact.need_help_with')} ${cat}`, { skipAi: true });
-    const matchedKey = CATEGORY_KEYS.find(k => t(`contact.${k}`) === cat);
-    const aiQuery = (matchedKey && CATEGORY_TO_AI_QUERY[matchedKey]) || cat;
-    triggerAiReply(provider, aiQuery, 1800);
-  };
-
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
@@ -663,6 +644,7 @@ const ContactUsView: React.FC<ContactUsViewProps> = ({
   };
 
   const confirmLiveStaffRequest = () => {
+    setHeaderMenuOpen(false);
     setLiveStaffModalOpen(false);
     handleTransferToHuman();
     void sendCustomerMessage(t('contact.live_staff_request_note'), { skipAi: true });
@@ -811,140 +793,91 @@ const ContactUsView: React.FC<ContactUsViewProps> = ({
   })();
 
   return (
-    <div
-      className={
-        embedded
-          ? 'relative flex h-full min-h-0 flex-col overflow-hidden overflow-x-hidden bg-[#eef1f6]'
-          : 'relative flex h-full min-h-0 flex-col overflow-hidden overflow-x-hidden bg-[#F2F4F7]'
-      }
-    >
-      {/* Header — gradient row + live-staff strip (single human path); edge swipe excludes composer */}
-      {embedded ? (
-        <header className="flex shrink-0 flex-col overflow-x-hidden">
-          <div className="border-b border-white/15 bg-gradient-to-br from-[#FF6600] via-[#FF7433] to-[#FF8533] px-4 pb-3 pt-[max(0.75rem,env(safe-area-inset-top,0px))] shadow-md">
-            <div className="flex items-start gap-3">
-              <div className="relative shrink-0">
-                <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-white shadow-md ring-2 ring-white/40">
-                  {aiDisabled ? (
-                    <Headphones size={19} color="#059669" strokeWidth={2.2} />
-                  ) : (
-                    <Sparkles size={19} color="#FF6600" strokeWidth={2.2} />
-                  )}
-                </div>
-                <span
-                  className="absolute -bottom-0.5 -right-0.5 flex h-[15px] w-[15px] items-center justify-center rounded-full border-2 border-[#ea580c] bg-emerald-400 shadow-sm"
-                  aria-hidden
-                >
-                  {aiDisabled ? (
-                    <span className="h-1.5 w-1.5 rounded-full bg-white" />
-                  ) : (
-                    <Bot size={9} color="#fff" strokeWidth={2.8} />
-                  )}
-                </span>
-              </div>
-              <div className="min-w-0 flex-1 pt-0.5">
-                <p className="text-[0.625rem] font-bold uppercase tracking-[0.16em] text-white/80">
-                  {t('support_fab.live_chat')}
-                </p>
-                <h1 className="mt-0.5 truncate text-[1.0625rem] font-bold leading-tight tracking-tight text-white">
-                  {t('contact.title')}
-                </h1>
-                <p className="mt-1.5 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-[0.6875rem] font-medium leading-snug text-white/90">
-                  <span className="inline-flex items-center gap-1.5">
-                    <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-emerald-300 shadow-[0_0_0_2px_rgba(255,255,255,0.35)]" />
-                    <span>{aiDisabled ? t('contact.agent_status') : t('contact.online_status')}</span>
-                  </span>
-                  <span className="text-white/45" aria-hidden>
-                    ·
-                  </span>
-                  <span className="text-white/95">{aiDisabled ? t('contact.agent_name') : 'Evair AI Assistant'}</span>
-                </p>
-              </div>
-              <div className="flex shrink-0 items-center gap-1.5 pt-0.5">
+    <div className="relative flex h-full min-h-0 flex-col overflow-hidden overflow-x-hidden bg-[#ECE5DD]">
+      {/* WhatsApp-density header: gradient bar + ⋮ overflow (live staff, jump to start) */}
+      <header
+        className={`relative z-[41] shrink-0 overflow-visible border-b border-white/15 bg-gradient-to-br from-[#FF6600] via-[#FF7433] to-[#FF8533] shadow-md ${embedded ? 'pb-2 pt-[max(10px,env(safe-area-inset-top,0px))]' : 'pb-2 pt-safe'}`}
+      >
+        <div className={`flex min-h-[48px] items-center gap-2 px-3 ${embedded ? '' : ''}`}>
+          <button
+            type="button"
+            onClick={onBack}
+            className="flex h-10 w-10 shrink-0 touch-manipulation items-center justify-center rounded-full bg-white/20 text-white transition-colors active:bg-white/30"
+            aria-label={t('barcode_scanner.close')}
+          >
+            <ChevronLeft size={23} color="#fff" strokeWidth={2.5} />
+          </button>
+          <div className="relative flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-white shadow-sm ring-2 ring-white/40">
+            {aiDisabled ? (
+              <Headphones size={18} color="#059669" strokeWidth={2.2} />
+            ) : (
+              <Sparkles size={18} color="#FF6600" strokeWidth={2.2} />
+            )}
+            <span className="absolute -bottom-0.5 -right-0.5 flex h-[11px] w-[11px] items-center justify-center rounded-full border-2 border-[#ea580c] bg-emerald-400 shadow-sm" aria-hidden>
+              {aiDisabled ? <span className="h-1 w-1 rounded-full bg-white" /> : <Bot size={6} color="#fff" strokeWidth={3} />}
+            </span>
+          </div>
+          <div className="min-w-0 flex-1">
+            <h1 className="truncate text-[17px] font-bold leading-tight tracking-tight text-white">{t('contact.title')}</h1>
+            <p className="mt-px truncate text-[11px] font-medium leading-tight text-white/90">
+              <span className="inline-flex items-center gap-1">
+                <span className="h-1 w-1 shrink-0 rounded-full bg-emerald-300" />
+                {aiDisabled ? t('contact.agent_status') : t('contact.online_status')}
+              </span>
+              <span className="text-white/55" aria-hidden>
+                {' '}·{' '}
+              </span>
+              <span>{aiDisabled ? t('contact.agent_name') : 'Evair AI'}</span>
+            </p>
+          </div>
+          <div className="relative shrink-0">
+            <button
+              type="button"
+              onClick={() => setHeaderMenuOpen(open => !open)}
+              className="flex h-10 w-10 touch-manipulation items-center justify-center rounded-full bg-white/15 text-white transition-colors active:bg-white/25"
+              aria-expanded={headerMenuOpen}
+              aria-haspopup="menu"
+              aria-label={t('contact.chat_overflow_menu')}
+            >
+              <MoreVertical size={21} strokeWidth={2} />
+            </button>
+            {headerMenuOpen ? (
+              <>
                 <button
                   type="button"
-                  onClick={onBack}
-                  className="flex h-9 w-9 items-center justify-center rounded-full bg-white/15 text-white ring-1 ring-white/30 transition-colors hover:bg-white/25 active:bg-white/20"
-                  aria-label={t('barcode_scanner.close')}
-                >
-                  <X size={18} strokeWidth={2.4} />
-                </button>
-              </div>
-            </div>
-          </div>
-          <div className="shrink-0 border-b border-slate-200/90 bg-white px-4 py-3">
-            <button
-              type="button"
-              onClick={() => setLiveStaffModalOpen(true)}
-              className="touch-manipulation flex min-h-[44px] w-full items-center justify-center gap-2 rounded-xl border-2 border-[#FF6600] bg-white py-2.5 text-[15px] font-semibold text-[#FF6600] shadow-sm transition-colors hover:bg-orange-50 active:bg-orange-50/80"
-            >
-              <Headphones size={20} strokeWidth={2.2} aria-hidden />
-              {t('contact.live_staff_cta')}
-            </button>
-            <p className="mt-2 text-center text-[11px] leading-snug text-slate-500">{t('contact.live_staff_reply_sla')}</p>
-          </div>
-        </header>
-      ) : (
-        <header className="flex shrink-0 flex-col overflow-x-hidden">
-          <div
-            className="shrink-0 border-b border-white/15 pt-safe shadow-md"
-            style={{ background: 'linear-gradient(180deg, #FF6600 0%, #FF8533 100%)' }}
-          >
-            <div className="flex items-center gap-3 px-4 pb-3">
-              <button
-                type="button"
-                onClick={onBack}
-                className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-white/20 transition-colors active:bg-white/30"
-              >
-                <ChevronLeft size={22} color="#fff" strokeWidth={2.5} />
-              </button>
-              <div className="relative shrink-0">
-                <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-white shadow-sm">
-                  {aiDisabled ? <Headphones size={16} color="#10B981" /> : <Sparkles size={16} color="#FF6600" />}
+                  aria-hidden
+                  tabIndex={-1}
+                  className="fixed inset-0 z-[38] bg-black/25"
+                  onClick={() => setHeaderMenuOpen(false)}
+                />
+                <div className="absolute right-0 top-full z-[45] mt-1 max-h-[min(60vh,20rem)] w-[min(calc(100vw-56px),16rem)] overflow-hidden rounded-xl border border-slate-200 bg-white py-1 shadow-xl" role="menu">
+                  <button
+                    type="button"
+                    role="menuitem"
+                    className="flex w-full items-center gap-3 px-4 py-3 text-left text-sm font-medium text-slate-800 active:bg-slate-100"
+                    onClick={() => {
+                      setHeaderMenuOpen(false);
+                      setLiveStaffModalOpen(true);
+                    }}
+                  >
+                    <Headphones size={18} className="text-[#059669]" aria-hidden />
+                    {t('contact.menu_live_staff')}
+                  </button>
+                  <button
+                    type="button"
+                    role="menuitem"
+                    className="flex w-full items-center gap-3 px-4 py-3 text-left text-sm font-medium text-slate-800 active:bg-slate-100"
+                    onClick={() => scrollToTop()}
+                  >
+                    <ArrowUp size={18} className="text-slate-500" aria-hidden />
+                    {t('contact.menu_jump_to_top')}
+                  </button>
                 </div>
-                {aiDisabled ? (
-                  <div className="absolute -bottom-0.5 -right-0.5 flex h-3.5 w-3.5 items-center justify-center rounded-full border-2 border-[#FF8533] bg-emerald-400">
-                    <div className="h-1.5 w-1.5 rounded-full bg-white" />
-                  </div>
-                ) : (
-                  <div className="absolute -bottom-0.5 -right-0.5 flex h-3.5 w-3.5 items-center justify-center rounded-full border-2 border-[#FF8533] bg-emerald-400">
-                    <Bot size={7} color="#fff" strokeWidth={3} />
-                  </div>
-                )}
-              </div>
-              <div className="min-w-0 flex-1">
-                <h1 className="truncate text-base font-bold tracking-tight text-white">{t('contact.title')}</h1>
-                <p className="mt-0.5 truncate text-xs font-semibold text-white/90">
-                  {aiDisabled ? t('contact.agent_name') : 'Evair AI Assistant'}
-                </p>
-                <div className="mt-0.5 flex flex-wrap items-center gap-x-1.5 gap-y-0 text-[11px] font-medium text-white/75">
-                  <span className="inline-flex items-center gap-1">
-                    <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-emerald-300" />
-                    {aiDisabled ? t('contact.agent_status') : t('contact.online_status')}
-                  </span>
-                  {!aiDisabled && (
-                    <>
-                      <span aria-hidden>·</span>
-                      <span>Powered by AI</span>
-                    </>
-                  )}
-                </div>
-              </div>
-            </div>
+              </>
+            ) : null}
           </div>
-          <div className="shrink-0 border-b border-slate-200/90 bg-white px-4 py-3">
-            <button
-              type="button"
-              onClick={() => setLiveStaffModalOpen(true)}
-              className="touch-manipulation flex min-h-[44px] w-full items-center justify-center gap-2 rounded-xl border-2 border-[#FF6600] bg-white py-2.5 text-[15px] font-semibold text-[#FF6600] shadow-sm transition-colors hover:bg-orange-50 active:bg-orange-50/80"
-            >
-              <Headphones size={20} strokeWidth={2.2} aria-hidden />
-              {t('contact.live_staff_cta')}
-            </button>
-            <p className="mt-2 text-center text-[11px] leading-snug text-slate-500">{t('contact.live_staff_reply_sla')}</p>
-          </div>
-        </header>
-      )}
+        </div>
+      </header>
 
       {/* 网络状态条：仅在非 connected 时显示 */}
       {connectionLabel && (
@@ -954,38 +887,14 @@ const ContactUsView: React.FC<ContactUsViewProps> = ({
         </div>
       )}
 
-      {/* Topic chips — fixed below header (not inside message scroll) */}
-      {!selectedCategory && (
-        <div
-          className={`shrink-0 overflow-x-hidden border-b border-slate-200/90 ${embedded ? 'bg-[#eef1f6]' : 'bg-[#F2F4F7]'}`}
-        >
-          <p className="px-3 pt-2 text-center text-[10px] font-bold uppercase tracking-[0.14em] text-slate-500">
-            {t('contact.choose_topic')}
-          </p>
-          <div className="grid grid-cols-1 gap-2 px-2 pb-2 pt-1 min-[340px]:grid-cols-3">
-            {CATEGORY_KEYS.map((key) => {
-              const cat = t(`contact.${key}`);
-              return (
-                <button
-                  key={key}
-                  type="button"
-                  onClick={() => handleCategorySelect(cat)}
-                  className="touch-manipulation min-h-[40px] w-full rounded-full border border-slate-200/90 bg-white px-3 py-2 text-center text-[11px] font-semibold leading-tight text-slate-700 shadow-sm transition-transform active:scale-[0.97] hover:border-orange-200 hover:text-orange-700"
-                >
-                  {cat}
-                </button>
-              );
-            })}
-          </div>
-        </div>
-      )}
+
 
       {/* Scrollable messages — only this region scrolls; composer stays put */}
       <div className="relative flex min-h-0 min-w-0 flex-1 flex-col overflow-x-hidden">
         <div
           ref={scrollContainerRef}
           onScroll={handleScroll}
-          className={`touch-pan-y min-h-0 flex-1 overflow-x-hidden overflow-y-auto overscroll-y-contain no-scrollbar ${embedded ? 'px-4 pt-3 sm:px-5' : 'px-4 pt-3'}`}
+          className={`touch-pan-y min-h-0 flex-1 overflow-x-hidden overflow-y-auto overscroll-y-contain no-scrollbar pb-2 ${embedded ? 'px-3 pt-2 sm:px-4' : 'px-3 pt-2'} bg-[#ECE5DD]`}
           style={{
             scrollBehavior: 'smooth',
             WebkitOverflowScrolling: 'touch',
@@ -1023,7 +932,7 @@ const ContactUsView: React.FC<ContactUsViewProps> = ({
           if (item.kind === 'divider') {
             return (
               <div key={item.key} style={{ display: 'flex', justifyContent: 'center', margin: '12px 0' }}>
-                <span style={{ fontSize: 11, fontWeight: 600, color: '#94a3b8', backgroundColor: 'rgba(255,255,255,0.7)', padding: '4px 12px', borderRadius: 10 }}>
+                <span style={{ fontSize: 11, fontWeight: 600, color: '#5b6470', backgroundColor: 'rgba(253,251,246,0.92)', padding: '4px 12px', borderRadius: 10, boxShadow: '0 1px 2px rgba(0,0,0,0.06)' }}>
                   {item.label}
                 </span>
               </div>
@@ -1104,40 +1013,28 @@ const ContactUsView: React.FC<ContactUsViewProps> = ({
           <div ref={messagesEndRef} />
         </div>
 
-        {showJumpToTop && (
-          <button
-            type="button"
-            onClick={() => scrollToTop()}
-            className="pointer-events-auto absolute left-4 top-3 z-[35] flex h-11 w-11 items-center justify-center rounded-full border border-slate-200 bg-white shadow-lg transition hover:bg-slate-50"
-            aria-label={t('contact.jump_to_top')}
-          >
-            <ArrowUp size={20} color="#475569" />
-          </button>
-        )}
         {showJumpToLatest && (
           <button
             type="button"
             onClick={() => scrollToBottom()}
-            className="pointer-events-auto absolute bottom-3 right-4 z-[35] flex h-11 w-11 items-center justify-center rounded-full border border-slate-200 bg-white shadow-lg transition hover:bg-slate-50"
+            className="pointer-events-auto absolute bottom-3 left-1/2 z-[34] flex max-w-[calc(100%-2rem)] -translate-x-1/2 touch-manipulation items-center gap-2 rounded-full border border-slate-200/90 bg-white px-5 py-2.5 text-[14px] font-semibold text-slate-800 shadow-[0_4px_16px_rgba(15,23,42,0.14)] active:scale-[0.98]"
             aria-label={t('contact.jump_to_latest')}
           >
-            <ArrowDown size={20} color="#475569" />
+            <ArrowDown size={18} className="shrink-0 text-slate-600" aria-hidden />
+            <span className="truncate">{t('contact.jump_to_recent_pill')}</span>
           </button>
         )}
       </div>
 
-      {/* Phase 3: Input — flex footer (not position:fixed) so header/messages/composer don’t fight page scroll */}
-      <div
-        className={`relative z-20 shrink-0 touch-manipulation border-t border-slate-200/90 bg-white shadow-[0_-8px_24px_-12px_rgba(15,23,42,0.08)] supports-[padding:max(0px)]:pb-[max(14px,env(safe-area-inset-bottom,0px))] ${embedded ? 'px-3.5 pb-3 pt-2' : 'px-4 pb-3 pt-2'}`}
-      >
-        <div className="flex w-full min-w-0 items-end gap-2 rounded-[22px] border border-[#e2e8f0] bg-[#f8fafc] p-2 pl-3 pr-2">
+      <footer className={`relative z-20 shrink-0 bg-[#F0F2F5] pb-[max(14px,env(safe-area-inset-bottom,0px))] pt-2 ${embedded ? 'px-3' : 'px-3'}`}>
+        <div className="flex min-h-[48px] w-full min-w-0 touch-manipulation items-center gap-1 rounded-[28px] bg-white px-2 py-1.5 shadow-[0_1px_3px_rgba(15,23,42,0.08)] ring-1 ring-black/[0.04]">
           <button
             type="button"
             onClick={() => setAttachMenuOpen(true)}
             disabled={uploading}
-            className="mb-px flex h-11 w-11 shrink-0 touch-manipulation items-center justify-center rounded-full border-none bg-transparent transition-opacity disabled:cursor-not-allowed disabled:opacity-40"
+            className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full border-none bg-transparent text-slate-500 transition-colors active:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-40"
           >
-            <Paperclip size={20} color="#94a3b8" strokeWidth={2} />
+            <Paperclip size={21} strokeWidth={2} />
           </button>
           <textarea
             ref={inputRef}
@@ -1153,7 +1050,7 @@ const ContactUsView: React.FC<ContactUsViewProps> = ({
             rows={1}
             spellCheck
             aria-label={t('contact.type_message')}
-            className="box-border min-h-[44px] min-w-0 flex-1 resize-none overflow-hidden border-none bg-transparent px-0.5 py-2.5 font-sans text-[15px] leading-snug text-[#1e293b] [-webkit-appearance:none] outline-none"
+            className="box-border min-h-[44px] min-w-0 flex-1 resize-none overflow-hidden border-none bg-transparent px-2 py-2.5 font-sans text-[16px] leading-snug text-[#1f2937] [-webkit-appearance:none] outline-none"
             style={{
               maxHeight: COMPOSER_MAX_INPUT_PX,
             }}
@@ -1162,21 +1059,20 @@ const ContactUsView: React.FC<ContactUsViewProps> = ({
             type="button"
             onClick={handleSend}
             disabled={!input.trim() || uploading}
-            className="mb-px flex h-11 w-11 shrink-0 touch-manipulation items-center justify-center rounded-full border-none transition-colors"
+            className="flex h-11 w-11 shrink-0 touch-manipulation items-center justify-center rounded-full border-none transition-colors"
             style={{
               backgroundColor: input.trim() && !uploading ? '#FF6600' : '#e2e8f0',
               cursor: input.trim() && !uploading ? 'pointer' : 'default',
-              boxShadow: input.trim() && !uploading ? '0 2px 8px rgba(255,102,0,0.3)' : 'none',
+              boxShadow: input.trim() && !uploading ? '0 2px 8px rgba(255,102,0,0.25)' : 'none',
             }}
           >
-            {/* Phase 2: show spinner when uploading */}
             {uploading
               ? <Loader2 size={16} color="#fff" style={{ animation: 'spin 1s linear infinite' }} />
               : <Send size={16} color="#fff" style={{ marginLeft: 2 }} />
             }
           </button>
         </div>
-      </div>
+      </footer>
 
       {liveStaffModalOpen && (
         <div
