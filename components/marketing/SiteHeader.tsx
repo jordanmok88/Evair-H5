@@ -33,9 +33,14 @@ interface SiteHeaderProps {
      * otherwise `SiteHeader` uses its own {@link useMobileSignInGate}.
      */
     gate?: MobileSignInGate;
+    /**
+     * Apex home places Live Chat above the hero trust strip below `lg`;
+     * keep the header uncluttered on narrow viewports by hiding this button until desktop.
+     */
+    hideLiveChatBelowLg?: boolean;
 }
 
-const SiteHeader: React.FC<SiteHeaderProps> = ({ active = null, gate: gateProp }) => {
+const SiteHeader: React.FC<SiteHeaderProps> = ({ active = null, gate: gateProp, hideLiveChatBelowLg = false }) => {
     const { t } = useTranslation();
     const internalGate = useMobileSignInGate('/app');
     const signInGate = gateProp ?? internalGate;
@@ -75,7 +80,7 @@ const SiteHeader: React.FC<SiteHeaderProps> = ({ active = null, gate: gateProp }
                         onClick={() => {
                             window.dispatchEvent(new CustomEvent(EVAIR_OPEN_MARKETING_CONTACT_EVENT));
                         }}
-                        className="relative flex max-w-[min(100vw-12rem,9rem)] shrink-0 items-center gap-0.5 overflow-hidden rounded-full bg-gradient-to-r from-[#FF6600] to-[#FF8A3D] px-2 py-1.5 text-[10px] font-extrabold uppercase tracking-wide text-white shadow-sm active:scale-[0.98] transition-transform sm:max-w-none sm:gap-1 sm:px-3 sm:py-2 sm:text-[11px]"
+                        className={`relative flex max-w-[min(100vw-12rem,9rem)] shrink-0 items-center gap-0.5 overflow-hidden rounded-full bg-gradient-to-r from-[#FF6600] to-[#FF8A3D] px-2 py-1.5 text-[10px] font-extrabold uppercase tracking-wide text-white shadow-sm active:scale-[0.98] transition-transform sm:max-w-none sm:gap-1 sm:px-3 sm:py-2 sm:text-[11px] ${hideLiveChatBelowLg ? 'hidden lg:flex' : ''}`}
                     />
                     <SiteHeaderAccountActions />
                     <OpenAppHeaderButton href="/app" onClick={signInGate.gateClick} />

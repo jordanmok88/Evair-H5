@@ -49,7 +49,7 @@ const SiteHeaderAccountActions: React.FC = () => {
         };
     }, [loggedIn]);
 
-    if (!loggedIn) return null;
+    /** Show inbox + account on narrow marketing WebView/mobile; drawers handle signed-out UX. */
 
     const openInbox = () => {
         setProfileOpen(false);
@@ -114,7 +114,7 @@ const SiteHeaderAccountActions: React.FC = () => {
             <MarketingProfileDrawer
                 open={profileOpen}
                 onClose={() => setProfileOpen(false)}
-                isLoggedIn
+                isLoggedIn={loggedIn}
                 user={profileUser}
                 userLoading={profileOpen && profileUserLoading}
                 notifications={notifications}

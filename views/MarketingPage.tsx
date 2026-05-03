@@ -154,7 +154,7 @@ const MarketingPage: React.FC = () => {
 
     return (
         <div className="min-h-screen overflow-x-hidden bg-white text-gray-900 antialiased [text-rendering:optimizeLegibility]">
-            <SiteHeader active={null} gate={signInGate} />
+            <SiteHeader active={null} gate={signInGate} hideLiveChatBelowLg />
             <section className="bg-white px-4 py-6 sm:px-5 sm:py-8 md:px-6 md:py-10 lg:py-11">
                 <div className="mx-auto w-full min-w-0 max-w-6xl">
                     <MarketingHeroCarousel

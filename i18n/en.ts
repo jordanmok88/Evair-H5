@@ -324,7 +324,7 @@ const en = {
     nav_blog: 'Blog',
     footer_flat_home: 'Home',
     header_inbox_aria: 'Open inbox',
-    header_profile_aria: 'Open profile in the Evair app',
+    header_profile_aria: 'Open account menu',
     footer_flat_refunds: 'Refunds',
     footer_flat_support: 'Support',
     footer_link_phone: 'Mobile SIM',

@@ -1,6 +1,8 @@
 import React, { useCallback, useEffect, useId, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { BadgeCheck, CheckCircle2, Coins, Globe, ShoppingCart, Star } from 'lucide-react';
+import AppShellLiveChatButton from '@/components/AppShellLiveChatButton';
+import { EVAIR_OPEN_MARKETING_CONTACT_EVENT } from '@/utils/evairMarketingEvents';
 
 /** Autoplay spacing (≥4s): each advance picks a delay in this range. */
 const SLIDE_INTERVAL_MIN_MS = 4300;
@@ -302,11 +304,18 @@ export function MarketingHeroCarousel(props: MarketingHeroCarouselProps) {
                         </div>
                     </div>
 
-                    {/* Trust line before hero art on small screens — keeps conversion points above the fold */}
-                    <HeroTrustStrip
-                        id="marketing-hero-trust"
-                        className="mt-3 max-w-xl px-1 lg:hidden"
-                    />
+                    {/* Trust line before hero art on small screens — Live Chat tucked above it (homepage only). */}
+                    <div className="mt-3 w-full max-w-xl px-1 lg:hidden">
+                        <div className="mb-2 flex justify-center">
+                            <AppShellLiveChatButton
+                                onClick={() => {
+                                    window.dispatchEvent(new CustomEvent(EVAIR_OPEN_MARKETING_CONTACT_EVENT));
+                                }}
+                                className="relative flex max-w-[min(100vw-10rem,12rem)] shrink-0 items-center gap-1 overflow-hidden rounded-full bg-gradient-to-r from-[#FF6600] to-[#FF8A3D] px-3 py-2 text-[10px] font-extrabold uppercase tracking-wide text-white shadow-sm active:scale-[0.98] transition-transform sm:text-[11px]"
+                            />
+                        </div>
+                        <HeroTrustStrip id="marketing-hero-trust" className="" />
+                    </div>
 
                     {/* Touch swipe advances slides; tapping opens Pick a plan for that slide's category */}
                     <div
