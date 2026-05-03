@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect, useLayoutEffect, useMemo, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
-import { ChevronLeft, Send, Paperclip, CheckCheck, Bot, Sparkles, AlertCircle, ArrowDown, ArrowUp, Wifi, WifiOff, Headphones, ImagePlus, FileText, Loader2, X, Package, Receipt, Download, MoreVertical } from 'lucide-react';
+import { ChevronLeft, Send, Paperclip, CheckCheck, Bot, Sparkles, AlertCircle, ArrowDown, Wifi, WifiOff, Headphones, ImagePlus, FileText, Loader2, X, Package, Receipt, Download, MoreVertical } from 'lucide-react';
 import { getMultilingualResponse } from '../ai/evairAssistant';
 import { useEdgeSwipeBack } from '../hooks/useEdgeSwipeBack';
 import { chatService, newClientMsgId } from '../services/api/chat';
@@ -25,6 +25,15 @@ interface ContactUsViewProps {
 const EDGE_SWIPE_EXCLUDE_BOTTOM_PX = 140;
 
 const HUMAN_KEYWORDS = /\b(human|agent|real person|speak to someone|talk to person|live chat|representative|operator|transfer)\b|人工|客服|真人|转接|找人|humano|agente|persona real/i;
+
+const COMPOSER_SUGGESTION_KEYS = ['network_problem', 'sim_activation', 'data_topup', 'billing_issue'] as const;
+
+const SUGGESTION_AI_QUERY: Record<(typeof COMPOSER_SUGGESTION_KEYS)[number], string> = {
+  network_problem: 'My eSIM is not working, no signal or internet',
+  sim_activation: 'How do I activate my SIM card?',
+  data_topup: 'How can I top up my data plan?',
+  billing_issue: 'I have a billing question about my payment',
+};
 
 const DRAFT_KEY = 'evair-chat-draft';
 const SCROLL_FOLLOW_THRESHOLD_PX = 80;
@@ -308,12 +317,6 @@ const ContactUsView: React.FC<ContactUsViewProps> = ({
   const handleScroll = () => {
     syncScrollFABsFromEl();
   };
-
-  const scrollToTop = useCallback((behavior: ScrollBehavior = 'smooth') => {
-    scrollContainerRef.current?.scrollTo({ top: 0, behavior });
-    setHeaderMenuOpen(false);
-    requestAnimationFrame(() => syncScrollFABsFromEl());
-  }, [syncScrollFABsFromEl]);
 
   useEffect(() => {
     if (isNearBottom()) {
@@ -629,6 +632,16 @@ const ContactUsView: React.FC<ContactUsViewProps> = ({
     await sendCustomerMessage(trimmed);
   };
 
+  const handleSuggestionChip = async (key: (typeof COMPOSER_SUGGESTION_KEYS)[number]) => {
+    const label = t(`contact.${key}`);
+    const prefixed = `${t('contact.need_help_with')} ${label}`;
+    await sendCustomerMessage(prefixed, { skipAi: true });
+    if (!aiDisabledRef.current) {
+      const provider = providerRef.current;
+      if (provider) triggerAiReply(provider, SUGGESTION_AI_QUERY[key]);
+    }
+  };
+
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
@@ -794,7 +807,7 @@ const ContactUsView: React.FC<ContactUsViewProps> = ({
 
   return (
     <div className="relative flex h-full min-h-0 flex-col overflow-hidden overflow-x-hidden bg-[#ECE5DD]">
-      {/* WhatsApp-density header: gradient bar + ⋮ overflow (live staff, jump to start) */}
+      {/* WhatsApp-density header: gradient bar + ⋮ overflow (live staff, default AI) */}
       <header
         className={`relative z-[41] shrink-0 overflow-visible border-b border-white/15 bg-gradient-to-br from-[#FF6600] via-[#FF7433] to-[#FF8533] shadow-md ${embedded ? 'pb-2 pt-[max(10px,env(safe-area-inset-top,0px))]' : 'pb-2 pt-safe'}`}
       >
@@ -822,12 +835,8 @@ const ContactUsView: React.FC<ContactUsViewProps> = ({
             <p className="mt-px truncate text-[11px] font-medium leading-tight text-white/90">
               <span className="inline-flex items-center gap-1">
                 <span className="h-1 w-1 shrink-0 rounded-full bg-emerald-300" />
-                {aiDisabled ? t('contact.agent_status') : t('contact.online_status')}
+                {aiDisabled ? t('contact.header_mode_agent_live') : t('contact.header_mode_ai_assistant')}
               </span>
-              <span className="text-white/55" aria-hidden>
-                {' '}·{' '}
-              </span>
-              <span>{aiDisabled ? t('contact.agent_name') : 'Evair AI'}</span>
             </p>
           </div>
           <div className="relative shrink-0">
@@ -867,10 +876,16 @@ const ContactUsView: React.FC<ContactUsViewProps> = ({
                     type="button"
                     role="menuitem"
                     className="flex w-full items-center gap-3 px-4 py-3 text-left text-sm font-medium text-slate-800 active:bg-slate-100"
-                    onClick={() => scrollToTop()}
+                    onClick={() => {
+                      setHeaderMenuOpen(false);
+                      if (aiDisabled) {
+                        aiDisabledRef.current = false;
+                        setAiDisabled(false);
+                      }
+                    }}
                   >
-                    <ArrowUp size={18} className="text-slate-500" aria-hidden />
-                    {t('contact.menu_jump_to_top')}
+                    <Sparkles size={18} className="text-[#FF6600]" aria-hidden />
+                    {t('contact.menu_ai_assistant_default')}
                   </button>
                 </div>
               </>
@@ -1027,50 +1042,70 @@ const ContactUsView: React.FC<ContactUsViewProps> = ({
       </div>
 
       <footer className={`relative z-20 shrink-0 bg-[#F0F2F5] pb-[max(14px,env(safe-area-inset-bottom,0px))] pt-2 ${embedded ? 'px-3' : 'px-3'}`}>
-        <div className="flex min-h-[48px] w-full min-w-0 touch-manipulation items-center gap-1 rounded-[28px] bg-white px-2 py-1.5 shadow-[0_1px_3px_rgba(15,23,42,0.08)] ring-1 ring-black/[0.04]">
-          <button
-            type="button"
-            onClick={() => setAttachMenuOpen(true)}
-            disabled={uploading}
-            className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full border-none bg-transparent text-slate-500 transition-colors active:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-40"
+        <div className="flex w-full min-w-0 flex-col gap-1 rounded-[28px] bg-white px-2 pb-1.5 pt-1 shadow-[0_1px_3px_rgba(15,23,42,0.08)] ring-1 ring-black/[0.04]">
+          <div
+            className="flex gap-2 overflow-x-auto overscroll-x-contain px-0.5 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+            style={{ WebkitOverflowScrolling: 'touch' }}
+            role="group"
+            aria-label={t('contact.suggestion_chips_label')}
           >
-            <Paperclip size={21} strokeWidth={2} />
-          </button>
-          <textarea
-            ref={inputRef}
-            value={input}
-            enterKeyHint="send"
-            onChange={e => {
-              setInput(e.target.value);
-              requestAnimationFrame(adjustComposerHeight);
-            }}
-            onKeyDown={handleKeyDown}
-            onFocus={handleComposerFocus}
-            placeholder={t('contact.type_message')}
-            rows={1}
-            spellCheck
-            aria-label={t('contact.type_message')}
-            className="box-border min-h-[44px] min-w-0 flex-1 resize-none overflow-hidden border-none bg-transparent px-2 py-2.5 font-sans text-[16px] leading-snug text-[#1f2937] [-webkit-appearance:none] outline-none"
-            style={{
-              maxHeight: COMPOSER_MAX_INPUT_PX,
-            }}
-          />
-          <button
-            type="button"
-            onClick={handleSend}
-            disabled={!input.trim() || uploading}
-            className="flex h-11 w-11 shrink-0 touch-manipulation items-center justify-center rounded-full border-none transition-colors"
-            style={{
-              backgroundColor: input.trim() && !uploading ? '#FF6600' : '#e2e8f0',
-              cursor: input.trim() && !uploading ? 'pointer' : 'default',
-              boxShadow: input.trim() && !uploading ? '0 2px 8px rgba(255,102,0,0.25)' : 'none',
-            }}
-          >
-            {uploading
-              ? <Loader2 size={16} color="#fff" style={{ animation: 'spin 1s linear infinite' }} />
-              : <Send size={16} color="#fff" style={{ marginLeft: 2 }} />
-            }
-          </button>
+            {COMPOSER_SUGGESTION_KEYS.map(key => (
+              <button
+                key={key}
+                type="button"
+                onClick={() => void handleSuggestionChip(key)}
+                disabled={uploading}
+                className="shrink-0 whitespace-nowrap rounded-full border border-orange-100 bg-orange-50/95 px-3 py-1.5 text-[12px] font-semibold text-[#c2410c] transition-colors active:bg-orange-100 disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                {t(`contact.${key}`)}
+              </button>
+            ))}
+          </div>
+          <div className="flex min-h-[48px] w-full min-w-0 touch-manipulation items-center gap-1">
+            <button
+              type="button"
+              onClick={() => setAttachMenuOpen(true)}
+              disabled={uploading}
+              className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full border-none bg-transparent text-slate-500 transition-colors active:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-40"
+            >
+              <Paperclip size={21} strokeWidth={2} />
+            </button>
+            <textarea
+              ref={inputRef}
+              value={input}
+              enterKeyHint="send"
+              onChange={e => {
+                setInput(e.target.value);
+                requestAnimationFrame(adjustComposerHeight);
+              }}
+              onKeyDown={handleKeyDown}
+              onFocus={handleComposerFocus}
+              placeholder={t('contact.type_message')}
+              rows={1}
+              spellCheck
+              aria-label={t('contact.type_message')}
+              className="box-border min-h-[44px] min-w-0 flex-1 resize-none overflow-hidden border-none bg-transparent px-2 py-2.5 font-sans text-[16px] leading-snug text-[#1f2937] [-webkit-appearance:none] outline-none"
+              style={{
+                maxHeight: COMPOSER_MAX_INPUT_PX,
+              }}
+            />
+            <button
+              type="button"
+              onClick={handleSend}
+              disabled={!input.trim() || uploading}
+              className="flex h-11 w-11 shrink-0 touch-manipulation items-center justify-center rounded-full border-none transition-colors"
+              style={{
+                backgroundColor: input.trim() && !uploading ? '#FF6600' : '#e2e8f0',
+                cursor: input.trim() && !uploading ? 'pointer' : 'default',
+                boxShadow: input.trim() && !uploading ? '0 2px 8px rgba(255,102,0,0.25)' : 'none',
+              }}
+            >
+              {uploading
+                ? <Loader2 size={16} color="#fff" style={{ animation: 'spin 1s linear infinite' }} />
+                : <Send size={16} color="#fff" style={{ marginLeft: 2 }} />
+              }
+            </button>
+          </div>
         </div>
       </footer>
 
