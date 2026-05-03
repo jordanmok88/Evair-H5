@@ -10,6 +10,7 @@
 import React, { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { isMobileDevice } from '../../utils/device';
+import { toAbsoluteAppShellUrl } from '../../utils/marketingAppShell';
 import { MARKETING_NAV_ITEMS } from './siteNavConfig';
 
 type FlatFooterLink = { label: string; href: string; mobileHref?: string };
@@ -53,7 +54,7 @@ const SiteFooter: React.FC = () => {
                             onClick={(e) => {
                                 if (link.mobileHref && isMobileDevice()) {
                                     e.preventDefault();
-                                    window.location.assign(link.mobileHref);
+                                    window.location.assign(toAbsoluteAppShellUrl(link.mobileHref));
                                 }
                             }}
                         >

@@ -9,6 +9,7 @@ import { useTranslation } from 'react-i18next';
 import { CheckCircle2, ChevronRight, Star } from 'lucide-react';
 import { applyPageSeo } from '../utils/seoHead';
 import { isMobileDevice } from '../utils/device';
+import { toAbsoluteAppShellUrl } from '../utils/marketingAppShell';
 import { FooterWordmarkLink } from '../components/marketing/FooterWordmarkLink';
 import SiteHeader from '../components/marketing/SiteHeader';
 import { useMobileSignInGate } from '../hooks/useMobileSignInGate';
@@ -22,7 +23,7 @@ const TRAVEL_ESIM_LANDING = '/travel-esim';
 const goActivateCta = (e: React.MouseEvent<HTMLAnchorElement>) => {
     if (isMobileDevice()) {
         e.preventDefault();
-        window.location.assign(`${APP_PATH}#bind-sim`);
+        window.location.assign(toAbsoluteAppShellUrl(`${APP_PATH}#bind-sim`));
     }
 };
 
@@ -449,7 +450,7 @@ const FooterColumn: React.FC<{ title: string; links: FooterLink[] }> = ({ title,
                         onClick={(e) => {
                             if (l.mobileHref && isMobileDevice()) {
                                 e.preventDefault();
-                                window.location.assign(l.mobileHref);
+                                window.location.assign(toAbsoluteAppShellUrl(l.mobileHref));
                             }
                             l.onClick?.(e);
                         }}

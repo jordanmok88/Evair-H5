@@ -31,12 +31,27 @@
  *      Catches the "phone in landscape" and "desktop browser pinned
  *      narrow" edge cases that pure UA misses.
  *
- * We treat the visitor as **mobile** if EITHER signal fires. False
- * positives ("desktop user with a tiny window") get the mobile
+ * We treat the visitor as **mobile** if ANY signal fires:
+ *
+ *   UA / viewport (above), **or**
+ *   **iPadOS “Request Desktop Website”** — UA presents as `MacIntel` with
+ *   touch points, so neither `uaMobile` nor `narrow` is true. Those users
+ *   still expect footer / activation links to open `/app…` like a phone.
+ *
+ * False positives ("desktop user with a tiny window") get the mobile
  * full-screen app, which is fine — the H5 is fully responsive at any
  * viewport. False negatives ("Android tablet in landscape") get the
  * desktop store, which is also fine.
  */
+function isIpadOsSafariDesktopUa(): boolean {
+    if (typeof navigator === 'undefined') return false;
+    return (
+        navigator.platform === 'MacIntel' &&
+        typeof navigator.maxTouchPoints === 'number' &&
+        navigator.maxTouchPoints > 1
+    );
+}
+
 export function isMobileDevice(): boolean {
     if (typeof window === 'undefined') return false;
 
@@ -49,7 +64,7 @@ export function isMobileDevice(): boolean {
         typeof window.matchMedia === 'function' &&
         window.matchMedia('(max-width: 1023px)').matches;
 
-    return uaMobile || narrow;
+    return uaMobile || narrow || isIpadOsSafariDesktopUa();
 }
 
 /**
