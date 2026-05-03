@@ -60,8 +60,14 @@ export function toCamelCase<T>(obj: T): T {
 
 // ─── 配置 ────────────────────────────────────────────────────────────────
 
-// 开发环境使用本地测试服务器，生产环境通过环境变量配置
-const DEFAULT_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://evair.zhhwxt.cn/api/v1';
+// Production / explicit env: full URL to Laravel. DEV default: same-origin `/evair-api-proxy`
+// so `vite` can forward to China (`vite.config.ts`) — avoids CORS when Origin is e.g.
+// `http://192.168.x.x:3000` from a phone while testing `npm run dev`.
+const REMOTE_API_DEFAULT = 'https://evair.zhhwxt.cn/api/v1';
+const DEV_PROXY_BASE = '/evair-api-proxy';
+const DEFAULT_BASE_URL =
+  import.meta.env.VITE_API_BASE_URL ||
+  (import.meta.env.DEV ? DEV_PROXY_BASE : REMOTE_API_DEFAULT);
 const TOKEN_KEY = 'evair_access_token';
 const REFRESH_TOKEN_KEY = 'evair_refresh_token';
 

@@ -28,6 +28,17 @@ export default defineConfig(({ mode }) => {
       port: 3000,
       host: '0.0.0.0',
       proxy: {
+        /**
+         * Same-origin escape hatch for `npm run dev` when the browser Origin is NOT
+         * allowed by Laravel CORS (e.g. iPhone hitting `http://192.168.x.x:3000`).
+         * The API client defaults to this base only in DEV when `VITE_API_BASE_URL` is unset
+         * (see `services/api/client.ts`). Requests go Host: localhost:3000 → Vite → China API.
+         */
+        '/evair-api-proxy': {
+          target: 'https://evair.zhhwxt.cn',
+          changeOrigin: true,
+          rewrite: (path: string) => `/api/v1${path.replace(/^\/evair-api-proxy/, '') || ''}`,
+        },
         '/api/track': {
           target: netlifyFnTarget,
           changeOrigin: true,
