@@ -1042,9 +1042,9 @@ const ContactUsView: React.FC<ContactUsViewProps> = ({
       </div>
 
       <footer className={`relative z-20 shrink-0 bg-[#F0F2F5] pb-[max(14px,env(safe-area-inset-bottom,0px))] pt-2 ${embedded ? 'px-3' : 'px-3'}`}>
-        <div className="flex w-full min-w-0 flex-col gap-1 rounded-[28px] bg-white px-2 pb-1.5 pt-1 shadow-[0_1px_3px_rgba(15,23,42,0.08)] ring-1 ring-black/[0.04]">
+        <div className="flex w-full min-w-0 flex-col gap-2">
           <div
-            className="flex gap-2 overflow-x-auto overscroll-x-contain px-0.5 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+            className="flex gap-2 overflow-x-auto overscroll-x-contain py-0.5 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
             style={{ WebkitOverflowScrolling: 'touch' }}
             role="group"
             aria-label={t('contact.suggestion_chips_label')}
@@ -1055,13 +1055,13 @@ const ContactUsView: React.FC<ContactUsViewProps> = ({
                 type="button"
                 onClick={() => void handleSuggestionChip(key)}
                 disabled={uploading}
-                className="shrink-0 whitespace-nowrap rounded-full border border-orange-100 bg-orange-50/95 px-3 py-1.5 text-[12px] font-semibold text-[#c2410c] transition-colors active:bg-orange-100 disabled:cursor-not-allowed disabled:opacity-50"
+                className="shrink-0 whitespace-nowrap rounded-full border border-orange-100 bg-white px-3 py-1.5 text-[12px] font-semibold text-[#c2410c] shadow-[0_1px_2px_rgba(15,23,42,0.06)] transition-colors active:bg-orange-50 disabled:cursor-not-allowed disabled:opacity-50"
               >
                 {t(`contact.${key}`)}
               </button>
             ))}
           </div>
-          <div className="flex min-h-[48px] w-full min-w-0 touch-manipulation items-center gap-1">
+          <div className="flex min-h-[48px] w-full min-w-0 touch-manipulation items-center gap-1 rounded-[28px] bg-white px-2 py-1.5 shadow-[0_1px_3px_rgba(15,23,42,0.08)] ring-1 ring-black/[0.04]">
             <button
               type="button"
               onClick={() => setAttachMenuOpen(true)}
