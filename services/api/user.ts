@@ -90,6 +90,21 @@ export const userService = {
    * App-tier returns { data: null } (code "200").
    */
   async unbindSim(data: UnbindSimRequest): Promise<void> {
+    // #region agent log
+    fetch('http://127.0.0.1:7893/ingest/14d3c5f8-7d82-4f89-8791-2a5c027b03b6', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'X-Debug-Session-Id': '243df2' },
+      body: JSON.stringify({
+        sessionId: '243df2',
+        runId: 'post-fix',
+        hypothesisId: 'H1',
+        location: 'user.ts:unbindSim',
+        message: 'outbound unbind body (camelCase keys before client snake_case)',
+        data: { keys: Object.keys(data) },
+        timestamp: Date.now(),
+      }),
+    }).catch(() => {});
+    // #endregion
     await post(ENDPOINTS.UNBIND_SIM, data);
   },
 

@@ -1378,14 +1378,71 @@ const MySimsView: React.FC<MySimsViewProps> = ({
               </button>
               <button
                 onClick={async () => {
-                  const iccid = deleteConfirmSim.iccid || deleteConfirmSim.id;
-                  console.log('[Delete SIM] iccid:', iccid, 'sim:', deleteConfirmSim);
+                  const rowPk = deleteConfirmSim.simId;
+                  const rowDigest = deleteConfirmSim.iccid
+                    ? `${deleteConfirmSim.iccid.slice(-4)}`
+                    : 'no_iccid';
+                  console.log('[Delete SIM] simId:', rowPk, 'iccid_last4:', rowDigest, 'bindingId:', deleteConfirmSim.id);
                   setDeleteLoading(true);
                   setDeleteError(null);
                   try {
-                    await unbindSim(iccid);
-                  } catch (err: any) {
-                    console.warn('[Delete SIM] API unbind failed (expected for demo SIMs):', err?.message);
+                    if (typeof rowPk === 'number' && rowPk > 0) {
+                      await unbindSim(rowPk);
+                      // #region agent log
+                      fetch('http://127.0.0.1:7893/ingest/14d3c5f8-7d82-4f89-8791-2a5c027b03b6', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json', 'X-Debug-Session-Id': '243df2' },
+                        body: JSON.stringify({
+                          sessionId: '243df2',
+                          runId: 'post-fix',
+                          hypothesisId: 'H1',
+                          location: 'MySimsView:delete_confirm',
+                          message: 'unbind API resolved (simId)',
+                          data: { rowPk },
+                          timestamp: Date.now(),
+                        }),
+                      }).catch(() => {});
+                      // #endregion
+                    } else {
+                      // #region agent log
+                      fetch('http://127.0.0.1:7893/ingest/14d3c5f8-7d82-4f89-8791-2a5c027b03b6', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json', 'X-Debug-Session-Id': '243df2' },
+                        body: JSON.stringify({
+                          sessionId: '243df2',
+                          runId: 'post-fix',
+                          hypothesisId: 'H1_skip',
+                          location: 'MySimsView:delete_confirm',
+                          message: 'unbind skipped — no laravel simId (local-only row)',
+                          data: { bindingId: deleteConfirmSim.id },
+                          timestamp: Date.now(),
+                        }),
+                      }).catch(() => {});
+                      // #endregion
+                    }
+                  } catch (err: unknown) {
+                    const e = err as { httpStatus?: number; message?: string; code?: string };
+                    console.warn('[Delete SIM] API unbind failed (expected for demo SIMs):', e?.message);
+                    // #region agent log
+                    fetch('http://127.0.0.1:7893/ingest/14d3c5f8-7d82-4f89-8791-2a5c027b03b6', {
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json', 'X-Debug-Session-Id': '243df2' },
+                      body: JSON.stringify({
+                        sessionId: '243df2',
+                        runId: 'post-fix',
+                        hypothesisId: 'H1',
+                        location: 'MySimsView:delete_confirm',
+                        message: 'unbind API rejected',
+                        data: {
+                          httpStatus: e?.httpStatus ?? null,
+                          code: String(e?.code ?? ''),
+                          msgSlice: String(e?.message ?? '').slice(0, 120),
+                          attemptedSimPk: rowPk ?? null,
+                        },
+                        timestamp: Date.now(),
+                      }),
+                    }).catch(() => {});
+                    // #endregion
                   }
                   onDeleteSim?.(deleteConfirmSim.id);
                   setDeleteConfirmSim(null);

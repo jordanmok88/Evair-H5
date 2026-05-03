@@ -47,6 +47,8 @@ export interface User {
 
 export interface ActiveSim {
   id: string;
+  /** Laravel `sims.id` (App API); required for POST `/app/users/unbind-sim`. */
+  simId?: number;
   iccid?: string;
   country: Country;
   locationCode?: string;

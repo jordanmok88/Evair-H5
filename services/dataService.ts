@@ -503,12 +503,11 @@ export async function enableProfile(iccid: string): Promise<EnableProfileResult>
 
 // ─── Unbind SIM ──────────────────────────────────────────────────────
 
-export async function unbindSim(iccid: string): Promise<{ success: boolean }> {
+export async function unbindSim(simId: number): Promise<void> {
   const { userService } = await import('./api');
 
   try {
-    const result = await userService.unbindSim({ iccid });
-    return result;
+    await userService.unbindSim({ simId });
   } catch (err: any) {
     console.error('[unbindSim] API error:', err?.message, 'code:', err?.code);
     throw err;

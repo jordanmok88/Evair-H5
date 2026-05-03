@@ -468,6 +468,7 @@ function CustomerApp() {
     };
     return {
       id: String(userSim.id),
+      simId: userSim.simId,
       iccid: userSim.sim.iccid,
       country: physical ? countryPhysical : countryEsim,
       plan: {
@@ -505,6 +506,21 @@ function CustomerApp() {
     try {
       const response = await userService.getSims();
       const convertedSims = response.list.map(convertUserSimToActiveSim);
+      // #region agent log
+      fetch('http://127.0.0.1:7893/ingest/14d3c5f8-7d82-4f89-8791-2a5c027b03b6', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-Debug-Session-Id': '243df2' },
+        body: JSON.stringify({
+          sessionId: '243df2',
+        runId: 'post-fix',
+        hypothesisId: 'H2',
+        location: 'App.tsx:fetchUserSims',
+          message: 'GET /app/users/sims merged list length',
+          data: { fetchedCount: convertedSims.length },
+          timestamp: Date.now(),
+        }),
+      }).catch(() => {});
+      // #endregion
       setServerSims(convertedSims);
 
       // Fan-out live usage refresh (per-SIM supplier) — best-effort; on
@@ -802,6 +818,26 @@ function CustomerApp() {
   };
 
   const handleDeleteSim = (simId: string) => {
+    // #region agent log
+    fetch('http://127.0.0.1:7893/ingest/14d3c5f8-7d82-4f89-8791-2a5c027b03b6', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'X-Debug-Session-Id': '243df2' },
+      body: JSON.stringify({
+        sessionId: '243df2',
+        runId: 'post-fix',
+        hypothesisId: 'H3',
+        location: 'App.tsx:handleDeleteSim',
+        message: 'parent delete handler entry',
+        data: {
+          simId,
+          serverSimsLen: serverSims.length,
+          activeSimsLen: activeSims.length,
+          serverBindingIdsSample: serverSims.slice(0, 5).map((s) => s.id),
+        },
+        timestamp: Date.now(),
+      }),
+    }).catch(() => {});
+    // #endregion
     setActiveSims(prev => prev.filter(s => s.id !== simId));
     setServerSims(prev => prev.filter(s => s.id !== simId));
     // Re-fetch from server to ensure consistency

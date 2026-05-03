@@ -200,8 +200,9 @@ export interface BindSimRequest {
   activationCode?: string;
 }
 
+/** App-tier unbind validates `sim_id` (matches `AppUserSim.sim_id` / `sims.id`). */
 export interface UnbindSimRequest {
-  iccid: string;
+  simId: number;
 }
 
 // ─── 地址模块类型 ────────────────────────────────────────────────────────

@@ -57,7 +57,7 @@ const MODULES = {
       changePassword: { name: '修改密码', params: ['currentPassword', 'password', 'passwordConfirmation'] },
       getSims: { name: '获取SIM卡列表', params: ['status?'] },
       bindSim: { name: '绑定SIM卡', params: ['iccid', 'activationCode?'] },
-      unbindSim: { name: '解绑SIM卡', params: ['iccid'] },
+      unbindSim: { name: '解绑SIM卡', params: ['simId'] },
       getAddresses: { name: '获取地址列表', params: [] },
       createAddress: { name: '添加地址', params: ['recipientName', 'phone', 'addressLine1', 'city', 'postalCode', 'country'] },
       updateAddress: { name: '更新地址', params: ['addressId', 'recipientName?', 'phone?', 'addressLine1?', 'city?', 'postalCode?', 'country?'] },
@@ -128,6 +128,8 @@ const DEFAULT_PARAMS: Record<string, string> = {
   name: 'Test User',
   phone: '+1234567890',
   iccid: '8985200000000000001',
+  /** Laravel `sims.id` for POST /app/users/unbind-sim */
+  simId: '1',
   packageCode: 'PKG-US-5GB-30D',
   productId: 'SIM-US-10GB-30D',
   orderNo: 'ORD20260429123456',
@@ -533,8 +535,14 @@ async function executeUserMethod(method: string, params: Record<string, string>)
         iccid: params.iccid || DEFAULT_PARAMS.iccid,
         activationCode: params.activationCode,
       } as BindSimRequest);
-    case 'unbindSim':
-      return userService.unbindSim({ iccid: params.iccid || DEFAULT_PARAMS.iccid });
+    case 'unbindSim': {
+      const simIdRaw = params.simId || DEFAULT_PARAMS.simId;
+      const simId = parseInt(simIdRaw, 10);
+      if (!Number.isFinite(simId)) {
+        throw new Error('unbindSim: simId must be a finite integer');
+      }
+      return userService.unbindSim({ simId });
+    }
     case 'getAddresses':
       return userService.getAddresses();
     case 'createAddress':
