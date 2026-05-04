@@ -40,6 +40,7 @@ import { getRoute, type Route } from './utils/routing';
 import {
   EVAIR_OPEN_APP_SHELL_CHAT,
   EVAIR_OPEN_MARKETING_CONTACT_EVENT,
+  type MarketingContactOpenDetail,
 } from './utils/evairMarketingEvents';
 import { deriveEsimCountryOverlay } from './utils/deriveEsimRegionFromPlanName';
 import { BootSplash, shouldSkipBootSplash } from './components/BootSplash';
@@ -80,6 +81,24 @@ function hashFragmentForTab(tab: Tab): string {
 }
 
 
+/** Default anchor when the marketing contact event has no `detail` (e.g. Profile → Contact). Matches edge tab sizing. */
+function marketingContactFallbackAnchor(): MarketingContactOpenDetail {
+  if (typeof window === 'undefined') {
+    return { dock: 'right', topPx: 120, tabW: 44, tabH: 118 };
+  }
+  const md = window.innerWidth >= 768;
+  const tabW = md ? 44 : 22;
+  const tabH = md ? 118 : 92;
+  const vh = window.innerHeight;
+  return {
+    dock: 'right',
+    topPx: Math.max(12, Math.round((vh - tabH) / 2)),
+    tabW,
+    tabH,
+  };
+}
+
+
 function RouteSuspenseFallback() {
   return (
     <div className="min-h-[50vh] flex flex-col items-center justify-center gap-3 bg-white text-slate-500">
@@ -92,6 +111,7 @@ function App() {
   /** Full-screen splash on every load (~2.8 s). Append `?nosplash` to skip (QA). Timing: BootSplash.tsx `BOOT_SPLASH_DURATION_*`. */
   const [bootComplete, setBootComplete] = useState(() => shouldSkipBootSplash());
   const [marketingSupportOpen, setMarketingSupportOpen] = useState(false);
+  const [marketingContactAnchor, setMarketingContactAnchor] = useState<MarketingContactOpenDetail | null>(null);
 
   // Top-level route detection. Falls back to <CustomerApp/> for any path
   // we don't explicitly handle, so existing app surfaces are unaffected.
@@ -109,12 +129,15 @@ function App() {
 
   useEffect(() => {
     setMarketingSupportOpen(false);
+    setMarketingContactAnchor(null);
   }, [route.kind]);
 
   /** Profile drawer → Contact Us without `/app#contact` (`SiteHeaderAccountActions`). */
   useEffect(() => {
-    const openContactDrawer = () => {
+    const openContactDrawer = (ev: Event) => {
       if (getRoute().kind === 'app') return;
+      const ce = ev as CustomEvent<MarketingContactOpenDetail | undefined>;
+      setMarketingContactAnchor(ce.detail ?? marketingContactFallbackAnchor());
       setMarketingSupportOpen(true);
     };
     window.addEventListener(EVAIR_OPEN_MARKETING_CONTACT_EVENT, openContactDrawer);
@@ -198,7 +221,14 @@ function App() {
     <>
       <LiveChatEdgeLauncher />
       {route.kind !== 'app' && (
-        <MarketingContactDrawer open={marketingSupportOpen} onClose={() => setMarketingSupportOpen(false)} />
+        <MarketingContactDrawer
+          open={marketingSupportOpen}
+          anchor={marketingContactAnchor}
+          onClose={() => {
+            setMarketingSupportOpen(false);
+            setMarketingContactAnchor(null);
+          }}
+        />
       )}
       <Suspense fallback={<RouteSuspenseFallback />}>{appBody}</Suspense>
     </>
