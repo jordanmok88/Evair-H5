@@ -4,6 +4,8 @@ const es = {
     tuck: 'Ocultar el botón de soporte al borde',
     expand: 'Mostrar chat de soporte',
     live_chat: 'Chat en vivo',
+    edge_tab_line1: 'EN VIVO',
+    edge_tab_line2: 'CHAT',
   },
   barcode_scanner: {
     title: 'Escanear código de barras ICCID',

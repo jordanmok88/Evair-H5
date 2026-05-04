@@ -197,8 +197,8 @@ const LiveChatEdgeLauncher: React.FC = () => {
       >
         <ChevronsRight className="h-4 w-4 shrink-0 text-white opacity-95" aria-hidden strokeWidth={2.5} />
         <span className="flex flex-col items-center gap-0 font-extrabold leading-none text-[9px] uppercase tracking-wide text-white">
-          <span>LIVE</span>
-          <span className="mt-0.5">CHAT</span>
+          <span>{t('support_fab.edge_tab_line1')}</span>
+          <span className="mt-0.5">{t('support_fab.edge_tab_line2')}</span>
         </span>
         {unread > 0 ? (
           <span className="min-w-[1.125rem] rounded-full bg-red-500 px-0.5 text-center text-[9px] font-bold leading-4 text-white ring-2 ring-orange-600">

@@ -4,6 +4,8 @@ const zh = {
     tuck: '收起客服按钮到边缘',
     expand: '显示客服入口',
     live_chat: '在线客服',
+    edge_tab_line1: '在线',
+    edge_tab_line2: '客服',
   },
   barcode_scanner: {
     title: '扫描 ICCID 条码',
