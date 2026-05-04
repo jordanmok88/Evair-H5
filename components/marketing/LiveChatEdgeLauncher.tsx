@@ -313,10 +313,11 @@ const LiveChatEdgeLauncher: React.FC<LiveChatEdgeLauncherProps> = ({ marketingDr
             strokeWidth={2.5}
           />
           <span
-            className={`inline-block shrink-0 whitespace-nowrap font-extrabold uppercase leading-none tracking-wide text-white ${mdUp ? 'text-[11px]' : 'text-[10px]'}`}
+            className={`inline-block shrink-0 whitespace-nowrap font-extrabold uppercase leading-none text-white ${mdUp ? 'text-[11px]' : 'text-[10px]'}`}
             style={{
               transform: dock === 'left' ? 'rotate(-90deg)' : 'rotate(90deg)',
               transformOrigin: 'center center',
+              letterSpacing: mdUp ? '0.22em' : '0.28em',
             }}
             aria-hidden
           >
