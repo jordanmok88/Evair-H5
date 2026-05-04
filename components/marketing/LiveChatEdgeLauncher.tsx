@@ -19,7 +19,8 @@ const FLIP_MIN_DX = 44;
 const FLIP_DOMINANCE = 1.2;
 /** Mobile idle strip */
 const COLLAPSED_W_PX = 4;
-const EXPAND_MS = 5200;
+/** Expanded tab hides this many ms after last scroll/touch/wheel/tab interaction (mobile). */
+const MOBILE_PEEK_HOLD_MS = 3000;
 /** Transitions (width / opacity / shadow) */
 const EASE_PREMIUM = 'cubic-bezier(0.22, 1, 0.36, 1)';
 
@@ -60,7 +61,7 @@ interface LiveChatEdgeLauncherProps {
 
 /**
  * Edge “Live chat” control. **Mobile (< md):** collapses to a 4px orange line when idle;
- * scroll/touch peeks the full tab for ~5s with smooth easing. **Desktop:** always expanded.
+ * scroll/touch peeks the full tab; expanded rail hides again after ~3s without interaction. **Desktop:** always expanded.
  * Hidden while any full chat surface is open. Network loss tints the collapsed rail + tooltip.
  */
 const LiveChatEdgeLauncher: React.FC<LiveChatEdgeLauncherProps> = ({ marketingDrawerOpen = false }) => {
@@ -146,7 +147,7 @@ const LiveChatEdgeLauncher: React.FC<LiveChatEdgeLauncherProps> = ({ marketingDr
     peekTimerRef.current = window.setTimeout(() => {
       setMobilePeek(false);
       peekTimerRef.current = null;
-    }, EXPAND_MS);
+    }, MOBILE_PEEK_HOLD_MS);
   }, [mdUp, chatSurfacesOpen]);
 
   /** Scroll / touch wakes the strip on phones */
