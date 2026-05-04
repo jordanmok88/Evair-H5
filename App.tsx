@@ -220,7 +220,9 @@ function App() {
 
   return (
     <>
-      <LiveChatEdgeLauncher marketingDrawerOpen={marketingSupportOpen} />
+      {route.kind !== 'app' ? (
+        <LiveChatEdgeLauncher marketingDrawerOpen={marketingSupportOpen} />
+      ) : null}
       {route.kind !== 'app' && (
         <MarketingContactDrawer
           open={marketingSupportOpen}

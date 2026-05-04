@@ -4,10 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { ChevronsLeft, ChevronsRight } from 'lucide-react';
 import { getRoute } from '../../utils/routing';
 import {
-  EVAIR_APP_CONTACT_OPEN,
-  EVAIR_OPEN_APP_SHELL_CHAT,
   EVAIR_OPEN_MARKETING_CONTACT_EVENT,
-  type EvairAppContactOpenDetail,
   type MarketingContactOpenDetail,
 } from '../../utils/evairMarketingEvents';
 import { useUnreadChat } from '../../hooks/useUnreadChat';
@@ -60,24 +57,19 @@ interface LiveChatEdgeLauncherProps {
 }
 
 /**
- * Edge “Live chat” control. **`/app` always uses compact rail typography** (same as mobile marketing).
- * Marketing **viewport ≥ md** uses a wider always-expanded rail. Below md (marketing only): 4px idle strip,
- * scroll/touch peeks expanded tab (~3s hold). Hidden while chat drawer / in-app Contact is open.
+ * Edge “Live chat” rail for **non-`app`** routes only (`App.tsx` does not mount this on `route.kind === 'app'` —
+ * the shell uses {@link AppShellLiveChatButton} in headers). **Viewport ≥ md**: wide always-expanded rail.
+ * Narrow viewports: 4px idle strip, scroll/touch peeks expanded tab (~3s hold). Hidden while the marketing contact drawer is open.
  */
 const LiveChatEdgeLauncher: React.FC<LiveChatEdgeLauncherProps> = ({ marketingDrawerOpen = false }) => {
   const { t } = useTranslation();
   const viewportMdUp = useViewportMinWidth(MD_MIN);
   const [routeKind, setRouteKind] = useState(() => getRoute().kind);
-  /** Wider docked tab — marketing desktop only. App shell/WebView stays compact → matches phone marketing styling. */
-  const wideRail = viewportMdUp && routeKind !== 'app';
+  /** Desktop: wide always-expanded rail — this component never mounts on `/app` (customer shell). */
+  const wideRail = viewportMdUp;
   const { w: TAB_W, h: TAB_H } = tabSize(wideRail);
 
   const [dock, setDock] = useState<'left' | 'right'>(loadDock);
-  const [appContactSurfaceOpen, setAppContactSurfaceOpen] = useState(() =>
-    typeof window !== 'undefined'
-      ? getRoute().kind === 'app' && window.location.hash.toLowerCase() === '#contact'
-      : false,
-  );
   /** Peek-expanded tab — when not wideRail, user wakes strip via scroll/touch */
   const [mobilePeek, setMobilePeek] = useState(!wideRail);
 
@@ -93,39 +85,20 @@ const LiveChatEdgeLauncher: React.FC<LiveChatEdgeLauncherProps> = ({ marketingDr
   const [online, setOnline] = useState(
     typeof navigator !== 'undefined' ? navigator.onLine : true,
   );
-  const unreadActive = routeKind === 'app' && !marketingDrawerOpen && !appContactSurfaceOpen;
-  const { unread } = useUnreadChat(unreadActive && routeKind !== 'apiTest');
+  const { unread } = useUnreadChat(false);
 
-  const chatSurfacesOpen = marketingDrawerOpen || appContactSurfaceOpen;
+  const chatSurfacesOpen = marketingDrawerOpen;
   const showExpanded = wideRail || mobilePeek;
 
   useEffect(() => {
     const syncRoute = () => {
-      const r = getRoute();
-      setRouteKind(r.kind);
-      if (r.kind !== 'app') {
-        setAppContactSurfaceOpen(false);
-      }
-    };
-    const syncContactFromLocation = () => {
-      const h = window.location.hash.toLowerCase();
-      setAppContactSurfaceOpen(getRoute().kind === 'app' && h === '#contact');
-    };
-    const onAppContactBroadcast = (e: Event) => {
-      const d = (e as CustomEvent<EvairAppContactOpenDetail>).detail;
-      if (d && typeof d.open === 'boolean') {
-        setAppContactSurfaceOpen(d.open);
-      }
+      setRouteKind(getRoute().kind);
     };
     window.addEventListener('popstate', syncRoute);
-    window.addEventListener('hashchange', syncContactFromLocation);
-    window.addEventListener('popstate', syncContactFromLocation);
-    window.addEventListener(EVAIR_APP_CONTACT_OPEN, onAppContactBroadcast);
+    window.addEventListener('hashchange', syncRoute);
     return () => {
       window.removeEventListener('popstate', syncRoute);
-      window.removeEventListener('hashchange', syncContactFromLocation);
-      window.removeEventListener('popstate', syncContactFromLocation);
-      window.removeEventListener(EVAIR_APP_CONTACT_OPEN, onAppContactBroadcast);
+      window.removeEventListener('hashchange', syncRoute);
     };
   }, []);
 
@@ -182,19 +155,14 @@ const LiveChatEdgeLauncher: React.FC<LiveChatEdgeLauncherProps> = ({ marketingDr
   }, []);
 
   const openChat = useCallback(() => {
-    const k = getRoute().kind;
-    if (k === 'apiTest') return;
+    if (getRoute().kind === 'apiTest') return;
     const instantMd = typeof window !== 'undefined' && window.innerWidth >= MD_MIN;
     const { w, h } = tabSize(instantMd);
     /** Vertically centred tab → anchor drawer to same vertical axis */
     const topPx =
       typeof window !== 'undefined' ? Math.max(12, Math.round(window.innerHeight / 2 - h / 2)) : 160;
-    if (k === 'app') {
-      window.dispatchEvent(new CustomEvent(EVAIR_OPEN_APP_SHELL_CHAT));
-    } else {
-      const detail: MarketingContactOpenDetail = { dock, topPx, tabW: w, tabH: h };
-      window.dispatchEvent(new CustomEvent(EVAIR_OPEN_MARKETING_CONTACT_EVENT, { detail }));
-    }
+    const detail: MarketingContactOpenDetail = { dock, topPx, tabW: w, tabH: h };
+    window.dispatchEvent(new CustomEvent(EVAIR_OPEN_MARKETING_CONTACT_EVENT, { detail }));
   }, [dock]);
 
   const onPointerDown = (e: React.PointerEvent<HTMLDivElement>) => {

@@ -15,8 +15,7 @@ export const EVAIR_OPEN_APP_SHELL_CHAT = 'evair-open-app-shell-chat';
 
 /**
  * CustomerApp broadcasts whether the full-screen Contact / live chat (`Tab.DIALER`) is visible.
- * {@link LiveChatEdgeLauncher} listens so the rail hides even when `history.replaceState` / WebView
- * does not emit `hashchange` for `#contact`.
+ * Consumers may include native WebView overlays; the HTML edge rail is not mounted on `/app`.
  */
 export const EVAIR_APP_CONTACT_OPEN = 'evair-app-contact-open';
 export type EvairAppContactOpenDetail = { open: boolean };
