@@ -1,17 +1,14 @@
 import React from 'react';
-import { OpenAppHeaderButton } from '@/components/marketing/OpenAppHeaderButton';
-import { runningInsideNativeApp } from '@/utils/testMode';
 
 /**
- * Full “OPEN APP” pill for mobile web only (hidden in Flutter WebView and on `md+`).
- * Pairs with icon-only live chat in app shell headers.
+ * Legacy slot in app-shell headers ({@link ShopView}, {@link ProfileView}, etc.).
+ *
+ * **`OPEN APP`** only makes sense on **marketing** surfaces (people still on Safari / public pages).
+ * The customer shell already *is* the app (`/app` or equivalent routes), so a second “OPEN APP” pill here
+ * duplicated the headline CTA incorrectly (especially on phones).
+ *
+ * Keeps `<MobileOpenAppNudge />` call sites alive as a deliberate no-op for layout stability.
  */
 export default function MobileOpenAppNudge() {
-    if (runningInsideNativeApp()) return null;
-    return (
-        <OpenAppHeaderButton
-            href="/app"
-            className="shrink-0 !px-2.5 text-[10px] sm:!px-3 sm:!text-[11px] md:hidden"
-        />
-    );
+  return null;
 }
