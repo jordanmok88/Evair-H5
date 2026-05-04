@@ -110,6 +110,8 @@ export interface MarketingHeroCarouselProps {
     /** Optional override; omit so Travel eSIM uses `travelLanding` (e.g. `/travel-esim`) on all devices. */
     onTravelClick?: (e: React.MouseEvent<HTMLAnchorElement>) => void;
     onActivateClick: (e: React.MouseEvent<HTMLAnchorElement>) => void;
+    /** When true, omit the centered mobile Live Chat pill — chat lives in `SiteHeader` instead (apex home). */
+    hideHeroMobileLiveChat?: boolean;
 }
 
 const SLIDE_COUNT = MARKETING_HERO_VISUAL_SLIDES.length;
@@ -206,7 +208,7 @@ const heroCtaBtnClass =
 /** Home hero: selling slides; striped indicators (jump, swipe on touch), imagery + CTAs. */
 export function MarketingHeroCarousel(props: MarketingHeroCarouselProps) {
     const { t } = useTranslation();
-    const { amazonUrl, travelLanding, activatePath, onTravelClick, onActivateClick } = props;
+    const { amazonUrl, travelLanding, activatePath, onTravelClick, onActivateClick, hideHeroMobileLiveChat = false } = props;
     const reducedMotion = usePrefersReducedMotion();
     const [index, setIndex] = useState(0);
     const regionId = useId();
@@ -304,16 +306,18 @@ export function MarketingHeroCarousel(props: MarketingHeroCarouselProps) {
                         </div>
                     </div>
 
-                    {/* Trust line before hero art on small screens — Live Chat tucked above it (homepage only). */}
+                    {/* Trust line before hero art on small screens. Live Chat pill optional when header carries the icon. */}
                     <div className="mt-3 w-full max-w-xl px-1 lg:hidden">
-                        <div className="mb-2 flex justify-center">
-                            <AppShellLiveChatButton
-                                onClick={() => {
-                                    window.dispatchEvent(new CustomEvent(EVAIR_OPEN_MARKETING_CONTACT_EVENT));
-                                }}
-                                className="relative flex max-w-[min(100vw-10rem,12rem)] shrink-0 items-center gap-1 overflow-hidden rounded-full bg-gradient-to-r from-[#FF6600] to-[#FF8A3D] px-3 py-2 text-[10px] font-extrabold uppercase tracking-wide text-white shadow-sm active:scale-[0.98] transition-transform sm:text-[11px]"
-                            />
-                        </div>
+                        {!hideHeroMobileLiveChat && (
+                            <div className="mb-2 flex justify-center">
+                                <AppShellLiveChatButton
+                                    onClick={() => {
+                                        window.dispatchEvent(new CustomEvent(EVAIR_OPEN_MARKETING_CONTACT_EVENT));
+                                    }}
+                                    className="relative flex max-w-[min(100vw-10rem,12rem)] shrink-0 items-center gap-1 overflow-hidden rounded-full bg-gradient-to-r from-[#FF6600] to-[#FF8A3D] px-3 py-2 text-[10px] font-extrabold uppercase tracking-wide text-white shadow-sm active:scale-[0.98] transition-transform sm:text-[11px]"
+                                />
+                            </div>
+                        )}
                         <HeroTrustStrip id="marketing-hero-trust" className="" />
                     </div>
 

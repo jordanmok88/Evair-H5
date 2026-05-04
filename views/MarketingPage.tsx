@@ -162,6 +162,7 @@ const MarketingPage: React.FC = () => {
                         travelLanding={TRAVEL_ESIM_LANDING}
                         activatePath={ACTIVATE_PATH}
                         onActivateClick={goActivateCta}
+                        hideHeroMobileLiveChat
                     />
                 </div>
             </section>

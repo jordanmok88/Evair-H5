@@ -34,8 +34,8 @@ interface SiteHeaderProps {
      */
     gate?: MobileSignInGate;
     /**
-     * Apex home places Live Chat above the hero trust strip below `lg`;
-     * omit header chat on smaller viewports so it is not doubled with the hero CTA.
+     * Apex home: hide the **desktop** header Live Chat pill below `lg` (hero used to carry mobile chat).
+     * Mobile header always shows the **message icon** in the action row; this flag no longer removes it.
      */
     hideLiveChatBelowLg?: boolean;
 }
@@ -89,11 +89,11 @@ const SiteHeader: React.FC<SiteHeaderProps> = ({ active = null, gate: gateProp, 
         </nav>
     );
 
-    /** Mobile: OPEN APP → live chat (icon) → inbox → account */
+    /** Mobile: OPEN APP → live chat (icon) → inbox → account — message icon is always shown so order stays consistent. */
     const mobileActions = (
         <div className="flex min-w-0 shrink items-center gap-1.5 sm:gap-2">
             <OpenAppHeaderButton href="/app" className="!px-2.5 text-[10px] sm:!px-4 sm:!text-xs" onClick={signInGate.gateClick} />
-            {!hideLiveChatBelowLg ? <AppShellLiveChatButton iconOnly onClick={openMarketingContact} /> : null}
+            <AppShellLiveChatButton iconOnly onClick={openMarketingContact} />
             <SiteHeaderAccountActions />
         </div>
     );
