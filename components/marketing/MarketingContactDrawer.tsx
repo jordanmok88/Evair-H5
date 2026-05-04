@@ -19,11 +19,11 @@ export interface MarketingContactDrawerProps {
 
 function fallbackAnchor(): MarketingContactOpenDetail {
   if (typeof window === 'undefined') {
-    return { dock: 'right', topPx: 120, tabW: 44, tabH: 118 };
+    return { dock: 'right', topPx: 120, tabW: 42, tabH: 124 };
   }
   const md = window.innerWidth >= MD_PX;
-  const tabW = md ? 44 : 28;
-  const tabH = md ? 118 : 104;
+  const tabW = md ? 42 : 32;
+  const tabH = md ? 124 : 114;
   const vh = window.innerHeight;
   return {
     dock: 'right',
