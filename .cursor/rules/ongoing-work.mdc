@@ -5,6 +5,8 @@ alwaysApply: true
 
 # Ongoing work — read this first
 
+Last updated: 2026-05-04 — Live Chat edge rail: label reads horizontally (all viewports).
+
 Last updated: 2026-04-25 22:30 PT — Phase 3/4/5 wrap session: shipped marketing page, top-up polish, post-activation cross-sell, full referral system (backend + H5 panel), email subdomain migration plan, cleared 3 pre-existing TS errors. Update this file at the END of every meaningful work session.
 
 ## Wrap session 2026-04-25 — Phases 3, 4, 5 + housekeeping
@@ -545,6 +547,11 @@ Tracking against the corrected ship sequence in `docs/ACTIVATION_FUNNEL.md` §10
     workflow that the Resend dashboard can't satisfy.
 
 ## Recently resolved (don't re-open without cause)
+
+- **Live Chat edge tab label** (2026-05-04): `LiveChatEdgeLauncher` no longer stacks
+  letters vertically; the translated string renders on one horizontal line.
+  Tab width/height and marketing drawer fallback anchors (`App.tsx`,
+  `MarketingContactDrawer.tsx`) updated to match.
 
 - **Phase 0 route split** (2026-04-24 evening):
   - `utils/testMode.ts` gained `isAppPath()` + `shouldRenderMarketing()` helpers.
