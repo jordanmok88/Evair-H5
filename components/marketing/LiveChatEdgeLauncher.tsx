@@ -60,24 +60,26 @@ interface LiveChatEdgeLauncherProps {
 }
 
 /**
- * Edge “Live chat” control. **Mobile (< md):** collapses to a 4px orange line when idle;
- * scroll/touch peeks the full tab; expanded rail hides again after ~3s without interaction. **Desktop:** always expanded.
- * Hidden while any full chat surface is open. Network loss tints the collapsed rail + tooltip.
+ * Edge “Live chat” control. **`/app` always uses compact rail typography** (same as mobile marketing).
+ * Marketing **viewport ≥ md** uses a wider always-expanded rail. Below md (marketing only): 4px idle strip,
+ * scroll/touch peeks expanded tab (~3s hold). Hidden while chat drawer / in-app Contact is open.
  */
 const LiveChatEdgeLauncher: React.FC<LiveChatEdgeLauncherProps> = ({ marketingDrawerOpen = false }) => {
   const { t } = useTranslation();
-  const mdUp = useViewportMinWidth(MD_MIN);
-  const { w: TAB_W, h: TAB_H } = tabSize(mdUp);
-
+  const viewportMdUp = useViewportMinWidth(MD_MIN);
   const [routeKind, setRouteKind] = useState(() => getRoute().kind);
+  /** Wider docked tab — marketing desktop only. App shell/WebView stays compact → matches phone marketing styling. */
+  const wideRail = viewportMdUp && routeKind !== 'app';
+  const { w: TAB_W, h: TAB_H } = tabSize(wideRail);
+
   const [dock, setDock] = useState<'left' | 'right'>(loadDock);
   const [appContactSurfaceOpen, setAppContactSurfaceOpen] = useState(() =>
     typeof window !== 'undefined'
       ? getRoute().kind === 'app' && window.location.hash.toLowerCase() === '#contact'
       : false,
   );
-  /** Mobile-only: user recently interacted — show full-width tab */
-  const [mobilePeek, setMobilePeek] = useState(!mdUp);
+  /** Peek-expanded tab — when not wideRail, user wakes strip via scroll/touch */
+  const [mobilePeek, setMobilePeek] = useState(!wideRail);
 
   const peekTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const dragRef = useRef<{
@@ -95,7 +97,7 @@ const LiveChatEdgeLauncher: React.FC<LiveChatEdgeLauncherProps> = ({ marketingDr
   const { unread } = useUnreadChat(unreadActive && routeKind !== 'apiTest');
 
   const chatSurfacesOpen = marketingDrawerOpen || appContactSurfaceOpen;
-  const showExpanded = mdUp || mobilePeek;
+  const showExpanded = wideRail || mobilePeek;
 
   useEffect(() => {
     const syncRoute = () => {
@@ -127,9 +129,9 @@ const LiveChatEdgeLauncher: React.FC<LiveChatEdgeLauncherProps> = ({ marketingDr
     };
   }, []);
 
-  /** Desktop always expanded; entering mobile defaults to collapsed line until interaction */
+  /** Wide marketing rail always expanded; compact paths default to collapsed line until interaction */
   useEffect(() => {
-    if (mdUp) {
+    if (wideRail) {
       if (peekTimerRef.current) {
         clearTimeout(peekTimerRef.current);
         peekTimerRef.current = null;
@@ -138,21 +140,21 @@ const LiveChatEdgeLauncher: React.FC<LiveChatEdgeLauncherProps> = ({ marketingDr
       return;
     }
     setMobilePeek(false);
-  }, [mdUp]);
+  }, [wideRail]);
 
   const bumpMobilePeek = useCallback(() => {
-    if (mdUp || chatSurfacesOpen) return;
+    if (wideRail || chatSurfacesOpen) return;
     setMobilePeek(true);
     if (peekTimerRef.current) clearTimeout(peekTimerRef.current);
     peekTimerRef.current = window.setTimeout(() => {
       setMobilePeek(false);
       peekTimerRef.current = null;
     }, MOBILE_PEEK_HOLD_MS);
-  }, [mdUp, chatSurfacesOpen]);
+  }, [wideRail, chatSurfacesOpen]);
 
   /** Scroll / touch wakes the strip on phones */
   useEffect(() => {
-    if (mdUp || chatSurfacesOpen) return undefined;
+    if (wideRail || chatSurfacesOpen) return undefined;
     const opts = { passive: true } as AddEventListenerOptions;
     const onScroll = () => bumpMobilePeek();
     const onTouch = () => bumpMobilePeek();
@@ -164,7 +166,7 @@ const LiveChatEdgeLauncher: React.FC<LiveChatEdgeLauncherProps> = ({ marketingDr
       window.removeEventListener('touchstart', onTouch);
       window.removeEventListener('wheel', onScroll);
     };
-  }, [mdUp, chatSurfacesOpen, bumpMobilePeek]);
+  }, [wideRail, chatSurfacesOpen, bumpMobilePeek]);
 
   useEffect(() => {
     const up = () => setOnline(true);
@@ -229,7 +231,7 @@ const LiveChatEdgeLauncher: React.FC<LiveChatEdgeLauncherProps> = ({ marketingDr
     }
     const dx = e.clientX - d.startX;
     const dy = e.clientY - d.startY;
-    if (!d.moved && (!mdUp ? showExpanded : true)) {
+    if (!d.moved && (!wideRail ? showExpanded : true)) {
       openChat();
       return;
     }
@@ -249,10 +251,10 @@ const LiveChatEdgeLauncher: React.FC<LiveChatEdgeLauncherProps> = ({ marketingDr
   if (routeKind === 'apiTest') return null;
   if (chatSurfacesOpen) return null;
 
-  const railW = !mdUp && !showExpanded ? COLLAPSED_W_PX : TAB_W;
+  const railW = !wideRail && !showExpanded ? COLLAPSED_W_PX : TAB_W;
   const roundClass =
     dock === 'left' ? 'rounded-r-xl rounded-l-none' : 'rounded-l-xl rounded-r-none';
-  const collapsedVisual = !mdUp && !showExpanded;
+  const collapsedVisual = !wideRail && !showExpanded;
   const Chevrons = dock === 'left' ? ChevronsRight : ChevronsLeft;
 
   const mount = typeof document !== 'undefined' && document.body ? document.body : null;
@@ -295,7 +297,7 @@ const LiveChatEdgeLauncher: React.FC<LiveChatEdgeLauncherProps> = ({ marketingDr
       }}
     >
       <div
-        className={`flex h-full min-h-[inherit] w-full flex-col items-center justify-between bg-gradient-to-b from-[#FF6600] to-[#FF8A3D] opacity-100 ring-1 ring-black/[0.04] md:justify-between md:gap-0 ${roundClass} ${collapsedVisual ? '' : mdUp ? 'px-1.5 py-2.5' : 'px-0.5 py-1.5'}`}
+        className={`flex h-full min-h-[inherit] w-full flex-col items-center justify-between bg-gradient-to-b from-[#FF6600] to-[#FF8A3D] opacity-100 ring-1 ring-black/[0.04] md:justify-between md:gap-0 ${roundClass} ${collapsedVisual ? '' : wideRail ? 'px-1.5 py-2.5' : 'px-0.5 py-1.5'}`}
         style={{
           opacity: collapsedVisual ? 0.94 : 1,
           justifyContent: collapsedVisual ? 'center' : undefined,
@@ -308,16 +310,16 @@ const LiveChatEdgeLauncher: React.FC<LiveChatEdgeLauncherProps> = ({ marketingDr
           aria-hidden={collapsedVisual}
         >
           <Chevrons
-            className={`shrink-0 text-white opacity-95 ${mdUp ? 'h-4 w-4' : 'h-3 w-3'}`}
+            className={`shrink-0 text-white opacity-95 ${wideRail ? 'h-4 w-4' : 'h-3 w-3'}`}
             aria-hidden
             strokeWidth={2.5}
           />
           <span
-            className={`inline-block shrink-0 whitespace-nowrap font-extrabold uppercase leading-none text-white ${mdUp ? 'text-[11px]' : 'text-[10px]'}`}
+            className={`inline-block shrink-0 whitespace-nowrap font-extrabold uppercase leading-none text-white ${wideRail ? 'text-[11px]' : 'text-[10px]'}`}
             style={{
               transform: dock === 'left' ? 'rotate(-90deg)' : 'rotate(90deg)',
               transformOrigin: 'center center',
-              letterSpacing: mdUp ? '0.22em' : '0.28em',
+              letterSpacing: wideRail ? '0.22em' : '0.28em',
             }}
             aria-hidden
           >
@@ -325,12 +327,12 @@ const LiveChatEdgeLauncher: React.FC<LiveChatEdgeLauncherProps> = ({ marketingDr
           </span>
           {unread > 0 ? (
             <span
-              className={`rounded-full bg-red-500 text-center font-bold text-white ring-2 ring-orange-600 ${mdUp ? 'min-w-[1.125rem] px-0.5 text-[9px] leading-4 [writing-mode:horizontal-tb]' : 'min-w-3 px-px text-[7px] leading-3 [writing-mode:horizontal-tb]'}`}
+              className={`rounded-full bg-red-500 text-center font-bold text-white ring-2 ring-orange-600 ${wideRail ? 'min-w-[1.125rem] px-0.5 text-[9px] leading-4 [writing-mode:horizontal-tb]' : 'min-w-3 px-px text-[7px] leading-3 [writing-mode:horizontal-tb]'}`}
             >
               {unread > 9 ? '9+' : unread}
             </span>
           ) : (
-            <span className={`${mdUp ? 'h-4 w-4' : 'h-3 w-3'} shrink-0`} aria-hidden />
+            <span className={`${wideRail ? 'h-4 w-4' : 'h-3 w-3'} shrink-0`} aria-hidden />
           )}
         </div>
       </div>
