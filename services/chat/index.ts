@@ -2,14 +2,17 @@
  * Chat provider 工厂 + 选路
  *
  * 决策顺序（VITE_CHAT_PROVIDER）：
- *   - 'laravel' | 'supabase' | 'local'：强制使用对应 provider
- *   - 'auto'（默认）：登录态 + Reverb 配置齐 → laravel；否则 Supabase；都不行 → local
+ *   - 'laravel' | 'supabase' | 'local'：强制使用对应 provider（supabase 仅保留 QA 兼容）
+ *   - 'auto'（默认）：有登录 token → Laravel（REST + 可选 Reverb；无 Reverb 时轮询）。
+ *      未登录 → local 内存兜底（Laravel `/app/conversations*` 需 Bearer）。
+ *
+ * 说明：群发邮件、工单持久化、客服回复全部由 Laravel + admin 链路完成；
+ * Supabase 不再出现在默认选路里。
  *
  * Runtime override：localStorage('evair-chat-provider') 覆盖 env，方便 QA 切换。
  */
 
 import { isAuthenticated } from '../api/client';
-import { supabaseConfigured } from '../supabase';
 import { createLaravelProvider } from './laravelProvider';
 import { createLocalProvider } from './localProvider';
 import { createSupabaseProvider } from './supabaseProvider';
@@ -31,10 +34,6 @@ function readOverride(): ChatProviderName | null {
   return null;
 }
 
-function isReverbConfigured(): boolean {
-  return !!(import.meta.env.VITE_REVERB_KEY && import.meta.env.VITE_REVERB_HOST);
-}
-
 export function setChatProviderOverride(name: ChatProviderName | null): void {
   try {
     if (name) localStorage.setItem(STORAGE_KEY, name);
@@ -48,9 +47,8 @@ export function resolveProviderName(): ChatProviderName {
   const env = readEnvProvider();
   if (env !== 'auto') return env;
 
-  // auto 决策
-  if (isAuthenticated() && isReverbConfigured()) return 'laravel';
-  if (supabaseConfigured) return 'supabase';
+  // auto：后端聊天与邮件链路以 Laravel 为唯一数据源；不按 Supabase URL 兜底。
+  if (isAuthenticated()) return 'laravel';
   return 'local';
 }
 
