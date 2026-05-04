@@ -68,7 +68,6 @@ const SiteHeaderAccountActions: React.FC = () => {
 
     return (
         <>
-            {/* Option A: explicit gap between inbox + profile; spacing before OPEN APP in SiteHeader */}
             <div className="flex shrink-0 items-center gap-2">
                 <button
                     type="button"

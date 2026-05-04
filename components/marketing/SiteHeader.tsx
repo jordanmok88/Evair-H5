@@ -8,8 +8,9 @@
  * pages don't have to reason about pathname matching themselves.
  *
  * From `md:` and up, horizontal nav links appear in the header. Narrow
- * mobile viewports omit the old hamburger drawer to keep the bar from
- * feeling crowded; visitors use in-page CTAs, footer links, and OPEN APP.
+ * mobile viewports use a two-line left column (logo + optional Live Chat)
+ * and a right cluster ordered: Open App · Inbox · Account — to avoid a
+ * cramped single-row bar.
  */
 
 import React from 'react';
@@ -35,7 +36,7 @@ interface SiteHeaderProps {
     gate?: MobileSignInGate;
     /**
      * Apex home places Live Chat above the hero trust strip below `lg`;
-     * keep the header uncluttered on narrow viewports by hiding this button until desktop.
+     * hide the header Live Chat on small/medium viewports so it is not doubled.
      */
     hideLiveChatBelowLg?: boolean;
 }
@@ -45,53 +46,87 @@ const SiteHeader: React.FC<SiteHeaderProps> = ({ active = null, gate: gateProp, 
     const internalGate = useMobileSignInGate('/app');
     const signInGate = gateProp ?? internalGate;
 
+    const openMarketingContact = () => {
+        window.dispatchEvent(new CustomEvent(EVAIR_OPEN_MARKETING_CONTACT_EVENT));
+    };
+
+    /** Desktop / tablet header — gradient pill scaled for the bar height. */
+    const liveChatDesktopClass = `relative flex max-w-[min(100vw-12rem,9rem)] shrink-0 items-center gap-0.5 overflow-hidden rounded-full bg-gradient-to-r from-[#FF6600] to-[#FF8A3D] px-2 py-1.5 text-[10px] font-extrabold uppercase tracking-wide text-white shadow-sm transition-transform active:scale-[0.98] sm:max-w-none sm:gap-1 sm:px-3 sm:py-2 sm:text-[11px] ${hideLiveChatBelowLg ? 'hidden lg:flex' : ''}`;
+
+    /** Mobile — under wordmark; no max-width squeeze needed. */
+    const liveChatMobileClass =
+        'relative flex w-fit max-w-[min(calc(100vw-11rem),16rem)] shrink-0 items-center gap-1 overflow-hidden rounded-full bg-gradient-to-r from-[#FF6600] to-[#FF8A3D] px-3 py-2 text-[11px] font-extrabold uppercase tracking-wide text-white shadow-sm transition-transform active:scale-[0.98]';
+
+    const wordmark = (
+        <a href="/" className="flex min-w-0 max-w-[min(200px,52vw)] shrink items-center" aria-label="EvairSIM home">
+            <img
+                src="/evairsim-wordmark.png"
+                alt="EvairSIM"
+                width={896}
+                height={228}
+                className="h-7 w-auto max-h-9 sm:h-8 sm:max-h-10 md:h-9"
+            />
+        </a>
+    );
+
+    const navDesktop = (
+        <nav
+            aria-label="Main"
+            className="hidden flex-wrap justify-end md:flex md:items-center md:gap-x-4 md:gap-y-2 lg:gap-x-6 xl:gap-x-7"
+        >
+            {MARKETING_NAV_ITEMS.map((item) => (
+                <a
+                    key={item.key}
+                    href={item.href}
+                    className={
+                        active === item.key
+                            ? 'text-[0.8125rem] font-semibold text-orange-600 transition-colors sm:text-[0.875rem] lg:text-[0.9375rem] xl:text-base'
+                            : 'text-[0.8125rem] font-semibold text-slate-700 transition-colors hover:text-slate-900 sm:text-[0.875rem] lg:text-[0.9375rem] xl:text-base'
+                    }
+                >
+                    {t(item.labelKey)}
+                </a>
+            ))}
+        </nav>
+    );
+
+    /** Order: Open App · Inbox · Account (plan Option A). */
+    const accountCluster = (
+        <div className="flex shrink-0 items-center gap-2 sm:gap-3">
+            <OpenAppHeaderButton href="/app" onClick={signInGate.gateClick} />
+            <SiteHeaderAccountActions />
+        </div>
+    );
+
     return (
         <header className="sticky top-0 z-30 border-b border-slate-100 bg-white/90 backdrop-blur-md supports-[backdrop-filter]:bg-white/90">
-            <div className="mx-auto flex h-14 min-h-14 max-w-6xl items-center justify-between gap-2 px-3 sm:h-16 sm:min-h-16 sm:gap-3 sm:px-4 md:px-8">
-                <a href="/" className="flex min-w-0 max-w-[min(200px,52vw)] shrink items-center" aria-label="EvairSIM home">
-                    <img
-                        src="/evairsim-wordmark.png"
-                        alt="EvairSIM"
-                        width={896}
-                        height={228}
-                        className="h-7 w-auto max-h-9 sm:h-8 sm:max-h-10 md:h-9"
-                    />
-                </a>
-                <nav
-                    aria-label="Main"
-                    className="hidden flex-wrap justify-end md:flex md:items-center md:gap-x-4 md:gap-y-2 lg:gap-x-6 xl:gap-x-7"
+            <div className="mx-auto max-w-6xl">
+                {/* Mobile &lt; md: logo + Live Chat stacked left; Open App · notifications · profile right */}
+                <div
+                    className={`flex px-3 py-2.5 sm:px-4 md:hidden ${hideLiveChatBelowLg ? 'items-center' : 'items-start'} justify-between gap-2`}
                 >
-                    {MARKETING_NAV_ITEMS.map(item => (
-                        <a
-                            key={item.key}
-                            href={item.href}
-                            className={
-                                active === item.key
-                                    ? 'text-[0.8125rem] font-semibold text-orange-600 transition-colors sm:text-[0.875rem] lg:text-[0.9375rem] xl:text-base'
-                                    : 'text-[0.8125rem] font-semibold text-slate-700 transition-colors hover:text-slate-900 sm:text-[0.875rem] lg:text-[0.9375rem] xl:text-base'
-                            }
-                        >
-                            {t(item.labelKey)}
-                        </a>
-                    ))}
-                </nav>
-                <div className="flex shrink-0 items-center gap-2 sm:gap-3">
-                    <AppShellLiveChatButton
-                        onClick={() => {
-                            window.dispatchEvent(new CustomEvent(EVAIR_OPEN_MARKETING_CONTACT_EVENT));
-                        }}
-                        className={`relative flex max-w-[min(100vw-12rem,9rem)] shrink-0 items-center gap-0.5 overflow-hidden rounded-full bg-gradient-to-r from-[#FF6600] to-[#FF8A3D] px-2 py-1.5 text-[10px] font-extrabold uppercase tracking-wide text-white shadow-sm active:scale-[0.98] transition-transform sm:max-w-none sm:gap-1 sm:px-3 sm:py-2 sm:text-[11px] ${hideLiveChatBelowLg ? 'hidden lg:flex' : ''}`}
-                    />
-                    <SiteHeaderAccountActions />
-                    <OpenAppHeaderButton href="/app" onClick={signInGate.gateClick} />
+                    <div className={`flex min-w-0 flex-col ${hideLiveChatBelowLg ? '' : 'items-start gap-2'}`}>
+                        {wordmark}
+                        {!hideLiveChatBelowLg && (
+                            <AppShellLiveChatButton onClick={openMarketingContact} className={liveChatMobileClass} />
+                        )}
+                    </div>
+                    {accountCluster}
+                </div>
+
+                {/* Desktop md+ */}
+                <div className="hidden h-14 min-h-14 items-center justify-between gap-2 px-3 sm:h-16 sm:min-h-16 sm:gap-3 sm:px-4 md:flex md:px-8">
+                    {wordmark}
+                    {navDesktop}
+                    <div className="flex shrink-0 items-center gap-2 sm:gap-3">
+                        <AppShellLiveChatButton onClick={openMarketingContact} className={liveChatDesktopClass} />
+                        <OpenAppHeaderButton href="/app" onClick={signInGate.gateClick} />
+                        <SiteHeaderAccountActions />
+                    </div>
                 </div>
             </div>
 
-            <MobileOnlyNotice
-                open={signInGate.open}
-                onClose={signInGate.onClose}
-                onContinueAnyway={signInGate.onContinueAnyway}
-            />
+            <MobileOnlyNotice open={signInGate.open} onClose={signInGate.onClose} onContinueAnyway={signInGate.onContinueAnyway} />
         </header>
     );
 };
