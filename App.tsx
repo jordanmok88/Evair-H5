@@ -1204,6 +1204,7 @@ function CustomerApp() {
                 embedded
                 notifications={notifications}
                 onUpdateNotifications={setNotifications}
+                onOpenLiveChat={() => handleTabChange(Tab.DIALER)}
                 onNavigate={(tabStr) => {
                   if (tabStr === 'ESIM') handleTabChange(Tab.ESIM);
                   else if (tabStr === 'SIM_CARD') handleTabChange(Tab.SIM_CARD);
@@ -1225,6 +1226,7 @@ function CustomerApp() {
           <InboxView
             notifications={notifications}
             onUpdateNotifications={setNotifications}
+            onOpenLiveChat={() => handleTabChange(Tab.DIALER)}
             onNavigate={(tabStr) => {
               if (tabStr === 'ESIM') handleTabChange(Tab.ESIM);
               else if (tabStr === 'SIM_CARD') handleTabChange(Tab.SIM_CARD);

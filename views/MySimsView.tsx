@@ -10,7 +10,7 @@ import { daysRemainingFromExpiry } from '../utils/daysRemainingFromExpiry';
 import { topUp, fetchTopUpPackages, fetchPackages, checkDataUsage, formatVolume, formatPrice, retailPrice, packagePriceUsd, formatGB, queryProfile, mapRedTeaStatus, unbindSim } from '../services/dataService';
 import { useEdgeSwipeBack } from '../hooks/useEdgeSwipeBack';
 import LinkEsimWizard from '../components/LinkEsimWizard';
-import MobileOpenAppNudge from '../components/shell/MobileOpenAppNudge';
+import AppShellLiveChatButton from '../components/AppShellLiveChatButton';
 
 interface MySimsViewProps {
   activeSims: ActiveSim[];
@@ -636,7 +636,7 @@ const MySimsView: React.FC<MySimsViewProps> = ({
             )}
             <h1 className="text-lg font-bold tracking-tight text-slate-900 truncate">{filterType === 'ESIM' ? t('my_sims.title_esims') : t('my_sims.title_sims')}</h1>
           </div>
-          <MobileOpenAppNudge />
+          <AppShellLiveChatButton iconOnly onClick={() => onNavigate(Tab.DIALER)} className="!h-9 !w-9" />
           <div className="flex shrink-0 gap-2 items-center">
              <button type="button" onClick={handleSync} className="w-9 h-9 bg-slate-100 rounded-full flex items-center justify-center text-slate-600 active:scale-95 transition-transform">
                  <RefreshCw size={16} className={isSyncing ? 'animate-spin' : ''} />

@@ -2,7 +2,7 @@ import React, { useState, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ChevronRight, Share, ChevronLeft, Search, Lock, Bell, Download, Trash2, Check, Plus, Package, HelpCircle, FileText, Globe, Info, Coins, ShieldCheck, CreditCard, ShoppingBag, Briefcase, Phone, Settings, AlertCircle, Play, Smartphone, Loader2, X, Star, Gift } from 'lucide-react';
 import ReferralView from './ReferralView';
-import MobileOpenAppNudge from '../components/shell/MobileOpenAppNudge';
+import AppShellLiveChatButton from '../components/AppShellLiveChatButton';
 import { AppNotification } from '../types';
 import { useSwipeBack } from '../hooks/useSwipeBack';
 import { useEdgeSwipeBack } from '../hooks/useEdgeSwipeBack';
@@ -1345,7 +1345,7 @@ const ProfileViewInner: React.FC<ProfileViewProps> = ({
               )}
               <h1 className="min-w-0 flex-1 truncate text-lg font-bold tracking-tight text-slate-900">{t('profile.title')}</h1>
             </div>
-            <MobileOpenAppNudge />
+            <AppShellLiveChatButton onClick={onOpenDialer} className="relative shrink-0" />
         </div>
 
         <div

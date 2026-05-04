@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Search, ChevronRight, ArrowLeft, Globe, Star, X, MapPin, Loader2, Smartphone, CheckCircle, Calendar, Wifi, Signal, Info, CreditCard, ArrowDown, QrCode, Copy, Check, RefreshCw, Zap, Clock, Shield, Mail, Radio } from 'lucide-react';
-import { Country, Plan, SimType, User, SimCardProduct, EsimPackage, EsimCountryGroup, EsimOrderResult, ActiveSim } from '../types';
+import { Country, Plan, SimType, User, SimCardProduct, EsimPackage, EsimCountryGroup, EsimOrderResult, ActiveSim, Tab } from '../types';
 import { MOCK_COUNTRIES } from '../constants';
 import AmazonPhysicalSimPicker from '../components/AmazonPhysicalSimPicker';
 import RetailSingletonDurationRoll from '../components/RetailSingletonDurationRoll';
@@ -34,7 +34,7 @@ import { useSwipeBack } from '../hooks/useSwipeBack';
 
 import { Bell, UserCircle } from 'lucide-react';
 import { AppNotification } from '../types';
-import MobileOpenAppNudge from '../components/shell/MobileOpenAppNudge';
+import AppShellLiveChatButton from '../components/AppShellLiveChatButton';
 
 /** eSIM shop filter row: single-country tabs + Multi-Country (`Multi-Region` in facets). */
 const ESIM_LOCATION_FILTER_TABS: ContinentTab[] = [
@@ -1399,14 +1399,17 @@ const ShopView: React.FC<ShopViewProps> = ({
           className="bg-white px-4 pt-safe pb-3 sticky top-0 z-40 border-b border-slate-100 transition-transform duration-300 ease-out"
           style={{ transform: headerHidden ? 'translateY(-100%)' : 'translateY(0)' }}
         >
-          {/* Row 1: Greeting · notifications · profile (live chat = edge tab) */}
+          {/* Row 1: Greeting · live chat · notifications · profile */}
           <div className="mb-3 flex min-w-0 items-center gap-1.5 md:gap-2">
               <div className="min-w-0 flex-1">
                   <p className="truncate text-base font-bold text-slate-900 tracking-tight">
                       {t('shop.hello')} {isLoggedIn && user ? user.name : t('shop.new_friend')}
                   </p>
               </div>
-              <MobileOpenAppNudge />
+              <AppShellLiveChatButton
+                onClick={() => onNavigate?.(Tab.DIALER)}
+                className="relative ml-0 flex shrink-0 items-center gap-1 rounded-full bg-gradient-to-r from-[#FF6600] to-[#FF8A3D] px-2.5 py-2 text-[10px] font-extrabold uppercase tracking-wide text-white shadow-sm active:scale-[0.98] transition-transform sm:px-3 sm:text-[11px]"
+              />
               <div className="flex shrink-0 items-center gap-2">
                 <button onClick={() => onNavigate?.('INBOX')} className="relative w-10 h-10 rounded-xl bg-slate-100 flex items-center justify-center active:scale-95 transition-all" style={{ WebkitTapHighlightColor: 'transparent' }}>
                   <Bell size={18} className="text-slate-700" />
