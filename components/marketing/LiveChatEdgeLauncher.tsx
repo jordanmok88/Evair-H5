@@ -313,28 +313,14 @@ const LiveChatEdgeLauncher: React.FC<LiveChatEdgeLauncherProps> = ({ marketingDr
             strokeWidth={2.5}
           />
           <span
-            className={`inline-flex shrink-0 flex-col items-center font-extrabold uppercase leading-none text-white ${mdUp ? 'text-[11px]' : 'text-[10px]'}`}
+            className={`inline-block shrink-0 whitespace-nowrap font-extrabold uppercase leading-none tracking-wide text-white ${mdUp ? 'text-[11px]' : 'text-[10px]'}`}
+            style={{
+              transform: dock === 'left' ? 'rotate(-90deg)' : 'rotate(90deg)',
+              transformOrigin: 'center center',
+            }}
             aria-hidden
           >
-            {label
-              .trim()
-              .split(/\s+/)
-              .map((word, wi) => (
-                <React.Fragment key={`lc-w-${wi}`}>
-                  {wi > 0 ? (
-                    <span className={`shrink-0 ${mdUp ? 'h-1.5' : 'h-1'} w-px`} aria-hidden />
-                  ) : null}
-                  <span
-                    className={`flex flex-col items-center ${mdUp ? 'gap-1' : 'gap-[3px]'}`}
-                  >
-                    {word.split('').map((ch, ci) => (
-                      <span key={`lc-${wi}-${ci}`} className="block leading-none">
-                        {ch}
-                      </span>
-                    ))}
-                  </span>
-                </React.Fragment>
-              ))}
+            {label}
           </span>
           {unread > 0 ? (
             <span
