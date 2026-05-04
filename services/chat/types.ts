@@ -57,6 +57,8 @@ export interface ConversationHandle {
   status: 'open' | 'needs_agent' | 'resolved';
   /** 标识本次 ensure 是命中已有会话还是新建 */
   existing: boolean;
+  /** Server `conversations.updated_at` — for lightweight “team activity” copy (Laravel). */
+  conversationUpdatedAt?: string | null;
 }
 
 export interface ChatProviderListener {

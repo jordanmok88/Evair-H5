@@ -724,6 +724,22 @@ const es = {
     data_volume: 'Datos',
     validity_period: 'Validez',
     days_unit: 'días',
+    sla_hint: 'Por lo general respondemos en 6–12 horas.',
+    hk_local_time: 'Hora local (Hong Kong): {{time}}',
+    team_last_active_moments: 'El equipo estaba activo hace instantes',
+    team_last_active_one: 'El equipo estuvo activo hace 1 minuto',
+    team_last_active_other: 'El equipo estuvo activo hace {{count}} minutos',
+    leave_message_quick: 'Deja un mensaje',
+    email_capture_label: 'Tu correo electrónico',
+    email_capture_placeholder: 'nombre@ejemplo.com',
+    email_invalid: 'Introduce un correo válido antes de enviar.',
+    leave_success_title: 'Mensaje recibido',
+    leave_success_with_email:
+      'Hemos enviado una confirmación a {{email}}. Normalmente respondemos en 6–12 horas.',
+    leave_success_no_email_delivery:
+      'Tu mensaje está en cola para el equipo. Normalmente respondemos en 6–12 horas.',
+    live_chat_reconnecting_tooltip: 'Reconectando…',
+    leave_flow_done_cta: 'Enviar otro mensaje',
   },
   profile: {
     title: 'Perfil',

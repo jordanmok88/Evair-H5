@@ -11,12 +11,15 @@ import {
   type ChatProvider,
   type ConnectionState,
   type UnifiedChatMessage,
+  type ChatProviderName,
 } from '../services/chat';
 
 
 interface ContactUsViewProps {
   onBack: () => void;
   userName?: string;
+  /** When known (logged-in `/app`), pre-fills the Leave a message capture flow. */
+  customerEmail?: string | null;
   /** Marketing slide-over / sheet: constrain height instead of forcing full viewport scroll */
   embedded?: boolean;
 }
@@ -56,6 +59,49 @@ const SUGGESTION_AI_QUERY: Record<(typeof COMPOSER_SUGGESTION_KEYS)[number], str
   shipping_sim: 'How long does shipping take for a physical SIM card?',
   plan_validity: 'When does my plan validity period start and expire?',
 };
+
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+function minutesSinceUtc(iso: string): number {
+  const normalized = iso.includes('T') ? iso : iso.replace(' ', 'T');
+  const d = Date.parse(normalized);
+  if (Number.isNaN(d)) return Number.POSITIVE_INFINITY;
+  return Math.max(0, Math.floor((Date.now() - d) / 60000));
+}
+
+function uniqSuggestionKeys(keys: readonly (typeof COMPOSER_SUGGESTION_KEYS)[number][]): (typeof COMPOSER_SUGGESTION_KEYS)[number][] {
+  const seen = new Set<string>();
+  const out: (typeof COMPOSER_SUGGESTION_KEYS)[number][] = [];
+  for (const k of keys) {
+    if (!seen.has(k)) {
+      seen.add(k);
+      out.push(k);
+    }
+  }
+  return out;
+}
+
+/** URL-driven quick prompts (pricing, activation funnel, SEO landers). */
+function contextualSuggestionsFromPath(path: string): (typeof COMPOSER_SUGGESTION_KEYS)[number][] {
+  const p = path.toLowerCase();
+  const hit: (typeof COMPOSER_SUGGESTION_KEYS)[number][] = [];
+  if (p.includes('top-up') || p.includes('topup') || p.includes('/pricing') || p.includes('/plans')) {
+    hit.push('billing_issue', 'data_topup');
+  }
+  if (p.includes('activate')) {
+    hit.push('sim_activation', 'shipping_sim');
+  }
+  if (p.includes('travel-esim')) {
+    hit.push('coverage_roaming', 'plans_pricing', 'install_esim');
+  }
+  if (p.includes('/legal') || p.includes('refund')) {
+    hit.push('refund_help');
+  }
+  if (p.includes('/device') || p.includes('/sim/')) {
+    hit.push('device_compatibility', 'network_problem');
+  }
+  return uniqSuggestionKeys(hit);
+}
 
 const DRAFT_KEY = 'evair-chat-draft';
 const SCROLL_FOLLOW_THRESHOLD_PX = 80;
@@ -123,6 +169,7 @@ const RichText = ({ text }: { text: string }) => {
 const ContactUsView: React.FC<ContactUsViewProps> = ({
   onBack,
   userName = 'Jordan',
+  customerEmail,
   embedded = false,
 }) => {
   const { t } = useTranslation();
@@ -151,6 +198,19 @@ const ContactUsView: React.FC<ContactUsViewProps> = ({
   const [headerMenuOpen, setHeaderMenuOpen] = useState(false);
   const imageInputRef = useRef<HTMLInputElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const [pathname, setPathname] = useState(() =>
+    typeof window !== 'undefined' ? window.location.pathname : '/',
+  );
+
+  const [initializingChat, setInitializingChat] = useState(true);
+  const [providerName, setProviderName] = useState<ChatProviderName | null>(null);
+
+  const [conversationUpdatedAtIso, setConversationUpdatedAtIso] = useState<string | null>(null);
+  const [leaveMessageMode, setLeaveMessageMode] = useState(false);
+  const [leaveEmailInput, setLeaveEmailInput] = useState(() => (customerEmail?.trim() ?? ''));
+  const [leaveEmailError, setLeaveEmailError] = useState<string | null>(null);
+  const [leaveSuccess, setLeaveSuccess] = useState<{ emailConfirmed: boolean; email: string } | null>(null);
 
   // Phase 4: loading history + infinite scroll up
   const [loadingHistory, setLoadingHistory] = useState(false);
@@ -212,12 +272,25 @@ const ContactUsView: React.FC<ContactUsViewProps> = ({
     };
   }, []);
 
+  useEffect(() => {
+    const v = customerEmail?.trim();
+    if (v) setLeaveEmailInput(v);
+  }, [customerEmail]);
+
+  useEffect(() => {
+    const sync = () => setPathname(window.location.pathname);
+    window.addEventListener('popstate', sync);
+    return () => window.removeEventListener('popstate', sync);
+  }, []);
+
   // 初始化 provider + 加载会话
   useEffect(() => {
     let cancelled = false;
 
     const provider = acquireSharedChatProvider();
     providerRef.current = provider;
+    setProviderName(provider.name);
+    setInitializingChat(true);
 
     const unsubscribe = provider.subscribe({
       onMessage: incoming => {
@@ -242,12 +315,16 @@ const ContactUsView: React.FC<ContactUsViewProps> = ({
 
     (async () => {
       try {
-        const handle = await provider.ensureConversation({ customerName: userName });
+        const handle = await provider.ensureConversation({
+          customerName: userName,
+          ...(customerEmail?.trim() ? { customerEmail: customerEmail.trim() } : {}),
+        });
         if (cancelled) return;
         if (import.meta.env.DEV) {
           console.log('[ContactUs] ensureConversation OK:', handle);
         }
         conversationIdRef.current = handle.id;
+        setConversationUpdatedAtIso(handle.conversationUpdatedAt ?? null);
         if (handle.existing) {
           setLoadingHistory(true);
           // Use chatService directly to get has_more flag from the API
@@ -303,10 +380,12 @@ const ContactUsView: React.FC<ContactUsViewProps> = ({
         }
         const localFallback = createChatProvider('local');
         providerRef.current = localFallback;
+        setProviderName('local');
         try {
           const localHandle = await localFallback.ensureConversation({ customerName: userName });
           if (cancelled) return;
           conversationIdRef.current = localHandle.id;
+          setConversationUpdatedAtIso(localHandle.conversationUpdatedAt ?? null);
         } catch {
           if (!cancelled) conversationIdRef.current = 'local-fallback';
         }
@@ -315,6 +394,8 @@ const ContactUsView: React.FC<ContactUsViewProps> = ({
             { id: 'welcome-fallback', conversationId: conversationIdRef.current ?? 'local', sender: 'ai', text: t('contact.connect_failed'), messageType: 'text', timestamp: new Date(), status: 'read' },
           ]);
         }
+      } finally {
+        if (!cancelled) setInitializingChat(false);
       }
     })();
 
@@ -325,7 +406,7 @@ const ContactUsView: React.FC<ContactUsViewProps> = ({
       providerRef.current = null;
       conversationIdRef.current = null;
     };
-  }, [t, userName]);
+  }, [t, userName, customerEmail]);
 
   // 滚动跟随：仅在已经接近底部时自动跟，否则让用户阅读不被打断
   const isNearBottom = useCallback((): boolean => {
@@ -348,6 +429,11 @@ const ContactUsView: React.FC<ContactUsViewProps> = ({
     ta.style.height = `${next}px`;
     ta.style.overflowY = next >= COMPOSER_MAX_INPUT_PX ? 'auto' : 'hidden';
   }, []);
+
+  const footerSendBlocked =
+    !input.trim()
+    || uploading
+    || (leaveMessageMode && !EMAIL_RE.test((leaveEmailInput.trim() || customerEmail?.trim() || '')));
 
   const handleComposerFocus = useCallback(() => {
     adjustComposerHeight();
@@ -511,7 +597,7 @@ const ContactUsView: React.FC<ContactUsViewProps> = ({
     }, typingDelay);
   };
 
-  const sendCustomerMessage = async (text: string, opts?: { skipAi?: boolean }) => {
+  const sendCustomerMessage = async (text: string, opts?: { skipAi?: boolean; metadata?: Record<string, unknown> }) => {
     const provider = providerRef.current;
     const convId = conversationIdRef.current ?? 'local';
     const isHumanRequest = HUMAN_KEYWORDS.test(text);
@@ -536,7 +622,11 @@ const ContactUsView: React.FC<ContactUsViewProps> = ({
     }
 
     try {
-      const confirmed = await provider.send({ text, clientMsgId });
+      const confirmed = await provider.send({
+        text,
+        clientMsgId,
+        ...(opts?.metadata ? { metadata: opts.metadata } : {}),
+      });
       upsertOptimistic({ ...confirmed, clientMsgId });
     } catch {
       upsertOptimistic({ ...optimistic, status: 'failed' });
@@ -682,8 +772,47 @@ const ContactUsView: React.FC<ContactUsViewProps> = ({
   const handleSend = async () => {
     const trimmed = input.trim();
     if (!trimmed) return;
+    if (leaveSuccess) return;
+
+    if (leaveMessageMode) {
+      const mergedEmail = leaveEmailInput.trim() || customerEmail?.trim() || '';
+      if (!EMAIL_RE.test(mergedEmail)) {
+        setLeaveEmailError(t('contact.email_invalid'));
+        return;
+      }
+      setLeaveEmailError(null);
+
+      const provider = providerRef.current;
+      if (!provider) return;
+
+      try {
+        const handle = await provider.ensureConversation({
+          customerName: userName,
+          customerEmail: mergedEmail,
+        });
+        conversationIdRef.current = handle.id;
+        setConversationUpdatedAtIso(handle.conversationUpdatedAt ?? null);
+        aiDisabledRef.current = true;
+        setAiDisabled(true);
+        provider.markNeedsHuman().catch(() => { /* noop */ });
+        await sendCustomerMessage(trimmed, { skipAi: true, metadata: { email_ack_requested: true } });
+        setLeaveSuccess({ emailConfirmed: provider.name === 'laravel', email: mergedEmail });
+        setLeaveMessageMode(false);
+      } catch {
+        // Optimistic row will show failed / sendCustomerMessage already surfaced
+      }
+
+      setInput('');
+      try {
+        localStorage.removeItem(DRAFT_KEY);
+      } catch { /* noop */ }
+      return;
+    }
+
     setInput('');
-    try { localStorage.removeItem(DRAFT_KEY); } catch { /* noop */ }
+    try {
+      localStorage.removeItem(DRAFT_KEY);
+    } catch { /* noop */ }
     await sendCustomerMessage(trimmed);
   };
 
@@ -700,7 +829,9 @@ const ContactUsView: React.FC<ContactUsViewProps> = ({
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
-      handleSend();
+      if (!footerSendBlocked) {
+        void handleSend();
+      }
     }
   };
 
@@ -851,6 +982,36 @@ const ContactUsView: React.FC<ContactUsViewProps> = ({
     return items;
   }, [messages, t]);
 
+  const chipKeys = useMemo(() => {
+    const ctx = contextualSuggestionsFromPath(pathname);
+    const tail = COMPOSER_SUGGESTION_KEYS.filter(k => !ctx.includes(k));
+    return uniqSuggestionKeys([...ctx, ...tail]);
+  }, [pathname]);
+
+  const presenceSubtitle = useMemo(() => {
+    const hkStr = new Intl.DateTimeFormat(undefined, {
+      weekday: 'short',
+      month: 'short',
+      day: 'numeric',
+      hour: 'numeric',
+      minute: '2-digit',
+      hour12: true,
+      timeZone: 'Asia/Hong_Kong',
+    }).format(new Date());
+    const hkLine = t('contact.hk_local_time', { time: hkStr });
+
+    if (providerName === 'laravel' && conversationUpdatedAtIso) {
+      const mins = minutesSinceUtc(conversationUpdatedAtIso);
+      if (mins < 1) return t('contact.team_last_active_moments');
+      if (mins === 1) return t('contact.team_last_active_one');
+      return t('contact.team_last_active_other', { count: mins });
+    }
+
+    return hkLine;
+  }, [conversationUpdatedAtIso, providerName, t]);
+
+  const showChatSkeleton = initializingChat || loadingHistory;
+
   const connectionLabel = (() => {
     switch (connection) {
       case 'reconnecting': return t('contact.reconnecting');
@@ -892,6 +1053,9 @@ const ContactUsView: React.FC<ContactUsViewProps> = ({
                 <span className="h-1 w-1 shrink-0 rounded-full bg-emerald-300" />
                 {aiDisabled ? t('contact.header_mode_agent_live') : t('contact.header_mode_ai_assistant')}
               </span>
+            </p>
+            <p className="mt-0.5 line-clamp-2 text-[10px] font-medium leading-snug text-white/80">
+              {presenceSubtitle}
             </p>
           </div>
           <div className="relative shrink-0">
@@ -970,33 +1134,41 @@ const ContactUsView: React.FC<ContactUsViewProps> = ({
             WebkitOverflowScrolling: 'touch',
           }}
         >
-          {/* IntersectionObserver sentinel for infinite scroll up */}
-          <div ref={sentinelRef} style={{ height: 1 }} />
+          {showChatSkeleton ? (
+            <div className="space-y-4 px-2 py-8" aria-busy="true">
+              {[0, 1, 2, 3, 4, 5].map(i => (
+                <div
+                  key={`sk-${i}`}
+                  className={`flex w-full touch-none ${i % 2 === 1 ? 'justify-end pr-4' : 'justify-start pl-4'}`}
+                >
+                  <div
+                    className="contact-chat-skeleton-bar h-[52px] w-[74%] max-w-[19rem] rounded-[18px]"
+                    style={{ transition: 'opacity 420ms cubic-bezier(0.22, 1, 0.36, 1)' }}
+                  />
+                </div>
+              ))}
+            </div>
+          ) : (
+            <>
+              {/* IntersectionObserver sentinel for infinite scroll up */}
+              <div ref={sentinelRef} style={{ height: 1 }} />
 
-          {/* Loading older messages spinner (at top, above sentinel) */}
-          {loadingMore && (
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, padding: '12px 0' }}>
-            <Loader2 size={14} style={{ color: '#94a3b8', animation: 'spin 1s linear infinite' }} />
-            <span style={{ fontSize: 12, color: '#94a3b8', fontWeight: 500 }}>{t('contact.loading_messages')}</span>
-          </div>
-          )}
+              {/* Loading older messages spinner (at top, above sentinel) */}
+              {loadingMore && (
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, padding: '12px 0' }}>
+                <Loader2 size={14} style={{ color: '#94a3b8', animation: 'spin 1s linear infinite' }} />
+                <span style={{ fontSize: 12, color: '#94a3b8', fontWeight: 500 }}>{t('contact.loading_messages')}</span>
+              </div>
+              )}
 
-          {/* "Beginning of conversation" indicator */}
-          {!hasMore && messages.length > 0 && (
-          <div style={{ display: 'flex', justifyContent: 'center', paddingBottom: 8 }}>
-            <span style={{ fontSize: 11, color: '#cbd5e1', fontWeight: 500 }}>
-              {t('contact.loading_messages').replace('...', '')}
-            </span>
-          </div>
-          )}
-
-          {/* Phase 4: loading history indicator (initial load) */}
-          {loadingHistory && (
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, padding: '20px 0' }}>
-            <Loader2 size={16} style={{ color: '#94a3b8', animation: 'spin 1s linear infinite' }} />
-            <span style={{ fontSize: 13, color: '#94a3b8', fontWeight: 500 }}>{t('contact.loading_messages')}</span>
-          </div>
-          )}
+              {/* "Beginning of conversation" indicator */}
+              {!hasMore && messages.length > 0 && (
+              <div style={{ display: 'flex', justifyContent: 'center', paddingBottom: 8 }}>
+                <span style={{ fontSize: 11, color: '#cbd5e1', fontWeight: 500 }}>
+                  {t('contact.loading_messages').replace('...', '')}
+                </span>
+              </div>
+              )}
 
           {messageItems.map(item => {
           if (item.kind === 'divider') {
@@ -1081,6 +1253,8 @@ const ContactUsView: React.FC<ContactUsViewProps> = ({
           </div>
           )}
           <div ref={messagesEndRef} />
+            </>
+          )}
         </div>
 
         {showJumpToLatest && (
@@ -1118,26 +1292,83 @@ const ContactUsView: React.FC<ContactUsViewProps> = ({
               ].join(' ')
         }`}
       >
-        <div className="mx-auto flex w-full min-w-0 max-w-lg flex-col gap-2.5">
-          <div
-            className="flex gap-2 overflow-x-auto overscroll-x-contain py-1 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
-            style={{ WebkitOverflowScrolling: 'touch' }}
-            role="group"
-            aria-label={t('contact.suggestion_chips_label')}
-          >
-            {COMPOSER_SUGGESTION_KEYS.map(key => (
+        <div className="mx-auto flex w-full min-w-0 max-w-lg flex-col gap-2">
+          {leaveSuccess ? (
+            <div
+              className="rounded-2xl border border-black/[0.05] bg-white p-6 text-center shadow-[0_10px_40px_-16px_rgba(15,23,42,0.28)] ring-1 ring-black/[0.03]"
+            >
+              <h3 className="text-[17px] font-bold tracking-tight text-slate-900">{t('contact.leave_success_title')}</h3>
+              <p className="mt-2 px-1 text-[14px] leading-relaxed text-slate-600">
+                {leaveSuccess.emailConfirmed
+                  ? t('contact.leave_success_with_email', { email: leaveSuccess.email })
+                  : t('contact.leave_success_no_email_delivery')}
+              </p>
               <button
-                key={key}
                 type="button"
-                onClick={() => void handleSuggestionChip(key)}
-                disabled={uploading}
-                className="shrink-0 whitespace-nowrap rounded-full border border-orange-100/90 bg-white px-3 py-1.5 text-[12px] font-semibold text-[#c2410c] shadow-[0_1px_2px_rgba(15,23,42,0.06)] transition-colors active:bg-orange-50/90 disabled:cursor-not-allowed disabled:opacity-50"
+                className="mt-5 w-full min-h-[48px] touch-manipulation rounded-xl bg-[#FF6600] text-[15px] font-semibold text-white shadow-[0_6px_20px_-6px_rgba(255,102,0,0.55)] transition-transform active:scale-[0.99]"
+                onClick={() => setLeaveSuccess(null)}
               >
-                {t(`contact.${key}`)}
+                {t('contact.leave_flow_done_cta')}
               </button>
-            ))}
-          </div>
-          <div className="flex min-h-[48px] w-full min-w-0 touch-manipulation items-center gap-1 rounded-[28px] bg-white px-2 py-1.5 shadow-[0_1px_3px_rgba(15,23,42,0.08)] ring-1 ring-black/[0.04]">
+            </div>
+          ) : (
+            <>
+              <div className="rounded-xl bg-white/70 px-2.5 py-2 shadow-[0_1px_2px_rgba(15,23,42,0.04)] ring-1 ring-black/[0.04]">
+                <p className="text-[11px] font-semibold leading-snug text-slate-600">{t('contact.sla_hint')}</p>
+              </div>
+
+              {leaveMessageMode ? (
+                <label className="flex flex-col gap-1 px-0.5">
+                  <span className="text-[12px] font-semibold text-slate-700">{t('contact.email_capture_label')}</span>
+                  <input
+                    type="email"
+                    autoComplete="email"
+                    value={leaveEmailInput}
+                    placeholder={t('contact.email_capture_placeholder')}
+                    onChange={e => {
+                      setLeaveEmailInput(e.target.value);
+                      setLeaveEmailError(null);
+                    }}
+                    className="min-h-[44px] rounded-xl border-none bg-white px-3 py-2.5 font-sans text-[15px] text-slate-900 shadow-inner ring-1 ring-black/[0.06] outline-none placeholder:text-slate-400 focus:shadow-[0_0_0_2px_rgba(255,102,0,0.25)]"
+                  />
+                  {leaveEmailError ? (
+                    <span className="text-[11px] font-semibold text-red-600">{leaveEmailError}</span>
+                  ) : null}
+                </label>
+              ) : null}
+
+              <div
+                className="flex gap-2 overflow-x-auto overscroll-x-contain py-1 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+                style={{ WebkitOverflowScrolling: 'touch' }}
+                role="group"
+                aria-label={t('contact.suggestion_chips_label')}
+              >
+                <button
+                  type="button"
+                  onClick={() => {
+                    setLeaveMessageMode(true);
+                    setLeaveEmailError(null);
+                  }}
+                  disabled={uploading}
+                  className="shrink-0 whitespace-nowrap rounded-full border border-transparent bg-gradient-to-br from-[#FF6600] to-[#FF8A3D] px-3 py-1.5 text-[12px] font-extrabold text-white shadow-[0_8px_20px_-10px_rgba(255,102,0,0.55)] transition-[transform,box-shadow] active:scale-[0.97] disabled:cursor-not-allowed disabled:opacity-40"
+                  style={{ transitionTimingFunction: 'cubic-bezier(0.22, 1, 0.36, 1)' }}
+                >
+                  {t('contact.leave_message_quick')}
+                </button>
+                {chipKeys.map(key => (
+                  <button
+                    key={key}
+                    type="button"
+                    onClick={() => void handleSuggestionChip(key)}
+                    disabled={uploading}
+                    className="shrink-0 whitespace-nowrap rounded-full border border-orange-100/90 bg-white px-3 py-1.5 text-[12px] font-semibold text-[#c2410c] shadow-[0_1px_2px_rgba(15,23,42,0.06)] transition-colors active:bg-orange-50/90 disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    {t(`contact.${key}`)}
+                  </button>
+                ))}
+              </div>
+
+              <div className="flex min-h-[48px] w-full min-w-0 touch-manipulation items-center gap-1 rounded-[28px] bg-white px-2 py-1.5 shadow-[0_1px_3px_rgba(15,23,42,0.08)] ring-1 ring-black/[0.04]">
             <button
               type="button"
               onClick={() => setAttachMenuOpen(true)}
@@ -1167,13 +1398,13 @@ const ContactUsView: React.FC<ContactUsViewProps> = ({
             />
             <button
               type="button"
-              onClick={handleSend}
-              disabled={!input.trim() || uploading}
+              onClick={() => void handleSend()}
+              disabled={footerSendBlocked}
               className="flex h-11 w-11 shrink-0 touch-manipulation items-center justify-center rounded-full border-none transition-colors"
               style={{
-                backgroundColor: input.trim() && !uploading ? '#FF6600' : '#e2e8f0',
-                cursor: input.trim() && !uploading ? 'pointer' : 'default',
-                boxShadow: input.trim() && !uploading ? '0 2px 8px rgba(255,102,0,0.25)' : 'none',
+                backgroundColor: !footerSendBlocked ? '#FF6600' : '#e2e8f0',
+                cursor: !footerSendBlocked ? 'pointer' : 'default',
+                boxShadow: !footerSendBlocked ? '0 2px 8px rgba(255,102,0,0.25)' : 'none',
               }}
             >
               {uploading
@@ -1182,6 +1413,8 @@ const ContactUsView: React.FC<ContactUsViewProps> = ({
               }
             </button>
           </div>
+            </>
+          )}
         </div>
       </footer>
 

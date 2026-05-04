@@ -732,6 +732,22 @@ const en = {
     data_volume: 'Data',
     validity_period: 'Validity',
     days_unit: 'days',
+    sla_hint: 'We typically respond within 6–12 hours.',
+    hk_local_time: 'Local time (Hong Kong): {{time}}',
+    team_last_active_moments: 'Team was active just now',
+    team_last_active_one: 'Team was last active 1 minute ago',
+    team_last_active_other: 'Team was last active {{count}} minutes ago',
+    leave_message_quick: 'Leave a message',
+    email_capture_label: 'Your email',
+    email_capture_placeholder: 'name@example.com',
+    email_invalid: 'Enter a valid email address before sending.',
+    leave_success_title: 'Message received',
+    leave_success_with_email:
+      'We’ve sent a confirmation to {{email}}. Our team typically replies within 6–12 hours.',
+    leave_success_no_email_delivery:
+      'Your message has been queued for our team. We typically reply within 6–12 hours.',
+    live_chat_reconnecting_tooltip: 'Reconnecting…',
+    leave_flow_done_cta: 'Send another message',
   },
   profile: {
     title: 'Profile',

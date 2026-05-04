@@ -219,7 +219,7 @@ function App() {
 
   return (
     <>
-      <LiveChatEdgeLauncher />
+      <LiveChatEdgeLauncher marketingDrawerOpen={marketingSupportOpen} />
       {route.kind !== 'app' && (
         <MarketingContactDrawer
           open={marketingSupportOpen}
@@ -1263,6 +1263,7 @@ function CustomerApp() {
               handleTabChange(previousTab.current);
             }}
             userName={user?.name}
+            customerEmail={user?.email}
           />
         );
       default:

@@ -317,6 +317,7 @@ export function createLaravelProvider(): ChatProvider {
         id: conversationId,
         status: conv.status,
         existing: !isNew,
+        conversationUpdatedAt: conv.updated_at ?? null,
       };
     },
 
