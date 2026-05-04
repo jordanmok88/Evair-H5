@@ -49,11 +49,8 @@ const SiteHeader: React.FC<SiteHeaderProps> = ({ active = null, gate: gateProp, 
         window.dispatchEvent(new CustomEvent(EVAIR_OPEN_MARKETING_CONTACT_EVENT));
     };
 
-    /** Desktop/web: match OPEN APP and LIVE CHAT pill width in the header (`md+` bar). */
-    const desktopHeaderCtaPillSize = 'md:min-w-[12.5rem] md:justify-center';
-
-    /** Desktop header — gradient pill with label; visibility follows apex hero rule below `lg` when flagged. */
-    const liveChatDesktopClass = `relative flex max-w-[min(100vw-12rem,9rem)] shrink-0 items-center justify-center gap-0.5 overflow-hidden rounded-full bg-gradient-to-r from-[#FF6600] to-[#FF8A3D] px-2 py-1.5 text-[10px] font-extrabold uppercase tracking-wide text-white shadow-sm transition-transform active:scale-[0.98] sm:max-w-none sm:gap-1 sm:px-3 sm:py-2 sm:text-[11px] md:h-[2.375rem] md:px-4 md:text-sm ${desktopHeaderCtaPillSize} ${hideLiveChatBelowLg ? 'hidden lg:flex' : ''}`;
+    /** Desktop header — compact pills (no fixed min-width — wide min-width was crushing the nav into two rows). */
+    const liveChatDesktopClass = `relative flex shrink-0 items-center gap-0.5 overflow-hidden rounded-full bg-gradient-to-r from-[#FF6600] to-[#FF8A3D] px-2 py-1.5 text-[10px] font-extrabold uppercase tracking-wide text-white shadow-sm transition-transform active:scale-[0.98] max-w-[min(100vw-12rem,9rem)] sm:max-w-none sm:gap-1 sm:px-3 sm:py-2 sm:text-[11px] md:h-[2.375rem] md:px-4 md:text-sm ${hideLiveChatBelowLg ? 'hidden lg:flex' : ''}`;
 
     const wordmark = (
         <a
@@ -74,7 +71,7 @@ const SiteHeader: React.FC<SiteHeaderProps> = ({ active = null, gate: gateProp, 
     const navDesktop = (
         <nav
             aria-label="Main"
-            className="hidden flex-wrap justify-end md:flex md:items-center md:gap-x-4 md:gap-y-2 lg:gap-x-6 xl:gap-x-7"
+            className="hidden shrink-0 flex-nowrap md:flex md:items-center md:justify-end md:gap-x-3 lg:gap-x-6 xl:gap-x-7"
         >
             {MARKETING_NAV_ITEMS.map((item) => (
                 <a
@@ -104,7 +101,7 @@ const SiteHeader: React.FC<SiteHeaderProps> = ({ active = null, gate: gateProp, 
     /** Desktop (&ge; md): OPEN APP → live chat pill → inbox → account */
     const desktopActions = (
         <div className="flex shrink-0 items-center gap-2 sm:gap-3">
-            <OpenAppHeaderButton href="/app" className={desktopHeaderCtaPillSize} onClick={signInGate.gateClick} />
+            <OpenAppHeaderButton href="/app" onClick={signInGate.gateClick} />
             <AppShellLiveChatButton onClick={openMarketingContact} className={liveChatDesktopClass} />
             <SiteHeaderAccountActions />
         </div>
