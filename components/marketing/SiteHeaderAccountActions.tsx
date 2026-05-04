@@ -62,9 +62,9 @@ const SiteHeaderAccountActions: React.FC = () => {
     };
 
     const bellCls =
-        'relative flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-slate-100 text-slate-700 shadow-sm outline-none transition-colors hover:bg-slate-200 active:scale-[0.98]';
+        'btn btn-icon relative h-10 w-10 min-h-10 shrink-0 border-slate-200 bg-slate-50 text-slate-700 shadow-sm active:scale-[0.98]';
     const profileCls =
-        'relative flex h-10 w-10 shrink-0 items-center justify-center rounded-xl shadow-sm outline-none transition-colors active:scale-[0.98]';
+        'btn btn-icon btn-icon-profile relative h-10 w-10 min-h-10 shrink-0 shadow-sm active:scale-[0.98]';
 
     return (
         <>
@@ -92,10 +92,7 @@ const SiteHeaderAccountActions: React.FC = () => {
                     aria-label={t('marketing.header_profile_aria')}
                     aria-expanded={profileOpen}
                     aria-haspopup="dialog"
-                    style={{
-                        background: 'linear-gradient(135deg, #FF6600, #FF8A3D)',
-                        WebkitTapHighlightColor: 'transparent',
-                    }}
+                    style={{ WebkitTapHighlightColor: 'transparent' }}
                 >
                     {initial ? (
                         <span className="text-sm font-bold text-white">{initial}</span>

@@ -182,7 +182,7 @@ const MarketingPage: React.FC = () => {
                         {HAPPY_STORIES.map((s) => (
                             <article
                                 key={s.who}
-                                className="group flex w-[min(82vw,17.5rem)] min-w-0 shrink-0 snap-center flex-col overflow-hidden rounded-xl border border-gray-100 bg-white shadow-md sm:min-w-[15rem] sm:max-w-[17.5rem] sm:w-60 md:w-[15.5rem] lg:w-64"
+                                className="card group flex w-[min(82vw,17.5rem)] min-w-0 shrink-0 snap-center flex-col overflow-hidden sm:min-w-[15rem] sm:max-w-[17.5rem] sm:w-60 md:w-[15.5rem] lg:w-64"
                             >
                                 <div className="aspect-[5/3] w-full shrink-0 overflow-hidden bg-gray-100">
                                     <img
@@ -209,7 +209,7 @@ const MarketingPage: React.FC = () => {
                                     <div className="border-t border-gray-100 px-4 pb-4 pt-4 sm:px-5 sm:pb-5">
                                         <a
                                             href="/blog"
-                                            className="inline-flex min-h-10 w-full items-center justify-center rounded-lg border border-gray-900 bg-white py-2.5 text-xs font-bold text-gray-900 transition-[background-color,color,border-color] hover:border-brand-orange hover:bg-brand-orange hover:text-white"
+                                            className="btn btn-secondary !min-h-10 w-full py-2.5 text-xs sm:py-2.5"
                                         >
                                             {t('marketing.home_stories_cta')}
                                         </a>
@@ -235,7 +235,7 @@ const MarketingPage: React.FC = () => {
                                 key={c.title}
                                 href={c.href}
                                 onClick={c.onClick}
-                                className="group relative flex min-w-0 flex-col overflow-hidden rounded-2xl bg-white p-3.5 shadow-sm ring-1 ring-gray-200/80 transition hover:shadow-md hover:ring-[#F27420]/40 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2563eb] active:scale-[0.99] min-[400px]:min-h-[8.5rem] min-[400px]:p-4 sm:p-5 md:min-h-0"
+                                className="card group relative flex min-w-0 flex-col overflow-hidden p-3.5 transition hover:shadow-md hover:ring-[#F27420]/40 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2563eb] active:scale-[0.99] min-[400px]:min-h-[8.5rem] min-[400px]:p-4 sm:p-5 md:min-h-0"
                             >
                                 <div className={`absolute left-0 top-0 h-1 w-full bg-gradient-to-r ${c.gradient}`} aria-hidden />
                                 <p className="text-[9px] font-bold uppercase tracking-[0.18em] text-gray-400 md:text-[10px]">{c.tag}</p>
@@ -270,10 +270,10 @@ const MarketingPage: React.FC = () => {
                         {planCards.map((p) => (
                             <div
                                 key={p.name}
-                                className={`flex h-full w-full min-w-0 flex-col rounded-xl border bg-white p-3.5 shadow-sm sm:p-4 md:min-h-[19rem] md:rounded-2xl md:p-5 ${
+                                className={`card flex h-full w-full min-w-0 flex-col p-3.5 sm:p-4 md:min-h-[19rem] md:p-5 ${
                                     p.popular
                                         ? 'border-[#F27420] ring-2 ring-[#F27420]/30 bg-orange-50/40'
-                                        : 'border-gray-200'
+                                        : ''
                                 }`}
                             >
                                 <div className="flex min-w-0 flex-wrap items-center gap-1.5 sm:gap-2">
@@ -296,10 +296,8 @@ const MarketingPage: React.FC = () => {
                                     href={AMAZON_SIM_PRIMARY_PRODUCT_URL}
                                     target="_blank"
                                     rel="noopener noreferrer"
-                                    className={`mt-3 inline-flex min-h-10 w-full items-center justify-center rounded-lg px-3 py-2 text-xs font-bold transition sm:min-h-11 sm:rounded-xl sm:py-2.5 sm:text-sm md:mt-auto md:min-h-12 md:py-3 ${
-                                        p.popular
-                                            ? 'bg-[#F27420] text-white hover:brightness-105'
-                                            : 'bg-[#0A1128] text-white hover:bg-[#121f45]'
+                                    className={`btn !min-h-10 mt-3 w-full px-3 py-2 text-xs font-bold sm:min-h-11 sm:py-2.5 sm:text-sm md:mt-auto md:min-h-12 md:py-3 ${
+                                        p.popular ? 'btn-primary' : 'btn-neutral-dark'
                                     }`}
                                 >
                                     {p.cta}
@@ -320,13 +318,13 @@ const MarketingPage: React.FC = () => {
                         <a
                             href={APP_PATH}
                             onClick={signInGate.gateClick}
-                            className="inline-flex min-h-12 items-center justify-center gap-2 rounded-xl bg-[#F27420] px-6 py-3.5 text-sm font-bold text-white transition hover:brightness-105 sm:min-h-14 sm:px-8 sm:py-4 sm:text-base"
+                            className="btn btn-primary !min-h-12 gap-2 px-6 py-3.5 text-sm sm:min-h-14 sm:px-8 sm:py-4 sm:text-base"
                         >
                             {t('marketing.home_ready_get_started')}
                         </a>
                         <a
                             href={APP_SUPPORT_CHAT_HREF}
-                            className="inline-flex min-h-12 items-center justify-center gap-2 rounded-xl border-2 border-white bg-transparent px-6 py-3.5 text-sm font-bold text-white transition hover:bg-white/10 sm:min-h-14 sm:px-8 sm:py-4 sm:text-base"
+                            className="btn btn-outline-light !min-h-12 gap-2 px-6 py-3.5 text-sm sm:min-h-14 sm:px-8 sm:py-4 sm:text-base"
                         >
                             {t('marketing.home_ready_talk')}
                         </a>

@@ -4,7 +4,7 @@ import { Smartphone } from 'lucide-react';
 
 /** Single source of truth for the marketing / public-site “OPEN APP” header CTA. */
 const OPEN_APP_HEADER_BTN_CLASS =
-    'inline-flex h-8 shrink-0 select-none items-center justify-center gap-1 rounded-full bg-[#2563eb] px-3 text-[10px] font-bold uppercase leading-none tracking-wide text-white shadow-sm transition hover:bg-[#1d4ed8] active:scale-[0.98] sm:h-9 sm:gap-1.5 sm:px-4 sm:text-xs md:h-[2.375rem] md:gap-2 md:px-4 md:text-sm';
+    'btn btn-primary !min-h-0 h-8 shrink-0 gap-1 rounded-full px-3 text-[10px] font-bold uppercase leading-none tracking-wide sm:h-9 sm:gap-1.5 sm:px-4 sm:text-xs md:h-[2.375rem] md:gap-2 md:px-4 md:text-sm';
 
 export interface OpenAppHeaderButtonProps {
     /** Defaults to the customer app shell. */

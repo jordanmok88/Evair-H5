@@ -146,10 +146,8 @@ const DeviceLandingPage: React.FC<DeviceLandingPageProps> = ({ category }) => {
                                 {...(ctaOpensExternal
                                     ? { target: '_blank', rel: 'noopener noreferrer' }
                                     : {})}
-                                className={`mt-auto block min-h-11 rounded-xl py-2.5 text-center text-sm font-bold transition sm:min-h-12 sm:py-3 ${
-                                    plan.highlight
-                                        ? 'bg-[#F27420] text-white shadow-lg shadow-orange-500/25 hover:brightness-105 active:scale-[0.99]'
-                                        : 'bg-[#0A1128] text-white shadow-lg shadow-slate-900/20 hover:bg-[#121f45] active:scale-[0.99]'
+                                className={`btn !min-h-11 mt-auto block w-full py-2.5 text-center text-sm font-bold sm:min-h-12 sm:py-3 ${
+                                    plan.highlight ? 'btn-primary' : 'btn-neutral-dark'
                                 }`}
                             >
                                 Get {plan.name}
@@ -165,7 +163,7 @@ const DeviceLandingPage: React.FC<DeviceLandingPageProps> = ({ category }) => {
                     {content.pillars.map((p) => (
                         <div
                             key={p.title}
-                            className="relative flex h-full min-h-0 flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white p-5 shadow-sm"
+                            className="relative flex h-full min-h-0 flex-col overflow-hidden p-5 card"
                         >
                             <div
                                 className="absolute left-0 right-0 top-0 h-1 bg-gradient-to-r from-orange-500 via-amber-400 to-yellow-300"

@@ -555,13 +555,13 @@ const SingleCountryView: React.FC<SingleCountryViewProps> = ({
                                 <a
                                     href={`/app/travel-esim/${country.code}`}
                                     onClick={handleHeroCta}
-                                    className="inline-flex items-center justify-center gap-2 rounded-xl bg-orange-500 px-4 py-2.5 font-bold text-white shadow-md shadow-orange-500/20 transition-transform active:scale-[0.98] md:px-5 md:py-3 lg:shadow-lg"
+                                    className="btn btn-primary !min-h-0 gap-2 px-4 py-2.5 text-sm active:scale-[0.98] md:px-5 md:py-3"
                                 >
                                     See {country.name} plans <ArrowRight size={18} />
                                 </a>
                                 <a
                                     href="/travel-esim"
-                                    className="inline-flex items-center justify-center gap-2 rounded-xl border border-slate-300 bg-white px-4 py-2.5 font-semibold text-slate-900 md:px-5 md:py-3"
+                                    className="btn btn-secondary !min-h-0 gap-2 px-4 py-2.5 text-sm font-semibold md:px-5 md:py-3"
                                 >
                                     All countries
                                 </a>
@@ -684,7 +684,7 @@ const SingleCountryView: React.FC<SingleCountryViewProps> = ({
                 <a
                     href={`/app/travel-esim/${country.code}`}
                     onClick={handleHeroCta}
-                    className="inline-flex items-center justify-center gap-2 bg-orange-500 text-white font-bold px-6 py-4 rounded-xl shadow-lg shadow-orange-500/20"
+                    className="btn btn-primary gap-2 px-6 py-4 text-base font-bold"
                 >
                     See {country.name} plans <ArrowRight size={18} />
                 </a>
@@ -751,13 +751,13 @@ const ErrorView: React.FC<{ message: string | null; onDismiss: () => void }> = (
             <button
                 type="button"
                 onClick={onDismiss}
-                className="bg-slate-900 text-white font-bold px-5 py-3 rounded-xl"
+                className="btn btn-neutral-dark px-5 py-3 text-sm font-bold"
             >
                 Back to plans
             </button>
             <a
                 href={`mailto:${CUSTOMER_SERVICE_EMAIL}`}
-                className="bg-white text-slate-900 font-semibold px-5 py-3 rounded-xl border border-slate-300"
+                className="btn btn-secondary px-5 py-3 text-sm font-semibold"
             >
                 Email support
             </a>
@@ -787,13 +787,13 @@ const CountryNotFoundView: React.FC<{ code: string }> = ({ code }) => (
         <div className="flex flex-wrap justify-center gap-3">
             <a
                 href="/travel-esim"
-                className="inline-flex items-center justify-center gap-2 bg-orange-500 text-white font-bold px-5 py-3 rounded-xl"
+                className="btn btn-primary gap-2 px-5 py-3 text-sm font-bold"
             >
                 Browse destinations <ArrowRight size={18} />
             </a>
             <a
                 href="/app"
-                className="inline-flex items-center justify-center gap-2 bg-white text-slate-900 font-semibold px-5 py-3 rounded-xl border border-slate-300"
+                className="btn btn-secondary gap-2 px-5 py-3 text-sm font-semibold"
             >
                 Open the app
             </a>

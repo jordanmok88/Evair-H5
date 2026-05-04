@@ -93,7 +93,7 @@ const SiteHeader: React.FC<SiteHeaderProps> = ({ active = null, gate: gateProp }
     );
 
     return (
-        <header className="sticky top-0 z-30 border-b border-slate-100 bg-white/90 backdrop-blur-md supports-[backdrop-filter]:bg-white/90">
+        <header className="sticky top-0 z-30 border-b border-border bg-white/90 backdrop-blur-md supports-[backdrop-filter]:bg-white/90">
             <div className="mx-auto max-w-6xl">
                 <div className="flex items-center justify-between gap-2 px-3 py-2.5 sm:px-4 md:hidden">
                     {wordmark}

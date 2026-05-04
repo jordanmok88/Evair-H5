@@ -250,8 +250,6 @@ const LiveChatEdgeLauncher: React.FC<LiveChatEdgeLauncherProps> = ({ marketingDr
   if (chatSurfacesOpen) return null;
 
   const railW = !mdUp && !showExpanded ? COLLAPSED_W_PX : TAB_W;
-  const roundClass =
-    dock === 'left' ? 'rounded-r-xl rounded-l-none' : 'rounded-l-xl rounded-r-none';
   const collapsedVisual = !mdUp && !showExpanded;
   const Chevrons = dock === 'left' ? ChevronsRight : ChevronsLeft;
 
@@ -267,17 +265,17 @@ const LiveChatEdgeLauncher: React.FC<LiveChatEdgeLauncherProps> = ({ marketingDr
       tabIndex={0}
       aria-label={collapsedVisual && !online ? reconnectLabel : label}
       title={collapsedVisual && !online ? reconnectLabel : undefined}
-      className={`fixed z-[60] touch-none select-none overflow-hidden outline-none active:outline-none ${roundClass}`}
+      className={`edge-tab fixed z-[60] touch-none select-none overflow-hidden outline-none active:outline-none ${collapsedVisual ? 'edge-tab--collapsed' : ''}`}
+      data-dock={dock}
       style={{
         ...(dock === 'left' ? { left: 0 } : { right: 0 }),
-        top: '50%',
+        top: mdUp ? '50%' : '42%',
         transform: 'translateY(-50%)',
         width: railW,
         minHeight: collapsedVisual ? `min(${TAB_H}px, 45vh)` : TAB_H,
         height: collapsedVisual ? `min(280px, 45vh)` : 'auto',
         transition: `width 420ms ${EASE_PREMIUM}, box-shadow 360ms ${EASE_PREMIUM}, min-height 360ms ${EASE_PREMIUM}, filter 380ms ease, opacity 320ms ease`,
         cursor: 'pointer',
-        boxShadow: collapsedVisual ? '0 4px 20px rgba(255,102,0,0.08)' : '0 10px 32px rgba(255,102,0,0.18)',
         filter: collapsedVisual && !online ? 'saturate(0.55) hue-rotate(-12deg)' : 'none',
         animation:
           collapsedVisual && !online ? 'livechat-rail-offline-pulse 1.8s ease-in-out infinite' : undefined,
@@ -295,7 +293,7 @@ const LiveChatEdgeLauncher: React.FC<LiveChatEdgeLauncherProps> = ({ marketingDr
       }}
     >
       <div
-        className={`flex h-full min-h-[inherit] w-full flex-col items-center justify-between bg-gradient-to-b from-[#FF6600] to-[#FF8A3D] opacity-100 ring-1 ring-black/[0.04] md:justify-between md:gap-0 ${roundClass} ${collapsedVisual ? '' : mdUp ? 'px-1.5 py-2.5' : 'px-0.5 py-1.5'}`}
+        className={`edge-tab-inner flex h-full min-h-[inherit] w-full flex-col items-center justify-between opacity-100 md:justify-between md:gap-0 ${collapsedVisual ? '' : mdUp ? 'px-1.5 py-2.5' : 'px-0.5 py-1.5'}`}
         style={{
           opacity: collapsedVisual ? 0.94 : 1,
           justifyContent: collapsedVisual ? 'center' : undefined,
