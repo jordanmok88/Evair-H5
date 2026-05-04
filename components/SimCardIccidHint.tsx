@@ -5,7 +5,7 @@ import { useTranslation } from 'react-i18next';
 const ICCID_GUIDE_IMG = '/marketing/evairsim-physical-card-iccid-guide.png';
 
 export interface SimCardIccidHintProps {
-  /** Merged onto the bordered frame (`rounded-2xl` wrapper). */
+  /** Merged onto the outer wrapper (crop + optional rounding). */
   className?: string;
 }
 
@@ -15,9 +15,7 @@ export interface SimCardIccidHintProps {
 const SimCardIccidHint: React.FC<SimCardIccidHintProps> = ({ className = '' }) => {
   const { t } = useTranslation();
   return (
-    <div
-      className={`rounded-2xl border border-orange-200/90 overflow-hidden bg-white shadow-sm ${className}`.trim()}
-    >
+    <div className={`overflow-hidden rounded-2xl bg-transparent ${className}`.trim()}>
       <img
         src={ICCID_GUIDE_IMG}
         alt={t('sim_setup.iccid_packaging_hint_alt')}
