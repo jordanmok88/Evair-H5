@@ -37,13 +37,17 @@ import {
   stripTestModeFromUrl,
 } from './utils/testMode';
 import { getRoute, type Route } from './utils/routing';
-import { EVAIR_OPEN_MARKETING_CONTACT_EVENT } from './utils/evairMarketingEvents';
+import {
+  EVAIR_OPEN_APP_SHELL_CHAT,
+  EVAIR_OPEN_MARKETING_CONTACT_EVENT,
+} from './utils/evairMarketingEvents';
 import { deriveEsimCountryOverlay } from './utils/deriveEsimRegionFromPlanName';
 import { BootSplash, shouldSkipBootSplash } from './components/BootSplash';
 import { useViewportMinWidth } from './hooks/useViewportMinWidth';
 import { useCustomerAppDesktopQr } from './hooks/useMobileSignInGate';
 import MobileOnlyNotice from './components/marketing/MobileOnlyNotice';
 import MarketingContactDrawer from './components/marketing/MarketingContactDrawer';
+import LiveChatEdgeLauncher from './components/marketing/LiveChatEdgeLauncher';
 
 /** Laravel `SupplierSeeder` default ordering: PCCW = 1, ESIMACCESS = 2. See Evair-Laravel `docs/ops/STAGING_PREVIEW_BINDINGS_JORDAN.md`. */
 const LARAVEL_SUPPLIER_ID_PCCW = 1;
@@ -192,6 +196,7 @@ function App() {
 
   return (
     <>
+      <LiveChatEdgeLauncher />
       {route.kind !== 'app' && (
         <MarketingContactDrawer open={marketingSupportOpen} onClose={() => setMarketingSupportOpen(false)} />
       )}
@@ -1067,6 +1072,14 @@ function CustomerApp() {
     window.scrollTo(0, 0);
   }, [currentSimType, syncAppHash]);
 
+  useEffect(() => {
+    const openFromEdgeTab = () => {
+      openContactFromBrowseShop();
+    };
+    window.addEventListener(EVAIR_OPEN_APP_SHELL_CHAT, openFromEdgeTab);
+    return () => window.removeEventListener(EVAIR_OPEN_APP_SHELL_CHAT, openFromEdgeTab);
+  }, [openContactFromBrowseShop]);
+
   const handleProfileLinkExistingEsim = useCallback(() => {
     if (currentSimType !== 'ESIM') return;
     handleTabChange(Tab.ESIM);
@@ -1108,7 +1121,6 @@ function CustomerApp() {
       onLinkedEsimRefresh={fetchUserSims}
       simWalletHydrated={simWalletHydrated}
       externalLinkExistingEsimNonce={linkEsimProfileNonce}
-      onOpenContactFromBrowseShop={openContactFromBrowseShop}
     />
   );
 
@@ -1154,10 +1166,6 @@ function CustomerApp() {
                 embedded
                 notifications={notifications}
                 onUpdateNotifications={setNotifications}
-                onOpenDialer={() => {
-                  previousTab.current = Tab.INBOX;
-                  handleTabChange(Tab.DIALER);
-                }}
                 onNavigate={(tabStr) => {
                   if (tabStr === 'ESIM') handleTabChange(Tab.ESIM);
                   else if (tabStr === 'SIM_CARD') handleTabChange(Tab.SIM_CARD);
@@ -1179,10 +1187,6 @@ function CustomerApp() {
           <InboxView
             notifications={notifications}
             onUpdateNotifications={setNotifications}
-            onOpenDialer={() => {
-              previousTab.current = Tab.INBOX;
-              handleTabChange(Tab.DIALER);
-            }}
             onNavigate={(tabStr) => {
               if (tabStr === 'ESIM') handleTabChange(Tab.ESIM);
               else if (tabStr === 'SIM_CARD') handleTabChange(Tab.SIM_CARD);

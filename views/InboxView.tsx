@@ -3,7 +3,6 @@ import { useTranslation } from 'react-i18next';
 import { ChevronRight, Bell, Package, AlertTriangle, Clock, Tag, Zap, Trash2, ArrowLeft } from 'lucide-react';
 import { AppNotification, NotificationType } from '../types';
 import FlagIcon from '../components/FlagIcon';
-import AppShellLiveChatButton from '../components/AppShellLiveChatButton';
 import MobileOpenAppNudge from '../components/shell/MobileOpenAppNudge';
 import { useSwipeBack } from '../hooks/useSwipeBack';
 import { useEdgeSwipeBack } from '../hooks/useEdgeSwipeBack';
@@ -30,8 +29,6 @@ interface InboxViewProps {
   onUpdateNotifications: (updater: (prev: AppNotification[]) => AppNotification[]) => void;
   onNavigate?: (tab: string) => void;
   onBack?: () => void;
-  /** Open live chat / Contact (same as shop header — sets previousTab in App.tsx). */
-  onOpenDialer?: () => void;
   /** Marketing floating drawer — compact chrome + in-flow scroll (see `MarketingInboxDrawer`). */
   embedded?: boolean;
 }
@@ -46,7 +43,6 @@ const InboxView: React.FC<InboxViewProps> = ({
   onUpdateNotifications,
   onNavigate,
   onBack,
-  onOpenDialer,
   embedded = false,
 }) => {
   const { t } = useTranslation();
@@ -108,15 +104,6 @@ const InboxView: React.FC<InboxViewProps> = ({
         )}
         <h1 className="min-w-0 flex-1 truncate text-lg font-bold tracking-tight text-slate-900">{t('profile.inbox')}</h1>
         <MobileOpenAppNudge />
-        {onOpenDialer && (
-          <>
-            <AppShellLiveChatButton iconOnly onClick={onOpenDialer} className="shrink-0 md:hidden" />
-            <AppShellLiveChatButton
-              onClick={onOpenDialer}
-              className="relative hidden shrink-0 items-center gap-1 rounded-full bg-gradient-to-r from-[#FF6600] to-[#FF8A3D] px-2.5 py-2 text-[10px] font-extrabold uppercase tracking-wide text-white shadow-sm transition-transform active:scale-[0.98] sm:px-3 sm:text-[11px] md:flex"
-            />
-          </>
-        )}
       </div>
 
       <div

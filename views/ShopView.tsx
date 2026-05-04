@@ -34,7 +34,6 @@ import { useSwipeBack } from '../hooks/useSwipeBack';
 
 import { Bell, UserCircle } from 'lucide-react';
 import { AppNotification } from '../types';
-import AppShellLiveChatButton from '../components/AppShellLiveChatButton';
 import MobileOpenAppNudge from '../components/shell/MobileOpenAppNudge';
 
 /** eSIM shop filter row: single-country tabs + Multi-Country (`Multi-Region` in facets). */
@@ -66,8 +65,6 @@ interface ShopViewProps {
   /** ISO-2 from `/app/travel-esim/{xx}` — auto-open that country group. */
   initialEsimLocationCode?: string | null;
   onInitialEsimDeepLinkConsumed?: () => void;
-  /** App shell: ensures Contact back returns to storefront, not Inbox tab behind a floater. */
-  onOpenContactFromBrowseShop?: () => void;
 }
 
 // ─── 国家/地区信息映射 ────────────────────────────────────────────────
@@ -217,7 +214,6 @@ const ShopView: React.FC<ShopViewProps> = ({
   notifications = [],
   initialEsimLocationCode = null,
   onInitialEsimDeepLinkConsumed,
-  onOpenContactFromBrowseShop,
 }) => {
   const { t, i18n } = useTranslation();
   /** Shop header replaces floating FAB — keep unread parity with former FAB */
@@ -1403,7 +1399,7 @@ const ShopView: React.FC<ShopViewProps> = ({
           className="bg-white px-4 pt-safe pb-3 sticky top-0 z-40 border-b border-slate-100 transition-transform duration-300 ease-out"
           style={{ transform: headerHidden ? 'translateY(-100%)' : 'translateY(0)' }}
         >
-          {/* Row 1: Greeting · Live chat · notifications · profile (subtext removed for space) */}
+          {/* Row 1: Greeting · notifications · profile (live chat = edge tab) */}
           <div className="mb-3 flex min-w-0 items-center gap-1.5 md:gap-2">
               <div className="min-w-0 flex-1">
                   <p className="truncate text-base font-bold text-slate-900 tracking-tight">
@@ -1411,19 +1407,6 @@ const ShopView: React.FC<ShopViewProps> = ({
                   </p>
               </div>
               <MobileOpenAppNudge />
-              <AppShellLiveChatButton
-                iconOnly
-                className="md:hidden"
-                onClick={() =>
-                  onOpenContactFromBrowseShop ? onOpenContactFromBrowseShop() : onNavigate?.('DIALER')
-                }
-              />
-              <AppShellLiveChatButton
-                className="relative hidden shrink-0 items-center gap-1 rounded-full bg-gradient-to-r from-[#FF6600] to-[#FF8A3D] px-3 py-2 text-[11px] font-extrabold uppercase tracking-wide text-white shadow-sm transition-transform active:scale-[0.98] md:flex"
-                onClick={() =>
-                  onOpenContactFromBrowseShop ? onOpenContactFromBrowseShop() : onNavigate?.('DIALER')
-                }
-              />
               <div className="flex shrink-0 items-center gap-2">
                 <button onClick={() => onNavigate?.('INBOX')} className="relative w-10 h-10 rounded-xl bg-slate-100 flex items-center justify-center active:scale-95 transition-all" style={{ WebkitTapHighlightColor: 'transparent' }}>
                   <Bell size={18} className="text-slate-700" />

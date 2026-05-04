@@ -8,8 +8,9 @@
  * pages don't have to reason about pathname matching themselves.
  *
  * From `md:` and up, horizontal nav links appear in the header. Narrow
- * mobile viewports use one row: logo left, then OPEN APP (full pill),
- * message-only live chat, inbox, account — even visual rhythm on small screens.
+ * mobile viewports use one row: logo left, then OPEN APP, inbox,
+ * account — live chat lives on the draggable edge tab
+ * ({@link LiveChatEdgeLauncher}).
  */
 
 import React from 'react';
@@ -18,10 +19,8 @@ import type { MobileSignInGate } from '../../hooks/useMobileSignInGate';
 import { useMobileSignInGate } from '../../hooks/useMobileSignInGate';
 import MobileOnlyNotice from './MobileOnlyNotice';
 import { OpenAppHeaderButton } from './OpenAppHeaderButton';
-import AppShellLiveChatButton from '../AppShellLiveChatButton';
 import SiteHeaderAccountActions from './SiteHeaderAccountActions';
 import { MARKETING_NAV_ITEMS, type MarketingNavKey } from './siteNavConfig';
-import { EVAIR_OPEN_MARKETING_CONTACT_EVENT } from '../../utils/evairMarketingEvents';
 
 export type SiteSection = MarketingNavKey | null;
 
@@ -33,24 +32,12 @@ interface SiteHeaderProps {
      * otherwise `SiteHeader` uses its own {@link useMobileSignInGate}.
      */
     gate?: MobileSignInGate;
-    /**
-     * Apex home: hide the **desktop** header Live Chat pill below `lg` (hero used to carry mobile chat).
-     * Mobile header always shows the **message icon** in the action row; this flag no longer removes it.
-     */
-    hideLiveChatBelowLg?: boolean;
 }
 
-const SiteHeader: React.FC<SiteHeaderProps> = ({ active = null, gate: gateProp, hideLiveChatBelowLg = false }) => {
+const SiteHeader: React.FC<SiteHeaderProps> = ({ active = null, gate: gateProp }) => {
     const { t } = useTranslation();
     const internalGate = useMobileSignInGate('/app');
     const signInGate = gateProp ?? internalGate;
-
-    const openMarketingContact = () => {
-        window.dispatchEvent(new CustomEvent(EVAIR_OPEN_MARKETING_CONTACT_EVENT));
-    };
-
-    /** Desktop header — compact pills (no fixed min-width — wide min-width was crushing the nav into two rows). */
-    const liveChatDesktopClass = `relative flex shrink-0 items-center gap-0.5 overflow-hidden rounded-full bg-gradient-to-r from-[#FF6600] to-[#FF8A3D] px-2 py-1.5 text-[10px] font-extrabold uppercase tracking-wide text-white shadow-sm transition-transform active:scale-[0.98] max-w-[min(100vw-12rem,9rem)] sm:max-w-none sm:gap-1 sm:px-3 sm:py-2 sm:text-[11px] md:h-[2.375rem] md:px-4 md:text-sm ${hideLiveChatBelowLg ? 'hidden lg:flex' : ''}`;
 
     const wordmark = (
         <a
@@ -89,20 +76,18 @@ const SiteHeader: React.FC<SiteHeaderProps> = ({ active = null, gate: gateProp, 
         </nav>
     );
 
-    /** Mobile: OPEN APP → live chat (icon) → inbox → account — message icon is always shown so order stays consistent. */
+    /** Mobile: OPEN APP → inbox → account */
     const mobileActions = (
         <div className="flex min-w-0 shrink items-center gap-1.5 sm:gap-2">
             <OpenAppHeaderButton href="/app" className="!px-2.5 text-[10px] sm:!px-4 sm:!text-xs" onClick={signInGate.gateClick} />
-            <AppShellLiveChatButton iconOnly onClick={openMarketingContact} />
             <SiteHeaderAccountActions />
         </div>
     );
 
-    /** Desktop (&ge; md): OPEN APP → live chat pill → inbox → account */
+    /** Desktop (&ge; md): OPEN APP → inbox → account */
     const desktopActions = (
         <div className="flex shrink-0 items-center gap-2 sm:gap-3">
             <OpenAppHeaderButton href="/app" onClick={signInGate.gateClick} />
-            <AppShellLiveChatButton onClick={openMarketingContact} className={liveChatDesktopClass} />
             <SiteHeaderAccountActions />
         </div>
     );

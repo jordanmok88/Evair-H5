@@ -3,7 +3,6 @@ import { createPortal } from 'react-dom';
 import { useTranslation } from 'react-i18next';
 import InboxView from '../../views/InboxView';
 import type { AppNotification } from '../../types';
-import { EVAIR_OPEN_MARKETING_CONTACT_EVENT } from '../../utils/evairMarketingEvents';
 
 export interface MarketingInboxDrawerProps {
     open: boolean;
@@ -66,10 +65,6 @@ const MarketingInboxDrawer: React.FC<MarketingInboxDrawerProps> = ({
                         notifications={notifications}
                         onUpdateNotifications={onUpdateNotifications}
                         onNavigate={() => goAppShop()}
-                        onOpenDialer={() => {
-                            onClose();
-                            window.dispatchEvent(new CustomEvent(EVAIR_OPEN_MARKETING_CONTACT_EVENT));
-                        }}
                         onBack={onClose}
                         embedded
                     />

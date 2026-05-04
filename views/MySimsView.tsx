@@ -10,7 +10,6 @@ import { daysRemainingFromExpiry } from '../utils/daysRemainingFromExpiry';
 import { topUp, fetchTopUpPackages, fetchPackages, checkDataUsage, formatVolume, formatPrice, retailPrice, packagePriceUsd, formatGB, queryProfile, mapRedTeaStatus, unbindSim } from '../services/dataService';
 import { useEdgeSwipeBack } from '../hooks/useEdgeSwipeBack';
 import LinkEsimWizard from '../components/LinkEsimWizard';
-import AppShellLiveChatButton from '../components/AppShellLiveChatButton';
 import MobileOpenAppNudge from '../components/shell/MobileOpenAppNudge';
 
 interface MySimsViewProps {
@@ -44,10 +43,7 @@ interface MySimsViewProps {
    * leaving Mine for Shop does not lose `lastHandled` (child unmounted) while the
    * nonce stays bumped — returning to Mine would otherwise re-open Link eSIM.
    */
-  /**
-   * Same as Shop header Live Chat: opens `#contact` with correct `previousTab` from App.
-   */
-  onOpenLiveChat?: () => void;
+  onConsumeLinkEsimRequestNonce?: () => void;
 }
 
 const CARD_HEIGHT = 72;
@@ -97,7 +93,6 @@ const MySimsView: React.FC<MySimsViewProps> = ({
   esimsMineWizardDefer = false,
   onReleaseEsimsMineWizardDefer,
   onConsumeLinkEsimRequestNonce,
-  onOpenLiveChat,
 }) => {
   const { t } = useTranslation();
   const swipeBack = useCallback(() => {
@@ -642,15 +637,6 @@ const MySimsView: React.FC<MySimsViewProps> = ({
             <h1 className="text-lg font-bold tracking-tight text-slate-900 truncate">{filterType === 'ESIM' ? t('my_sims.title_esims') : t('my_sims.title_sims')}</h1>
           </div>
           <MobileOpenAppNudge />
-          {onOpenLiveChat ? (
-            <>
-              <AppShellLiveChatButton iconOnly onClick={onOpenLiveChat} className="shrink-0 md:hidden" />
-              <AppShellLiveChatButton
-                onClick={onOpenLiveChat}
-                className="relative hidden shrink-0 items-center gap-1 rounded-full bg-gradient-to-r from-[#FF6600] to-[#FF8A3D] px-2 py-1.5 text-[10px] font-extrabold uppercase tracking-wide text-white shadow-sm transition-transform active:scale-[0.98] sm:px-3 sm:py-2 sm:text-[11px] md:flex"
-              />
-            </>
-          ) : null}
           <div className="flex shrink-0 gap-2 items-center">
              <button type="button" onClick={handleSync} className="w-9 h-9 bg-slate-100 rounded-full flex items-center justify-center text-slate-600 active:scale-95 transition-transform">
                  <RefreshCw size={16} className={isSyncing ? 'animate-spin' : ''} />

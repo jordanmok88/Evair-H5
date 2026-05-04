@@ -1,13 +1,13 @@
 /**
  * 共享聊天未读计数 hook
  *
- * 用于店面/个人中心/收件匣顶栏「在线客服」小红点（与 {@link AppShellLiveChatButton} 配对）。
+ * 用于 {@link LiveChatEdgeLauncher} 侧边「在线客服」小红点（替代原顶栏按钮）。
  *
  * 实现要点：
  * - 复用 acquireSharedChatProvider 的引用计数机制，确保 ContactUsView
  *   打开时不会触发"重连 + 重订阅"
  * - 收到 agent 消息时未读 +1；进入 Tab.DIALER 查看对话后由聊天页自身消费 provider，
- *   顶栏按钮卸载时 release 会重置订阅（与原先 SupportFab visible 切换等效）。
+ *   Edge tab 卸载时 release 会重置订阅（与原顶栏按钮行为等效）。
  */
 
 import { useEffect, useRef, useState } from 'react';

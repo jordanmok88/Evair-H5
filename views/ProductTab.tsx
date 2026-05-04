@@ -53,8 +53,6 @@ interface ProductTabProps {
    * (`Profile` hides the browse subtree).
    */
   externalLinkExistingEsimNonce?: number;
-  /** Forces back from Contact to SIM/ESIM browse when header chat is used (avoids INBOX-as-previous when shell float is open). */
-  onOpenContactFromBrowseShop?: () => void;
 }
 
 const ProductTab: React.FC<ProductTabProps> = ({
@@ -78,7 +76,6 @@ const ProductTab: React.FC<ProductTabProps> = ({
   onLinkedEsimRefresh,
   simWalletHydrated,
   externalLinkExistingEsimNonce = 0,
-  onOpenContactFromBrowseShop,
 }) => {
   const { t } = useTranslation();
   const mySims = activeSims.filter(s => s.type === type);
@@ -209,7 +206,6 @@ const ProductTab: React.FC<ProductTabProps> = ({
             notifications={notifications}
             initialEsimLocationCode={initialEsimLocationCode}
             onInitialEsimDeepLinkConsumed={onInitialEsimDeepLinkConsumed}
-            onOpenContactFromBrowseShop={onOpenContactFromBrowseShop}
           />
        )}
        
@@ -235,7 +231,6 @@ const ProductTab: React.FC<ProductTabProps> = ({
             esimsMineWizardDefer={type === 'ESIM' && esimsMineWizardDefer}
             onReleaseEsimsMineWizardDefer={() => setEsimsMineWizardDefer(false)}
             onConsumeLinkEsimRequestNonce={() => setLinkEsimFromShopNonce(0)}
-            onOpenLiveChat={onOpenContactFromBrowseShop}
           />
        )}
 
