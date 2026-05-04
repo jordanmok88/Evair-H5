@@ -554,6 +554,8 @@ const en = {
     bind_title: 'Add Your SIM Card',
     bind_scan_desc: 'Scan or enter the ICCID/EID number on your SIM card to link it to your account.',
     this_is_iccid: 'This is your ICCID',
+    iccid_packaging_hint_alt:
+      'EvairSIM retail card illustration: barcode on the carrier sleeve and where ICCID/EID appear on the nano-SIM.',
     verify_sim: 'Verify SIM Card',
     verifying: 'Verifying...',
     verify_failed: 'Could not verify this ICCID. Please check the number and try again.',

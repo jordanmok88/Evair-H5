@@ -552,6 +552,8 @@ const es = {
     bind_title: 'Agregar Tu Tarjeta SIM',
     bind_scan_desc: 'Escanea o ingresa el número ICCID/EID de tu tarjeta SIM para vincularla a tu cuenta.',
     this_is_iccid: 'Este es tu ICCID',
+    iccid_packaging_hint_alt:
+      'Tarjeta EvairSIM: código de barras en el portador y dónde aparece el ICCID/EID en la nano-SIM.',
     verify_sim: 'Verificar Tarjeta SIM',
     verifying: 'Verificando...',
     verify_failed: 'No se pudo verificar este ICCID. Por favor revisa el número e intenta de nuevo.',

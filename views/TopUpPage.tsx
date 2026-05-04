@@ -54,6 +54,7 @@ import {
 } from 'lucide-react';
 import InlineGuestAuthForm from '../components/auth/InlineGuestAuthForm';
 import BarcodeScanner from '../components/BarcodeScanner';
+import SimCardIccidHint from '../components/SimCardIccidHint';
 import SiteHeader from '../components/marketing/SiteHeader';
 import StripePaymentModal from '../components/StripePaymentModal';
 import {
@@ -773,6 +774,9 @@ const IdleState: React.FC<IdleProps> = ({
                     {manualError}
                 </p>
             )}
+            <div className="-mx-4 mb-4 mt-4 md:mx-0">
+                <SimCardIccidHint />
+            </div>
             <button
                 type="button"
                 onClick={onManualSubmit}

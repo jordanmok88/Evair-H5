@@ -528,6 +528,8 @@ const zh = {
     bind_title: '添加您的SIM卡',
     bind_scan_desc: '扫描或输入SIM卡上的ICCID/EID号码，将其绑定到您的账户。',
     this_is_iccid: '这是您的ICCID',
+    iccid_packaging_hint_alt:
+      'EvairSIM 实物卡示意图：卡套上的条形码与 nano-SIM 上的 ICCID/EID 位置。',
     verify_sim: '验证SIM卡',
     verifying: '验证中...',
     verify_failed: '无法验证此ICCID，请检查号码后重试。',

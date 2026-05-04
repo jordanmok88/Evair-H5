@@ -181,7 +181,7 @@ const PhysicalSimSetupView: React.FC<PhysicalSimSetupViewProps> = ({
                 </button>
               </div>
 
-              {/* Simplified card-back hint: orange band + wordmark, barcode + demo ICCID */}
+              {/* Retail packaging art — matches physical ship insert (barcode + SIM ICCID). */}
               <div className="-mx-5 mb-4">
                 <SimCardIccidHint />
               </div>
