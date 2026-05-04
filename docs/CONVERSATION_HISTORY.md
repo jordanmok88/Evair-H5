@@ -1,6 +1,6 @@
 # Evair H5 — Development Conversation History
 
-> Last updated: April 24, 2026 (evening — DNS cutover complete)
+> Last updated: May 4, 2026 — Cursor session backup (support + marketing header UX)
 >
 > **Flutter successor app**: A native mobile app (EvairSIM, Flutter 3.38) has been started to replace this H5.
 > Full Flutter history lives at `~/Development/EvairSIM-App/docs/CONVERSATION_HISTORY.md`.
@@ -489,3 +489,39 @@ work over the last 10 days that I had not absorbed.
 webhook handlers, SIM resource fields, bind-sim activation_code support
 all already done). Same scope, same UX, lower risk. Ready to start the
 Laravel migration on `sim_assets` as step 1 of the corrected ship sequence.
+
+---
+
+## Cursor session archive — Live Chat + marketing header (2026-05-04)
+
+_Archived for Jordan starting a fresh agent. Raw Cursor threads are **not** in Git; only this summary plus the commits below._
+
+### What Jordan asked for
+
+1. **Remove the floating orange live chat bubble** (corners / vertical “LIVE CHAT” tab) from WebView + mobile everywhere; **keep chat only via header-style controls** (`AppShellLiveChatButton`) on Shop, Profile, Inbox, My SIMs, marketing `SiteHeader`, etc.
+2. **Web mobile marketing home**: Jordan wanted Live Chat **in the hero**, **above** the trust line that includes **“No hidden fees”**, plus **room in the sticky header for Inbox + Account** without duplicating chat twice on narrow viewports.
+
+### Intermediate step (later reverted on request)
+
+- Jordan said **“undo”** once: that **reverted** `fix(marketing): always show inbox + account in SiteHeader on mobile web` (`a9c7336` ↔ `ec8054b`). After that revert, inbox/account again **vanished for signed-out visitors** (`SiteHeaderAccountActions` had returned `null` when not logged in).
+
+### Final behavior shipped (`main`)
+
+- **`components/SupportFab.tsx` removed**; `App.tsx` no longer mounts a global FAB—see commit `feat(support): remove floating chat FAB; header Live Chat…` (**8051ec6**, rebased ancestry).
+- **Shared header CTA**: `components/AppShellLiveChatButton.tsx` (+ unread badge via `useUnreadChat(true)`); wired where headers need chat.
+- **Apex homepage (`MarketingPage`)** (`3d378a8` — `feat(marketing): hero Live Chat above trust strip mobile; header inbox+account; hide dup chat in narrow header`):
+  - **`MarketingHeroCarousel`**: Below `lg`, centered **Live Chat** pill **above** `HeroTrustStrip` (trust_no_hidden_fees row).
+  - **`SiteHeader`**: New prop **`hideLiveChatBelowLg`** — apex passes it so header Live Chat is **`hidden lg:flex`** (no duplicate with hero pill on phones).
+  - **`SiteHeaderAccountActions`**: Inbox + account **always rendered** again; **`MarketingProfileDrawer`** gets **`isLoggedIn={loggedIn}`** so signed-out users still open profile sheet / empty inbox UX.
+  - **i18n**: `marketing.header_profile_aria` updated (en/zh/es) to “account menu,” not “in the Evair app.”
+
+### Repo pointers for the next agent
+
+| Topic | Files |
+|---|---|
+| FAB removal / in-app shell chat wiring | `App.tsx`, `views/ShopView.tsx`, `views/ProfileView.tsx`, `views/InboxView.tsx`, `views/MySimsView.tsx`, `views/ProductTab.tsx`, `components/marketing/SiteHeader.tsx` |
+| Marketing contact drawer opener | `EVAIR_OPEN_MARKETING_CONTACT_EVENT` in `utils/evairMarketingEvents.ts`, listener in `App.tsx` (`marketingSupportOpen`) |
+| Hero chat placement | `components/marketing/MarketingHeroCarousel.tsx`, prop `hideLiveChatBelowLg` on `components/marketing/SiteHeader.tsx`, `views/MarketingPage.tsx` |
+| Signed-out inbox/account | `components/marketing/SiteHeaderAccountActions.tsx` |
+
+**Note:** Paste any extra points from Cursor into this file—or ask the new agent to read `docs/H5_SHELL_AND_MARKETING.md` and `.cursor/rules/ongoing-work.mdc`.
