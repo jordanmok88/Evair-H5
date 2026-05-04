@@ -700,7 +700,7 @@ const zh = {
     data_volume: '数据量',
     validity_period: '有效期',
     days_unit: '天',
-    sla_hint: '我们通常在 6–12 小时内回复。',
+    sla_hint: '我们通常在 12 小时内回复。',
     hk_local_time: '香港当地时间：{{time}}',
     team_last_active_moments: '刚刚有团队活动',
     team_last_active_one: '团队最后一次活动：1 分钟前',

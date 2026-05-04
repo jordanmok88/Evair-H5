@@ -22,7 +22,7 @@ const EXPAND_MS = 5200;
 const EASE_PREMIUM = 'cubic-bezier(0.22, 1, 0.36, 1)';
 
 function tabSize(mdUp: boolean): { w: number; h: number } {
-  return mdUp ? { w: 44, h: 118 } : { w: 22, h: 92 };
+  return mdUp ? { w: 44, h: 118 } : { w: 28, h: 104 };
 }
 
 function loadDock(): 'left' | 'right' {
@@ -296,7 +296,11 @@ const LiveChatEdgeLauncher: React.FC<LiveChatEdgeLauncherProps> = ({ marketingDr
             strokeWidth={2.5}
           />
           <span
-            className={`flex flex-col items-center gap-0 font-extrabold uppercase tracking-wide text-white [writing-mode:vertical-rl] rotate-180 ${mdUp ? 'text-[10px] leading-none' : 'text-[8px] leading-tight max-md:tracking-tighter'}`}
+            className={`flex flex-col items-center font-extrabold uppercase text-white [writing-mode:vertical-rl] [text-orientation:upright] rotate-180 ${mdUp ? 'text-[11px]' : 'text-[10px]'}`}
+            style={{
+              letterSpacing: mdUp ? '0.06em' : '0.1em',
+              lineHeight: 1.55,
+            }}
           >
             {t('support_fab.live_chat')}
           </span>

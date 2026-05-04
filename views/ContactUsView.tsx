@@ -11,7 +11,6 @@ import {
   type ChatProvider,
   type ConnectionState,
   type UnifiedChatMessage,
-  type ChatProviderName,
 } from '../services/chat';
 
 
@@ -61,13 +60,6 @@ const SUGGESTION_AI_QUERY: Record<(typeof COMPOSER_SUGGESTION_KEYS)[number], str
 };
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-
-function minutesSinceUtc(iso: string): number {
-  const normalized = iso.includes('T') ? iso : iso.replace(' ', 'T');
-  const d = Date.parse(normalized);
-  if (Number.isNaN(d)) return Number.POSITIVE_INFINITY;
-  return Math.max(0, Math.floor((Date.now() - d) / 60000));
-}
 
 function uniqSuggestionKeys(keys: readonly (typeof COMPOSER_SUGGESTION_KEYS)[number][]): (typeof COMPOSER_SUGGESTION_KEYS)[number][] {
   const seen = new Set<string>();
@@ -204,9 +196,7 @@ const ContactUsView: React.FC<ContactUsViewProps> = ({
   );
 
   const [initializingChat, setInitializingChat] = useState(true);
-  const [providerName, setProviderName] = useState<ChatProviderName | null>(null);
 
-  const [conversationUpdatedAtIso, setConversationUpdatedAtIso] = useState<string | null>(null);
   const [leaveMessageMode, setLeaveMessageMode] = useState(false);
   const [leaveEmailInput, setLeaveEmailInput] = useState(() => (customerEmail?.trim() ?? ''));
   const [leaveEmailError, setLeaveEmailError] = useState<string | null>(null);
@@ -289,7 +279,6 @@ const ContactUsView: React.FC<ContactUsViewProps> = ({
 
     const provider = acquireSharedChatProvider();
     providerRef.current = provider;
-    setProviderName(provider.name);
     setInitializingChat(true);
 
     const unsubscribe = provider.subscribe({
@@ -324,7 +313,6 @@ const ContactUsView: React.FC<ContactUsViewProps> = ({
           console.log('[ContactUs] ensureConversation OK:', handle);
         }
         conversationIdRef.current = handle.id;
-        setConversationUpdatedAtIso(handle.conversationUpdatedAt ?? null);
         if (handle.existing) {
           setLoadingHistory(true);
           // Use chatService directly to get has_more flag from the API
@@ -380,12 +368,10 @@ const ContactUsView: React.FC<ContactUsViewProps> = ({
         }
         const localFallback = createChatProvider('local');
         providerRef.current = localFallback;
-        setProviderName('local');
         try {
           const localHandle = await localFallback.ensureConversation({ customerName: userName });
           if (cancelled) return;
           conversationIdRef.current = localHandle.id;
-          setConversationUpdatedAtIso(localHandle.conversationUpdatedAt ?? null);
         } catch {
           if (!cancelled) conversationIdRef.current = 'local-fallback';
         }
@@ -791,7 +777,6 @@ const ContactUsView: React.FC<ContactUsViewProps> = ({
           customerEmail: mergedEmail,
         });
         conversationIdRef.current = handle.id;
-        setConversationUpdatedAtIso(handle.conversationUpdatedAt ?? null);
         aiDisabledRef.current = true;
         setAiDisabled(true);
         provider.markNeedsHuman().catch(() => { /* noop */ });
@@ -988,28 +973,6 @@ const ContactUsView: React.FC<ContactUsViewProps> = ({
     return uniqSuggestionKeys([...ctx, ...tail]);
   }, [pathname]);
 
-  const presenceSubtitle = useMemo(() => {
-    const hkStr = new Intl.DateTimeFormat(undefined, {
-      weekday: 'short',
-      month: 'short',
-      day: 'numeric',
-      hour: 'numeric',
-      minute: '2-digit',
-      hour12: true,
-      timeZone: 'Asia/Hong_Kong',
-    }).format(new Date());
-    const hkLine = t('contact.hk_local_time', { time: hkStr });
-
-    if (providerName === 'laravel' && conversationUpdatedAtIso) {
-      const mins = minutesSinceUtc(conversationUpdatedAtIso);
-      if (mins < 1) return t('contact.team_last_active_moments');
-      if (mins === 1) return t('contact.team_last_active_one');
-      return t('contact.team_last_active_other', { count: mins });
-    }
-
-    return hkLine;
-  }, [conversationUpdatedAtIso, providerName, t]);
-
   const showChatSkeleton = initializingChat || loadingHistory;
 
   const connectionLabel = (() => {
@@ -1054,8 +1017,8 @@ const ContactUsView: React.FC<ContactUsViewProps> = ({
                 {aiDisabled ? t('contact.header_mode_agent_live') : t('contact.header_mode_ai_assistant')}
               </span>
             </p>
-            <p className="mt-0.5 line-clamp-2 text-[10px] font-medium leading-snug text-white/80">
-              {presenceSubtitle}
+            <p className="mt-0.5 line-clamp-2 text-[10px] font-medium leading-snug text-white/85">
+              {t('contact.sla_hint')}
             </p>
           </div>
           <div className="relative shrink-0">
@@ -1313,10 +1276,6 @@ const ContactUsView: React.FC<ContactUsViewProps> = ({
             </div>
           ) : (
             <>
-              <div className="rounded-xl bg-white/70 px-2.5 py-2 shadow-[0_1px_2px_rgba(15,23,42,0.04)] ring-1 ring-black/[0.04]">
-                <p className="text-[11px] font-semibold leading-snug text-slate-600">{t('contact.sla_hint')}</p>
-              </div>
-
               {leaveMessageMode ? (
                 <label className="flex flex-col gap-1 px-0.5">
                   <span className="text-[12px] font-semibold text-slate-700">{t('contact.email_capture_label')}</span>

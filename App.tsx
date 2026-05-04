@@ -87,8 +87,8 @@ function marketingContactFallbackAnchor(): MarketingContactOpenDetail {
     return { dock: 'right', topPx: 120, tabW: 44, tabH: 118 };
   }
   const md = window.innerWidth >= 768;
-  const tabW = md ? 44 : 22;
-  const tabH = md ? 118 : 92;
+  const tabW = md ? 44 : 28;
+  const tabH = md ? 118 : 104;
   const vh = window.innerHeight;
   return {
     dock: 'right',

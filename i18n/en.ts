@@ -732,7 +732,7 @@ const en = {
     data_volume: 'Data',
     validity_period: 'Validity',
     days_unit: 'days',
-    sla_hint: 'We typically respond within 6–12 hours.',
+    sla_hint: 'We typically respond within 12 hours.',
     hk_local_time: 'Local time (Hong Kong): {{time}}',
     team_last_active_moments: 'Team was active just now',
     team_last_active_one: 'Team was last active 1 minute ago',
