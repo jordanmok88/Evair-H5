@@ -31,7 +31,7 @@ const SiteFooter: React.FC = () => {
     }, [t]);
 
     return (
-        <footer className="bg-slate-900 text-slate-400 px-4 md:px-8 py-8 text-sm">
+        <footer className="border-t border-white/5 bg-slate-900 px-4 py-8 text-sm text-slate-400 md:px-8">
             <div className="max-w-6xl mx-auto flex flex-col md:flex-row items-center gap-4 justify-between">
                 <div className="flex items-center gap-3">
                     <img

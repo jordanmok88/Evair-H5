@@ -90,7 +90,7 @@ const MarketingContactDrawer: React.FC<MarketingContactDrawerProps> = ({ open, o
         aria-label={t('support_fab.live_chat')}
         className={
           mdUp && desktopLayout
-            ? `fixed z-[71] flex flex-col overflow-hidden rounded-2xl bg-[#eef1f6] shadow-[0_8px_48px_-8px_rgba(0,0,0,0.22)] ring-1 ring-black/10 animate-in fade-in zoom-in-95 duration-200 ${slideFrom}`
+            ? `card fixed z-[71] flex flex-col overflow-hidden rounded-2xl bg-[#eef1f6] ring-1 ring-black/10 animate-in fade-in zoom-in-95 duration-200 ${slideFrom}`
             : 'fixed inset-0 z-[71] flex h-[100dvh] max-h-[100dvh] w-full animate-in fade-in duration-200 flex-col overflow-hidden bg-[#eef1f6]'
         }
         style={
