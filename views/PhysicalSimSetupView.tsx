@@ -101,18 +101,12 @@ const PhysicalSimSetupView: React.FC<PhysicalSimSetupViewProps> = ({
       <div
         className={
           activateStep === 'SCAN'
-            ? 'flex min-h-0 flex-1 flex-col overflow-hidden px-2.5 pb-safe-bottom sm:px-3'
+            ? 'min-h-0 flex-1 overflow-y-auto px-2.5 pb-safe-bottom no-scrollbar sm:px-3'
             : 'min-h-0 flex-1 overflow-y-auto px-4 pb-6 no-scrollbar'
         }
       >
 
-        <div
-          className={
-            activateStep === 'SCAN'
-              ? 'flex min-h-0 flex-1 flex-col gap-2 pt-1.5'
-              : 'pt-4'
-          }
-        >
+        <div className={activateStep === 'SCAN' ? 'flex flex-col gap-2 pt-1.5' : 'pt-4'}>
 
           {/* ── Step Progress Indicator ── */}
           <div
@@ -158,9 +152,9 @@ const PhysicalSimSetupView: React.FC<PhysicalSimSetupViewProps> = ({
             </div>
           </div>
 
-          {/* ── Step 1: SCAN — fill viewport below stepper ── */}
+          {/* ── Step 1: SCAN (block layout — avoids WebKit flex-1 height collapse) ── */}
           {activateStep === 'SCAN' && (
-            <div className="flex min-h-0 flex-1 basis-0 flex-col overflow-hidden rounded-2xl border border-slate-100 bg-white shadow-sm">
+            <div className="flex w-full flex-col rounded-2xl border border-slate-100 bg-white shadow-sm">
               <div className="shrink-0 space-y-3 p-3 sm:p-4">
                 <div className="flex items-start gap-2 rounded-lg border border-green-100 bg-green-50 px-3 py-2.5">
                   <Info size={16} className="mt-0.5 shrink-0 text-green-600" />
@@ -201,8 +195,11 @@ const PhysicalSimSetupView: React.FC<PhysicalSimSetupViewProps> = ({
                 </div>
               </div>
 
-              <div className="flex min-h-0 flex-1 flex-col px-3 pb-3 pt-1 sm:px-4 sm:pb-4">
-                <SimCardIccidHint fill className="min-h-0 flex-1" />
+              <div className="flex flex-col px-3 pb-3 pt-1 sm:px-4 sm:pb-4">
+                {/* Min height gives the art room without relying on indefinite flex-1 (Safari → 0px). */}
+                <div className="flex min-h-[min(38dvh,280px)] w-full shrink-0 items-center justify-center py-2">
+                  <SimCardIccidHint className="max-h-[min(38dvh,280px)] w-full" compact />
+                </div>
 
                 <button
                   type="button"
