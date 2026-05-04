@@ -38,6 +38,7 @@ import {
 } from './utils/testMode';
 import { getRoute, type Route } from './utils/routing';
 import {
+  EVAIR_APP_CONTACT_OPEN,
   EVAIR_OPEN_APP_SHELL_CHAT,
   EVAIR_OPEN_MARKETING_CONTACT_EVENT,
   type MarketingContactOpenDetail,
@@ -1109,6 +1110,13 @@ function CustomerApp() {
     window.addEventListener(EVAIR_OPEN_APP_SHELL_CHAT, openFromEdgeTab);
     return () => window.removeEventListener(EVAIR_OPEN_APP_SHELL_CHAT, openFromEdgeTab);
   }, [openContactFromBrowseShop]);
+
+  /** Keeps {@link LiveChatEdgeLauncher} in sync — `replaceState(#contact)` does not always emit `hashchange` (Safari / WebView). */
+  useEffect(() => {
+    window.dispatchEvent(
+      new CustomEvent(EVAIR_APP_CONTACT_OPEN, { detail: { open: activeTab === Tab.DIALER } }),
+    );
+  }, [activeTab]);
 
   const handleProfileLinkExistingEsim = useCallback(() => {
     if (currentSimType !== 'ESIM') return;

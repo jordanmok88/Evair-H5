@@ -4,8 +4,10 @@ import { useTranslation } from 'react-i18next';
 import { ChevronsLeft, ChevronsRight } from 'lucide-react';
 import { getRoute } from '../../utils/routing';
 import {
+  EVAIR_APP_CONTACT_OPEN,
   EVAIR_OPEN_APP_SHELL_CHAT,
   EVAIR_OPEN_MARKETING_CONTACT_EVENT,
+  type EvairAppContactOpenDetail,
   type MarketingContactOpenDetail,
 } from '../../utils/evairMarketingEvents';
 import { useUnreadChat } from '../../hooks/useUnreadChat';
@@ -68,7 +70,7 @@ const LiveChatEdgeLauncher: React.FC<LiveChatEdgeLauncherProps> = ({ marketingDr
 
   const [routeKind, setRouteKind] = useState(() => getRoute().kind);
   const [dock, setDock] = useState<'left' | 'right'>(loadDock);
-  const [appContactOpen, setAppContactOpen] = useState(() =>
+  const [appContactSurfaceOpen, setAppContactSurfaceOpen] = useState(() =>
     typeof window !== 'undefined'
       ? getRoute().kind === 'app' && window.location.hash.toLowerCase() === '#contact'
       : false,
@@ -88,25 +90,39 @@ const LiveChatEdgeLauncher: React.FC<LiveChatEdgeLauncherProps> = ({ marketingDr
   const [online, setOnline] = useState(
     typeof navigator !== 'undefined' ? navigator.onLine : true,
   );
-  const unreadActive = routeKind === 'app' && !marketingDrawerOpen && !appContactOpen;
+  const unreadActive = routeKind === 'app' && !marketingDrawerOpen && !appContactSurfaceOpen;
   const { unread } = useUnreadChat(unreadActive && routeKind !== 'apiTest');
 
-  const chatSurfacesOpen = marketingDrawerOpen || appContactOpen;
+  const chatSurfacesOpen = marketingDrawerOpen || appContactSurfaceOpen;
   const showExpanded = mdUp || mobilePeek;
 
   useEffect(() => {
-    const syncRoute = () => setRouteKind(getRoute().kind);
-    const syncHash = () => {
+    const syncRoute = () => {
+      const r = getRoute();
+      setRouteKind(r.kind);
+      if (r.kind !== 'app') {
+        setAppContactSurfaceOpen(false);
+      }
+    };
+    const syncContactFromLocation = () => {
       const h = window.location.hash.toLowerCase();
-      setAppContactOpen(getRoute().kind === 'app' && h === '#contact');
+      setAppContactSurfaceOpen(getRoute().kind === 'app' && h === '#contact');
+    };
+    const onAppContactBroadcast = (e: Event) => {
+      const d = (e as CustomEvent<EvairAppContactOpenDetail>).detail;
+      if (d && typeof d.open === 'boolean') {
+        setAppContactSurfaceOpen(d.open);
+      }
     };
     window.addEventListener('popstate', syncRoute);
-    window.addEventListener('hashchange', syncHash);
-    window.addEventListener('popstate', syncHash);
+    window.addEventListener('hashchange', syncContactFromLocation);
+    window.addEventListener('popstate', syncContactFromLocation);
+    window.addEventListener(EVAIR_APP_CONTACT_OPEN, onAppContactBroadcast);
     return () => {
       window.removeEventListener('popstate', syncRoute);
-      window.removeEventListener('hashchange', syncHash);
-      window.removeEventListener('popstate', syncHash);
+      window.removeEventListener('hashchange', syncContactFromLocation);
+      window.removeEventListener('popstate', syncContactFromLocation);
+      window.removeEventListener(EVAIR_APP_CONTACT_OPEN, onAppContactBroadcast);
     };
   }, []);
 
