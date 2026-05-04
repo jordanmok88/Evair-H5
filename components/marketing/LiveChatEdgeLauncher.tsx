@@ -25,7 +25,8 @@ const MOBILE_PEEK_HOLD_MS = 3000;
 const EASE_PREMIUM = 'cubic-bezier(0.22, 1, 0.36, 1)';
 
 function tabSize(mdUp: boolean): { w: number; h: number } {
-  return mdUp ? { w: 44, h: 118 } : { w: 28, h: 104 };
+  /** Narrow width, taller height — label is horizontal type rotated ±90° along the edge (WebKit-safe vs `writing-mode: vertical-*`). */
+  return mdUp ? { w: 42, h: 124 } : { w: 32, h: 114 };
 }
 
 function loadDock(): 'left' | 'right' {
@@ -312,30 +313,15 @@ const LiveChatEdgeLauncher: React.FC<LiveChatEdgeLauncherProps> = ({ marketingDr
             aria-hidden
             strokeWidth={2.5}
           />
-          <span
-            className={`inline-flex shrink-0 flex-col items-center font-extrabold uppercase leading-none text-white ${mdUp ? 'text-[11px]' : 'text-[10px]'}`}
-            aria-hidden
-          >
-            {label
-              .trim()
-              .split(/\s+/)
-              .map((word, wi) => (
-                <React.Fragment key={`lc-w-${wi}`}>
-                  {wi > 0 ? (
-                    <span className={`shrink-0 ${mdUp ? 'h-1.5' : 'h-1'} w-px`} aria-hidden />
-                  ) : null}
-                  <span
-                    className={`flex flex-col items-center ${mdUp ? 'gap-1' : 'gap-[3px]'}`}
-                  >
-                    {word.split('').map((ch, ci) => (
-                      <span key={`lc-${wi}-${ci}`} className="block leading-none">
-                        {ch}
-                      </span>
-                    ))}
-                  </span>
-                </React.Fragment>
-              ))}
-          </span>
+          <div className="flex min-h-0 min-w-0 flex-1 items-center justify-center overflow-visible px-0.5">
+            <span
+              className={`origin-center whitespace-nowrap text-center font-extrabold uppercase leading-none tracking-wide text-white [writing-mode:horizontal-tb] ${mdUp ? 'text-[11px]' : 'text-[10px]'}`}
+              style={{ transform: dock === 'left' ? 'rotate(-90deg)' : 'rotate(90deg)' }}
+              aria-hidden
+            >
+              {label.trim()}
+            </span>
+          </div>
           {unread > 0 ? (
             <span
               className={`rounded-full bg-red-500 text-center font-bold text-white ring-2 ring-orange-600 ${mdUp ? 'min-w-[1.125rem] px-0.5 text-[9px] leading-4 [writing-mode:horizontal-tb]' : 'min-w-3 px-px text-[7px] leading-3 [writing-mode:horizontal-tb]'}`}
