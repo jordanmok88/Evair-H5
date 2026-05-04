@@ -28,9 +28,10 @@ export default function AppShellLiveChatButton({
 }: AppShellLiveChatButtonProps) {
   const { t } = useTranslation();
   const { unread } = useUnreadChat(true);
-  const merged =
-    className ??
-    (iconOnly ? ICON_ONLY_CLASS : DEFAULT_CLASS);
+  /** Icon-only tiles merge utility classes onto the circular base; full pills usually pass `className` alone. */
+  const merged = iconOnly
+    ? [ICON_ONLY_CLASS, className].filter(Boolean).join(' ')
+    : className ?? DEFAULT_CLASS;
 
   return (
     <button

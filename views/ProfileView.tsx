@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { ChevronRight, Share, ChevronLeft, Search, Lock, Bell, Download, Trash2, Check, Plus, Package, HelpCircle, FileText, Globe, Info, Coins, ShieldCheck, CreditCard, ShoppingBag, Briefcase, Phone, Settings, AlertCircle, Play, Smartphone, Loader2, X, Star, Gift } from 'lucide-react';
 import ReferralView from './ReferralView';
 import AppShellLiveChatButton from '../components/AppShellLiveChatButton';
+import MobileOpenAppNudge from '../components/shell/MobileOpenAppNudge';
 import { AppNotification } from '../types';
 import { useSwipeBack } from '../hooks/useSwipeBack';
 import { useEdgeSwipeBack } from '../hooks/useEdgeSwipeBack';
@@ -1345,9 +1346,11 @@ const ProfileViewInner: React.FC<ProfileViewProps> = ({
               )}
               <h1 className="min-w-0 flex-1 truncate text-lg font-bold tracking-tight text-slate-900">{t('profile.title')}</h1>
             </div>
+            <MobileOpenAppNudge />
+            <AppShellLiveChatButton iconOnly onClick={onOpenDialer} className="shrink-0 md:hidden" />
             <AppShellLiveChatButton
               onClick={onOpenDialer}
-              className="relative flex shrink-0 items-center gap-1 rounded-full bg-gradient-to-r from-[#FF6600] to-[#FF8A3D] px-2.5 py-2 text-[10px] font-extrabold uppercase tracking-wide text-white shadow-sm active:scale-[0.98] transition-transform sm:px-3 sm:text-[11px]"
+              className="relative hidden shrink-0 items-center gap-1 rounded-full bg-gradient-to-r from-[#FF6600] to-[#FF8A3D] px-2.5 py-2 text-[10px] font-extrabold uppercase tracking-wide text-white shadow-sm transition-transform active:scale-[0.98] sm:px-3 sm:text-[11px] md:flex"
             />
         </div>
 

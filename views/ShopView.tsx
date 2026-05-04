@@ -35,6 +35,7 @@ import { useSwipeBack } from '../hooks/useSwipeBack';
 import { Bell, UserCircle } from 'lucide-react';
 import { AppNotification } from '../types';
 import AppShellLiveChatButton from '../components/AppShellLiveChatButton';
+import MobileOpenAppNudge from '../components/shell/MobileOpenAppNudge';
 
 /** eSIM shop filter row: single-country tabs + Multi-Country (`Multi-Region` in facets). */
 const ESIM_LOCATION_FILTER_TABS: ContinentTab[] = [
@@ -1403,14 +1404,22 @@ const ShopView: React.FC<ShopViewProps> = ({
           style={{ transform: headerHidden ? 'translateY(-100%)' : 'translateY(0)' }}
         >
           {/* Row 1: Greeting · Live chat · notifications · profile (subtext removed for space) */}
-          <div className="flex min-w-0 items-center gap-2 mb-3">
+          <div className="mb-3 flex min-w-0 items-center gap-1.5 md:gap-2">
               <div className="min-w-0 flex-1">
                   <p className="truncate text-base font-bold text-slate-900 tracking-tight">
                       {t('shop.hello')} {isLoggedIn && user ? user.name : t('shop.new_friend')}
                   </p>
               </div>
+              <MobileOpenAppNudge />
               <AppShellLiveChatButton
-                className="relative flex shrink-0 items-center gap-1 rounded-full bg-gradient-to-r from-[#FF6600] to-[#FF8A3D] px-3 py-2 text-[11px] font-extrabold uppercase tracking-wide text-white shadow-sm active:scale-[0.98] transition-transform"
+                iconOnly
+                className="md:hidden"
+                onClick={() =>
+                  onOpenContactFromBrowseShop ? onOpenContactFromBrowseShop() : onNavigate?.('DIALER')
+                }
+              />
+              <AppShellLiveChatButton
+                className="relative hidden shrink-0 items-center gap-1 rounded-full bg-gradient-to-r from-[#FF6600] to-[#FF8A3D] px-3 py-2 text-[11px] font-extrabold uppercase tracking-wide text-white shadow-sm transition-transform active:scale-[0.98] md:flex"
                 onClick={() =>
                   onOpenContactFromBrowseShop ? onOpenContactFromBrowseShop() : onNavigate?.('DIALER')
                 }
