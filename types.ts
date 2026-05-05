@@ -64,6 +64,7 @@ export interface ActiveSim {
   orderNo?: string;
   trackingNumber?: string;
   purchaseSource?: 'IN_APP' | 'MARKETPLACE';
+  supplierType: 'pccw' | 'esimaccess';
 }
 
 export interface Order {

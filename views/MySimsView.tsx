@@ -280,35 +280,14 @@ const MySimsView: React.FC<MySimsViewProps> = ({
     setTopUpLoading(true);
     setTopUpPackages([]);
     setSelectedTopUp(null);
-    const fallbackLocation = currentSim.locationCode || currentSim.country.countryCode;
-    const locationFallback = () =>
-      fetchPackages({ locationCode: fallbackLocation, omitShopPresentation: true });
-    // Recharge catalogue resolution by SIM type:
-    //
-    //   • ESIM        → EsimAccess / Red Tea top-up templates keyed to
-    //                   the ICCID; fall back to the general location
-    //                   catalogue if none returned.
-    //   • PHYSICAL    → physical-SIM recharge templates. Pass
-    //                   `'pccw'` explicitly — the backend defaults to
-    //                   `esimaccess` and would otherwise return zero
-    //                   matches. If the pool has no offers for this SIM
-    //                   (e.g. an ICCID not yet on any whitelist) we
-    //                   fall through to the general catalogue so the
-    //                   user still sees something actionable.
-    const pkgPromise = currentSim.type === 'ESIM'
-      ? fetchTopUpPackages(currentIccid)
-          .then(pkgs => pkgs.length > 0 ? pkgs : locationFallback())
-          .catch(locationFallback)
-      : fetchTopUpPackages(currentIccid, 'pccw')
-          .then(pkgs => pkgs.length > 0 ? pkgs : locationFallback())
-          .catch(locationFallback);
-    pkgPromise
+    const supplierType = currentSim.supplierType;
+    fetchTopUpPackages(currentIccid, supplierType)
       .then(pkgs => { if (!cancelled) setTopUpPackages(pkgs); })
-      .catch(() => {})
+      .catch(() => { if (!cancelled) setTopUpPackages([]); })
       .finally(() => { if (!cancelled) setTopUpLoading(false); });
     return () => { cancelled = true; };
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- currentSim is identified by iccid + type
-  }, [isRechargeModalOpen, currentIccid, currentSim?.type]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- currentSim is identified by iccid + supplierType
+  }, [isRechargeModalOpen, currentIccid, currentSim?.supplierType]);
 
   // Top-bar sync button on the ring-gauge card. `checkDataUsage` routes
   // to the right supplier backend-side, so the same
@@ -1188,7 +1167,7 @@ const MySimsView: React.FC<MySimsViewProps> = ({
               iccid,
               packageCode: selectedTopUp.packageCode,
               amount: packagePriceUsd(selectedTopUp),
-              supplierType: currentSim.type === 'PHYSICAL' ? 'pccw' : 'esimaccess',
+              supplierType: currentSim.supplierType,
             });
             setPaymentModalOpen(true);
           };
