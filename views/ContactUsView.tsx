@@ -196,6 +196,7 @@ const ContactUsView: React.FC<ContactUsViewProps> = ({
   );
 
   const [initializingChat, setInitializingChat] = useState(true);
+  const [footerReservePx, setFooterReservePx] = useState(188);
 
   const [leaveMessageMode, setLeaveMessageMode] = useState(false);
   const [leaveEmailInput, setLeaveEmailInput] = useState(() => (customerEmail?.trim() ?? ''));
@@ -211,6 +212,7 @@ const ContactUsView: React.FC<ContactUsViewProps> = ({
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
+  const footerRef = useRef<HTMLElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const providerRef = useRef<ChatProvider | null>(null);
   const conversationIdRef = useRef<string | null>(null);
@@ -431,6 +433,27 @@ const ContactUsView: React.FC<ContactUsViewProps> = ({
   useLayoutEffect(() => {
     adjustComposerHeight();
   }, [input, adjustComposerHeight]);
+
+  useEffect(() => {
+    if (embedded || typeof window === 'undefined') return;
+    const footerEl = footerRef.current;
+    if (!footerEl) return;
+
+    const syncFooterReserve = () => {
+      // Keep spacer aligned with real footer height across locale/content changes.
+      const measured = Math.ceil(footerEl.getBoundingClientRect().height);
+      setFooterReservePx(Math.max(120, measured + 12));
+    };
+
+    syncFooterReserve();
+    const ro = new ResizeObserver(syncFooterReserve);
+    ro.observe(footerEl);
+    window.addEventListener('resize', syncFooterReserve);
+    return () => {
+      ro.disconnect();
+      window.removeEventListener('resize', syncFooterReserve);
+    };
+  }, [embedded, leaveMessageMode, leaveSuccess]);
 
   const syncScrollFABsFromEl = useCallback(() => {
     const el = scrollContainerRef.current;
@@ -1091,10 +1114,11 @@ const ContactUsView: React.FC<ContactUsViewProps> = ({
         <div
           ref={scrollContainerRef}
           onScroll={handleScroll}
-          className={`touch-pan-y min-h-0 flex-1 overflow-x-hidden overflow-y-auto overscroll-y-contain no-scrollbar ${embedded ? 'px-3 pt-1.5 pb-3 sm:px-4' : 'px-3 pt-1.5 lg:pb-3 max-lg:pb-[calc(0.75rem+11.75rem+env(safe-area-inset-bottom,0px)+var(--contact-vv-gap,0px))]'} bg-[#ECE5DD]`}
+          className={`touch-pan-y min-h-0 flex-1 overflow-x-hidden overflow-y-auto overscroll-y-contain no-scrollbar ${embedded ? 'px-3 pt-1.5 pb-3 sm:px-4' : 'px-3 pt-1.5 lg:pb-3 max-lg:pb-[calc(var(--contact-footer-offset,188px)+env(safe-area-inset-bottom,0px)+var(--contact-vv-gap,0px))]'} bg-[#ECE5DD]`}
           style={{
             scrollBehavior: 'smooth',
             WebkitOverflowScrolling: 'touch',
+            ...(!embedded ? ({ '--contact-footer-offset': `${footerReservePx}px` } as React.CSSProperties) : {}),
           }}
         >
           {showChatSkeleton ? (
@@ -1227,7 +1251,7 @@ const ContactUsView: React.FC<ContactUsViewProps> = ({
             className={`pointer-events-auto absolute left-1/2 z-[34] flex max-w-[calc(100%-2rem)] -translate-x-1/2 touch-manipulation items-center gap-2 rounded-full border border-slate-200/90 bg-white px-5 py-2.5 text-[14px] font-semibold text-slate-800 shadow-[0_4px_16px_rgba(15,23,42,0.14)] active:scale-[0.98] ${
               embedded
                 ? 'bottom-[calc(1rem+env(safe-area-inset-bottom,0px))]'
-                : 'max-lg:bottom-[calc(0.75rem+11.75rem+env(safe-area-inset-bottom,0px)+var(--contact-vv-gap,0px))] lg:bottom-[calc(1rem+env(safe-area-inset-bottom,0px))]'
+                : 'max-lg:bottom-[calc(var(--contact-footer-offset,188px)+env(safe-area-inset-bottom,0px)+var(--contact-vv-gap,0px))] lg:bottom-[calc(1rem+env(safe-area-inset-bottom,0px))]'
             }`}
             aria-label={t('contact.jump_to_latest')}
           >
@@ -1238,6 +1262,7 @@ const ContactUsView: React.FC<ContactUsViewProps> = ({
       </div>
 
       <footer
+        ref={footerRef}
         className={`shrink-0 bg-[#F0F2F5] px-3 pt-3 ${
           embedded
             ? [
