@@ -1275,7 +1275,8 @@ function CustomerApp() {
         return (
           <ContactUsView
             onBack={() => {
-              handleTabChange(previousTab.current);
+              const back = previousTab.current;
+              handleTabChange(back === Tab.DIALER ? (currentSimType === 'PHYSICAL' ? Tab.SIM_CARD : Tab.ESIM) : back);
             }}
             userName={user?.name}
             customerEmail={user?.email}

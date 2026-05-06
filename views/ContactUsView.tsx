@@ -1008,7 +1008,7 @@ const ContactUsView: React.FC<ContactUsViewProps> = ({
   })();
 
   return (
-    <div className="relative flex h-full min-h-0 flex-col overflow-hidden overflow-x-hidden bg-[#ECE5DD]">
+    <div className={`relative flex min-h-0 flex-col overflow-hidden overflow-x-hidden bg-[#ECE5DD] ${embedded ? 'h-full' : 'h-[100dvh]'}`}>
       {/* WhatsApp-density header: gradient bar + ⋮ overflow (live staff, default AI) */}
       <header
         className={`relative z-[41] shrink-0 overflow-visible border-b border-white/15 bg-gradient-to-br from-[#FF6600] via-[#FF7433] to-[#FF8533] shadow-md ${embedded ? 'pb-1.5 pt-[max(8px,env(safe-area-inset-top,0px))]' : 'pb-1.5 pt-[max(6px,env(safe-area-inset-top,0px))]'}`}
