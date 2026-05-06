@@ -469,7 +469,7 @@ const ShopView: React.FC<ShopViewProps> = ({
         setEsimOrderResult(result);
 
         if (email) {
-          fetch('/.netlify/functions/send-esim-email', {
+          fetch('/api/send-esim-email', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
@@ -658,7 +658,7 @@ const ShopView: React.FC<ShopViewProps> = ({
 
         // 邮件发送暂时仍走 Netlify 函数（后端邮件迁移是另一个工作量）
         if (pending.email) {
-          fetch('/.netlify/functions/send-esim-email', {
+          fetch('/api/send-esim-email', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({

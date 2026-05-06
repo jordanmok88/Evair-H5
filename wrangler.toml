@@ -1,0 +1,4 @@
+name = "evair-h5"
+pages_build_output_dir = "dist"
+compatibility_date = "2025-05-06"
+compatibility_flags = ["nodejs_compat"]

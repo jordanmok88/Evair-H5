@@ -18,7 +18,7 @@
  *        b. Poll `GET /app/orders/{id}` via
  *           `pollEsimOrderUntilProvisioned` until the backend webhook
  *           has finished provisioning (esim field present).
- *        c. Fire-and-forget POST `/.netlify/functions/send-esim-email`.
+ *        c. Fire-and-forget POST `/api/send-esim-email` (Pages Functions; was Netlify).
  *   4. `history.replaceState` to strip query params so refreshing the
  *      success screen is safe.
  *
@@ -231,7 +231,7 @@ export function useEsimCheckoutFlow(): EsimCheckoutFlowState {
                 });
 
                 if (pendingOrder.email) {
-                    fetch('/.netlify/functions/send-esim-email', {
+                    fetch('/api/send-esim-email', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({

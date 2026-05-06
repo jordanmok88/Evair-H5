@@ -15,13 +15,15 @@ const devTitlePlugin = {
   },
 };
 
-/** Default: local `netlify dev` (:functions). Override with VITE_NETLIFY_FUNCTIONS_PROXY_TARGET — never point at prod by default. */
-const DEFAULT_NETLIFY_FUNCTIONS_PROXY = 'http://127.0.0.1:8888';
+/** Local API routes mapped in `functions/` — proxy to Pages (`npm run cf:dev`) or Netlify CLI (`npm run netlify:dev`). */
+const DEFAULT_FUNCTIONS_PROXY = 'http://127.0.0.1:8888';
 
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, '.', '');
-  const netlifyFnTarget =
-    env.VITE_NETLIFY_FUNCTIONS_PROXY_TARGET || DEFAULT_NETLIFY_FUNCTIONS_PROXY;
+  const edgeFnTarget =
+    env.VITE_FUNCTIONS_PROXY_TARGET ||
+    env.VITE_NETLIFY_FUNCTIONS_PROXY_TARGET ||
+    DEFAULT_FUNCTIONS_PROXY;
 
   return {
     server: {
@@ -40,19 +42,27 @@ export default defineConfig(({ mode }) => {
           rewrite: (path: string) => `/api/v1${path.replace(/^\/evair-api-proxy/, '') || ''}`,
         },
         '/api/track': {
-          target: netlifyFnTarget,
+          target: edgeFnTarget,
           changeOrigin: true,
         },
         '/api/esim': {
-          target: netlifyFnTarget,
+          target: edgeFnTarget,
+          changeOrigin: true,
+        },
+        '/api/send-esim-email': {
+          target: edgeFnTarget,
           changeOrigin: true,
         },
         '/api/stripe-checkout': {
-          target: netlifyFnTarget,
+          target: edgeFnTarget,
           changeOrigin: true,
         },
         '/api/stripe-verify': {
-          target: netlifyFnTarget,
+          target: edgeFnTarget,
+          changeOrigin: true,
+        },
+        '/r': {
+          target: edgeFnTarget,
           changeOrigin: true,
         },
         // Local Laravel dev proxy. Forwards `/laravel-api/*` -> `/api/*` on

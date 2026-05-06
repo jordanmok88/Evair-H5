@@ -14,6 +14,8 @@
     "daily-pull": "bash scripts/daily-pull-report.sh",
     "carriers:pull": "node scripts/fetch-redtea-carriers.mjs",
     "catalog:embed-facets": "node scripts/generate-embed-catalog-facets.mjs",
+    "cf:dev": "wrangler pages dev dist --compatibility-date=2025-05-06 --compatibility-flags=nodejs_compat --local-protocol=http --port=8788",
+    "cf:deploy": "npm run build && wrangler pages deploy dist",
     "og:optimize": "node scripts/optimize-og-image.mjs",
     "verify:sitemap": "node scripts/verify-sitemap.mjs",
     "save:all": "bash '/Users/jordanmok/Desktop/iCloud Drive/Cursor Codes/save-all.sh'"
@@ -44,6 +46,7 @@
     "tailwindcss": "^4.2.1",
     "typescript": "~5.8.2",
     "vite": "^6.2.0",
-    "vitest": "^4.1.0"
+    "vitest": "^4.1.0",
+    "wrangler": "^4.88.0"
   }
 }

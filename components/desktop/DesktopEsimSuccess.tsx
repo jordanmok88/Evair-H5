@@ -12,7 +12,7 @@
  *   - "Download QR" button — saves the QR PNG to disk in case the
  *     email is delayed or filtered.
  *   - "Email sent to {email}" affordance when the side-effect call
- *     to /send-esim-email succeeded.
+ *     to /api/send-esim-email succeeded.
  *   - CTA into the H5 app to manage the eSIM going forward.
  *
  * Stays mounted as long as the parent renders it; the parent reads
