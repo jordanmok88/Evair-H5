@@ -314,6 +314,8 @@ export interface PackageDto {
   supplierRegionName?: string | null;
   /** Operator line parsed from supplier `raw_data` when present (`esimaccess:sync-products`). */
   networkPartnerSummary?: string | null;
+  /** Supplier type for recharge packages (populated by recharge catalogue endpoint). */
+  supplierType?: 'pccw' | 'esimaccess';
 }
 
 export interface PackageListParams {

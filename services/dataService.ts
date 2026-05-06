@@ -98,6 +98,7 @@ function backendPkgToEsimPackage(dto: PackageDto): EsimPackage {
     supplierRegionCode: dto.supplierRegionCode ?? undefined,
     supplierRegionName: dto.supplierRegionName ?? undefined,
     networkPartnerSummary: dto.networkPartnerSummary?.trim() || undefined,
+    supplierType: dto.supplierType ?? undefined,
   };
 }
 

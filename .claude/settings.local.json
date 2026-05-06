@@ -34,7 +34,10 @@
       "Bash(git status:*)",
       "Bash(git push -u origin fix/pccw-recharge-flow)",
       "Bash(git -C \"/Users/jordanmok/Desktop/iCloud Drive/Cursor Codes/Evair-H5\" log --oneline --diff-filter=A -- \".env\")",
-      "Bash(git -C \"/Users/jordanmok/Desktop/iCloud Drive/Cursor Codes/Evair-H5\" log --all --oneline -- \".env\")"
+      "Bash(git -C \"/Users/jordanmok/Desktop/iCloud Drive/Cursor Codes/Evair-H5\" log --all --oneline -- \".env\")",
+      "Bash(del:*)",
+      "Bash(be less than 1\".\n\n- 影响范围: PCCW 充值履约（ESimAccess 分支不受影响）\n- 风险等级: P0 \\(充值支付已扣款但履约失败会触发退款\\)\n- 回滚: revert 此 commit，旧逻辑会将字符串编码强转为 0 导致 PCCW 充值失败\n\nCo-Authored-By: Claude Sonnet 4.5 <noreply@anthropic.com>\nEOF\n\\)\")",
+      "Bash(git reset:*)"
     ]
   }
 }

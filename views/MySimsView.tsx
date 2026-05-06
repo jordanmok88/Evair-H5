@@ -1172,7 +1172,11 @@ const MySimsView: React.FC<MySimsViewProps> = ({
             setPaymentModalOpen(true);
           };
 
-          const _filtered = topUpPackages.filter(pkg => !(pkg.durationUnit === 'DAY' && (pkg.duration === 1 || pkg.duration === 7 || pkg.duration === 15 || pkg.duration === 365)));
+          const _filtered = topUpPackages.filter(pkg => {
+            // 只对 ESimAccess 过滤非零售 duration（1/7/15/365 天），PCCW 全部展示
+            if (pkg.supplierType === 'pccw') return true;
+            return !(pkg.durationUnit === 'DAY' && (pkg.duration === 1 || pkg.duration === 7 || pkg.duration === 15 || pkg.duration === 365));
+          });
           const filtered = _filtered.length > 0 ? _filtered : topUpPackages;
 
           const grouped = new Map<string, EsimPackage[]>();

@@ -131,6 +131,7 @@ export interface EsimPackage {
   location: string;        // comma-separated ISO country codes, e.g. "US,CA"
   description: string;
   activeType: number;      // 1 = auto-activate on first data use
+  supplierType?: 'pccw' | 'esimaccess';
 
   /**
    * When true, `price` is already the retail USD value the team set in the
