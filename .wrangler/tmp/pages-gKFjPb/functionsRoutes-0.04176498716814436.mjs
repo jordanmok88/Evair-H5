@@ -4,6 +4,7 @@ import { onRequest as __api_stripe_checkout_ts_onRequest } from "/Users/jordanmo
 import { onRequest as __api_stripe_verify_ts_onRequest } from "/Users/jordanmok/Desktop/iCloud Drive/Cursor Codes/Evair-H5/functions/api/stripe-verify.ts"
 import { onRequest as __api_track_ts_onRequest } from "/Users/jordanmok/Desktop/iCloud Drive/Cursor Codes/Evair-H5/functions/api/track.ts"
 import { onRequest as __r_ts_onRequest } from "/Users/jordanmok/Desktop/iCloud Drive/Cursor Codes/Evair-H5/functions/r.ts"
+import { onRequest as __r_2_ts_onRequest } from "/Users/jordanmok/Desktop/iCloud Drive/Cursor Codes/Evair-H5/functions/r 2.ts"
 
 export const routes = [
     {
@@ -47,5 +48,12 @@ export const routes = [
       method: "",
       middlewares: [],
       modules: [__r_ts_onRequest],
+    },
+  {
+      routePath: "/r 2",
+      mountPath: "/",
+      method: "",
+      middlewares: [],
+      modules: [__r_2_ts_onRequest],
     },
   ]

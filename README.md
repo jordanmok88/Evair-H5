@@ -1,7 +1,7 @@
 # EvairSIM H5
 
 Mobile-first React (Vite + TypeScript + Tailwind) customer app and marketing
-surface for **evairdigital.com**, deployed on **Netlify**.
+surface for **evairdigital.com**, deployed on **Cloudflare Pages** (legacy: **Netlify**).
 
 ## Local development
 

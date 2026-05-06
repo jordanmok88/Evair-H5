@@ -26,6 +26,7 @@ Cloudflare Pages **automatically treats the site as an SPA** when there is **no*
    - **Build command:** `npm ci && npm run build`
    - **Build output directory:** `dist`
    - **Root directory:** `/` (repo root)
+   - **Deploy command:** leave **blank** (Pages uploads `dist` automatically; do not use `npx wrangler deploy`).
 3. Set **environment variable** `NODE_VERSION` = `22` (matches `netlify.toml`).
 4. **Production branch:** usually `main`.
 5. Add **production** secrets (mirror Netlify prod):
@@ -93,3 +94,13 @@ Without `ALLOWED_ORIGINS`, browser calls from `http://localhost:3000` get **403*
 3. Smoke checkout on **staging domain** with Stripe test keys if applicable.
 4. Point DNS to Cloudflare; wait for TLS; purge cache if headers look stale.
 5. Disable Netlify build hook when confident.
+
+## Troubleshooting
+
+### `EBADPLATFORM` / `@rollup/rollup-android-*` during install
+
+That error means the build machine (Linux) refused a package built for another OS. This project **does not** ship `netlify-cli` in `package.json` (it pulled a huge tree that confused strict installs), and **does not** use `omit=optional` in `.npmrc` (that breaks Vite/Rollup’s normal platform add-ons). Pull the latest `main` and redeploy.
+
+### “Deploy command” set to `npx wrangler deploy`
+
+For Git-connected **Pages**, leave the **Deploy command empty**. Cloudflare publishes the **`dist`** folder after your build finishes. `wrangler deploy` is for Workers projects, not this flow.

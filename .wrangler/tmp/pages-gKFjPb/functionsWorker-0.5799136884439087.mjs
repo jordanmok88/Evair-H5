@@ -7050,6 +7050,76 @@ async function onRequest6(context2) {
 }
 __name(onRequest6, "onRequest");
 
+// r 2.ts
+var DEFAULT_PUBLIC_APP2 = "https://www.evairdigital.com/app";
+function parseDevice2(ua) {
+  if (!ua) return "unknown";
+  if (/iPhone/i.test(ua)) return "iPhone";
+  if (/iPad/i.test(ua)) return "iPad";
+  if (/Android/i.test(ua)) return "Android";
+  if (/Windows/i.test(ua)) return "Windows";
+  if (/Macintosh/i.test(ua)) return "Mac";
+  return "other";
+}
+__name(parseDevice2, "parseDevice");
+async function hashIp2(ip) {
+  if (!ip) return null;
+  const encoder = new TextEncoder();
+  const data = encoder.encode(ip + "_evair_salt_2026");
+  const hash = await crypto.subtle.digest("SHA-256", data);
+  return Array.from(new Uint8Array(hash)).map((b) => b.toString(16).padStart(2, "0")).join("").slice(0, 16);
+}
+__name(hashIp2, "hashIp");
+function geoFromRequest2(request) {
+  const cf = request.cf;
+  return {
+    country: cf?.country ?? null,
+    region: cf?.regionCode || cf?.region || null,
+    city: cf?.city ?? null
+  };
+}
+__name(geoFromRequest2, "geoFromRequest");
+async function onRequest7(context2) {
+  const { request, env: env2 } = context2;
+  const url = new URL(request.url);
+  const src = url.searchParams.get("src") || "direct";
+  const target = (env2.QR_SCAN_REDIRECT_URL || DEFAULT_PUBLIC_APP2).replace(/\/$/, "");
+  const supabaseUrl = env2.SUPABASE_URL;
+  const supabaseKey = env2.SUPABASE_SERVICE_KEY;
+  if (supabaseUrl && supabaseKey) {
+    try {
+      const ua = request.headers.get("user-agent") || "";
+      const clientIp = request.headers.get("cf-connecting-ip") || request.headers.get("x-nf-client-connection-ip") || request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || null;
+      const geo = geoFromRequest2(request);
+      const row = {
+        source: src,
+        country: geo.country ?? null,
+        region: geo.region ?? null,
+        city: geo.city ?? null,
+        device: parseDevice2(ua),
+        user_agent: ua.slice(0, 512),
+        ip_hash: await hashIp2(clientIp)
+      };
+      await fetch(`${supabaseUrl}/rest/v1/qr_scans`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          apikey: supabaseKey,
+          Authorization: `Bearer ${supabaseKey}`,
+          Prefer: "return=minimal"
+        },
+        body: JSON.stringify(row)
+      });
+    } catch {
+    }
+  }
+  return new Response(null, {
+    status: 302,
+    headers: { Location: target }
+  });
+}
+__name(onRequest7, "onRequest");
+
 // ../.wrangler/tmp/pages-gKFjPb/functionsRoutes-0.04176498716814436.mjs
 var routes = [
   {
@@ -7093,6 +7163,13 @@ var routes = [
     method: "",
     middlewares: [],
     modules: [onRequest6]
+  },
+  {
+    routePath: "/r 2",
+    mountPath: "/",
+    method: "",
+    middlewares: [],
+    modules: [onRequest7]
   }
 ];
 
@@ -7583,7 +7660,7 @@ var jsonError = /* @__PURE__ */ __name(async (request, env2, _ctx, middlewareCtx
 }, "jsonError");
 var middleware_miniflare3_json_error_default = jsonError;
 
-// ../.wrangler/tmp/bundle-cx0Mfj/middleware-insertion-facade.js
+// ../.wrangler/tmp/bundle-fahtZC/middleware-insertion-facade.js
 var __INTERNAL_WRANGLER_MIDDLEWARE__ = [
   middleware_ensure_req_body_drained_default,
   middleware_miniflare3_json_error_default
@@ -7615,7 +7692,7 @@ function __facade_invoke__(request, env2, ctx, dispatch, finalMiddleware) {
 }
 __name(__facade_invoke__, "__facade_invoke__");
 
-// ../.wrangler/tmp/bundle-cx0Mfj/middleware-loader.entry.ts
+// ../.wrangler/tmp/bundle-fahtZC/middleware-loader.entry.ts
 var __Facade_ScheduledController__ = class ___Facade_ScheduledController__ {
   constructor(scheduledTime, cron, noRetry) {
     this.scheduledTime = scheduledTime;
