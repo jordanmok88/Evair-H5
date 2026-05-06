@@ -1,4 +1,5 @@
-name = "evair-h5"
+# Must match the Workers & Pages project name in the Cloudflare dashboard (e.g. evairh5).
+name = "evairh5"
 pages_build_output_dir = "dist"
 compatibility_date = "2025-05-06"
 compatibility_flags = ["nodejs_compat"]
