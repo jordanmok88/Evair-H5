@@ -2,6 +2,23 @@
 
 This repo deploys the Vite React app to **Cloudflare Pages** with **Pages Functions** (`functions/`) replacing Netlify serverless routes.
 
+## If “Deploy command” is required or you get “Invalid request body”
+
+You likely created a **Worker** with Git (**Workers Builds**), not **Pages**.
+
+- That flow only accepts commands like **`npx wrangler deploy`**. It will **reject** **`npx wrangler pages deploy`**, which often shows as **Invalid request body** when saving.
+- This repo targets **Cloudflare Pages** (`dist` + root `functions/`), not Worker-only upload.
+
+**Fix:** create a **new Pages** project (keep or ignore the old Worker):
+
+1. **Workers & Pages** → **Create** → **Pages** (not Worker / not “Deploy to Workers”).
+2. Connect **Git** → `jordanmok88/Evair-H5`, branch `main`.
+3. **Build command:** `npm ci && npm run build` — **Output directory:** `dist`.
+4. Pages has **no** Wrangler “Deploy command” step like Workers Git.
+5. Set **`NODE_VERSION`** = `22` and copy Netlify **variables/secrets**.
+
+---
+
 ## What moved from Netlify
 
 | Public path | Handler |
@@ -22,16 +39,11 @@ Cloudflare Pages **automatically treats the site as an SPA** when there is **no*
 ## Git-connected deploy (recommended)
 
 1. Cloudflare Dashboard → **Workers & Pages** → **Create** → **Pages** → Connect **`jordanmok88/Evair-H5`** (or Aliyun mirror).
-2. Build settings:
+2. Build settings (**Pages** wizard):
    - **Build command:** `npm ci && npm run build`
    - **Build output directory:** `dist`
-   - **Root directory:** `/` (repo root)
-   - **Deploy command:**
-     - If the form says it is **optional** or allows a blank value: leave **empty** (classic Pages upload).
-     - If the form shows **Required** in red: Cloudflare is using **Workers Git builds**. Use:  
-       **`npx wrangler pages deploy dist --project-name=evairh5`**  
-       (match the project name shown in the dashboard — yours is **evairh5**).  
-       Do **not** use `npx wrangler deploy` alone (that targets a plain Worker, not this site).
+   - **Root directory:** `/` (repo root)  
+   The Pages flow **does not** use Workers’ “Deploy command” field. If you only see Worker-style **Deploy command** / **Version command**, you are in the wrong project type — see the section at the top of this doc.
 3. Set **environment variable** `NODE_VERSION` = `22` (matches `netlify.toml`).
 4. **Production branch:** usually `main`.
 5. Add **production** secrets (mirror Netlify prod):
@@ -106,16 +118,10 @@ Without `ALLOWED_ORIGINS`, browser calls from `http://localhost:3000` get **403*
 
 That error means the build machine (Linux) refused a package built for another OS. This project **does not** ship `netlify-cli` in `package.json` (it pulled a huge tree that confused strict installs), and **does not** use `omit=optional` in `.npmrc` (that breaks Vite/Rollup’s normal platform add-ons). Pull the latest `main` and redeploy.
 
-### “Deploy command” is **required** (red error when empty)
+### “Deploy command” required or **Invalid request body** saving build settings
 
-Some accounts use **Workers** Git builds, which **require** a deploy step. Use **Pages deploy**, not Worker upload:
+You are almost certainly inside a **Worker** project using **Workers Builds**, not **Pages**. The dashboard rejects **`wrangler pages deploy`** there. **Do not keep fighting that form.** Create a **Pages** project using the steps in [If “Deploy command” is required or you get “Invalid request body”](#if-deploy-command-is-required-or-you-get-invalid-request-body) at the top of this file.
 
-```bash
-npx wrangler pages deploy dist --project-name=evairh5
-```
+### Old note: **`npx wrangler deploy`** alone
 
-Replace **`evairh5`** with your project’s name as shown in the dashboard. **`npx wrangler deploy`** (without `pages`) is for plain Workers and will **not** match this Vite + `functions/` layout.
-
-### “Deploy command” set to `npx wrangler deploy` (wrong for this repo)
-
-That command uploads a **Worker** package, not a **Pages + `dist` + `functions/`** bundle. Prefer **`npx wrangler pages deploy dist --project-name=evairh5`** when the dashboard requires a deploy command, or leave deploy empty when the UI allows it.
+That uploads a **Worker** only — wrong for this repo’s Pages Functions layout unless you migrate the whole project to Workers static assets.
