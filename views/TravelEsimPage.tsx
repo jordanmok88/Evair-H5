@@ -919,7 +919,7 @@ const CatalogueIndexView: React.FC = () => {
     useEffect(() => {
         if (!showHeadlineCountPlaceholder) return;
         let cancelled = false;
-        let tid: ReturnType<typeof setTimeout> | undefined;
+        let tid: number | undefined;
 
         const tick = () => {
             if (cancelled) return;

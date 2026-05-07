@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Html5Qrcode, Html5QrcodeSupportedFormats } from 'html5-qrcode';
+import type { Html5QrcodeCameraScanConfig } from 'html5-qrcode';
 import { X, Camera, SwitchCamera } from 'lucide-react';
 
 interface BarcodeScannerProps {
@@ -118,7 +119,7 @@ const BarcodeScanner: React.FC<BarcodeScannerProps> = ({
     scanner
       .start(
         { facingMode },
-        {
+        ({
           fps: 12,
           qrbox: (viewfinderWidth, viewfinderHeight) => {
             const w = Math.min(Math.floor(viewfinderWidth * 0.94), 400);
@@ -127,7 +128,7 @@ const BarcodeScanner: React.FC<BarcodeScannerProps> = ({
           },
           aspectRatio: 1.777778,
           formatsToSupport,
-        },
+        } as Html5QrcodeCameraScanConfig & { formatsToSupport: Html5QrcodeSupportedFormats[] }),
         (decodedText) => {
           if (cancelled) return;
           const iccid = extractIccidFromScan(decodedText);

@@ -197,7 +197,7 @@ export const esimService = {
    * @param iccid eSIM ICCID
    */
   async enableProfile(iccid: string): Promise<{ status: string; iccid: string }> {
-    return post<{ status: string }>(ENDPOINTS.ESIM_ENABLE(iccid), {});
+    return post<{ status: string; iccid: string }>(ENDPOINTS.ESIM_ENABLE(iccid), {});
   },
 
   // ============ 辅助方法 ============

@@ -17,7 +17,7 @@ import type {
   EsimCountryGroup,
 } from '../types';
 
-import type { PackageDto } from './api/types';
+import type { PackageDto, UserSimDto } from './api/types';
 
 // ─── Supplier API (order + topup via Netlify proxy) ─────────────────
 
@@ -597,7 +597,7 @@ export async function unbindSim(simId: number): Promise<void> {
 
 // ─── Bind SIM ────────────────────────────────────────────────────────
 
-export async function bindSim(iccid: string, activationCode?: string): Promise<{ success: boolean; sim?: any }> {
+export async function bindSim(iccid: string, activationCode?: string): Promise<UserSimDto> {
   const { userService } = await import('./api');
 
   try {

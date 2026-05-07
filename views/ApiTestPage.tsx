@@ -32,7 +32,8 @@ import type {
   BindSimRequest,
   UpdateProfileRequest,
   CreateAddressRequest,
-  OrderStatus,
+  AppOrderStatus,
+  AppOrderType,
 } from '../services/api/types';
 
 // 服务模块配置
@@ -616,8 +617,8 @@ async function executeOrderMethod(method: string, params: Record<string, string>
       } as CreatePhysicalOrderRequest);
     case 'getOrders':
       return orderService.getOrders({
-        status: params.status as OrderStatus | undefined,
-        type: params.type as 'ESIM' | 'PHYSICAL',
+        status: params.status as AppOrderStatus | undefined,
+        type: params.type as AppOrderType | undefined,
         page: params.page ? parseInt(params.page) : undefined,
         size: params.size ? parseInt(params.size) : undefined,
       });

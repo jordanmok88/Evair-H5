@@ -78,7 +78,7 @@ export function isMobileDevice(): boolean {
 export function isMobileUserAgentClient(): boolean {
     if (typeof window === 'undefined') return false;
 
-    const ud = navigator.userAgentData as { mobile?: boolean } | undefined;
+    const ud = (navigator as Navigator & { userAgentData?: { mobile?: boolean } }).userAgentData;
     if (ud && typeof ud.mobile === 'boolean') {
         return ud.mobile;
     }
