@@ -10,9 +10,9 @@
  *   3. POSTs `/app/orders` to create a PENDING Laravel order (so
  *      Stripe's `checkout.session.completed` webhook can match the
  *      payment back via `payment_intent_data.metadata.order_id`).
- *   4. POSTs `/api/stripe-checkout` with EXPLICIT `successUrl` /
- *      `cancelUrl` so Stripe redirects back to this same desktop page
- *      (not the H5 root), plus the order id/no for webhook linkage.
+ *   4. POSTs `/app/payments/checkout` with EXPLICIT `successUrl` /
+ *      `cancelUrl` so Laravel creates Stripe Checkout from the saved
+ *      order amount and redirects back to this same desktop page.
  *      The success URL is consumed by `useEsimCheckoutFlow` mounted on
  *      `TravelEsimPage`.
  *   5. Stamps `pending_esim_order` (orderId + orderNumber + email + packageName) in
@@ -42,7 +42,7 @@ import {
     formatVolume,
     packagePriceUsd,
 } from '../../services/dataService';
-import { userService, orderService } from '../../services/api';
+import { userService, orderService, paymentService } from '../../services/api';
 import { isMobileDevice } from '../../utils/device';
 import { planCardNetworkLine } from '../../utils/retailPackageNetworks';
 
@@ -120,7 +120,6 @@ const DesktopEsimCheckoutDrawer: React.FC<DesktopEsimCheckoutDrawerProps> = ({
         setSubmitting(true);
         setError(null);
 
-        const txnId = `evair_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
         const origin = window.location.origin;
         const returnPath = `/travel-esim/${countryCode.toLowerCase()}`;
         const successUrl = `${origin}${returnPath}?stripe_status=success&session_id={CHECKOUT_SESSION_ID}`;
@@ -134,35 +133,16 @@ const DesktopEsimCheckoutDrawer: React.FC<DesktopEsimCheckoutDrawerProps> = ({
                 quantity: 1,
             });
 
-            // Step 2: 创建 Stripe Checkout Session，把 order_id 透传给 Webhook
-            const res = await fetch('/api/stripe-checkout', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    packageName,
-                    priceUsd,
-                    email,
-                    packageCode: pkg.packageCode,
-                    transactionId: txnId,
-                    countryCode: countryCode.toUpperCase(),
-                    orderId: order.id,
-                    orderNo: order.orderNumber,
-                    userId: undefined, // desktop flow doesn't have user.id handy
-                    successUrl,
-                    cancelUrl,
-                }),
+            // Step 2: Laravel creates Stripe Checkout from the saved order
+            // amount. The browser only supplies return URLs.
+            const checkout = await paymentService.createCheckoutSession({
+                orderNo: order.orderNumber,
+                successUrl,
+                cancelUrl,
             });
 
-            const text = await res.text();
-            let data: { url?: string; sessionId?: string; error?: string; detail?: string };
-            try {
-                data = JSON.parse(text);
-            } catch {
-                throw new Error('Payment service unavailable. Please try again in a moment.');
-            }
-
-            if (!res.ok || !data.url) {
-                throw new Error(data.error || data.detail || 'Failed to create payment session.');
+            if (!checkout.url) {
+                throw new Error('Failed to create payment session.');
             }
 
             // Same key + shape as mobile ShopView so the shared
@@ -172,11 +152,11 @@ const DesktopEsimCheckoutDrawer: React.FC<DesktopEsimCheckoutDrawerProps> = ({
                 orderNo: order.orderNumber,
                 packageName,
                 email,
-                sessionId: data.sessionId,
+                sessionId: checkout.sessionId,
                 countryCode: countryCode.toLowerCase(),
             }));
 
-            window.location.href = data.url;
+            window.location.href = checkout.url;
         } catch (err) {
             console.error('[DesktopEsimCheckoutDrawer] checkout failed', err);
             setError(err instanceof Error ? err.message : 'Payment failed. Please try again.');

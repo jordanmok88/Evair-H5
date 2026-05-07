@@ -48,6 +48,7 @@ export { userService } from './user';
 export { orderService } from './order';
 export { packageService, esimService } from './esim';
 export { paymentService } from './payment';
+export { emailService } from './email';
 export { activationService } from './activation';
 export { appSimService } from './simApp';
 export type {
@@ -75,6 +76,7 @@ import { userService } from './user';
 import { orderService } from './order';
 import { packageService, esimService } from './esim';
 import { paymentService } from './payment';
+import { emailService } from './email';
 import { activationService } from './activation';
 import { appSimService } from './simApp';
 
@@ -86,6 +88,7 @@ export default {
   package: packageService,
   esim: esimService,
   payment: paymentService,
+  email: emailService,
   activation: activationService,
   appSim: appSimService,
 };

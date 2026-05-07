@@ -27,7 +27,7 @@ import { snapRetailUsdToXDot99 } from '../services/catalogPresentation';
 import { bucketPlansByValidity, inferRetailPremiumSkuTier, isMostPopularRetailBucket, sanitizedRetailPlanMarketingName, segmentRetailBucketsForPresentation, sortRetailBucketsMostPopularFirst } from '../utils/travelEsimPlanBuckets';
 import { planCardNetworkLine } from '../utils/retailPackageNetworks';
 import { formatWalletEsimBannerLabel } from '../utils/walletEsimBannerLabel';
-import { orderService } from '../services/api';
+import { emailService, orderService, paymentService } from '../services/api';
 import { pollEsimOrderUntilProvisioned } from '../services/api/order';
 import type { OrderDetailDto } from '../services/api/types';
 import { useSwipeBack } from '../hooks/useSwipeBack';
@@ -469,20 +469,17 @@ const ShopView: React.FC<ShopViewProps> = ({
         setEsimOrderResult(result);
 
         if (email) {
-          fetch('/api/send-esim-email', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
+          emailService.sendEsimDelivery({
               email,
               qrCodeUrl: result.qrCodeUrl,
               smdpAddress: result.smdpAddress,
               activationCode: result.activationCode,
               lpaString: result.lpaString,
               orderNo: result.orderNo,
+              iccid: result.iccid,
               packageName: `${selectedEsimGroup?.locationName || selectedEsimPkg.name} — ${formatVolume(selectedEsimPkg.volume)} / ${selectedEsimPkg.duration} Days`,
-            }),
           })
-            .then(r => { if (r.ok) setEmailSent(true); })
+            .then(() => { setEmailSent(true); })
             .catch(() => {});
         }
       } catch (err: any) {
@@ -517,7 +514,6 @@ const ShopView: React.FC<ShopViewProps> = ({
     }
 
     const packageName = `${selectedEsimGroup?.locationName || selectedEsimPkg.name} — ${formatVolume(selectedEsimPkg.volume)} / ${selectedEsimPkg.duration} Days`;
-    const priceUsd = packagePriceUsd(selectedEsimPkg);
     const countryCode = selectedEsimGroup?.flag || selectedEsimGroup?.locationCode.split(',')[0];
 
     try {
@@ -528,27 +524,16 @@ const ShopView: React.FC<ShopViewProps> = ({
         quantity: 1,
       });
 
-      // Step 2: 创建 Stripe Checkout Session，把 order_id 透传给 Webhook
-      const res = await fetch('/api/stripe-checkout', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          packageName,
-          priceUsd,
-          email,
-          packageCode: selectedEsimPkg.packageCode,
-          transactionId: txnId,
-          countryCode,
-          orderId: order.id,
-          orderNo: order.orderNumber,
-          userId: user?.id,
-        }),
+      // Step 2: Laravel creates the Stripe Checkout Session from the
+      // authoritative order amount; the browser never sends a price.
+      const returnUrl = `${window.location.origin}${window.location.pathname}`;
+      const checkout = await paymentService.createCheckoutSession({
+        orderNo: order.orderNumber,
+        successUrl: `${returnUrl}?stripe_status=success&session_id={CHECKOUT_SESSION_ID}`,
+        cancelUrl: `${returnUrl}?stripe_status=cancelled`,
       });
 
-      const text = await res.text();
-      let data: { url?: string; sessionId?: string; error?: string; detail?: string };
-      try { data = JSON.parse(text); } catch { throw new Error('Payment service unavailable. Please try again.'); }
-      if (!res.ok || !data.url) throw new Error(data.error || data.detail || 'Failed to create payment session');
+      if (!checkout.url) throw new Error('Failed to create payment session');
 
       // Step 3: 回跳后只需要 order_id 就能轮询 — 不再保留 transactionId/amount
       // （供应商订单号由 Webhook 履约后写在 OrderDetailResource.esim 里返回）
@@ -558,10 +543,10 @@ const ShopView: React.FC<ShopViewProps> = ({
         packageName,
         email,
         countryCode,
-        sessionId: data.sessionId,
+        sessionId: checkout.sessionId,
       }));
 
-      window.location.href = data.url;
+      window.location.href = checkout.url;
       setTimeout(() => setIsProcessing(false), 5000);
     } catch (err) {
       console.error('Stripe checkout error:', err);
@@ -658,20 +643,17 @@ const ShopView: React.FC<ShopViewProps> = ({
 
         // 邮件发送暂时仍走 Netlify 函数（后端邮件迁移是另一个工作量）
         if (pending.email) {
-          fetch('/api/send-esim-email', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
+          emailService.sendEsimDelivery({
               email: pending.email,
               qrCodeUrl: esim.qrCodeUrl,
               smdpAddress: esim.smdpAddress,
               activationCode: esim.activationCode,
               lpaString: esim.lpaString,
               orderNo: order.orderNumber,
+              iccid: esim.iccid,
               packageName: pending.packageName,
-            }),
           })
-            .then(r => { if (!cancelled && r.ok) setEmailSent(true); })
+            .then(() => { if (!cancelled) setEmailSent(true); })
             .catch(() => { /* 邮件 best-effort */ });
         }
       } catch (err) {

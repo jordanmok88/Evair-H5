@@ -7,6 +7,8 @@ import { get, post } from './client';
 import type {
   CreatePaymentRequest,
   CreatePaymentResponse,
+  CreateCheckoutSessionRequest,
+  CreateCheckoutSessionResponse,
   PaymentDto,
   ValidateCouponRequest,
   ValidateCouponResponse,
@@ -16,6 +18,7 @@ import type {
 // ─── API 端点 ────────────────────────────────────────────────────────────
 
 const ENDPOINTS = {
+  CREATE_CHECKOUT_SESSION: '/app/payments/checkout',
   CREATE_PAYMENT: '/app/payments/create',
   PAYMENT_BY_ID: (paymentId: string) => `/app/payments/${paymentId}`,
   VALIDATE_COUPON: '/app/coupons/validate',
@@ -51,6 +54,15 @@ export interface CreateSetupIntentRequest {
 // ─── 支付服务 ────────────────────────────────────────────────────────────
 
 export const paymentService = {
+  /**
+   * Create a Stripe-hosted Checkout Session for an existing Laravel order.
+   * Laravel loads the authoritative amount from the order; callers only pass
+   * the order number and return URLs.
+   */
+  async createCheckoutSession(data: CreateCheckoutSessionRequest): Promise<CreateCheckoutSessionResponse> {
+    return post<CreateCheckoutSessionResponse>(ENDPOINTS.CREATE_CHECKOUT_SESSION, data);
+  },
+
   /**
    * 创建支付会话 (Stripe PaymentIntent)
    * @param data 支付信息（orderNo + method）

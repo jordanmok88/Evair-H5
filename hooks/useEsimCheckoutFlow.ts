@@ -18,7 +18,7 @@
  *        b. Poll `GET /app/orders/{id}` via
  *           `pollEsimOrderUntilProvisioned` until the backend webhook
  *           has finished provisioning (esim field present).
- *        c. Fire-and-forget POST `/api/send-esim-email` (Pages Functions; was Netlify).
+ *        c. Fire-and-forget POST `/app/email/esim-delivery` through Laravel.
  *   4. `history.replaceState` to strip query params so refreshing the
  *      success screen is safe.
  *
@@ -41,6 +41,7 @@
 
 import { useEffect, useState } from 'react';
 import type { EsimOrderResult } from '../types';
+import { emailService } from '../services/api';
 import { pollEsimOrderUntilProvisioned } from '../services/api/order';
 
 export type CheckoutPhase =
@@ -231,10 +232,7 @@ export function useEsimCheckoutFlow(): EsimCheckoutFlowState {
                 });
 
                 if (pendingOrder.email) {
-                    fetch('/api/send-esim-email', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({
+                    emailService.sendEsimDelivery({
                             email: pendingOrder.email,
                             qrCodeUrl: esim.qrCodeUrl,
                             smdpAddress: esim.smdpAddress,
@@ -243,10 +241,9 @@ export function useEsimCheckoutFlow(): EsimCheckoutFlowState {
                             orderNo: order.orderNumber,
                             packageName: pendingOrder.packageName,
                             iccid: esim.iccid,
-                        }),
                     })
                         .then(r => {
-                            if (cancelled || !r.ok) return;
+                            if (cancelled || !r.success) return;
                             setEmailSent(true);
                             writeSuccessSnapshot({
                                 result: orderResult,

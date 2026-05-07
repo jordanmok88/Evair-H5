@@ -595,6 +595,20 @@ export interface CreatePaymentRequest {
   cancelUrl: string;
 }
 
+export interface CreateCheckoutSessionRequest {
+  orderNo: string;
+  successUrl: string;
+  cancelUrl: string;
+}
+
+export interface CreateCheckoutSessionResponse {
+  url: string;
+  sessionId: string;
+  orderNo: string;
+  amount: number;
+  currency: string;
+}
+
 export interface CreatePaymentResponse {
   paymentId: string;
   paymentIntentId: string;
