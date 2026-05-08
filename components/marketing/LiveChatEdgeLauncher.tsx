@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { useTranslation } from 'react-i18next';
-import { ChevronsLeft, ChevronsRight } from 'lucide-react';
+import { ChevronsLeft, ChevronsRight, MessageCircle } from 'lucide-react';
 import { getRoute } from '../../utils/routing';
 import {
   EVAIR_OPEN_MARKETING_CONTACT_EVENT,
@@ -14,15 +14,15 @@ const DOCK_STORAGE_KEY = 'evair_live_chat_dock';
 const MD_MIN = 768;
 const FLIP_MIN_DX = 44;
 const FLIP_DOMINANCE = 1.2;
-/** Mobile idle strip */
-const COLLAPSED_W_PX = 4;
+/** Mobile idle handle */
+const COLLAPSED_W_PX = 7;
 /** Expanded tab hides this many ms after last scroll/touch/wheel/tab interaction (mobile). */
 const MOBILE_PEEK_HOLD_MS = 3000;
 /** Transitions (width / opacity / shadow) */
 const EASE_PREMIUM = 'cubic-bezier(0.22, 1, 0.36, 1)';
 
 function tabSize(mdUp: boolean): { w: number; h: number } {
-  return mdUp ? { w: 44, h: 118 } : { w: 28, h: 104 };
+  return mdUp ? { w: 44, h: 118 } : { w: 32, h: 118 };
 }
 
 function loadDock(): 'left' | 'right' {
@@ -229,6 +229,7 @@ const LiveChatEdgeLauncher: React.FC<LiveChatEdgeLauncherProps> = ({ marketingDr
   if (!mount) return null;
 
   const label = t('support_fab.live_chat');
+  const railLabel = wideRail ? label : t('support_fab.edge_tab_line2', { defaultValue: 'CHAT' });
   const reconnectLabel = t('contact.live_chat_reconnecting_tooltip');
 
   return createPortal(
@@ -243,11 +244,15 @@ const LiveChatEdgeLauncher: React.FC<LiveChatEdgeLauncherProps> = ({ marketingDr
         top: '50%',
         transform: 'translateY(-50%)',
         width: railW,
-        minHeight: collapsedVisual ? `min(${TAB_H}px, 45vh)` : TAB_H,
-        height: collapsedVisual ? `min(280px, 45vh)` : 'auto',
+        minHeight: TAB_H,
+        height: collapsedVisual ? TAB_H : 'auto',
         transition: `width 420ms ${EASE_PREMIUM}, box-shadow 360ms ${EASE_PREMIUM}, min-height 360ms ${EASE_PREMIUM}, filter 380ms ease, opacity 320ms ease`,
         cursor: 'pointer',
-        boxShadow: collapsedVisual ? '0 4px 20px rgba(255,102,0,0.08)' : '0 10px 32px rgba(255,102,0,0.18)',
+        boxShadow: collapsedVisual
+          ? dock === 'left'
+            ? '6px 0 18px rgba(255,102,0,0.16)'
+            : '-6px 0 18px rgba(255,102,0,0.16)'
+          : '0 12px 32px rgba(255,102,0,0.22)',
         filter: collapsedVisual && !online ? 'saturate(0.55) hue-rotate(-12deg)' : 'none',
         animation:
           collapsedVisual && !online ? 'livechat-rail-offline-pulse 1.8s ease-in-out infinite' : undefined,
@@ -265,13 +270,21 @@ const LiveChatEdgeLauncher: React.FC<LiveChatEdgeLauncherProps> = ({ marketingDr
       }}
     >
       <div
-        className={`flex h-full min-h-[inherit] w-full flex-col items-center justify-between bg-gradient-to-b from-[#FF6600] to-[#FF8A3D] opacity-100 ring-1 ring-black/[0.04] md:justify-between md:gap-0 ${roundClass} ${collapsedVisual ? '' : wideRail ? 'px-1.5 py-2.5' : 'px-0.5 py-1.5'}`}
+        className={`flex h-full min-h-[inherit] w-full flex-col items-center justify-between bg-gradient-to-b from-[#FF5A1F] via-[#FF6600] to-[#FF9A3D] opacity-100 ring-1 ring-black/[0.04] md:justify-between md:gap-0 ${roundClass} ${collapsedVisual ? '' : wideRail ? 'px-1.5 py-2.5' : 'px-1 py-2'}`}
         style={{
-          opacity: collapsedVisual ? 0.94 : 1,
+          opacity: collapsedVisual ? 0.96 : 1,
           justifyContent: collapsedVisual ? 'center' : undefined,
           transition: `opacity 320ms ${EASE_PREMIUM}`,
         }}
       >
+        {collapsedVisual ? (
+          <span
+            className={`flex h-11 w-full items-center justify-center bg-white/18 ring-1 ring-white/25 ${roundClass}`}
+            aria-hidden
+          >
+            <span className="h-7 w-0.5 rounded-full bg-white/80 shadow-[0_0_10px_rgba(255,255,255,0.7)]" />
+          </span>
+        ) : null}
         <div
           className={`flex h-full min-h-[inherit] w-full flex-col items-center justify-between ${collapsedVisual ? 'pointer-events-none opacity-0' : 'opacity-100'}`}
           style={{ transition: `opacity 280ms ${EASE_PREMIUM}` }}
@@ -283,15 +296,21 @@ const LiveChatEdgeLauncher: React.FC<LiveChatEdgeLauncherProps> = ({ marketingDr
             strokeWidth={2.5}
           />
           <span
-            className={`inline-block shrink-0 whitespace-nowrap font-extrabold uppercase leading-none text-white ${wideRail ? 'text-[11px]' : 'text-[10px]'}`}
+            className={`grid shrink-0 place-items-center rounded-full bg-white text-[#FF6600] shadow-sm ${wideRail ? 'h-7 w-7' : 'h-5 w-5'}`}
+            aria-hidden
+          >
+            <MessageCircle className={wideRail ? 'h-4 w-4' : 'h-3 w-3'} strokeWidth={2.4} />
+          </span>
+          <span
+            className={`inline-block shrink-0 whitespace-nowrap font-extrabold uppercase leading-none text-white ${wideRail ? 'text-[11px]' : 'text-[9px]'}`}
             style={{
               transform: dock === 'left' ? 'rotate(-90deg)' : 'rotate(90deg)',
               transformOrigin: 'center center',
-              letterSpacing: wideRail ? '0.22em' : '0.28em',
+              letterSpacing: wideRail ? '0.16em' : '0.18em',
             }}
             aria-hidden
           >
-            {label}
+            {railLabel}
           </span>
           {unread > 0 ? (
             <span
