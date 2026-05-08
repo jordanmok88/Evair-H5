@@ -1,7 +1,19 @@
-import Stripe from 'stripe';
 import type { CfEnv } from '../../lib/cloudflare/env';
 import { resolveCors, jsonHeaders } from '../../lib/cloudflare/cors';
 import { rateLimitExceeded, stripeCheckoutLimits } from '../../lib/cloudflare/rateLimit';
+
+const LARAVEL_API_BASE = 'https://evair.zhhwxt.cn/api/v1';
+
+function safeReturnUrl(value: unknown, callerOrigin: string, fallbackPath: string): string {
+  if (
+    typeof value === 'string' &&
+    value.length < 2048 &&
+    value.startsWith(callerOrigin)
+  ) {
+    return value;
+  }
+  return `${callerOrigin}${fallbackPath}`;
+}
 
 export async function onRequest(context: { request: Request; env: CfEnv }): Promise<Response> {
   const { request: req, env } = context;
@@ -33,37 +45,8 @@ export async function onRequest(context: { request: Request; env: CfEnv }): Prom
     });
   }
 
-  const secretKey = env.STRIPE_SECRET_KEY;
-  if (!secretKey) {
-    return new Response(JSON.stringify({ error: 'Stripe not configured' }), {
-      status: 500,
-      headers,
-    });
-  }
-
   try {
-    const {
-      packageName,
-      priceUsd,
-      email,
-      packageCode,
-      transactionId,
-      countryCode,
-      successUrl,
-      cancelUrl,
-      orderId,
-      orderNo,
-      userId,
-    } = (await req.json()) as Record<string, unknown>;
-
-    if (!packageName || priceUsd === undefined || priceUsd === null || !packageCode) {
-      return new Response(
-        JSON.stringify({ error: 'Missing required fields: packageName, priceUsd, packageCode' }),
-        { status: 400, headers },
-      );
-    }
-
-    const stripe = new Stripe(secretKey);
+    const { orderNo, successUrl, cancelUrl } = (await req.json()) as Record<string, unknown>;
 
     const callerOrigin =
       allowOrigin ||
@@ -71,62 +54,44 @@ export async function onRequest(context: { request: Request; env: CfEnv }): Prom
       req.headers.get('Referer')?.split('/').slice(0, 3).join('/') ||
       'https://evairdigital.com';
 
-    const isSafeReturn = (url: unknown): url is string =>
-      typeof url === 'string' && url.length < 2048 && url.startsWith(callerOrigin);
+    if (typeof orderNo !== 'string' || !orderNo.trim()) {
+      return new Response(
+        JSON.stringify({
+          error: 'Missing required field: orderNo',
+          detail: 'Checkout amount is loaded from the Laravel order. Browser-supplied prices are not accepted.',
+        }),
+        { status: 400, headers },
+      );
+    }
 
-    const safeSuccessUrl = isSafeReturn(successUrl)
-      ? successUrl
-      : `${callerOrigin}/?stripe_status=success&session_id={CHECKOUT_SESSION_ID}`;
-    const safeCancelUrl = isSafeReturn(cancelUrl) ? cancelUrl : `${callerOrigin}/?stripe_status=cancelled`;
+    const authorization = req.headers.get('Authorization');
+    if (!authorization) {
+      return new Response(JSON.stringify({ error: 'Authorization required' }), {
+        status: 401,
+        headers,
+      });
+    }
 
-    const countryStr = typeof countryCode === 'string' ? countryCode : '';
-    const flagUrl = countryStr
-      ? `https://wsrv.nl/?url=flagcdn.com/w320/${countryStr.toLowerCase()}.png&w=324&h=217&fit=contain&we&cbg=d0d3d8`
-      : undefined;
-
-    const orderMetadata =
-      orderId != null && orderId !== ''
-        ? {
-            order_type: 'order',
-            order_id: String(orderId),
-            ...(orderNo != null && orderNo !== '' ? { order_number: String(orderNo) } : {}),
-            ...(userId != null && userId !== '' ? { user_id: String(userId) } : {}),
-            channel: 'h5',
-          }
-        : null;
-
-    const session = await stripe.checkout.sessions.create({
-      mode: 'payment',
-      customer_email: typeof email === 'string' ? email || undefined : undefined,
-      allow_promotion_codes: true,
-      adaptive_pricing: { enabled: false },
-      line_items: [
-        {
-          price_data: {
-            currency: 'usd',
-            product_data: {
-              name: String(packageName),
-              description: 'eSIM Data Plan — Instant Digital Delivery',
-              ...(flagUrl ? { images: [flagUrl] } : {}),
-            },
-            unit_amount: Math.round(Number(priceUsd) * 100),
-          },
-          quantity: 1,
-        },
-      ],
-      metadata: {
-        packageCode: String(packageCode),
-        ...(transactionId != null ? { transactionId: String(transactionId) } : {}),
-        packageName: String(packageName),
-        ...(orderMetadata ?? {}),
+    const laravelRes = await fetch(`${LARAVEL_API_BASE}/app/payments/checkout`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: authorization,
       },
-      ...(orderMetadata ? { payment_intent_data: { metadata: orderMetadata } } : {}),
-      success_url: safeSuccessUrl,
-      cancel_url: safeCancelUrl,
+      body: JSON.stringify({
+        order_no: orderNo.trim(),
+        success_url: safeReturnUrl(
+          successUrl,
+          callerOrigin,
+          '/?stripe_status=success&session_id={CHECKOUT_SESSION_ID}',
+        ),
+        cancel_url: safeReturnUrl(cancelUrl, callerOrigin, '/?stripe_status=cancelled'),
+      }),
     });
 
-    return new Response(JSON.stringify({ sessionId: session.id, url: session.url }), {
-      status: 200,
+    const text = await laravelRes.text();
+    return new Response(text, {
+      status: laravelRes.status,
       headers,
     });
   } catch (err) {
