@@ -1,4 +1,5 @@
 import React, { useEffect } from 'react';
+import { useBodyScrollLock } from '@/hooks/useBodyScrollLock';
 import { createPortal } from 'react-dom';
 import { Loader2 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
@@ -43,6 +44,8 @@ const MarketingProfileDrawer: React.FC<MarketingProfileDrawerProps> = ({
         window.addEventListener('keydown', onKey);
         return () => window.removeEventListener('keydown', onKey);
     }, [open, onClose]);
+
+    useBodyScrollLock(open);
 
     if (!open) return null;
 

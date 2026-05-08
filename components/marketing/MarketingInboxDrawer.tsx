@@ -1,4 +1,5 @@
 import React, { useEffect } from 'react';
+import { useBodyScrollLock } from '../../hooks/useBodyScrollLock';
 import { createPortal } from 'react-dom';
 import { useTranslation } from 'react-i18next';
 import InboxView from '../../views/InboxView';
@@ -34,6 +35,8 @@ const MarketingInboxDrawer: React.FC<MarketingInboxDrawerProps> = ({
         window.addEventListener('keydown', onKey);
         return () => window.removeEventListener('keydown', onKey);
     }, [open, onClose]);
+
+    useBodyScrollLock(open);
 
     if (!open) return null;
 

@@ -3,6 +3,7 @@ import { createPortal } from 'react-dom';
 import { useTranslation } from 'react-i18next';
 import ContactUsView from '../../views/ContactUsView';
 import type { MarketingContactOpenDetail } from '../../utils/evairMarketingEvents';
+import { useBodyScrollLock } from '../../hooks/useBodyScrollLock';
 import { useViewportMinWidth } from '../../hooks/useViewportMinWidth';
 
 const MD_PX = 768;
@@ -49,6 +50,8 @@ const MarketingContactDrawer: React.FC<MarketingContactDrawerProps> = ({ open, o
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
   }, [open, onClose]);
+
+  useBodyScrollLock(open);
 
   const desktopLayout = useMemo(() => {
     if (typeof window === 'undefined' || !mdUp || !open) return null;
