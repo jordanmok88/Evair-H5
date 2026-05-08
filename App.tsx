@@ -81,6 +81,22 @@ function hashFragmentForTab(tab: Tab): string {
   }
 }
 
+/**
+ * Marketing header profile drawer sends `/app?auth=login|register#profile` so desktop
+ * skips the mobile QR gate and opens {@link GuestAuthSheet} immediately.
+ */
+function initialProfileSheetAuthFromUrl(): 'login' | 'register' | null {
+  if (typeof window === 'undefined') return null;
+  if (authService.isLoggedIn()) return null;
+  try {
+    const v = new URLSearchParams(window.location.search).get('auth')?.trim().toLowerCase();
+    if (v === 'login') return 'login';
+    if (v === 'register' || v === 'signup') return 'register';
+  } catch {
+    /* ignore */
+  }
+  return null;
+}
 
 /** Default anchor when the marketing contact event has no `detail` (e.g. Profile → Contact). Matches edge tab sizing. */
 function marketingContactFallbackAnchor(): MarketingContactOpenDetail {
@@ -437,8 +453,24 @@ function CustomerApp() {
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
   const [loginModalMode, setLoginModalMode] = useState<'LOGIN' | 'REGISTER'>('LOGIN');
   /** Profile tab: same flowing sheet as `/top-up` checkout auth (not centre LoginModal). */
-  const [profileSheetAuth, setProfileSheetAuth] = useState<'login' | 'register' | null>(null);
-  
+  const [profileSheetAuth, setProfileSheetAuth] = useState<'login' | 'register' | null>(
+    initialProfileSheetAuthFromUrl,
+  );
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    try {
+      const params = new URLSearchParams(window.location.search);
+      if (!params.has('auth')) return;
+      params.delete('auth');
+      const qs = params.toString();
+      const { pathname, hash } = window.location;
+      window.history.replaceState(null, '', `${pathname}${qs ? `?${qs}` : ''}${hash}`);
+    } catch {
+      /* ignore */
+    }
+  }, []);
+
   const [activeSims, setActiveSims] = useState<ActiveSim[]>(() => {
     try {
       const saved = localStorage.getItem('evair_demo_sims');

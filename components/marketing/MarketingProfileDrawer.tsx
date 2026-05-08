@@ -75,10 +75,11 @@ const MarketingProfileDrawer: React.FC<MarketingProfileDrawerProps> = ({
                             isLoggedIn={isLoggedIn}
                             user={user}
                             onLogin={() => {
-                                void window.location.assign('/app');
+                                // `#profile` skips desktop "open in app" QR; `auth` opens web login sheet.
+                                void window.location.assign('/app?auth=login#profile');
                             }}
                             onSignup={() => {
-                                void window.location.assign('/app');
+                                void window.location.assign('/app?auth=register#profile');
                             }}
                             onLogout={onLogout}
                             onOpenDialer={onOpenDialer}
