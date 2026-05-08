@@ -69,9 +69,9 @@ export function isMobileDevice(): boolean {
 
 /**
  * True when the **User-Agent** (or UA-CH `mobile`) looks like a handset / tablet browser.
- * Does **not** consult viewport. **`useMobileSignInGate`** uses this in the **`max-width:
- * 767px`** branch together with **`pointer` / `hover`** media queries, while
- * **`min-width: 768px`** still always shows the QR first (unless acked).
+ * Does **not** consult viewport. **`useMobileSignInGate`** treats this as the sole signal to
+ * skip the desktop OPEN APP QR and navigate straight to **`/app`** (avoids false “handheld”
+ * from **`(pointer: coarse)`** on touch-capable laptops).
  *
  * Avoids a bare `Mobile` token (too easy to false-positive on unexpected UAs).
  */

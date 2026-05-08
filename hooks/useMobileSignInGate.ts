@@ -7,8 +7,12 @@
  *
  * Marketing OPEN APP specifics:
  *
- * - **`min-width: 768px`**: intercept with QR unless acked (viewport-led so wide Safari keeps the modal).
- * - **`max-width: 767px`**: skip when handheld (`isMobileUserAgentClient` or coarse pointer + `(hover:none)`).
+ * - **Desktop / laptop browsers**: intercept with QR unless acked — including **narrow browser
+ *   windows** (marketing header is still the “desktop” row at `md:` / 768px, but OPEN APP can be
+ *   tapped from pages that use the same hook without that split).
+ * - **Handheld browsers** (`isMobileUserAgentClient()` only): skip the modal and follow `/app`.
+ *   We intentionally do **not** use `(pointer: coarse)` here: many Windows touch laptops report
+ *   coarse + no-hover while the user is on a desktop session, which incorrectly skipped the QR.
  *
  * Trade-off: "Request desktop site" on a phone can surface the QR on OPEN APP taps.
  *
@@ -30,23 +34,9 @@ const MOBILE_VIEWPORT_MAX_PX = 767;
 /** v4 — adds `/app` auto QR; resets prior acks so desktop visitors see the modal again. */
 const ACK_STORAGE_KEY = 'evair_desktop_signin_acked.v4';
 
-function isNarrowMobileViewport(): boolean {
-    if (typeof window === 'undefined') return false;
-    return window.matchMedia(`(max-width: ${MOBILE_VIEWPORT_MAX_PX}px)`).matches;
-}
-
 /** True → follow `href` to `/app` without opening `MobileOnlyNotice`. */
 function shouldSkipOpenAppQrModal(): boolean {
-    if (!isNarrowMobileViewport()) return false;
-    if (isMobileUserAgentClient()) return true;
-    try {
-        const coarse = window.matchMedia?.('(pointer: coarse)')?.matches === true;
-        const noHover = window.matchMedia?.('(hover: none)')?.matches === true;
-        if (coarse && noHover) return true;
-    } catch {
-        /* matchMedia unsupported */
-    }
-    return false;
+    return isMobileUserAgentClient();
 }
 
 function readAck(): boolean {
