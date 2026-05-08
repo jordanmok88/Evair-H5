@@ -40,6 +40,17 @@ body {
    device-landing / travel / activate / top-up pages need normal
    page-level scrolling, so they leave the class off and the body
    scrolls naturally. */
+html.app-shell {
+  height: 100dvh;
+  min-height: 100dvh;
+}
+
+html.app-shell body,
+html.app-shell #root {
+  min-height: 100dvh;
+  height: 100%;
+}
+
 @media (min-width: 640px) {
   html.app-shell,
   html.app-shell body,
@@ -76,19 +87,23 @@ body {
 }
 
 /* Below lg, `.phone-frame-fit` has no fixed height (desktop mock only).
-   Without a flex column + min-height, `<main height: calc(100%-54px)>`
-   collapses — blank /app in real phones, narrow devtools, Cursor Browser. */
+   `min-height` alone does not give flex children a share of space — `main`
+   with flex:1 stayed 0px tall (blank /app). Lock shell to viewport height. */
 @media (max-width: 1023px) {
   .phone-frame-fit {
     display: flex;
     flex-direction: column;
+    box-sizing: border-box;
+    height: 100dvh;
     min-height: 100dvh;
-    min-height: 100vh;
+    max-height: 100dvh;
+    overflow: hidden;
   }
 
   .phone-frame-fit > main {
-    flex: 1 1 auto;
+    flex: 1 1 0;
     min-height: 0;
+    min-width: 0;
     height: auto !important;
   }
 }
