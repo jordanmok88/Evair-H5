@@ -1289,7 +1289,7 @@ function CustomerApp() {
       className={
         showStoreLayout
           ? 'min-h-screen bg-white font-sans antialiased selection:bg-orange-100'
-          : 'lg:bg-[#E5E5E5] lg:h-full lg:min-h-screen lg:flex lg:items-center lg:justify-center lg:p-8 font-sans antialiased selection:bg-orange-100'
+          : 'min-h-[100dvh] min-h-screen bg-[#F2F4F7] lg:bg-[#E5E5E5] lg:h-full lg:min-h-screen lg:flex lg:items-center lg:justify-center lg:p-8 font-sans antialiased selection:bg-orange-100'
       }
     >
 
@@ -1332,9 +1332,8 @@ function CustomerApp() {
           className={
             showStoreLayout
               ? 'w-full relative flex flex-col min-h-screen'
-              : 'w-full relative lg:overflow-hidden flex flex-col'
+              : 'w-full relative flex flex-col max-lg:min-h-0 max-lg:flex-1 lg:h-[calc(100%-54px)] lg:overflow-hidden'
           }
-          style={showStoreLayout ? undefined : { height: 'calc(100% - 54px)' }}
         >
           {testMode ? (
             <div className="shrink-0 bg-amber-400 text-amber-950 px-3 py-2 z-50 border-b border-amber-500/30 flex flex-wrap items-center justify-center gap-x-2 gap-y-1 text-center">

@@ -75,6 +75,24 @@ body {
   }
 }
 
+/* Below lg, `.phone-frame-fit` has no fixed height (desktop mock only).
+   Without a flex column + min-height, `<main height: calc(100%-54px)>`
+   collapses — blank /app in real phones, narrow devtools, Cursor Browser. */
+@media (max-width: 1023px) {
+  .phone-frame-fit {
+    display: flex;
+    flex-direction: column;
+    min-height: 100dvh;
+    min-height: 100vh;
+  }
+
+  .phone-frame-fit > main {
+    flex: 1 1 auto;
+    min-height: 0;
+    height: auto !important;
+  }
+}
+
 /* Safe area top padding: minimal in mobile browser */
 .pt-safe {
   padding-top: 12px;
