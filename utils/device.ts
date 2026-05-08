@@ -69,9 +69,8 @@ export function isMobileDevice(): boolean {
 
 /**
  * True when the **User-Agent** (or UA-CH `mobile`) looks like a handset / tablet browser.
- * Does **not** consult viewport. **`useMobileSignInGate`** treats this as the sole signal to
- * skip the desktop OPEN APP QR and navigate straight to **`/app`** (avoids false “handheld”
- * from **`(pointer: coarse)`** on touch-capable laptops).
+ * Does **not** consult viewport. Used for marketing CTAs that branch by device class (e.g. activate
+ * deep-links). **OPEN APP** QR vs `/app` is **viewport-only** — see **`useMobileSignInGate`**.
  *
  * Avoids a bare `Mobile` token (too easy to false-positive on unexpected UAs).
  */

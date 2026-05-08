@@ -1,20 +1,18 @@
 /**
  * Desktop QR experience for Evair (shared ack **`evair_desktop_signin_acked.v4`**):
  *
- * 1. **Marketing OPEN APP** — hybrid click gate (`useMobileSignInGate`).
+ * 1. **Marketing OPEN APP** — click gate (`useMobileSignInGate`).
  * 2. **`/app` shell** — same modal auto-opens for wide viewport + `(hover:hover)` +
  *    `(pointer:fine)` (`useCustomerAppDesktopQr`; see `shouldAutoPromptQrOnCustomerApp`).
  *
- * Marketing OPEN APP specifics:
+ * **OPEN APP — non-negotiable product rule (same breakpoint as `SiteHeader` / Tailwind `md:`):**
  *
- * - **Desktop / laptop browsers**: intercept with QR unless acked — including **narrow browser
- *   windows** (marketing header is still the “desktop” row at `md:` / 768px, but OPEN APP can be
- *   tapped from pages that use the same hook without that split).
- * - **Handheld browsers** (`isMobileUserAgentClient()` only): skip the modal and follow `/app`.
- *   We intentionally do **not** use `(pointer: coarse)` here: many Windows touch laptops report
- *   coarse + no-hover while the user is on a desktop session, which incorrectly skipped the QR.
+ * - **Desktop view** — viewport **`min-width: 768px`**: intercept → show QR (**`MobileOnlyNotice`**)
+ *   unless visitor previously chose “continue on desktop anyway” (**`readAck()`**).
+ * - **Mobile view** — viewport **`max-width: 767px`**: do **not** intercept → follow **`/app`**.
  *
- * Trade-off: "Request desktop site" on a phone can surface the QR on OPEN APP taps.
+ * Do **not** substitute UA, pointer, or hover for this click path — viewport width only, so
+ * behavior matches what the user sees (mobile vs desktop chrome).
  *
  * @see `APP_WIDE_LAYOUT_MIN_PX` in App.tsx (`md` / 768).
  */
@@ -34,9 +32,10 @@ const MOBILE_VIEWPORT_MAX_PX = 767;
 /** v4 — adds `/app` auto QR; resets prior acks so desktop visitors see the modal again. */
 const ACK_STORAGE_KEY = 'evair_desktop_signin_acked.v4';
 
-/** True → follow `href` to `/app` without opening `MobileOnlyNotice`. */
+/** True in **mobile view** (`max-width: 767px`) → follow `href` to `/app` without opening `MobileOnlyNotice`. */
 function shouldSkipOpenAppQrModal(): boolean {
-    return isMobileUserAgentClient();
+    if (typeof window === 'undefined') return false;
+    return window.matchMedia(`(max-width: ${MOBILE_VIEWPORT_MAX_PX}px)`).matches;
 }
 
 function readAck(): boolean {

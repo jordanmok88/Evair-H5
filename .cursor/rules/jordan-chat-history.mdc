@@ -83,7 +83,7 @@ See also: `.cursor/rules/auto-save-workflow.mdc`.
 ## OPEN APP / mobile gate (marketing — do not regress)
 
 - OPEN APP QR modal (**`MobileOnlyNotice`**) — **shared ack** **`evair_desktop_signin_acked.v4`**:
-  - **Marketing OPEN APP** (hybrid): show QR unless acked. Skip straight to **`/app`** only when **`isMobileUserAgentClient()`** (UA / UA-CH `mobile`) — **not** **`(pointer: coarse)`**, which false-positived on touch-capable laptops (2026-05-09).
+  - **Marketing OPEN APP — locked rule (viewport only, matches Tailwind `md:` / `SiteHeader`)**: **desktop view** = **`min-width: 768px`** → show QR unless acked. **mobile view** = **`max-width: 767px`** → go straight to **`/app`**. Do not use UA or pointer media for this click path (Jordan: do not change).
   - **`/app` shell**: desktop browsers **auto-open the same QR** on load when **`isAppPath()`**, viewport **`≥768px`**, **`(hover: hover)`** + **`(pointer: fine)`**, not native WebView, not **`#app-preview`**. Native app + real phones stay uninterrupted.
   For other marketing CTAs, **`isMobileDevice()`** stays separate; do not conflate.
 
