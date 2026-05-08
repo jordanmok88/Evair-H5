@@ -57,12 +57,15 @@ const LEGAL_SLUGS: ReadonlySet<LegalSlug> = new Set(['terms', 'privacy', 'refund
  * Hostnames where `/` should boot directly into the marketing page
  * instead of the customer app. This lets us serve the same Vite build
  * from `evairdigital.com` (marketing) and `app.evairdigital.com` (app)
- * without a separate deployment. Keep this list short — it only needs
- * the apex; any subdomain we don't recognise falls through to `app`.
+ * without a separate deployment. `localhost` / `127.0.0.1` match prod
+ * for local dev; `#app-preview` on `/` still forces the functional shell
+ * (see `utils/testMode.ts`).
  */
 const MARKETING_HOSTS = new Set([
     'evairdigital.com',
     'www.evairdigital.com',
+    'localhost',
+    '127.0.0.1',
 ]);
 
 /**
@@ -160,9 +163,13 @@ export function getRoute(): Route {
         }
     }
 
-    // Apex evairdigital.com renders the marketing page at `/`. App users
-    // still hit /app, /activate, /top-up explicitly so they're unaffected.
-    if (path === '/' && MARKETING_HOSTS.has(window.location.hostname.toLowerCase())) {
+    // Apex hosts (and local dev) render the marketing page at `/`. QA
+    // keeps `http://localhost:3000/#app-preview` on the root for shell-only preview.
+    const host = window.location.hostname.toLowerCase();
+    if (path === '/' && window.location.hash.toLowerCase().includes('app-preview')) {
+        return { kind: 'app' };
+    }
+    if (path === '/' && MARKETING_HOSTS.has(host)) {
         return { kind: 'marketing' };
     }
 

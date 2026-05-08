@@ -63,8 +63,13 @@ describe('getRoute', () => {
         expect(getRoute()).toEqual({ kind: 'marketing' });
     });
 
-    it('returns app for / on localhost', () => {
+    it('returns marketing for / on localhost (matches prod apex)', () => {
         mockLocation({ pathname: '/', hostname: 'localhost' });
+        expect(getRoute()).toEqual({ kind: 'marketing' });
+    });
+
+    it('returns app for / on localhost when hash is app-preview (QA shell)', () => {
+        mockLocation({ pathname: '/', hostname: 'localhost', hash: '#app-preview' });
         expect(getRoute()).toEqual({ kind: 'app' });
     });
 
