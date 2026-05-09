@@ -1,0 +1,1091 @@
+openapi: 3.0.3
+info:
+  title: Evair H5 — 接口对接全景（代码逆向）
+  version: "1.0.0"
+  description: |
+    **来源**：扫描 Evair-H5 仓库内 TypeScript / Netlify 实现整理，**不是** Laravel `l5-swagger` 生成的 JSON。
+
+    **主要源码**：
+    - `services/api/client.ts` — Base URL 默认 `https://evair.zhhwxt.cn/api/v1`（`VITE_API_BASE_URL` 可覆盖）；请求体 **camelCase → snake_case**；成功码 `code` 为 `0` / `'200'` / `'201'`（见 `isSuccessApiCode`）。
+    - `services/api/auth.ts`, `user.ts`, `order.ts`, `payment.ts`, `esim.ts`, `activation.ts`, `simApp.ts`, `email.ts`, `referrals.ts`, `chat.ts`
+    - `services/dataService.ts` — 统一门面：目录、用量、绑定等与上列 API + `esimApi` 回退组合
+    - `services/esimApi.ts` — `POST /api/esim`（同域）→ Netlify `esim.mjs` → Red Tea
+    - `services/pushService.ts` — `/h5/push/*`
+    - `services/chat/laravelProvider.ts` — 会话 `mark-read`；`chat.ts` 与 `laravelProvider` 均覆盖会话 REST
+    - `services/realtime/echo.ts` — Laravel Reverb / `broadcasting/auth`
+    - `netlify/functions/*.mjs` — 边缘代理与信标
+
+    **业务流程（简序）**：
+    1. **注册/登录** → `POST /app/users/register` | `POST /app/users/login` → 存 Bearer
+    2. **刷新** → `POST /app/auth/refresh`（401 时 client 自动重试）
+    3. **浏览目录** → `GET /app/packages/locations`（facets）→ `GET /app/packages`（`size=5000` 等）
+    4. **购 eSIM** → `POST /app/orders` → `POST /app/payments/checkout` → Stripe 回跳 → `GET /app/orders/{id}` 轮询履约 → `POST /app/email/esim-delivery`（可选）
+    5. **实体卡/激活页** → `GET /app/sims/preview/{iccid}` → 注册后 `POST /app/users/bind-sim`（可与 `SetupIntent` + 自动续费字段同发）
+    6. **我的 SIM** → `GET /app/users/sims`；详情/用量/自动续费 → `GET /app/sims/{iccid}`、`GET .../usage`、`PATCH .../auto-renew`
+    7. **充值** → `GET /app/packages/recharge` → `POST /app/recharge` → `POST /app/recharge/{id}/pay`（Stripe.js）
+    8. **解绑** → `POST /app/users/unbind-sim`
+    9. **客服聊天** → `POST /app/conversations`、`GET|POST .../messages`、`POST .../mark-read`、`POST /app/chat/upload`；实时层见文件末尾 `x-evair-realtime`
+    10. **推荐与余额** → `/app/referrals/*`、`/app/credits/me`
+    11. **推送（仅 WebView）** → `POST /h5/push/register`、`DELETE /h5/push/register`、`GET|PATCH /h5/push/preferences`
+    12. **供应商回退** → `POST /api/esim`（见下方 paths）
+
+    **wire 命名**：表内 **请求体** 以 Laravel 收到的 **snake_case** 为准（与 H5 `post()` 转换后一致）；**响应** 经 client 转为 **camelCase**（复杂嵌套以实际 JSON 为准）。
+
+  contact:
+    name: Evair H5 docs
+    url: https://github.com/jordanmok88/Evair-H5
+
+servers:
+  - url: https://evair.zhhwxt.cn/api/v1
+    description: Laravel API（生产默认，与 `services/api/client.ts` 一致）
+  - url: https://evairdigital.com
+    description: 用户站点同域 — Netlify/CF 上的 `/api/*` 无服务器代理
+
+tags:
+  - name: A-Auth
+    description: 注册、登录、登出、刷新、找回密码
+  - name: B-Profile
+    description: 用户资料、密码、收货地址
+  - name: C-SIM-User
+    description: 用户 SIM 列表、绑定、解绑（含激活 funnel 与常规绑定）
+  - name: D-Catalog
+    description: 套餐目录、热门、充值模板、国家/区域 facets
+  - name: E-Orders
+    description: 下单、列表、详情、取消、物流、退款（遗留 h5）
+  - name: F-Payments
+    description: Checkout、PaymentIntent、优惠券、SetupIntent
+  - name: G-SIM-Asset
+    description: 预览、详情、用量、Profile 启用、自动续费
+  - name: H-Recharge
+    description: 充值订单与支付会话
+  - name: I-Email-App
+    description: Laravel 发履约邮件
+  - name: J-Referrals
+    description: 推荐码与积分流水
+  - name: K-Chat
+    description: 会话与消息 REST
+  - name: L-Push-H5
+    description: 仅 H5 使用的 `/h5/push/*`
+  - name: M-Legacy-H5
+    description: 仍被 H5 调用的 `/h5/*` 子集
+  - name: N-Netlify-Proxy
+    description: 浏览器同域 `POST /api/esim` 等
+  - name: O-Realtime
+    description: WebSocket / 广播鉴权（非 REST 路径摘要）
+
+paths:
+  # ─── A 认证 ─────────────────────────────────────────────────
+  /app/users/register:
+    post:
+      tags: [A-Auth]
+      summary: 用户注册
+      operationId: appUsersRegister
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email, password, name]
+              properties:
+                email: { type: string, format: email }
+                password: { type: string }
+                name: { type: string }
+      responses:
+        "200":
+          description: 成功时 `data` 含 user、token、refresh_token、expires_in（camel 在客户端）
+  /app/users/login:
+    post:
+      tags: [A-Auth]
+      summary: 登录
+      operationId: appUsersLogin
+      security: []
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email, password]
+              properties:
+                email: { type: string }
+                password: { type: string }
+      responses:
+        "200": { description: OK }
+  /app/users/logout:
+    post:
+      tags: [A-Auth]
+      summary: 登出（Bearer）
+      operationId: appUsersLogout
+      responses:
+        "200": { description: OK }
+  /app/auth/refresh:
+    post:
+      tags: [A-Auth]
+      summary: 刷新访问令牌（skipAuth）
+      operationId: appAuthRefresh
+      security: []
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [refresh_token]
+              properties:
+                refresh_token: { type: string }
+      responses:
+        "200": { description: OK }
+
+  /app/auth/forgot-password:
+    post:
+      tags: [A-Auth]
+      summary: 忘记密码邮件
+      operationId: appAuthForgotPassword
+      security: []
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                email: { type: string }
+      responses:
+        "200": { description: OK }
+  /app/auth/reset-password:
+    post:
+      tags: [A-Auth]
+      summary: 重置密码
+      operationId: appAuthResetPassword
+      security: []
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                token: { type: string }
+                password: { type: string }
+      responses:
+        "200": { description: OK }
+
+  # ─── B 用户资料 / 地址 ───────────────────────────────────────
+  /app/users/me:
+    get:
+      tags: [B-Profile]
+      summary: 当前用户
+      operationId: appUsersMeGet
+      responses:
+        "200": { description: OK }
+    put:
+      tags: [B-Profile]
+      summary: 更新资料
+      operationId: appUsersMePut
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name: { type: string }
+                avatar: { type: string }
+      responses:
+        "200": { description: OK }
+  /app/users/password:
+    put:
+      tags: [B-Profile]
+      summary: 修改密码
+      operationId: appUsersPassword
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                current_password: { type: string }
+                password: { type: string }
+                password_confirmation: { type: string }
+      responses:
+        "200": { description: OK }
+
+  /app/users/addresses:
+    get:
+      tags: [B-Profile]
+      summary: 地址列表
+      operationId: appUsersAddressesList
+      responses:
+        "200": { description: OK }
+    post:
+      tags: [B-Profile]
+      summary: 新建地址
+      operationId: appUsersAddressesCreate
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              description: recipient_name, phone, address_line1, city, postal_code, country 等
+      responses:
+        "200": { description: OK }
+  /app/users/addresses/{id}:
+    put:
+      tags: [B-Profile]
+      summary: 更新地址
+      operationId: appUsersAddressesUpdate
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        "200": { description: OK }
+    delete:
+      tags: [B-Profile]
+      summary: 删除地址
+      operationId: appUsersAddressesDelete
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        "200": { description: OK }
+  /app/users/addresses/{id}/default:
+    put:
+      tags: [B-Profile]
+      summary: 设为默认地址
+      operationId: appUsersAddressesDefault
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        "200": { description: OK }
+
+  # ─── C 用户视角 SIM 绑定 ─────────────────────────────────────
+  /app/users/sims:
+    get:
+      tags: [C-SIM-User]
+      summary: 已绑定 SIM 列表
+      operationId: appUsersSims
+      parameters:
+        - name: status
+          in: query
+          schema: { type: string }
+      responses:
+        "200": { description: data.list — 绑定行 + 嵌套 sim 摘要 }
+
+  /app/users/bind-sim:
+    post:
+      tags: [C-SIM-User]
+      summary: 绑定 SIM（两种载荷）
+      description: |
+        **常规绑定**（`userService` / `dataService.bindSim`）：`iccid` + 可选 `activation_code`。
+        **激活漏斗**（`activationService`）：`sim_id` 必填；可选 `activation_code`；
+        自动续费时 `auto_renew` + `auto_renew_package_id` + `stripe_payment_method_id`。
+      operationId: appUsersBindSim
+      requestBody:
+        content:
+          application/json:
+            schema:
+              oneOf:
+                - type: object
+                  required: [iccid]
+                  properties:
+                    iccid: { type: string }
+                    activation_code: { type: string }
+                - type: object
+                  required: [sim_id]
+                  properties:
+                    sim_id: { type: integer }
+                    activation_code: { type: string }
+                    auto_renew: { type: boolean }
+                    auto_renew_package_id: { type: string }
+                    stripe_payment_method_id: { type: string }
+      responses:
+        "200":
+          description: 成功码多为 '201'（创建）
+        "201":
+          description: Created
+
+  /app/users/unbind-sim:
+    post:
+      tags: [C-SIM-User]
+      summary: 解绑
+      operationId: appUsersUnbindSim
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [sim_id]
+              properties:
+                sim_id: { type: integer }
+      responses:
+        "200": { description: OK }
+
+  # ─── D 目录 ───────────────────────────────────────────────────
+  /app/packages:
+    get:
+      tags: [D-Catalog]
+      summary: 套餐列表（商店常带 size=5000）
+      operationId: appPackagesList
+      security: []
+      parameters:
+        - name: location_code
+          in: query
+          schema: { type: string }
+        - name: type
+          in: query
+          schema: { type: string, enum: [BASE, TOPUP] }
+        - name: scope
+          in: query
+          schema: { type: string, enum: [single, multi, any] }
+        - name: page
+          in: query
+          schema: { type: integer }
+        - name: size
+          in: query
+          schema: { type: integer }
+        - name: iccid
+          in: query
+          schema: { type: string }
+      responses:
+        "200": { description: data.packages }
+  /app/packages/hot:
+    get:
+      tags: [D-Catalog]
+      summary: 热门套餐
+      operationId: appPackagesHot
+      security: []
+      parameters:
+        - name: limit
+          in: query
+          schema: { type: integer }
+      responses:
+        "200": { description: OK }
+  /app/packages/recharge:
+    get:
+      tags: [D-Catalog]
+      summary: 充值套餐目录（按 ICCID）
+      operationId: appPackagesRecharge
+      security: []
+      parameters:
+        - name: iccid
+          in: query
+          required: true
+          schema: { type: string }
+        - name: supplier_type
+          in: query
+          schema: { type: string, enum: [esimaccess, pccw] }
+      responses:
+        "200": { description: OK }
+  /app/packages/locations:
+    get:
+      tags: [D-Catalog]
+      summary: 国家/区域 facets（轻量索引）
+      operationId: appPackagesLocations
+      security: []
+      responses:
+        "200": { description: single_countries + multi_countries }
+
+  # ─── E 订单 ───────────────────────────────────────────────────
+  /app/orders:
+    get:
+      tags: [E-Orders]
+      summary: 订单分页列表
+      operationId: appOrdersList
+      parameters:
+        - name: status
+          in: query
+          schema: { type: string }
+        - name: type
+          in: query
+          schema: { type: string }
+        - name: page
+          in: query
+          schema: { type: integer }
+        - name: size
+          in: query
+          schema: { type: integer }
+      responses:
+        "200": { description: Laravel 分页 data + meta }
+    post:
+      tags: [E-Orders]
+      summary: 创建订单（eSIM 或实体）
+      operationId: appOrdersCreate
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              description: |
+                eSIM：package_code, email, quantity。
+                实体：product_id, quantity, email, shipping_address 等（见 `CreatePhysicalOrderRequest`）
+      responses:
+        "200":
+          description: 业务成功码常为 '201'
+
+  /app/orders/{id}:
+    get:
+      tags: [E-Orders]
+      summary: 订单详情（数字 id）
+      operationId: appOrdersDetail
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        "200": { description: 含可选 esim 履约块 }
+
+  /app/orders/{id}/cancel:
+    post:
+      tags: [E-Orders]
+      summary: 取消订单
+      operationId: appOrdersCancel
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string }
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                reason: { type: string }
+      responses:
+        "200": { description: OK }
+
+  /app/orders/track/{orderNo}:
+    get:
+      tags: [E-Orders]
+      summary: 物流追踪（仍用 order_number 字符串）
+      operationId: appOrdersTrack
+      parameters:
+        - name: orderNo
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        "200": { description: OK }
+
+  /h5/orders/{orderNo}/refund:
+    post:
+      tags: [E-Orders, M-Legacy-H5]
+      summary: 申请退款（App 层尚无对应，走遗留 h5）
+      operationId: h5OrdersRefund
+      parameters:
+        - name: orderNo
+          in: path
+          required: true
+          schema: { type: string }
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                reason: { type: string }
+                amount: { type: number }
+      responses:
+        "200": { description: OK }
+
+  # ─── F 支付 / 优惠券 / SetupIntent ──────────────────────────
+  /app/payments/checkout:
+    post:
+      tags: [F-Payments]
+      summary: 创建 Stripe Checkout Session（金额以后端订单为准）
+      operationId: appPaymentsCheckout
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [order_no, success_url, cancel_url]
+              properties:
+                order_no: { type: string }
+                success_url: { type: string }
+                cancel_url: { type: string }
+      responses:
+        "200":
+          description: url, session_id 等
+  /app/payments/create:
+    post:
+      tags: [F-Payments]
+      summary: 创建 PaymentIntent 类支付
+      operationId: appPaymentsCreate
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        "200": { description: OK }
+  /app/payments/{paymentId}:
+    get:
+      tags: [F-Payments]
+      summary: 查询支付状态
+      operationId: appPaymentsShow
+      parameters:
+        - name: paymentId
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        "200": { description: OK }
+  /app/payments/setup-intent:
+    post:
+      tags: [F-Payments]
+      summary: Stripe SetupIntent（绑卡不扣款，激活/自动续费用）
+      operationId: appPaymentsSetupIntent
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                iccid: { type: string }
+      responses:
+        "200": { description: client_secret, setup_intent_id, customer_id, publishable_key }
+  /app/coupons/validate:
+    post:
+      tags: [F-Payments]
+      summary: 校验优惠券
+      operationId: appCouponsValidate
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                code: { type: string }
+                order_no: { type: string }
+      responses:
+        "200": { description: OK }
+  /app/coupons:
+    get:
+      tags: [F-Payments]
+      summary: 我的优惠券
+      operationId: appCouponsList
+      responses:
+        "200": { description: OK }
+
+  # ─── G SIM 资产 / 预览 / eSIM 操作 ───────────────────────────
+  /app/sims/preview/{iccid}:
+    get:
+      tags: [G-SIM-Asset]
+      summary: 激活前公开预览（claim_state、套餐、续订包 id）
+      operationId: appSimsPreview
+      security: []
+      parameters:
+        - name: iccid
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        "200": { description: OK }
+        "404":
+          description: NOT_FOUND_001 等
+
+  /app/sims/{iccid}:
+    get:
+      tags: [G-SIM-Asset]
+      summary: 拥有者 SIM 详情（与 esimService.getDetail 同路径）
+      operationId: appSimsShow
+      parameters:
+        - name: iccid
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        "200": { description: SimResource 子集 }
+
+  /app/sims/{iccid}/usage:
+    get:
+      tags: [G-SIM-Asset]
+      summary: 流量用量
+      operationId: appSimsUsage
+      parameters:
+        - name: iccid
+          in: path
+          required: true
+          schema: { type: string }
+        - name: daily
+          in: query
+          schema: { type: boolean }
+        - name: page
+          in: query
+          schema: { type: integer }
+        - name: size
+          in: query
+          schema: { type: integer }
+      responses:
+        "200": { description: OK }
+
+  /app/sims/{iccid}/auto-renew:
+    patch:
+      tags: [G-SIM-Asset]
+      summary: 开启/关闭自动续费
+      operationId: appSimsAutoRenew
+      parameters:
+        - name: iccid
+          in: path
+          required: true
+          schema: { type: string }
+      requestBody:
+        content:
+          application/json:
+            schema:
+              oneOf:
+                - type: object
+                  required: [auto_renew, auto_renew_package_id, stripe_payment_method_id]
+                  properties:
+                    auto_renew: { type: boolean, enum: [true] }
+                    auto_renew_package_id: { type: string }
+                    stripe_payment_method_id: { type: string }
+                - type: object
+                  required: [auto_renew]
+                  properties:
+                    auto_renew: { type: boolean, enum: [false] }
+                    reason: { type: string }
+      responses:
+        "200": { description: 返回更新后的 SIM 状态 }
+
+  /app/esim/{iccid}/enable:
+    post:
+      tags: [G-SIM-Asset]
+      summary: 远程启用 eSIM Profile（LPA enable）
+      operationId: appEsimEnable
+      parameters:
+        - name: iccid
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        "200": { description: OK }
+
+  /h5/esim/preview/{iccid}:
+    get:
+      tags: [G-SIM-Asset, M-Legacy-H5]
+      summary: 遗留 eSIM/实体预览（`esimService.getPreview`；绑定前展示）
+      operationId: h5EsimPreview
+      security: []
+      parameters:
+        - name: iccid
+          in: path
+          required: true
+          schema: { type: string }
+        - name: supplier_type
+          in: query
+          schema: { type: string, enum: [esimaccess, pccw] }
+      responses:
+        "200": { description: OK }
+
+  # ─── H 充值订单 ───────────────────────────────────────────────
+  /app/recharge:
+    post:
+      tags: [H-Recharge]
+      summary: 创建充值订单
+      operationId: appRechargeStore
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [iccid, package_code, supplier_type]
+              properties:
+                iccid: { type: string }
+                package_code: { type: string }
+                supplier_type: { type: string, enum: [esimaccess, pccw] }
+      responses:
+        "200": { description: OK }
+
+  /app/recharge/{rechargeId}/pay:
+    post:
+      tags: [H-Recharge]
+      summary: 创建充值支付（Stripe PaymentIntent）
+      operationId: appRechargePay
+      parameters:
+        - name: rechargeId
+          in: path
+          required: true
+          schema: { type: integer }
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                payment_method: { type: string, example: stripe }
+      responses:
+        "200": { description: client_secret 等 }
+
+  /app/recharge/{rechargeId}:
+    get:
+      tags: [H-Recharge]
+      summary: 充值单详情
+      operationId: appRechargeShow
+      parameters:
+        - name: rechargeId
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        "200": { description: OK }
+
+  # ─── I 邮件（Laravel）────────────────────────────────────────
+  /app/email/esim-delivery:
+    post:
+      tags: [I-Email-App]
+      summary: 发送 eSIM 履约邮件（购卡成功后可选触发）
+      operationId: appEmailEsimDelivery
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email, order_no, iccid, package_name, qr_code_url, smdp_address, activation_code, lpa_string]
+              properties:
+                email: { type: string }
+                order_no: { type: string }
+                iccid: { type: string }
+                package_name: { type: string }
+                qr_code_url: { type: string }
+                smdp_address: { type: string }
+                activation_code: { type: string }
+                lpa_string: { type: string }
+      responses:
+        "200": { description: success, message_id }
+
+  # ─── J 推荐 ───────────────────────────────────────────────────
+  /app/referrals/me:
+    get:
+      tags: [J-Referrals]
+      summary: 我的推荐码与兑换摘要
+      operationId: appReferralsMe
+      responses:
+        "200": { description: OK }
+  /app/referrals/redeem:
+    post:
+      tags: [J-Referrals]
+      summary: 兑换他人推荐码
+      operationId: appReferralsRedeem
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [code]
+              properties:
+                code: { type: string }
+      responses:
+        "200": { description: OK }
+  /app/credits/me:
+    get:
+      tags: [J-Referrals]
+      summary: 余额与积分流水
+      operationId: appCreditsMe
+      responses:
+        "200": { description: OK }
+
+  # ─── K 聊天 ───────────────────────────────────────────────────
+  /app/conversations:
+    post:
+      tags: [K-Chat]
+      summary: 获取或创建会话
+      operationId: appConversationsStore
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                customer_name: { type: string }
+                customer_email: { type: string }
+                language: { type: string }
+      responses:
+        "200": { description: OK }
+
+  /app/conversations/{conversationId}/messages:
+    get:
+      tags: [K-Chat]
+      summary: 消息列表 / 增量 since / 翻页 before_id
+      operationId: appConversationMessagesList
+      parameters:
+        - name: conversationId
+          in: path
+          required: true
+          schema: { type: integer }
+        - name: since
+          in: query
+          schema: { type: string }
+        - name: before_id
+          in: query
+          schema: { type: integer }
+        - name: limit
+          in: query
+          schema: { type: integer }
+      responses:
+        "200": { description: messages + has_more }
+    post:
+      tags: [K-Chat]
+      summary: 发送消息
+      operationId: appConversationMessagesCreate
+      parameters:
+        - name: conversationId
+          in: path
+          required: true
+          schema: { type: integer }
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [content, client_msg_id]
+              properties:
+                content: { type: string }
+                client_msg_id: { type: string, format: uuid }
+                message_type: { type: string }
+                sender_name: { type: string }
+                media_url: { type: string }
+                metadata: { type: object }
+                english_content: { type: string }
+      responses:
+        "200": { description: OK }
+
+  /app/conversations/{conversationId}/mark-read:
+    post:
+      tags: [K-Chat]
+      summary: 标记已读（laravelProvider）
+      operationId: appConversationsMarkRead
+      parameters:
+        - name: conversationId
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        "200": { description: OK }
+
+  /app/chat/upload:
+    post:
+      tags: [K-Chat]
+      summary: 上传附件（multipart/form-data；Authorization Bearer）
+      operationId: appChatUpload
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                file:
+                  type: string
+                  format: binary
+                type:
+                  type: string
+                  enum: [image, file]
+      responses:
+        "200": { description: data.url 等 }
+
+  # ─── L 推送偏好（H5）───────────────────────────────────────────
+  /h5/push/register:
+    post:
+      tags: [L-Push-H5]
+      summary: 注册设备推送 token（WebView）
+      operationId: h5PushRegister
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                token: { type: string }
+                platform: { type: string, enum: [ios, android, web] }
+                locale: { type: string }
+                app_version: { type: string }
+      responses:
+        "200": { description: OK }
+    delete:
+      tags: [L-Push-H5]
+      summary: 注销设备 token（请求体含 token）
+      operationId: h5PushUnregister
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                token: { type: string }
+      responses:
+        "200": { description: OK }
+
+  /h5/push/preferences:
+    get:
+      tags: [L-Push-H5]
+      summary: 读取推送偏好
+      operationId: h5PushPreferencesGet
+      responses:
+        "200": { description: transactional_enabled, marketing_enabled }
+    patch:
+      tags: [L-Push-H5]
+      summary: 更新推送偏好
+      operationId: h5PushPreferencesPatch
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                marketing_enabled: { type: boolean }
+                transactional_enabled: { type: boolean }
+      responses:
+        "200": { description: OK }
+
+  # ─── N 同域 Netlify / CF Functions（第二 server）─────────────
+  /api/esim:
+    post:
+      tags: [N-Netlify-Proxy]
+      summary: Red Tea 供应商代理（H5 `esimApi.call`）
+      description: |
+        请求体：`{ "endpoint": "/esim/order" | "/esim/query" | "/esim/topup" | "/esim/usage" | "/package/list", "payload": { ... } }`
+        白名单见 `netlify/functions/esim.mjs` ALLOWED_ENDPOINTS。
+      servers:
+        - url: https://evairdigital.com
+      operationId: netlifyEsimProxy
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [endpoint, payload]
+              properties:
+                endpoint:
+                  type: string
+                  enum: [/package/list, /esim/order, /esim/query, /esim/topup, /esim/usage]
+                payload: { type: object }
+      responses:
+        "200":
+          description: 供应商原始 JSON
+        "400":
+          description: endpoint 不在白名单
+        "429": { description: 限流 }
+
+  /api/stripe-checkout:
+    post:
+      tags: [N-Netlify-Proxy]
+      summary: 直接创建 Stripe Checkout（遗留函数；当前主购物流已改走 Laravel `/app/payments/checkout`）
+      servers:
+        - url: https://evairdigital.com
+      operationId: netlifyStripeCheckout
+      security: []
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                packageName: { type: string }
+                priceUsd: { type: number }
+                packageCode: { type: string }
+                email: { type: string }
+                transactionId: { type: string }
+                countryCode: { type: string }
+                successUrl: { type: string }
+                cancelUrl: { type: string }
+                orderId: { type: integer }
+                orderNo: { type: string }
+                userId: { type: integer }
+      responses:
+        "200":
+          description: sessionId, url
+
+  /api/stripe-verify:
+    post:
+      tags: [N-Netlify-Proxy]
+      summary: 校验 Stripe Checkout Session 支付状态
+      servers:
+        - url: https://evairdigital.com
+      operationId: netlifyStripeVerify
+      security: []
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [sessionId]
+              properties:
+                sessionId: { type: string }
+      responses:
+        "200":
+          description: paid, status, customerEmail, amountTotal, currency, metadata
+
+  /api/send-esim-email:
+    post:
+      tags: [N-Netlify-Proxy]
+      summary: Resend 直发 eSIM 邮件（Netlify；与 Laravel `app/email/esim-delivery` 并存）
+      servers:
+        - url: https://evairdigital.com
+      operationId: netlifySendEsimEmail
+      security: []
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email]
+              properties:
+                email: { type: string }
+                qrCodeUrl: { type: string }
+                smdpAddress: { type: string }
+                activationCode: { type: string }
+                lpaString: { type: string }
+                orderNo: { type: string }
+                packageName: { type: string }
+                iccid: { type: string }
+      responses:
+        "200":
+          description: success, id（Resend id）
+
+  /api/track:
+    post:
+      tags: [N-Netlify-Proxy]
+      summary: 轻量分析信标（任意 JSON）
+      servers:
+        - url: https://evairdigital.com
+      operationId: netlifyTrack
+      security: []
+      responses:
+        "200":
+          description: "{ \"ok\": true }"
+
+x-evair-realtime:
+  description: |
+    **Laravel Echo + Reverb**（`services/realtime/echo.ts`）：
+    - `authEndpoint` = `{apiOrigin}/broadcasting/auth`（从 `VITE_API_BASE_URL` 去掉 `/api/v1` 后缀后拼接）
+    - 私有频道：`private-conversation.{conversationId}`（Echo `.private('conversation.' + id)`）
+    - 事件：`.message.sent`（Pusher 无前缀命名）
+    配置环境变量：`VITE_REVERB_KEY`、`VITE_REVERB_HOST`、`VITE_REVERB_PORT`、`VITE_REVERB_SCHEME`
+
+x-evair-other-integrations:
+  supabase:
+    description: |
+      `services/supabase.ts` / `services/chat/supabaseProvider.ts` — 使用 `@supabase/supabase-js` 直连项目 URL（非本 YAML REST 路径）。
+      QA 可选 chat provider；生产以 Laravel chat 为主。
+  packaging_qr_redirect:
+    description: GET `/r?src=...` → `netlify/functions/qr-scan.mjs` → 302 到公开 H5 `/app`（非 `/api/v1`）。
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: >-
+        Laravel Authorization Bearer access_token（多数 /app/* 需要；目录类接口在代码中显式 skipAuth）
+
+security:
+  - bearerAuth: []
