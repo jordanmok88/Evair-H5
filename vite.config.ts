@@ -18,6 +18,27 @@ const devTitlePlugin = {
 /** Local API routes mapped in `functions/` — proxy to Pages (`npm run cf:dev`) or Netlify CLI (`npm run netlify:dev`). */
 const DEFAULT_FUNCTIONS_PROXY = 'http://127.0.0.1:8888';
 
+/**
+ * On macOS default APFS (case-insensitive, case-preserving), Vite can resolve
+ * `GET /app` to the root file `App.tsx` and return transformed JS as the
+ * document — the browser then shows source instead of the SPA.
+ * Customer shell lives at `/app`; always serve the SPA entry instead.
+ */
+const spaAppPathRewrite = {
+  name: 'spa-app-path-rewrite',
+  configureServer(server: import('vite').ViteDevServer) {
+    server.middlewares.use((req, _res, next) => {
+      const url = req.url ?? '';
+      const q = url.indexOf('?');
+      const pathname = q === -1 ? url : url.slice(0, q);
+      if (pathname === '/app' || pathname.startsWith('/app/')) {
+        req.url = q === -1 ? '/' : '/' + url.slice(q);
+      }
+      next();
+    });
+  },
+};
+
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, '.', '');
   const edgeFnTarget =
@@ -76,6 +97,7 @@ export default defineConfig(({ mode }) => {
       },
     },
     plugins: [
+      spaAppPathRewrite,
       react(),
       tailwindcss(),
       apiResponseCapture(), // API 响应捕获插件
