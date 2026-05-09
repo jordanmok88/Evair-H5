@@ -457,6 +457,13 @@ function CustomerApp() {
     initialProfileSheetAuthFromUrl,
   );
 
+  /** {@link LoginModal} / {@link GuestAuthSheet} use z-index above {@link MobileOnlyNotice}; still dismiss QR so it cannot steal focus. */
+  useEffect(() => {
+    if (isLoginModalOpen || profileSheetAuth !== null) {
+      desktopAppQr.onClose();
+    }
+  }, [isLoginModalOpen, profileSheetAuth, desktopAppQr.onClose]);
+
   useEffect(() => {
     if (typeof window === 'undefined') return;
     try {

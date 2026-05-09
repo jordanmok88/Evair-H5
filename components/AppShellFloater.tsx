@@ -13,7 +13,7 @@ export interface AppShellFloaterProps {
 /**
  * `/app` shell — bottom-corner floating panel (same geometry as marketing inbox/chat),
  * portaled to `document.body` so it is not clipped by phone-frame or backdrop-filter ancestors.
- * z-index below {@link GuestAuthSheet} (80) so sheet auth stacks above the profile panel.
+ * z-index below {@link GuestAuthSheet} (220) so sheet auth stacks above the profile panel.
  */
 const AppShellFloater: React.FC<AppShellFloaterProps> = ({ open, onClose, ariaLabel, children }) => {
     const { t } = useTranslation();

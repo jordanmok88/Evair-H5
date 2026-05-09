@@ -40,7 +40,7 @@ const GuestAuthSheet: React.FC<GuestAuthSheetProps> = ({
     return createPortal(
         <div
             role="presentation"
-            className="fixed inset-0 z-[80] flex items-end justify-center bg-black/50 p-0 md:items-center md:p-4"
+            className="fixed inset-0 z-[220] flex items-end justify-center bg-black/50 p-0 md:items-center md:p-4"
             onMouseDown={(e) => {
                 if (e.target === e.currentTarget) onClose();
             }}
