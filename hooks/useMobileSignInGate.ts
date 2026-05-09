@@ -74,6 +74,8 @@ function looksLikeDesktopPointerEnvironment(): boolean {
  *
  * Native WebView (`evair.isNative`), **`#app-preview`**, handheld viewports (&lt;768), and
  * touch-primary devices are excluded — real phones opening `/app` in landscape stay uninterrupted.
+ * **`?auth=login|register|signup`** (marketing → profile login) also skips the QR so it never
+ * covers {@link GuestAuthSheet} (lower z-index than the QR dialog).
  */
 /** Deep-linked shells where we want the `/app` UI immediately (modal login, inbox, etc.). */
 export const APP_HASH_SKIP_DESKTOP_QR = ['#profile', '#inbox'] as const;
@@ -86,9 +88,21 @@ function deeplinkSkipsDesktopAppQr(): boolean {
     return (APP_HASH_SKIP_DESKTOP_QR as readonly string[]).includes(base);
 }
 
+/** Marketing profile drawer → `/app?auth=login|register#profile` — must never sit under {@link MobileOnlyNotice} (z-200). */
+function profileAuthQuerySkipsDesktopAppQr(): boolean {
+    if (typeof window === 'undefined') return false;
+    try {
+        const v = new URLSearchParams(window.location.search).get('auth')?.trim().toLowerCase();
+        return v === 'login' || v === 'register' || v === 'signup';
+    } catch {
+        return false;
+    }
+}
+
 export function shouldAutoPromptQrOnCustomerApp(): boolean {
     if (typeof window === 'undefined') return false;
     if (!isAppPath()) return false;
+    if (profileAuthQuerySkipsDesktopAppQr()) return false;
     if (deeplinkSkipsDesktopAppQr()) return false;
     if (runningInsideNativeApp()) return false;
     if (isAppPreviewHash()) return false;
