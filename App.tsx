@@ -22,10 +22,11 @@ const BlogPage = lazy(() => import('./views/BlogPage'));
 const LegalPage = lazy(() => import('./views/LegalPage'));
 import { Tab, ActiveSim, Country, SimType, User, AppNotification, EsimProfileResult } from './types';
 import { Lock } from 'lucide-react';
-import { MOCK_COUNTRIES, MOCK_PLANS_US, MOCK_ACTIVE_SIMS, MOCK_NOTIFICATIONS } from './constants';
+import { MOCK_COUNTRIES, MOCK_PLANS_US, MOCK_ACTIVE_SIMS } from './constants';
 import { retailCarrierRowForIso } from './utils/retailCarrierLookup';
 import { checkDataUsage, prefetchPackages, DEMO_MODE, mapRedTeaStatus, bindSim, queryProfile } from './services/dataService';
-import { supabaseConfigured, fetchNotifications, logSimActivation } from './services/supabase';
+import { logSimActivation } from './services/supabase';
+import { fetchLaravelAdminNotifications } from './services/fetchLaravelAdminNotifications';
 import { authService, userService, type UserDto, type UserSimDto } from './services/api';
 import { initPush, unregisterPush } from './services/pushService';
 import {
@@ -494,7 +495,7 @@ function CustomerApp() {
    * Prevents bouncing an empty persisted "My eSIMs" to Shop before bindings load.
    */
   const [simWalletHydrated, setSimWalletHydrated] = useState(() => !authService.isLoggedIn());
-  const [notifications, setNotifications] = useState<AppNotification[]>(MOCK_NOTIFICATIONS);
+  const [notifications, setNotifications] = useState<AppNotification[]>([]);
   /** Profile → Link existing eSIM (browse ProductTab unmounts while Profile is open). */
   const [linkEsimProfileNonce, setLinkEsimProfileNonce] = useState(0);
 
@@ -669,30 +670,43 @@ function CustomerApp() {
 
   useEffect(() => { prefetchPackages(); }, []);
 
-  // Fetch real notifications from Supabase (if configured) and merge with mocks
-  const notifFetched = useRef(false);
+  // Laravel admin notifications (public GET /app/notifications). Strict admin feed:
+  // no Supabase, no mock rows, no SIM health auto-injects. Preserve in-session `N-*` order toasts.
   useEffect(() => {
-    if (notifFetched.current || !supabaseConfigured) return;
-    notifFetched.current = true;
-    const lang = localStorage.getItem('evair-lang') || 'en';
-    fetchNotifications(lang)
-      .then(serverNotifs => {
-        if (serverNotifs.length > 0) {
-          setNotifications(prev => {
-            const localOnly = prev.filter(n => n.id.startsWith('auto-') || n.id.startsWith('N-'));
-            return [...serverNotifs, ...localOnly.filter(n => n.id.startsWith('auto-'))];
-          });
-        }
-      })
-      .catch(err => {
-        // Notifications are best-effort — Supabase being temporarily
-        // unreachable shouldn't surface as an unhandled rejection in
-        // production logs. Reset the latch so a later retry (e.g. via
-        // user re-login) can try again.
-        console.warn('[notifications] fetch failed', err);
-        notifFetched.current = false;
+    if (!isLoggedIn) {
+      setNotifications([]);
+      return;
+    }
+
+    let cancelled = false;
+
+    async function pull() {
+      const lang = localStorage.getItem('evair-lang') || 'en';
+      const countryCode = localStorage.getItem('evair-inbox-country');
+      const rows = await fetchLaravelAdminNotifications(lang, { countryCode });
+      if (cancelled) return;
+      setNotifications((prev) => {
+        const orders = prev.filter((n) => n.id.startsWith('N-'));
+        return [...rows, ...orders];
       });
-  }, []);
+    }
+
+    void pull();
+
+    const onFocus = () => {
+      void pull();
+    };
+    const onVis = () => {
+      if (document.visibilityState === 'visible') void pull();
+    };
+    window.addEventListener('focus', onFocus);
+    document.addEventListener('visibilitychange', onVis);
+    return () => {
+      cancelled = true;
+      window.removeEventListener('focus', onFocus);
+      document.removeEventListener('visibilitychange', onVis);
+    };
+  }, [isLoggedIn]);
 
   const addNotification = useCallback((notif: AppNotification) => {
     setNotifications(prev => {
@@ -700,63 +714,6 @@ function CustomerApp() {
       return [notif, ...prev];
     });
   }, []);
-
-  const healthCheckRan = useRef(false);
-
-  useEffect(() => {
-    if (healthCheckRan.current || !isLoggedIn) return;
-    healthCheckRan.current = true;
-
-    const esims = activeSims.filter(s => s.type === 'ESIM' && s.iccid && s.status === 'ACTIVE');
-    if (esims.length === 0) return;
-
-    esims.forEach(async (sim) => {
-      try {
-        const usage = await checkDataUsage(sim.iccid!);
-        const totalBytes = usage.totalVolume || 0;
-        const usedBytes = usage.usedVolume || 0;
-        const remainingBytes = Math.max(0, totalBytes - usedBytes);
-        const remainingPct = totalBytes > 0 ? (remainingBytes / totalBytes) * 100 : 100;
-
-        const remainingGB = (remainingBytes / (1024 * 1024 * 1024)).toFixed(1);
-        const totalGB = (totalBytes / (1024 * 1024 * 1024)).toFixed(1);
-
-        if (remainingPct < 20) {
-          addNotification({
-            id: `auto-data-low-${sim.iccid}`,
-            type: 'data_low',
-            titleKey: 'inbox.data_low_title',
-            bodyKey: 'inbox.data_low_body_auto',
-            date: new Date().toISOString(),
-            read: false,
-            actionLabel: 'inbox.top_up_now',
-            countryCode: sim.country.countryCode,
-            planName: `${remainingGB} GB / ${totalGB} GB`,
-          });
-        }
-
-        if (usage.expiredTime) {
-          const expiryDate = new Date(usage.expiredTime);
-          const daysLeft = Math.ceil((expiryDate.getTime() - Date.now()) / (1000 * 60 * 60 * 24));
-          if (daysLeft > 0 && daysLeft <= 5) {
-            addNotification({
-              id: `auto-expiring-${sim.iccid}`,
-              type: 'expiring',
-              titleKey: 'inbox.expiring_title',
-              bodyKey: 'inbox.expiring_body_auto',
-              date: new Date().toISOString(),
-              read: false,
-              actionLabel: 'inbox.renew_plan',
-              countryCode: sim.country.countryCode,
-              planName: `${daysLeft}`,
-            });
-          }
-        }
-      } catch {
-        // API call failed silently -- don't block the app
-      }
-    });
-  }, [isLoggedIn, activeSims, addNotification]);
 
   const clearLogoutStorage = () => {
     // Session/auth related keys only. Keep UX preferences (e.g. language, FAB position).

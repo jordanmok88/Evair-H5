@@ -1,4 +1,4 @@
-import { Country, Plan, Order, ActiveSim, ECard, AppNotification, SimCardProduct } from './types';
+import { Country, Plan, Order, ActiveSim, ECard, SimCardProduct } from './types';
 
 // Pricing: (data_MB × rate_per_MB) × 2 (100% markup) + $10 shipping, rounded up to .99
 function calcPrice(rateMB: number, gb: number): number {
@@ -317,60 +317,3 @@ export const MOCK_ECARDS: ECard[] = [
 
 export const MOCK_ACTIVE_SIMS: ActiveSim[] = [];
 
-function hoursAgo(h: number): string {
-  return new Date(Date.now() - h * 3600_000).toISOString();
-}
-
-export const MOCK_NOTIFICATIONS: AppNotification[] = [
-  {
-    id: 'N-001',
-    type: 'data_low',
-    titleKey: 'inbox.data_low_title',
-    bodyKey: 'inbox.data_low_body_auto',
-    date: hoursAgo(2),
-    read: false,
-    actionLabel: 'inbox.top_up_now',
-    countryCode: 'US',
-    planName: '0.2 GB / 1.0 GB',
-  },
-  {
-    id: 'N-002',
-    type: 'expiring',
-    titleKey: 'inbox.expiring_title',
-    bodyKey: 'inbox.expiring_body_auto',
-    date: hoursAgo(18),
-    read: false,
-    actionLabel: 'inbox.renew_plan',
-    countryCode: 'JP',
-    planName: '3',
-  },
-  {
-    id: 'N-003',
-    type: 'order',
-    titleKey: 'inbox.esim_order_title',
-    bodyKey: 'inbox.esim_order_body',
-    date: hoursAgo(48),
-    read: true,
-    actionLabel: 'inbox.install_now',
-    countryCode: 'TH',
-    planName: 'Thailand 3GB/15Days',
-    orderNo: 'ORD-20260307-8832',
-  },
-  {
-    id: 'N-004',
-    type: 'promo',
-    titleKey: 'inbox.promo_title',
-    bodyKey: 'inbox.promo_body',
-    date: hoursAgo(120),
-    read: true,
-    actionLabel: 'inbox.shop_now',
-  },
-  {
-    id: 'N-005',
-    type: 'service',
-    titleKey: 'inbox.service_title',
-    bodyKey: 'inbox.service_body',
-    date: hoursAgo(168),
-    read: true,
-  },
-];

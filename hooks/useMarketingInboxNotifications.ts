@@ -1,70 +1,65 @@
 /**
- * Mirrors `CustomerApp`'s bootstrap merge of `MOCK_NOTIFICATIONS` + Supabase
- * `@see App.tsx ~515` — shared list state for header badge count + inbox drawer on marketing shells.
+ * Marketing-site inbox — Laravel admin notifications only (public GET /app/notifications).
+ * Shown when the visitor is logged in (same gate as before).
  */
 
 import { useCallback, useEffect, useState } from 'react';
-import { MOCK_NOTIFICATIONS } from '@/constants';
 import type { AppNotification } from '@/types';
-import { fetchNotifications, supabaseConfigured } from '@/services/supabase';
+import { fetchLaravelAdminNotifications } from '@/services/fetchLaravelAdminNotifications';
 
 export interface UseMarketingInboxNotificationsResult {
-    notifications: AppNotification[];
-    onUpdateNotifications: (updater: (prev: AppNotification[]) => AppNotification[]) => void;
+  notifications: AppNotification[];
+  onUpdateNotifications: (updater: (prev: AppNotification[]) => AppNotification[]) => void;
 }
 
-/** Full merged notification list when logged in; empty when logged out. */
+/** Inbox list when logged in — sourced from Laravel admin `notifications` table only. */
 export function useMarketingInboxNotifications(loggedIn: boolean): UseMarketingInboxNotificationsResult {
-    const [notifications, setNotifications] = useState<AppNotification[]>([]);
+  const [notifications, setNotifications] = useState<AppNotification[]>([]);
 
-    useEffect(() => {
-        if (!loggedIn) {
-            setNotifications([]);
-            return;
-        }
+  useEffect(() => {
+    if (!loggedIn) {
+      setNotifications([]);
+      return;
+    }
 
-        let cancelled = false;
-        const mergeLikeApp = (serverNotifs: AppNotification[]) =>
-            setNotifications((prev) => {
-                const localOnly = prev.filter((n) => n.id.startsWith('auto-') || n.id.startsWith('N-'));
-                const autoOnly = localOnly.filter((n) => n.id.startsWith('auto-'));
-                return serverNotifs.length > 0 ? [...serverNotifs, ...autoOnly] : prev;
-            });
+    let cancelled = false;
 
-        function pull() {
-            if (!loggedIn || !supabaseConfigured) return;
-            const lang =
-                typeof localStorage !== 'undefined' ? localStorage.getItem('evair-lang') || 'en' : 'en';
-            fetchNotifications(lang)
-                .then((serverNotifs) => {
-                    if (!cancelled && serverNotifs.length > 0) mergeLikeApp(serverNotifs);
-                })
-                .catch(() => {});
-        }
+    function pull() {
+      const lang =
+        typeof localStorage !== 'undefined' ? localStorage.getItem('evair-lang') || 'en' : 'en';
+      const countryCode =
+        typeof localStorage !== 'undefined' ? localStorage.getItem('evair-inbox-country') : null;
+      fetchLaravelAdminNotifications(lang, { countryCode })
+        .then((rows) => {
+          if (!cancelled) setNotifications(rows);
+        })
+        .catch(() => {
+          if (!cancelled) setNotifications([]);
+        });
+    }
 
-        setNotifications(MOCK_NOTIFICATIONS);
-        pull();
+    pull();
 
-        const resume = () => {
-            if (document.visibilityState === 'visible') pull();
-        };
+    const resume = () => {
+      if (document.visibilityState === 'visible') pull();
+    };
 
-        window.addEventListener('focus', pull);
-        document.addEventListener('visibilitychange', resume);
+    window.addEventListener('focus', pull);
+    document.addEventListener('visibilitychange', resume);
 
-        return () => {
-            cancelled = true;
-            window.removeEventListener('focus', pull);
-            document.removeEventListener('visibilitychange', resume);
-        };
-    }, [loggedIn]);
+    return () => {
+      cancelled = true;
+      window.removeEventListener('focus', pull);
+      document.removeEventListener('visibilitychange', resume);
+    };
+  }, [loggedIn]);
 
-    const onUpdateNotifications = useCallback(
-        (updater: (prev: AppNotification[]) => AppNotification[]) => {
-            setNotifications(updater);
-        },
-        [],
-    );
+  const onUpdateNotifications = useCallback(
+    (updater: (prev: AppNotification[]) => AppNotification[]) => {
+      setNotifications(updater);
+    },
+    [],
+  );
 
-    return { notifications, onUpdateNotifications };
+  return { notifications, onUpdateNotifications };
 }
