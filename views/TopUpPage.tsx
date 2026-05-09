@@ -937,16 +937,17 @@ const ReadyState: React.FC<ReadyProps> = ({
         let bestVolume = 0;
         let mostCode: string | null = null;
         for (const pkg of sorted) {
-            const volumeMB = pkg.volume ?? 0;
+            const volumeBytes = pkg.volume ?? 0;
             const price = pkg.price ?? 0;
-            if (volumeMB > 0 && price > 0) {
-                const ratePerGb = price / (volumeMB / 1024);
+            const volumeGiB = volumeBytes / (1024 ** 3);
+            if (volumeGiB > 0 && price > 0) {
+                const ratePerGb = price / volumeGiB;
                 if (ratePerGb < bestRate) {
                     bestRate = ratePerGb;
                     bestCode = pkg.packageCode;
                 }
-                if (volumeMB > bestVolume) {
-                    bestVolume = volumeMB;
+                if (volumeBytes > bestVolume) {
+                    bestVolume = volumeBytes;
                     mostCode = pkg.packageCode;
                 }
             }
@@ -1015,10 +1016,10 @@ const ReadyState: React.FC<ReadyProps> = ({
                     const selected = pkg.packageCode === selectedPackageCode;
                     const isBestValue = pkg.packageCode === bestValueCode;
                     const isMostData = pkg.packageCode === mostDataCode && !isBestValue;
-                    const volumeGb = (pkg.volume ?? 0) / 1024;
+                    const volumeGiB = (pkg.volume ?? 0) / (1024 ** 3);
                     const pricePerGb =
-                        volumeGb > 0 && pkg.price > 0
-                            ? formatPrice(pkg.price / volumeGb, pkg.currency)
+                        volumeGiB > 0 && pkg.price > 0
+                            ? formatPrice(pkg.price / volumeGiB, pkg.currency)
                             : null;
                     return (
                         <button
