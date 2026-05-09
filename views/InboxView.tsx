@@ -6,6 +6,7 @@ import FlagIcon from '../components/FlagIcon';
 import AppShellLiveChatButton from '../components/AppShellLiveChatButton';
 import { useSwipeBack } from '../hooks/useSwipeBack';
 import { useEdgeSwipeBack } from '../hooks/useEdgeSwipeBack';
+import { inboxDismiss, inboxMarkAllRead, inboxMarkRead } from '../utils/inboxClientState';
 
 type InboxFilter = 'all' | 'alerts' | 'orders' | 'promos';
 
@@ -59,15 +60,20 @@ const InboxView: React.FC<InboxViewProps> = ({
   const unreadCount = notifications.filter(n => !n.read).length;
   const filtered = notifications.filter(n => FILTER_MAP[filter].includes(n.type));
 
-  const markAllRead = () => onUpdateNotifications(prev => prev.map(n => ({ ...n, read: true })));
+  const markAllRead = () => {
+    inboxMarkAllRead(notifications.map((n) => n.id));
+    onUpdateNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
+  };
 
   const handleDelete = (id: string) => {
-    onUpdateNotifications(prev => prev.filter(n => n.id !== id));
+    inboxDismiss(id);
+    onUpdateNotifications((prev) => prev.filter((n) => n.id !== id));
     setDeleteConfirmId(null);
   };
 
   const handleNotifClick = (notif: AppNotification) => {
-    onUpdateNotifications(prev => prev.map(n => n.id === notif.id ? { ...n, read: true } : n));
+    inboxMarkRead(notif.id);
+    onUpdateNotifications((prev) => prev.map((n) => (n.id === notif.id ? { ...n, read: true } : n)));
     if (onNavigate && notif.actionLabel) {
       onNavigate('ESIM');
     }

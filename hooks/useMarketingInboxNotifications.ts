@@ -6,6 +6,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import type { AppNotification } from '@/types';
 import { fetchLaravelAdminNotifications } from '@/services/fetchLaravelAdminNotifications';
+import { applyInboxClientState } from '@/utils/inboxClientState';
 
 export interface UseMarketingInboxNotificationsResult {
   notifications: AppNotification[];
@@ -31,7 +32,7 @@ export function useMarketingInboxNotifications(loggedIn: boolean): UseMarketingI
         typeof localStorage !== 'undefined' ? localStorage.getItem('evair-inbox-country') : null;
       fetchLaravelAdminNotifications(lang, { countryCode })
         .then((rows) => {
-          if (!cancelled) setNotifications(rows);
+          if (!cancelled) setNotifications(applyInboxClientState(rows));
         })
         .catch(() => {
           if (!cancelled) setNotifications([]);

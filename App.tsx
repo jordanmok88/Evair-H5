@@ -27,6 +27,7 @@ import { retailCarrierRowForIso } from './utils/retailCarrierLookup';
 import { checkDataUsage, prefetchPackages, DEMO_MODE, mapRedTeaStatus, bindSim, queryProfile } from './services/dataService';
 import { logSimActivation } from './services/supabase';
 import { fetchLaravelAdminNotifications } from './services/fetchLaravelAdminNotifications';
+import { applyInboxClientState, clearInboxClientState } from './utils/inboxClientState';
 import { authService, userService, type UserDto, type UserSimDto } from './services/api';
 import { initPush, unregisterPush } from './services/pushService';
 import {
@@ -687,7 +688,9 @@ function CustomerApp() {
       if (cancelled) return;
       setNotifications((prev) => {
         const orders = prev.filter((n) => n.id.startsWith('N-'));
-        return [...rows, ...orders];
+        const withOverlay = applyInboxClientState(rows);
+        const orderOverlay = applyInboxClientState(orders);
+        return [...withOverlay, ...orderOverlay];
       });
     }
 
@@ -732,6 +735,7 @@ function CustomerApp() {
 
     try {
       localKeys.forEach((key) => localStorage.removeItem(key));
+      clearInboxClientState();
     } catch {
       /* noop */
     }
