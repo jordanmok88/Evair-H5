@@ -21,6 +21,7 @@ import {
   ApiError,
 } from '../services/api';
 import { chatService, newClientMsgId } from '../services/api/chat';
+import { checkDataUsage } from '../services/dataService';
 import type {
   LoginRequest,
   RegisterRequest,
@@ -92,7 +93,10 @@ const MODULES = {
     name: 'eSIM服务',
     methods: {
       getDetail: { name: '获取eSIM详情', params: ['iccid'] },
-      getUsage: { name: '查询用量', params: ['iccid', 'daily?', 'page?', 'size?'] },
+      getUsage: {
+        name: '查询用量 (My SIMs 路径: 未绑定时走供应商)',
+        params: ['iccid', 'daily?', 'page?', 'size?'],
+      },
       topup: { name: 'eSIM充值', params: ['iccid', 'packageCode', 'supplierType'] },
     },
   },
@@ -649,12 +653,14 @@ async function executeEsimMethod(method: string, params: Record<string, string>)
   switch (method) {
     case 'getDetail':
       return esimService.getDetail(params.iccid || DEFAULT_PARAMS.iccid);
-    case 'getUsage':
-      return esimService.getUsage(params.iccid || DEFAULT_PARAMS.iccid, {
-        daily: params.daily === 'true',
-        page: params.page ? parseInt(params.page) : undefined,
-        size: params.size ? parseInt(params.size) : undefined,
-      });
+    case 'getUsage': {
+      // `esimService.getUsage` is auth-gated and requires an active bind on
+      // `GET /app/sims/{iccid}/usage`. For ad-hoc ICCIDs (e.g. support / #api-test),
+      // use the same `checkDataUsage` stack as MySimsView — Laravel when bound,
+      // otherwise Netlify supplier `/esim/query`.
+      const iccid = params.iccid || DEFAULT_PARAMS.iccid;
+      return checkDataUsage(iccid);
+    }
     case 'topup':
       return esimService.topup({
         iccid: params.iccid || DEFAULT_PARAMS.iccid,
