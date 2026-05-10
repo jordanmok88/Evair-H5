@@ -5,7 +5,13 @@ alwaysApply: true
 
 # Ongoing work — read this first
 
-Last updated: 2026-04-25 22:30 PT — Phase 3/4/5 wrap session: shipped marketing page, top-up polish, post-activation cross-sell, full referral system (backend + H5 panel), email subdomain migration plan, cleared 3 pre-existing TS errors. Update this file at the END of every meaningful work session.
+Last updated: 2026-05-10 22:38 CST — Added 12cm x 12cm English EvairSIM physical SIM user manual print package under `docs/print/`, including editable HTML/CSS source, export script, reader-order PDF, and preview PNGs. Update this file at the END of every meaningful work session.
+
+## Print asset — 12cm SIM card user manual (2026-05-10)
+
+- Built an English-only, 16-page, reader-order saddle-stitch manual at `docs/print/evairsim-sim-card-user-manual-12cm-reader.pdf`.
+- Editable source lives in `docs/print/sim-card-user-manual.html` and `docs/print/print.css`; regenerate with `node docs/print/export-manual.mjs`.
+- PDF page size is 126mm x 126mm: 120mm trim plus 3mm bleed on all sides. Preview PNGs are in `docs/print/preview/`.
 
 ## Wrap session 2026-04-25 — Phases 3, 4, 5 + housekeeping
 
