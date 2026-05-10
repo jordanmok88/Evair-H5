@@ -5,14 +5,14 @@ alwaysApply: true
 
 # Ongoing work — read this first
 
-Last updated: 2026-05-11 00:07 CST — Revised the 12cm EvairSIM physical SIM manual to exactly 16 reader-order pages while preserving original-manual details and no-logo QR codes. Update this file at the END of every meaningful work session.
+Last updated: 2026-05-11 00:44 CST — Revised the 12cm EvairSIM physical SIM manual to exactly 16 reader-order pages with restored original-manual clip art/screenshots, preserved details, and no-logo QR codes. Update this file at the END of every meaningful work session.
 
 ## Print asset — 12cm SIM card user manual (2026-05-10)
 
 - Built an English-only, 16-page, reader-order saddle-stitch manual at `docs/print/evairsim-sim-card-user-manual-12cm-reader.pdf`.
 - Editable source lives in `docs/print/sim-card-user-manual.html` and `docs/print/print.css`; regenerate with `node docs/print/export-manual.mjs`.
 - PDF page size is 126mm x 126mm: 120mm trim plus 3mm bleed on all sides. Preview PNGs are in `docs/print/preview/`.
-- Revised after page-count feedback: current PDF is exactly 16 pages with denser layout, preserved original-manual content, and no-logo QR codes.
+- Revised after page-count and visual-feedback: current PDF is exactly 16 pages with denser layout, preserved original-manual content, original setup clip art/screenshots, and no-logo QR codes.
 
 ## Wrap session 2026-04-25 — Phases 3, 4, 5 + housekeeping
 

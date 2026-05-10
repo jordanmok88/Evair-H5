@@ -218,6 +218,31 @@ li {
   padding: 2.4mm;
 }
 
+.visual-steps .step {
+  min-height: 39mm;
+  padding: 2mm;
+}
+
+.step-art {
+  display: block;
+  width: 100%;
+  height: 17mm;
+  margin-bottom: 1.4mm;
+  object-fit: contain;
+}
+
+.step-art.icon-art {
+  height: 15mm;
+}
+
+.step-art.tall-art {
+  height: 20mm;
+}
+
+.step-art.wide-art {
+  height: 15mm;
+}
+
 .step strong,
 .card strong {
   display: block;
@@ -365,13 +390,34 @@ li {
   padding: 2.2mm;
 }
 
+.compact-steps.visual-steps .step {
+  min-height: 38mm;
+  padding: 1.8mm;
+}
+
 .compact-steps .step strong {
-  font-size: 7.8pt;
+  font-size: 7.6pt;
 }
 
 .compact-steps .step p {
-  font-size: 7.1pt;
+  font-size: 6.8pt;
   line-height: 1.24;
+}
+
+.compact-steps .step-art {
+  height: 15mm;
+  margin-bottom: 1mm;
+}
+
+.compact-steps .step-art.tall-art {
+  height: 18mm;
+}
+
+.compact-steps .badge {
+  width: 5.5mm;
+  height: 5.5mm;
+  font-size: 7pt;
+  margin-bottom: 0.8mm;
 }
 
 .compact-table {
