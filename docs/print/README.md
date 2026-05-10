@@ -18,4 +18,4 @@ From the project root:
 node docs/print/export-manual.mjs
 ```
 
-The PDF is prepared as reader-order pages for saddle stitching. The current layout uses 28 pages so the 12cm booklet keeps larger, easier-to-read type. The printing factory should handle booklet imposition.
+The PDF is prepared as reader-order pages for saddle stitching. The current layout uses 24 pages so the 12cm booklet keeps readable type while preserving the full source-manual information. The printing factory should handle booklet imposition.
