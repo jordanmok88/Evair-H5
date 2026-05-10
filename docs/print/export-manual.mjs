@@ -102,10 +102,8 @@ if (!existsSync(chromePath)) {
 mkdirSync(previewDir, { recursive: true });
 rmSync(userDataDir, { recursive: true, force: true });
 rmSync(outputPdf, { force: true });
-for (let index = 1; index <= 16; index += 1) {
-  const page = String(index).padStart(2, "0");
-  rmSync(resolve(previewDir, `page-${page}.png`), { force: true });
-}
+rmSync(previewDir, { recursive: true, force: true });
+mkdirSync(previewDir, { recursive: true });
 
 await printPdf();
 
