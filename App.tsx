@@ -297,8 +297,12 @@ function CustomerApp() {
         });
       })
       .catch(() => {
-        // 如果获取失败，清除 token 让用户重新登录
-        authService.logout();
+        // If the stored session is no longer valid, keep React state in
+        // sync with the token clear so Profile / wallet gates show login.
+        setIsLoggedIn(false);
+        setUser(undefined);
+        clearInboxClientState();
+        void authService.logout().catch(() => undefined);
         userFetched.current = false;
       });
   }, []);
