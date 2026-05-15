@@ -44,6 +44,7 @@ import {
 } from '../../services/dataService';
 import { userService, orderService, paymentService } from '../../services/api';
 import { isMobileDevice } from '../../utils/device';
+import { storePendingEsimOrder } from '../../utils/esimCheckoutPending';
 import { planCardNetworkLine } from '../../utils/retailPackageNetworks';
 
 interface DesktopEsimCheckoutDrawerProps {
@@ -147,14 +148,14 @@ const DesktopEsimCheckoutDrawer: React.FC<DesktopEsimCheckoutDrawerProps> = ({
 
             // Same key + shape as mobile ShopView so the shared
             // useEsimCheckoutFlow hook works without branching.
-            localStorage.setItem('pending_esim_order', JSON.stringify({
+            storePendingEsimOrder({
                 orderId: order.id,
                 orderNo: order.orderNumber,
                 packageName,
                 email,
                 sessionId: checkout.sessionId,
                 countryCode: countryCode.toLowerCase(),
-            }));
+            });
 
             window.location.href = checkout.url;
         } catch (err) {
