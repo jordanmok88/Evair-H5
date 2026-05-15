@@ -43,6 +43,10 @@ import { useEffect, useState } from 'react';
 import type { EsimOrderResult } from '../types';
 import { emailService } from '../services/api';
 import { pollEsimOrderUntilProvisioned } from '../services/api/order';
+import { consumePendingEsimOrder } from '../utils/esimCheckoutPending';
+import type { PendingEsimOrder } from '../utils/esimCheckoutPending';
+
+export type { PendingEsimOrder } from '../utils/esimCheckoutPending';
 
 export type CheckoutPhase =
     | 'idle'
@@ -51,21 +55,6 @@ export type CheckoutPhase =
     | 'provisioning'
     | 'success'
     | 'error';
-
-export interface PendingEsimOrder {
-    /** Order ID (numeric) from POST /app/orders — used to poll order detail */
-    orderId?: number;
-    /** Order number string from POST /app/orders — for display / email */
-    orderNo?: string;
-    packageName?: string;
-    email?: string;
-    countryCode?: string;
-    sessionId?: string;
-    /** Legacy fields — kept for type compat, no longer written by new flow */
-    packageCode?: string;
-    transactionId?: string;
-    amount?: number;
-}
 
 export interface EsimCheckoutFlowState {
     phase: CheckoutPhase;
@@ -77,27 +66,12 @@ export interface EsimCheckoutFlowState {
     reset: () => void;
 }
 
-const PENDING_KEY = 'pending_esim_order';
 const SUCCESS_CACHE_KEY = 'esim_checkout_last_success';
 
 interface SuccessSnapshot {
     result: EsimOrderResult;
     pending: PendingEsimOrder | null;
     emailSent: boolean;
-}
-
-function readPending(): PendingEsimOrder | null {
-    const raw = typeof window === 'undefined'
-        ? null
-        : localStorage.getItem(PENDING_KEY);
-    if (!raw) return null;
-    try {
-        return JSON.parse(raw) as PendingEsimOrder;
-    } catch (err) {
-        console.error('[useEsimCheckoutFlow] pending_esim_order corrupt', err);
-        try { localStorage.removeItem(PENDING_KEY); } catch { /* ignore */ }
-        return null;
-    }
 }
 
 function readSuccessSnapshot(): SuccessSnapshot | null {
@@ -160,7 +134,7 @@ export function useEsimCheckoutFlow(): EsimCheckoutFlowState {
             return;
         }
 
-        const pendingOrder = readPending();
+        const pendingOrder = consumePendingEsimOrder(params.get('session_id'));
         if (!pendingOrder) {
             setPhase('error');
             setError(
@@ -171,7 +145,6 @@ export function useEsimCheckoutFlow(): EsimCheckoutFlowState {
         }
 
         setPending(pendingOrder);
-        try { localStorage.removeItem(PENDING_KEY); } catch { /* ignore */ }
         cleanUrl();
 
         // Legacy entries without orderId can't be fulfilled through the

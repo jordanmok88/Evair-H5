@@ -31,6 +31,7 @@ import { emailService, orderService, paymentService } from '../services/api';
 import { pollEsimOrderUntilProvisioned } from '../services/api/order';
 import type { OrderDetailDto } from '../services/api/types';
 import { useSwipeBack } from '../hooks/useSwipeBack';
+import { consumePendingEsimOrder, storePendingEsimOrder } from '../utils/esimCheckoutPending';
 
 import { Bell, UserCircle } from 'lucide-react';
 import { AppNotification } from '../types';
@@ -537,14 +538,14 @@ const ShopView: React.FC<ShopViewProps> = ({
 
       // Step 3: 回跳后只需要 order_id 就能轮询 — 不再保留 transactionId/amount
       // （供应商订单号由 Webhook 履约后写在 OrderDetailResource.esim 里返回）
-      localStorage.setItem('pending_esim_order', JSON.stringify({
+      storePendingEsimOrder({
         orderId: order.id,
         orderNo: order.orderNumber,
         packageName,
         email,
         countryCode,
         sessionId: checkout.sessionId,
-      }));
+      });
 
       window.location.href = checkout.url;
       setTimeout(() => setIsProcessing(false), 5000);
@@ -569,27 +570,20 @@ const ShopView: React.FC<ShopViewProps> = ({
 
     if (!stripeStatus) return;
 
+    const sessionId = params.get('session_id');
     window.history.replaceState({}, '', window.location.pathname);
 
     if (stripeStatus === 'cancelled') return;
 
     if (stripeStatus !== 'success') return;
 
-    const pendingRaw = localStorage.getItem('pending_esim_order');
-    if (!pendingRaw) return;
-
-    let pending: { orderId?: number; orderNo?: string; packageName?: string; email?: string };
-    try {
-      pending = JSON.parse(pendingRaw);
-    } catch (err) {
-      console.error('[ShopView] pending_esim_order corrupt, dropping', err);
-      localStorage.removeItem('pending_esim_order');
+    const pending = consumePendingEsimOrder(sessionId);
+    if (!pending) {
       setOrderError(
         'We could not match your payment to a pending order. Please contact support — your card was charged.'
       );
       return;
     }
-    localStorage.removeItem('pending_esim_order');
 
     if (!pending.orderId) {
       // 老格式（迁移前的 transactionId/amount/sessionId 三件套）已经没法
