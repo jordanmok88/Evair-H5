@@ -5,7 +5,13 @@ alwaysApply: true
 
 # Ongoing work — read this first
 
-Last updated: 2026-05-11 00:44 CST — Revised the 12cm EvairSIM physical SIM manual to exactly 16 reader-order pages with restored original-manual clip art/screenshots, preserved details, and no-logo QR codes. Update this file at the END of every meaningful work session.
+Last updated: 2026-05-16 10:10 CST — Daily critical-bug automation hardened legacy checkout pricing, bounded API 401 retries, and fixed top-up supplier routing / wallet refresh state. Update this file at the END of every meaningful work session.
+
+## Critical bug sweep — checkout, auth retry, top-up (2026-05-16)
+
+- Hardened Netlify `/api/stripe-checkout`: it now proxies authenticated Laravel `/app/payments/checkout` by `orderNo` and rejects legacy browser-priced payloads (`priceUsd` is ignored), matching the Cloudflare Pages function.
+- Added a one-retry guard to `services/api/client.ts` so a persistent 401 after refresh clears tokens and fails closed instead of recursively refreshing forever.
+- Fixed `/top-up` SIM-card fallback routing so checkout uses the supplier type that actually produced the recharge package, and mirrored wallet refresh/update state into `serverSims` so server-backed wallets do not hide fresh usage/purchase state.
 
 ## Print asset — 12cm SIM card user manual (2026-05-10)
 
