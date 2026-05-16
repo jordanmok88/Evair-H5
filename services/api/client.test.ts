@@ -224,6 +224,47 @@ describe('401 token refresh is single-flight', () => {
     expect(getRefreshToken()).toBe('rt-2');
   });
 
+  test('stops after one refresh when the retried request is still unauthorized', async () => {
+    setAccessToken('expired');
+    setRefreshToken('rt-1');
+
+    let refreshCalls = 0;
+    let originalCalls = 0;
+    const fetchMock = vi.fn(async (input: RequestInfo | URL) => {
+      const url = String(input);
+      if (url.endsWith('/app/auth/refresh')) {
+        refreshCalls += 1;
+        return new Response(
+          JSON.stringify({
+            code: '200',
+            msg: 'ok',
+            data: { token: 'new-access', refresh_token: 'rt-2' },
+          }),
+          { status: 200, headers: { 'Content-Type': 'application/json' } },
+        );
+      }
+      if (url.endsWith('/app/users/me')) {
+        originalCalls += 1;
+        return new Response(
+          JSON.stringify({ code: 'AUTH_001', msg: 'unauthorized', data: null }),
+          { status: 401, headers: { 'Content-Type': 'application/json' } },
+        );
+      }
+      throw new Error(`Unexpected URL: ${url}`);
+    });
+    vi.stubGlobal('fetch', fetchMock);
+
+    await expect(get('/app/users/me')).rejects.toMatchObject({
+      name: 'ApiError',
+      code: -3,
+      httpStatus: 401,
+    });
+    expect(refreshCalls).toBe(1);
+    expect(originalCalls).toBe(2); // first 401 + one retry, then fail closed
+    expect(getAccessToken()).toBeNull();
+    expect(getRefreshToken()).toBeNull();
+  });
+
   test('parallel 401s coalesce into one refresh call', async () => {
     setAccessToken('expired');
     setRefreshToken('rt-1');

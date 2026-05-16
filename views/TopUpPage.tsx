@@ -93,13 +93,19 @@ interface TopUpPageProps {
  *   ready             → catalogue loaded; customer picks a plan
  *   error             → generic API failure, retry
  */
+type RechargeSupplier = 'pccw' | 'esimaccess';
+interface RechargeCatalogue {
+    packages: PackageDto[];
+    supplierType: RechargeSupplier;
+}
+
 type Phase =
     | { kind: 'idle' }
     | { kind: 'loading' }
     | { kind: 'not_found' }
     | { kind: 'pending_shipment' }
     | { kind: 'needs_activation' }
-    | { kind: 'ready'; preview: ActivationPreviewData; packages: PackageDto[] }
+    | { kind: 'ready'; preview: ActivationPreviewData; packages: PackageDto[]; supplierType: RechargeSupplier }
     | { kind: 'error'; message: string };
 
 const ICCID_REGEX = /^[0-9A-Za-z]{15,22}$/;
@@ -107,7 +113,7 @@ const ICCID_REGEX = /^[0-9A-Za-z]{15,22}$/;
 async function fetchRechargeCatalogue(
     iccid: string,
     rechargeKind: 'sim' | 'esim',
-): Promise<PackageDto[]> {
+): Promise<RechargeCatalogue> {
     if (rechargeKind === 'sim') {
         try {
             const primary = await packageService.getRechargePackages(iccid, 'pccw');
@@ -116,15 +122,18 @@ async function fetchRechargeCatalogue(
                 const fb = await packageService.getRechargePackages(iccid, 'esimaccess');
                 packages = fb.packages ?? [];
                 packages = packages.filter(p => topUpKeepsStrictlyGreaterThanOneGib(p.volume));
+                if (packages.length > 0) return { packages, supplierType: 'esimaccess' };
             }
             if (packages.length === 0) {
                 const omit = await packageService.getRechargePackages(iccid);
                 packages = omit.packages ?? [];
                 packages = packages.filter(p => topUpKeepsStrictlyGreaterThanOneGib(p.volume));
+                const supplierType = packages.every((p) => p.supplierType === 'esimaccess') ? 'esimaccess' : 'pccw';
+                return { packages, supplierType };
             }
-            return packages;
+            return { packages, supplierType: 'pccw' };
         } catch {
-            return [];
+            return { packages: [], supplierType: 'pccw' };
         }
     }
     try {
@@ -135,10 +144,15 @@ async function fetchRechargeCatalogue(
             packages = omit.packages ?? [];
         }
         packages = packages.filter(p => topUpKeepsStrictlyGreaterThanOneGib(p.volume));
-        return packages;
+        return { packages, supplierType: 'esimaccess' };
     } catch {
-        return [];
+        return { packages: [], supplierType: 'esimaccess' };
     }
+}
+
+function supplierForSelectedPackage(phase: Extract<Phase, { kind: 'ready' }>, code: string | null): RechargeSupplier {
+    const selected = phase.packages.find((p) => p.packageCode === code);
+    return selected?.supplierType ?? phase.supplierType;
 }
 
 function formatMaskedIccid(full: string): string {
@@ -224,7 +238,7 @@ const TopUpPage: React.FC<TopUpPageProps> = ({ iccid: initialIccid, initialTab }
         setSimPhase({ kind: 'loading' });
 
         Promise.all([activationService.previewByIccid(simIccid), fetchRechargeCatalogue(simIccid, 'sim')])
-            .then(([previewResult, packages]) => {
+            .then(([previewResult, catalogue]) => {
                 if (cancelled) return;
 
                 if (previewResult.kind === 'not_found') {
@@ -246,7 +260,12 @@ const TopUpPage: React.FC<TopUpPageProps> = ({ iccid: initialIccid, initialTab }
                 }
 
                 if (cancelled) return;
-                setSimPhase({ kind: 'ready', preview: previewResult.data, packages });
+                setSimPhase({
+                    kind: 'ready',
+                    preview: previewResult.data,
+                    packages: catalogue.packages,
+                    supplierType: catalogue.supplierType,
+                });
             })
             .catch((err) => {
                 if (cancelled) return;
@@ -308,7 +327,7 @@ const TopUpPage: React.FC<TopUpPageProps> = ({ iccid: initialIccid, initialTab }
             activationService.previewByIccid(esimIccidSelected),
             fetchRechargeCatalogue(esimIccidSelected, 'esim'),
         ])
-            .then(([previewResult, packages]) => {
+            .then(([previewResult, catalogue]) => {
                 if (cancelled) return;
 
                 if (previewResult.kind === 'not_found') {
@@ -330,7 +349,12 @@ const TopUpPage: React.FC<TopUpPageProps> = ({ iccid: initialIccid, initialTab }
                 }
 
                 if (cancelled) return;
-                setEsimPhase({ kind: 'ready', preview: previewResult.data, packages });
+                setEsimPhase({
+                    kind: 'ready',
+                    preview: previewResult.data,
+                    packages: catalogue.packages,
+                    supplierType: catalogue.supplierType,
+                });
             })
             .catch((err) => {
                 if (cancelled) return;
@@ -465,7 +489,7 @@ const TopUpPage: React.FC<TopUpPageProps> = ({ iccid: initialIccid, initialTab }
                         {simPhase.kind === 'ready' && simCheckoutOpen && (
                             <CheckoutFlow
                                 iccid={simPhase.preview.iccid}
-                                supplierType="pccw"
+                                supplierType={supplierForSelectedPackage(simPhase, simSelectedPackageCode)}
                                 selected={
                                     simPhase.packages.find((p) => p.packageCode === simSelectedPackageCode) ??
                                     null
@@ -631,7 +655,7 @@ const TopUpPage: React.FC<TopUpPageProps> = ({ iccid: initialIccid, initialTab }
                                 {esimCheckoutOpen && (
                                     <CheckoutFlow
                                         iccid={esimPhase.preview.iccid}
-                                        supplierType="esimaccess"
+                                        supplierType={supplierForSelectedPackage(esimPhase, esimSelectedPkg)}
                                         selected={
                                             esimPhase.packages.find((p) => p.packageCode === esimSelectedPkg) ??
                                             null

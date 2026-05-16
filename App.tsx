@@ -854,6 +854,9 @@ function CustomerApp() {
         }),
     };
     setActiveSims([newSim, ...activeSims]);
+    if (authService.isLoggedIn()) {
+      void fetchUserSims();
+    }
 
     const planLabel = purchaseInfo?.planName || (currentType === 'ESIM' ? 'eSIM' : 'SIM Card');
     const isEsim = currentType === 'ESIM';
@@ -881,6 +884,7 @@ function CustomerApp() {
 
   const handleUpdateSim = useCallback((simId: string, updates: Partial<ActiveSim>) => {
     setActiveSims(prev => prev.map(s => s.id === simId ? { ...s, ...updates } : s));
+    setServerSims(prev => prev.map(s => s.id === simId ? { ...s, ...updates } : s));
   }, []);
 
   const handleAddCard = async (iccid: string, profile?: EsimProfileResult, activationCode?: string) => {
