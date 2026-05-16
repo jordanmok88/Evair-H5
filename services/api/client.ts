@@ -237,6 +237,8 @@ export function addErrorInterceptor(interceptor: ErrorInterceptor): void {
 export interface RequestConfig extends RequestInit {
   params?: Record<string, unknown>;
   skipAuth?: boolean;
+  /** Internal guard: a logical request gets at most one 401 refresh retry. */
+  _retried401?: boolean;
 }
 
 // ─── Token 刷新状态 ──────────────────────────────────────────────────────
@@ -359,8 +361,9 @@ export async function request<T>(
   // 发起请求
   let response: Response;
   try {
+    const { params: _params, skipAuth: _skipAuth, _retried401: _retried401, ...fetchConfig } = finalConfig;
     response = await fetch(url, {
-      ...finalConfig,
+      ...fetchConfig,
       headers,
     });
   } catch (err) {
@@ -378,6 +381,15 @@ export async function request<T>(
 
   // 处理 401 未授权
   if (response.status === 401 && !finalConfig.skipAuth) {
+    if (finalConfig._retried401) {
+      clearTokens();
+      const error = new ApiError(-3, 'Unauthorized', 401);
+      for (const interceptor of errorInterceptors) {
+        await interceptor(error);
+      }
+      throw error;
+    }
+
     if (!isRefreshing) {
       isRefreshing = true;
       refreshPromise = refreshAccessToken().finally(() => {
@@ -389,7 +401,7 @@ export async function request<T>(
     try {
       await refreshPromise;
       // 重试原请求
-      return request<T>(endpoint, config);
+      return request<T>(endpoint, { ...config, _retried401: true });
     } catch {
       clearTokens();
       const error = new ApiError(-3, 'Unauthorized', 401);
