@@ -73,10 +73,21 @@ export function createChatProvider(name?: ChatProviderName): ChatProvider {
 // 在切换瞬间被销毁后立刻重建，丢失会话状态并触发 Reverb 重连。
 
 const DISPOSE_DELAY_MS = 800;
+export const SHARED_CHAT_PROVIDER_RESET_EVENT = 'evair-chat-provider-reset';
 
 let shared: ChatProvider | null = null;
 let refCount = 0;
 let disposeTimer: ReturnType<typeof setTimeout> | null = null;
+let resetVersion = 0;
+
+function emitSharedProviderReset(): void {
+  resetVersion += 1;
+  if (typeof window !== 'undefined') {
+    window.dispatchEvent(
+      new CustomEvent(SHARED_CHAT_PROVIDER_RESET_EVENT, { detail: { version: resetVersion } }),
+    );
+  }
+}
 
 export function acquireSharedChatProvider(): ChatProvider {
   if (disposeTimer) {
@@ -101,6 +112,26 @@ export function releaseSharedChatProvider(): void {
       shared = null;
     }
   }, DISPOSE_DELAY_MS);
+}
+
+export function resetSharedChatProvider(): void {
+  if (disposeTimer) {
+    clearTimeout(disposeTimer);
+    disposeTimer = null;
+  }
+  if (shared) {
+    shared.dispose();
+    shared = null;
+  }
+  refCount = 0;
+  emitSharedProviderReset();
+}
+
+export function onSharedChatProviderReset(listener: () => void): () => void {
+  if (typeof window === 'undefined') return () => {};
+  const handler = () => listener();
+  window.addEventListener(SHARED_CHAT_PROVIDER_RESET_EVENT, handler);
+  return () => window.removeEventListener(SHARED_CHAT_PROVIDER_RESET_EVENT, handler);
 }
 
 export function peekSharedChatProvider(): ChatProvider | null {
