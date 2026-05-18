@@ -11,11 +11,21 @@
  */
 
 import { useEffect, useRef, useState } from 'react';
-import { acquireSharedChatProvider, releaseSharedChatProvider } from '../services/chat';
+import {
+  acquireSharedChatProvider,
+  onSharedChatProviderReset,
+  releaseSharedChatProvider,
+} from '../services/chat';
 
 export function useUnreadChat(active: boolean): { unread: number; reset: () => void } {
   const [unread, setUnread] = useState(0);
+  const [providerResetVersion, setProviderResetVersion] = useState(0);
   const initRef = useRef(false);
+
+  useEffect(() => onSharedChatProviderReset(() => {
+    setUnread(0);
+    setProviderResetVersion(v => v + 1);
+  }), []);
 
   useEffect(() => {
     if (!active) return;
@@ -52,7 +62,7 @@ export function useUnreadChat(active: boolean): { unread: number; reset: () => v
       releaseSharedChatProvider();
       initRef.current = false;
     };
-  }, [active]);
+  }, [active, providerResetVersion]);
 
   const reset = () => setUnread(0);
   return { unread, reset };

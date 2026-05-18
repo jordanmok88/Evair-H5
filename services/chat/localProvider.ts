@@ -32,6 +32,7 @@ export function createLocalProvider(): ChatProvider {
     isReady() { return true; },
 
     async ensureConversation(_input?: EnsureConversationInput): Promise<ConversationHandle> {
+      messages.length = 0;
       conversationId = `local-${Date.now()}`;
       setConnection('offline');
       return { id: conversationId, status: 'open', existing: false };

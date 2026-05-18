@@ -52,6 +52,7 @@ import { useCustomerAppDesktopQr } from './hooks/useMobileSignInGate';
 import MobileOnlyNotice from './components/marketing/MobileOnlyNotice';
 import MarketingContactDrawer from './components/marketing/MarketingContactDrawer';
 import LiveChatEdgeLauncher from './components/marketing/LiveChatEdgeLauncher';
+import { resetSharedChatProvider } from './services/chat';
 
 /** Laravel `SupplierSeeder` default ordering: PCCW = 1, ESIMACCESS = 2. See Evair-Laravel `docs/ops/STAGING_PREVIEW_BINDINGS_JORDAN.md`. */
 const LARAVEL_SUPPLIER_ID_PCCW = 1;
@@ -80,6 +81,24 @@ function hashFragmentForTab(tab: Tab): string {
       return '#esim';
     default:
       return '#esim';
+  }
+}
+
+function normalizeStoredTab(value: string | null): Tab {
+  switch (value) {
+    case Tab.SIM_CARD:
+    case Tab.ESIM:
+    case Tab.INBOX:
+    case Tab.PROFILE:
+    case Tab.DIALER:
+      return value;
+    case Tab.SHOP:
+      return Tab.ESIM;
+    case Tab.SETTINGS:
+      return Tab.PROFILE;
+    case Tab.MYSIMS:
+    default:
+      return Tab.SIM_CARD;
   }
 }
 
@@ -330,7 +349,7 @@ function CustomerApp() {
       const fromHash = HASH_TO_TAB[window.location.hash.toLowerCase()];
       if (fromHash) return fromHash;
     }
-    return (sessionStorage.getItem('evair-activeTab') as Tab) || Tab.SIM_CARD;
+    return normalizeStoredTab(sessionStorage.getItem('evair-activeTab'));
   });
   const previousTab = useRef<Tab>(Tab.SIM_CARD);
   const viewportMdUp = useViewportMinWidth(APP_WIDE_LAYOUT_MIN_PX);
@@ -751,6 +770,7 @@ function CustomerApp() {
 
   // 登录成功回调 - 接收后端返回的用户信息
   const handleLoginSuccess = (userData: UserDto) => {
+    resetSharedChatProvider();
     setIsLoggedIn(true);
     setUser({
       id: String(userData.id),
@@ -788,6 +808,7 @@ function CustomerApp() {
       setActiveSims([]);
       setServerSims([]);
       clearLogoutStorage();
+      resetSharedChatProvider();
     }
   };
 

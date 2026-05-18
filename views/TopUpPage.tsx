@@ -35,7 +35,7 @@
  * @see docs/ACTIVATION_FUNNEL.md §3 — H5 deliverables (TopUp surface)
  */
 
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
     AlertCircle,
@@ -104,6 +104,16 @@ type Phase =
 
 const ICCID_REGEX = /^[0-9A-Za-z]{15,22}$/;
 
+function stampRechargeSupplierType(
+    packages: PackageDto[],
+    supplierType: 'pccw' | 'esimaccess',
+): PackageDto[] {
+    return packages.map((pkg) => ({
+        ...pkg,
+        supplierType: pkg.supplierType ?? supplierType,
+    }));
+}
+
 async function fetchRechargeCatalogue(
     iccid: string,
     rechargeKind: 'sim' | 'esim',
@@ -111,10 +121,10 @@ async function fetchRechargeCatalogue(
     if (rechargeKind === 'sim') {
         try {
             const primary = await packageService.getRechargePackages(iccid, 'pccw');
-            let packages = primary.packages ?? [];
+            let packages = stampRechargeSupplierType(primary.packages ?? [], 'pccw');
             if (packages.length === 0) {
                 const fb = await packageService.getRechargePackages(iccid, 'esimaccess');
-                packages = fb.packages ?? [];
+                packages = stampRechargeSupplierType(fb.packages ?? [], 'esimaccess');
                 packages = packages.filter(p => topUpKeepsStrictlyGreaterThanOneGib(p.volume));
             }
             if (packages.length === 0) {
@@ -129,7 +139,7 @@ async function fetchRechargeCatalogue(
     }
     try {
         const primary = await packageService.getRechargePackages(iccid, 'esimaccess');
-        let packages = primary.packages ?? [];
+        let packages = stampRechargeSupplierType(primary.packages ?? [], 'esimaccess');
         if (packages.length === 0) {
             const omit = await packageService.getRechargePackages(iccid);
             packages = omit.packages ?? [];
@@ -1115,20 +1125,24 @@ const CheckoutFlow: React.FC<CheckoutProps> = ({ iccid, selected, supplierType, 
     const [step, setStep] = useState<CheckoutStep>(() =>
         authService.isLoggedIn() ? { kind: 'creating_order' } : { kind: 'auth' },
     );
+    const checkoutStartedRef = useRef(false);
 
     // Once authed (either at boot or after the inline form), kick off the
     // topup order. Centralised so both code paths converge here.
     const startCheckout = async () => {
+        if (checkoutStartedRef.current) return;
         if (!selected) {
             setStep({ kind: 'error', message: 'Please pick a plan first.' });
             return;
         }
+        checkoutStartedRef.current = true;
         setStep({ kind: 'creating_order' });
         try {
+            const resolvedSupplierType = selected.supplierType ?? supplierType;
             const order = await esimService.topup({
                 iccid,
                 packageCode: selected.packageCode,
-                supplierType,
+                supplierType: resolvedSupplierType,
             });
             const session = await esimService.createRechargePayment(order.id);
             setStep({
@@ -1137,6 +1151,7 @@ const CheckoutFlow: React.FC<CheckoutProps> = ({ iccid, selected, supplierType, 
                 rechargeId: order.id,
             });
         } catch (err) {
+            checkoutStartedRef.current = false;
             const message = err instanceof Error ? err.message : 'Could not create the order.';
             setStep({ kind: 'error', message });
         }
