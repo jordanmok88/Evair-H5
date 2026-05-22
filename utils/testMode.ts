@@ -76,6 +76,9 @@ export function computeTestModeEnabled(): boolean {
   // (real users) or inside the desktop APP preview tab (ops / QA
   // screenshots). The banner exists purely for desktop H5 dev work.
   if (runningInsideNativeApp() || isAppPreviewHash()) return false;
+  // Test mode bypasses normal checkout in parts of the shop. Only enable
+  // it when supplier calls are explicitly mocked by VITE_DEMO_ESIM.
+  if (import.meta.env.VITE_DEMO_ESIM !== '1') return false;
   if (urlHasTestMode()) {
     try {
       sessionStorage.removeItem(DEV_TEST_MODE_OFF_KEY);
