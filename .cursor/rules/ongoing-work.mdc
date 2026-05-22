@@ -5,7 +5,13 @@ alwaysApply: true
 
 # Ongoing work — read this first
 
-Last updated: 2026-05-11 00:44 CST — Revised the 12cm EvairSIM physical SIM manual to exactly 16 reader-order pages with restored original-manual clip art/screenshots, preserved details, and no-logo QR codes. Update this file at the END of every meaningful work session.
+Last updated: 2026-05-22 02:10 UTC — Closed a critical legacy supplier-proxy write hole: `/api/esim` now blocks `/esim/order` and `/esim/topup` on both Cloudflare Pages and Netlify functions, and H5 test-order bypass only enables when `VITE_DEMO_ESIM=1`. Update this file at the END of every meaningful work session.
+
+## Critical supplier proxy hardening (2026-05-22)
+
+- `/api/esim` is read-only for the legacy Red Tea proxy: allowed endpoints are `/package/list`, `/esim/query`, and `/esim/usage`.
+- Supplier write operations (`/esim/order`, `/esim/topup`) must go through Laravel checkout/payment flows, not browser-callable proxy endpoints.
+- The H5 shop's direct "Test Order" path is gated behind `VITE_DEMO_ESIM=1`; production `?testmode=1` must not bypass checkout or provision an eSIM directly.
 
 ## Print asset — 12cm SIM card user manual (2026-05-10)
 
