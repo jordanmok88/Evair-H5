@@ -53,7 +53,9 @@ async function proxyRequest(endpoint, body) {
   return data;
 }
 
-const ALLOWED_ENDPOINTS = ['/package/list', '/esim/order', '/esim/query', '/esim/topup', '/esim/usage'];
+// Keep this proxy read-only from the browser. Provisioning and recharge must go
+// through Laravel so auth, pricing, payment state, and audit logs are enforced.
+const ALLOWED_ENDPOINTS = ['/package/list', '/esim/query', '/esim/usage'];
 
 export default async (req) => {
   const { allowOrigin, rejectCrossOriginBrowser } = resolveCors(req);
