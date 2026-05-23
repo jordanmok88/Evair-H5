@@ -48,7 +48,9 @@ async function proxyRequest(endpoint: string, body: unknown, env: CfEnv): Promis
   }
 }
 
-const ALLOWED_ENDPOINTS = ['/package/list', '/esim/order', '/esim/query', '/esim/topup', '/esim/usage'];
+// Keep this proxy read-only from the browser. Provisioning and recharge must go
+// through Laravel so auth, pricing, payment state, and audit logs are enforced.
+const ALLOWED_ENDPOINTS = ['/package/list', '/esim/query', '/esim/usage'];
 
 export async function onRequest(context: { request: Request; env: CfEnv }): Promise<Response> {
   const { request: req, env } = context;
