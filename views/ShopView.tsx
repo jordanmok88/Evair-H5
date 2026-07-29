@@ -19,6 +19,7 @@ import {
   retailPrice,
   packagePriceUsd,
   orderEsim,
+  DEMO_MODE,
   type ContinentTab,
   formatGB,
   POPULAR_COUNTRY_CODES,
@@ -458,8 +459,11 @@ const ShopView: React.FC<ShopViewProps> = ({
     setEmailSent(false);
 
     const txnId = `evair_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+    // Only mock-checkout when supplier writes are also mocked. Production
+    // `?testmode=1` must never call Red Tea /esim/order for free.
+    const canUseTestOrder = testMode && DEMO_MODE;
 
-    if (testMode) {
+    if (canUseTestOrder) {
       try {
         const result = await orderEsim({
           packageCode: selectedEsimPkg.packageCode,
@@ -978,7 +982,7 @@ const ShopView: React.FC<ShopViewProps> = ({
                   disabled={isProcessing || !email.includes('@')}
                   className="w-full bg-brand-orange text-white py-3 rounded-xl font-bold text-sm shadow-lg shadow-orange-500/20 active:scale-[0.98] transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-orange-600"
                 >
-                  {isProcessing ? <><Loader2 size={18} className="animate-spin" /> Processing...</> : testMode
+                  {isProcessing ? <><Loader2 size={18} className="animate-spin" /> Processing...</> : testMode && DEMO_MODE
                     ? <><Zap size={16} /> Test Order — ${packagePriceUsd(selectedEsimPkg).toFixed(2)}</>
                     : <><CreditCard size={16} /> {t('shop.pay')} ${packagePriceUsd(selectedEsimPkg).toFixed(2)}</>}
                 </button>
