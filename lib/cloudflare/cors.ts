@@ -29,7 +29,7 @@ export function jsonHeaders(allowOrigin: string | null): Record<string, string> 
   const h: Record<string, string> = {
     'Content-Type': 'application/json',
     'Access-Control-Allow-Methods': 'POST, OPTIONS',
-    'Access-Control-Allow-Headers': 'Content-Type',
+    'Access-Control-Allow-Headers': 'Content-Type, Authorization',
     Vary: 'Origin',
   };
   if (allowOrigin) h['Access-Control-Allow-Origin'] = allowOrigin;
