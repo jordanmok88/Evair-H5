@@ -5,7 +5,14 @@ alwaysApply: true
 
 # Ongoing work — read this first
 
-Last updated: 2026-05-11 00:44 CST — Revised the 12cm EvairSIM physical SIM manual to exactly 16 reader-order pages with restored original-manual clip art/screenshots, preserved details, and no-logo QR codes. Update this file at the END of every meaningful work session.
+Last updated: 2026-07-29 UTC — Closed critical legacy holes: anonymous `/api/esim` order/topup, Netlify browser-priced checkout, production `?testmode=1` free provisioning, and unbounded API 401 refresh recursion. Update this file at the END of every meaningful work session.
+
+## Critical security hardening (2026-07-29)
+
+- `/api/esim` is read-only: blocks `/esim/order` + `/esim/topup` on Cloudflare Pages and Netlify; keep `/package/list`, `/esim/query`, `/esim/usage`.
+- Netlify `/api/stripe-checkout` now requires auth + `orderNo` and proxies Laravel `/app/payments/checkout` (no browser `priceUsd`).
+- Shop test-order / `computeTestModeEnabled()` require `VITE_DEMO_ESIM=1`.
+- API client refreshes at most once per request (`_authRetry`).
 
 ## Print asset — 12cm SIM card user manual (2026-05-10)
 
