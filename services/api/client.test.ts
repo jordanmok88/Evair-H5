@@ -356,4 +356,41 @@ describe('401 token refresh is single-flight', () => {
     expect(seenUrls).toContain(`${BASE}/app/auth/refresh`);
     expect(seenUrls.find((u) => u.endsWith('/h5/auth/refresh'))).toBeUndefined();
   });
+
+  test('does not recurse forever when retry after refresh still returns 401', async () => {
+    setAccessToken('expired');
+    setRefreshToken('rt-1');
+
+    let meCalls = 0;
+    let refreshCalls = 0;
+    const fetchMock = vi.fn(async (input: RequestInfo | URL) => {
+      const url = String(input);
+      if (url.endsWith('/app/auth/refresh')) {
+        refreshCalls += 1;
+        return new Response(
+          JSON.stringify({
+            code: '200',
+            msg: 'ok',
+            data: { token: 'new-access', refresh_token: 'rt-2' },
+          }),
+          { status: 200, headers: { 'Content-Type': 'application/json' } },
+        );
+      }
+      if (url.endsWith('/app/users/me')) {
+        meCalls += 1;
+        return new Response(
+          JSON.stringify({ code: 'AUTH_001', msg: 'still unauthorized', data: null }),
+          { status: 401, headers: { 'Content-Type': 'application/json' } },
+        );
+      }
+      throw new Error(`Unexpected URL: ${url}`);
+    });
+    vi.stubGlobal('fetch', fetchMock);
+
+    await expect(get('/app/users/me')).rejects.toBeInstanceOf(ApiError);
+    expect(meCalls).toBe(2); // original + one retry
+    expect(refreshCalls).toBe(1);
+    expect(getAccessToken()).toBeNull();
+    expect(getRefreshToken()).toBeNull();
+  });
 });
