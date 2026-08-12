@@ -53,7 +53,10 @@ async function proxyRequest(endpoint, body) {
   return data;
 }
 
-const ALLOWED_ENDPOINTS = ['/package/list', '/esim/order', '/esim/query', '/esim/topup', '/esim/usage'];
+// Keep this proxy read-only from the browser. Provisioning and recharge must go
+// through Laravel so auth, pricing, payment state, and audit logs are enforced.
+const ALLOWED_ENDPOINTS = ['/package/list', '/esim/query', '/esim/usage'];
+const BLOCKED_WRITE_ENDPOINTS = ['/esim/order', '/esim/topup'];
 
 export default async (req) => {
   const { allowOrigin, rejectCrossOriginBrowser } = resolveCors(req);
@@ -86,6 +89,16 @@ export default async (req) => {
 
   try {
     const { endpoint, payload } = await req.json();
+
+    if (endpoint && BLOCKED_WRITE_ENDPOINTS.includes(endpoint)) {
+      return new Response(
+        JSON.stringify({
+          error: 'Supplier write endpoint disabled',
+          detail: 'Create eSIM and top-up orders through the Laravel checkout flow.',
+        }),
+        { status: 403, headers },
+      );
+    }
 
     if (!endpoint || !ALLOWED_ENDPOINTS.includes(endpoint)) {
       return new Response(
