@@ -237,6 +237,8 @@ export function addErrorInterceptor(interceptor: ErrorInterceptor): void {
 export interface RequestConfig extends RequestInit {
   params?: Record<string, unknown>;
   skipAuth?: boolean;
+  /** Internal: set after one 401→refresh cycle so we never recurse forever. */
+  _authRetry?: boolean;
 }
 
 // ─── Token 刷新状态 ──────────────────────────────────────────────────────
@@ -376,8 +378,11 @@ export async function request<T>(
     response = await interceptor(response);
   }
 
-  // 处理 401 未授权
-  if (response.status === 401 && !finalConfig.skipAuth) {
+  // 处理 401 未授权 — refresh at most once per request chain.
+  // Without `_authRetry`, an endpoint that keeps returning 401 after a
+  // successful refresh (permission mismatch, revoked session race, etc.)
+  // would recurse until the tab crashes.
+  if (response.status === 401 && !finalConfig.skipAuth && !finalConfig._authRetry) {
     if (!isRefreshing) {
       isRefreshing = true;
       refreshPromise = refreshAccessToken().finally(() => {
@@ -388,8 +393,8 @@ export async function request<T>(
 
     try {
       await refreshPromise;
-      // 重试原请求
-      return request<T>(endpoint, config);
+      // 重试原请求 (exactly once)
+      return request<T>(endpoint, { ...config, _authRetry: true });
     } catch {
       clearTokens();
       const error = new ApiError(-3, 'Unauthorized', 401);
@@ -398,6 +403,15 @@ export async function request<T>(
       }
       throw error;
     }
+  }
+
+  if (response.status === 401 && !finalConfig.skipAuth && finalConfig._authRetry) {
+    clearTokens();
+    const error = new ApiError(-3, 'Unauthorized', 401);
+    for (const interceptor of errorInterceptors) {
+      await interceptor(error);
+    }
+    throw error;
   }
 
   // 解析响应体
