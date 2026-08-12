@@ -76,6 +76,10 @@ export function computeTestModeEnabled(): boolean {
   // (real users) or inside the desktop APP preview tab (ops / QA
   // screenshots). The banner exists purely for desktop H5 dev work.
   if (runningInsideNativeApp() || isAppPreviewHash()) return false;
+  // Test mode bypasses Stripe checkout in the shop. Only enable when
+  // supplier order/top-up calls are mocked via VITE_DEMO_ESIM — otherwise
+  // production `?testmode=1` would provision real eSIMs for free.
+  if (import.meta.env.VITE_DEMO_ESIM !== '1') return false;
   if (urlHasTestMode()) {
     try {
       sessionStorage.removeItem(DEV_TEST_MODE_OFF_KEY);
