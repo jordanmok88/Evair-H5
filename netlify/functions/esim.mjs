@@ -1,6 +1,7 @@
 import { createHmac, randomUUID } from 'crypto';
 import { resolveCors, jsonHeaders } from './cors.mjs';
 import { rateLimitExceeded, esimProxyLimits } from './rate-limit.mjs';
+import { redactSupplierProfileSecrets } from '../../lib/esimQueryRedact.mjs';
 
 const API_BASE = 'https://api.esimaccess.com/api/v1/open';
 
@@ -95,8 +96,12 @@ export default async (req) => {
     }
 
     const data = await proxyRequest(endpoint, payload || {});
+    const body =
+      endpoint === '/esim/query' || endpoint === '/esim/usage'
+        ? redactSupplierProfileSecrets(data)
+        : data;
 
-    return new Response(JSON.stringify(data), {
+    return new Response(JSON.stringify(body), {
       status: 200,
       headers,
     });

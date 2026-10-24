@@ -2,6 +2,7 @@ import { createHmac, randomUUID } from 'node:crypto';
 import type { CfEnv } from '../../lib/cloudflare/env';
 import { resolveCors, jsonHeaders } from '../../lib/cloudflare/cors';
 import { rateLimitExceeded, esimProxyLimits } from '../../lib/cloudflare/rateLimit';
+import { redactSupplierProfileSecrets } from '../../lib/esimQueryRedact.mjs';
 
 const API_BASE = 'https://api.esimaccess.com/api/v1/open';
 
@@ -91,8 +92,12 @@ export async function onRequest(context: { request: Request; env: CfEnv }): Prom
     }
 
     const data = await proxyRequest(endpoint, payload ?? {}, env);
+    const body =
+      endpoint === '/esim/query' || endpoint === '/esim/usage'
+        ? redactSupplierProfileSecrets(data)
+        : data;
 
-    return new Response(JSON.stringify(data), {
+    return new Response(JSON.stringify(body), {
       status: 200,
       headers,
     });
