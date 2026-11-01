@@ -14,7 +14,9 @@
  *        a. Pull `pending_esim_order` from localStorage (written by the
  *           page that initiated Stripe Checkout). Idempotency: we delete
  *           the entry as soon as we read it so a hard refresh after
- *           success will NOT re-trigger provisioning.
+ *           success will NOT re-trigger provisioning. The QR shown after
+ *           that refresh comes from a session snapshot scoped to this
+ *           country (see `utils/esimCheckoutSuccessCache.ts`).
  *        b. Poll `GET /app/orders/{id}` via
  *           `pollEsimOrderUntilProvisioned` until the backend webhook
  *           has finished provisioning (esim field present).
@@ -32,7 +34,7 @@
  *   - error: human-readable error to show on the page.
  *
  * Usage:
- *   const flow = useEsimCheckoutFlow();
+ *   const flow = useEsimCheckoutFlow(countryCode);
  *   if (flow.phase === 'success') return <DesktopEsimSuccess result={...} />;
  *   if (flow.phase === 'error') return <ErrorBanner message={flow.error} />;
  *
@@ -43,6 +45,14 @@ import { useEffect, useState } from 'react';
 import type { EsimOrderResult } from '../types';
 import { emailService } from '../services/api';
 import { pollEsimOrderUntilProvisioned } from '../services/api/order';
+import {
+    checkoutCountriesMatch,
+    clearEsimCheckoutSuccessCache,
+    ESIM_CHECKOUT_SUCCESS_CACHE_KEY,
+    readCheckoutNavigationKind,
+    shouldDiscardCheckoutSuccess,
+    shouldRestoreCheckoutSuccess,
+} from '../utils/esimCheckoutSuccessCache';
 
 export type CheckoutPhase =
     | 'idle'
@@ -78,7 +88,6 @@ export interface EsimCheckoutFlowState {
 }
 
 const PENDING_KEY = 'pending_esim_order';
-const SUCCESS_CACHE_KEY = 'esim_checkout_last_success';
 
 interface SuccessSnapshot {
     result: EsimOrderResult;
@@ -103,11 +112,11 @@ function readPending(): PendingEsimOrder | null {
 function readSuccessSnapshot(): SuccessSnapshot | null {
     if (typeof window === 'undefined') return null;
     try {
-        const raw = sessionStorage.getItem(SUCCESS_CACHE_KEY);
+        const raw = sessionStorage.getItem(ESIM_CHECKOUT_SUCCESS_CACHE_KEY);
         if (!raw) return null;
         return JSON.parse(raw) as SuccessSnapshot;
     } catch {
-        try { sessionStorage.removeItem(SUCCESS_CACHE_KEY); } catch { /* ignore */ }
+        clearEsimCheckoutSuccessCache();
         return null;
     }
 }
@@ -115,13 +124,37 @@ function readSuccessSnapshot(): SuccessSnapshot | null {
 function writeSuccessSnapshot(snap: SuccessSnapshot): void {
     if (typeof window === 'undefined') return;
     try {
-        sessionStorage.setItem(SUCCESS_CACHE_KEY, JSON.stringify(snap));
+        sessionStorage.setItem(ESIM_CHECKOUT_SUCCESS_CACHE_KEY, JSON.stringify(snap));
     } catch { /* quota — ignore */ }
 }
 
-function clearSuccessSnapshot(): void {
-    if (typeof window === 'undefined') return;
-    try { sessionStorage.removeItem(SUCCESS_CACHE_KEY); } catch { /* ignore */ }
+function currentNavigationKind() {
+    if (typeof performance === 'undefined') return readCheckoutNavigationKind(null);
+    const entry = performance.getEntriesByType('navigation')[0] as { type?: string } | undefined;
+    return readCheckoutNavigationKind(entry);
+}
+
+/**
+ * Decide what to show on this document load.
+ *
+ * A refresh of `/travel-esim/jp` may replay that order's QR. Opening any
+ * other travel page, or coming back via a normal link, drops the cached
+ * install secrets so they are not shown on the next country — or to the
+ * next person who uses the tab after logout.
+ */
+function initialSuccessSnapshot(activeCountryCode: string | null): SuccessSnapshot | null {
+    if (typeof window === 'undefined') return null;
+    const stripeStatus = new URLSearchParams(window.location.search).get('stripe_status');
+    const nav = currentNavigationKind();
+    if (shouldDiscardCheckoutSuccess(nav, stripeStatus)) {
+        clearEsimCheckoutSuccessCache();
+        return null;
+    }
+    const snap = readSuccessSnapshot();
+    if (!shouldRestoreCheckoutSuccess(nav, stripeStatus, snap?.pending?.countryCode, activeCountryCode)) {
+        return null;
+    }
+    return snap;
 }
 
 function cleanUrl(): void {
@@ -132,14 +165,27 @@ function cleanUrl(): void {
     } catch { /* ignore */ }
 }
 
-export function useEsimCheckoutFlow(): EsimCheckoutFlowState {
-    const initialSnap = typeof window !== 'undefined' ? readSuccessSnapshot() : null;
+export function useEsimCheckoutFlow(activeCountryCode: string | null): EsimCheckoutFlowState {
+    // Once per document load. Repeating this on render would delete the
+    // snapshot the Stripe return writes after it strips `stripe_status`.
+    const [initialSnap] = useState(() => initialSuccessSnapshot(activeCountryCode));
 
     const [phase, setPhase] = useState<CheckoutPhase>(initialSnap ? 'success' : 'idle');
     const [result, setResult] = useState<EsimOrderResult | null>(initialSnap?.result ?? null);
     const [pending, setPending] = useState<PendingEsimOrder | null>(initialSnap?.pending ?? null);
     const [emailSent, setEmailSent] = useState(initialSnap?.emailSent ?? false);
     const [error, setError] = useState<string | null>(null);
+
+    // Same document, different country (history within the travel shell):
+    // never keep another order's install QR on screen.
+    useEffect(() => {
+        if (phase !== 'success') return;
+        if (checkoutCountriesMatch(pending?.countryCode, activeCountryCode)) return;
+        setPhase('idle');
+        setResult(null);
+        setPending(null);
+        setEmailSent(false);
+    }, [activeCountryCode, pending, phase]);
 
     useEffect(() => {
         if (typeof window === 'undefined') return;
@@ -277,7 +323,7 @@ export function useEsimCheckoutFlow(): EsimCheckoutFlowState {
         reset: () => {
             setPhase('idle');
             setError(null);
-            clearSuccessSnapshot();
+            clearEsimCheckoutSuccessCache();
         },
     };
 }

@@ -28,6 +28,7 @@ import { checkDataUsage, prefetchPackages, DEMO_MODE, mapRedTeaStatus, bindSim, 
 import { logSimActivation } from './services/supabase';
 import { fetchLaravelAdminNotifications } from './services/fetchLaravelAdminNotifications';
 import { applyInboxClientState, clearInboxClientState } from './utils/inboxClientState';
+import { ESIM_CHECKOUT_SUCCESS_CACHE_KEY } from './utils/esimCheckoutSuccessCache';
 import { authService, userService, type UserDto, type UserSimDto } from './services/api';
 import { initPush, unregisterPush } from './services/pushService';
 import {
@@ -731,6 +732,7 @@ function CustomerApp() {
     const sessionKeys = [
       'evair-activeTab',
       'evair-simType',
+      ESIM_CHECKOUT_SUCCESS_CACHE_KEY,
     ];
 
     try {
