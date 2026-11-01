@@ -4,6 +4,7 @@
  */
 
 import { post, setAccessToken, setRefreshToken, clearTokens, getAccessToken, getRefreshToken } from './client';
+import { clearEsimCheckoutSuccessCache } from '../../utils/esimCheckoutSuccessCache';
 import type {
   LoginRequest,
   RegisterRequest,
@@ -67,6 +68,9 @@ export const authService = {
     } finally {
       // 无论请求成功与否，都清除本地 Token
       clearTokens();
+      // Desktop travel checkout stores the one-time LPA in sessionStorage.
+      // Marketing logout does not go through CustomerApp's storage wipe.
+      clearEsimCheckoutSuccessCache();
     }
   },
 

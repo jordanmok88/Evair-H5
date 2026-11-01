@@ -259,7 +259,7 @@ interface TravelEsimPageProps {
 const TravelEsimPage: React.FC<TravelEsimPageProps> = ({ countryCode }) => {
     const staticCountry = countryCode ? findCountry(countryCode) : undefined;
     const [dynamic, setDynamic] = useState<DynamicCountryState>({ kind: 'unset' });
-    const flow = useEsimCheckoutFlow();
+    const flow = useEsimCheckoutFlow(countryCode);
 
     useEffect(() => {
         if (!countryCode || staticCountry) {
